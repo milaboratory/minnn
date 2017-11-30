@@ -152,9 +152,9 @@ public class GroupUtilsTest {
                 "MainGroup", true);
         String notInsideMain = groupsToReadDescription(getGroupsInsideMain(matchedGroups, mainRange, false),
                 null, false);
-        assertEquals("group~GroupName~TTAG~CCCC{MainGroup~0~4}~group~GroupName~T~C{MainGroup~1~2}",
+        assertEquals("GroupName~TTAG~CCCC{MainGroup~0~4}~GroupName~T~C{MainGroup~1~2}",
                 insideMain);
-        assertEquals("group~GroupName~ATTAGACATT~CCCCCCCCCC~group~GroupName~ATTA~CCCC~group~GroupName~AGACA~CCCCC",
+        assertEquals("GroupName~ATTAGACATT~CCCCCCCCCC~GroupName~ATTA~CCCC~GroupName~AGACA~CCCCC",
                 notInsideMain);
     }
 
