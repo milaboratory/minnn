@@ -14,6 +14,7 @@ import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -81,6 +82,7 @@ public final class ReadProcessor {
     }
 
     public void processReadsParallel() {
+        long startTime = System.currentTimeMillis();
         List<SequenceReaderCloseable<? extends SequenceRead>> readers = new ArrayList<>();
         SequenceWriter writer;
         try {
@@ -127,12 +129,25 @@ public final class ReadProcessor {
             }
             return bestRead;
         };
+
+        long totalReads = 0;
+        long matchedReads = 0;
         for (ParsedRead parsedRead : CUtils.it(bestMatchPort)) {
             SequenceRead parsedSequenceRead = parsedRead.getParsedRead();
-            if (parsedSequenceRead != null)
+            totalReads++;
+            if (parsedSequenceRead != null) {
                 writer.write(parsedSequenceRead);
+                matchedReads++;
+            }
         }
         writer.close();
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        System.out.println(String.format("\nProcessing time: %02d min, %02d sec",
+                TimeUnit.MILLISECONDS.toMinutes(elapsedTime), TimeUnit.MILLISECONDS.toSeconds(elapsedTime)
+                        - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(elapsedTime))));
+        System.out.println(String.format("Matched reads: %.1f%%\n",
+                totalReads == 0 ? 0.0 : matchedReads * 100.0 / totalReads));
     }
 
     private SequenceReaderCloseable<? extends SequenceRead> createReader(boolean swapped) throws IOException {

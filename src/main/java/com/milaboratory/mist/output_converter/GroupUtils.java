@@ -66,7 +66,6 @@ public final class GroupUtils {
         StringBuilder descriptionBuilder = new StringBuilder();
         for (int i = 0; i < groups.size(); i++) {
             MatchedGroup currentGroup = groups.get(i);
-            descriptionBuilder.append("group~");
             descriptionBuilder.append(currentGroup.getGroupName());
             descriptionBuilder.append('~');
             descriptionBuilder.append(currentGroup.getValue().getSequence().toString());
