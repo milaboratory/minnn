@@ -250,10 +250,10 @@ public class ApproximateSorterTest {
         patternAligners[1] = getTestPatternAligner(-100, 0,
                 0, 0, true, 1);
         patternAligners[2] = new BasePatternAligner(new PatternAndTargetAlignmentScoring(0,
-                -1, -10, false, (byte)34, (byte)0, -4),
+                -1, -10, (byte)34, (byte)0, -4),
                 -100, -10, 1, 2);
         patternAligners[3] = new BasePatternAligner(new PatternAndTargetAlignmentScoring(0,
-                -7, -11, false, (byte)34, (byte)0, -4),
+                -7, -11, (byte)34, (byte)0, -4),
                 -200, -10, 3, 2);
 
         sequences[0] = "atgggcgcaaatatagggagctccgatcgacatcgggtatcgccctggtacgatcccg";

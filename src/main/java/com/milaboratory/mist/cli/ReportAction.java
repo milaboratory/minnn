@@ -26,8 +26,7 @@ public class ReportAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(params.matchScore,
-                params.mismatchScore, params.gapScore, params.usePatternLength, params.goodQuality,
-                params.badQuality, params.maxQualityPenalty);
+                params.mismatchScore, params.gapScore, params.goodQuality, params.badQuality, params.maxQualityPenalty);
         PatternAligner patternAligner = new BasePatternAligner(scoring, params.penaltyThreshold,
                 params.singleOverlapPenalty, params.bitapMaxErrors, params.maxOverlap);
         Parser patternParser = new Parser(patternAligner);
@@ -118,10 +117,6 @@ public class ReportAction implements Action {
         @Parameter(description = "Score for gap or insertion.",
                 names = {"--gap-score"})
         int gapScore = DEFAULT_GAP_SCORE;
-
-        @Parameter(description = "Use pattern length for scoring: longer patterns will have smaller score penalties.",
-                names = {"--use-pattern-length"})
-        boolean usePatternLength = false;
 
         @Parameter(description = "This or better quality value will be considered good quality, " +
                 "without score penalties.",

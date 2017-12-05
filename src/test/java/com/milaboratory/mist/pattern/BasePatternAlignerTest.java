@@ -22,7 +22,7 @@ public class BasePatternAlignerTest {
                 : -rg.nextInt(Math.min(-mismatchScore, -gapScore) + matchScore);
         byte badQuality = (byte)(rg.nextInt(5));
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(matchScore, mismatchScore,
-                gapScore, rg.nextBoolean(), (byte)(rg.nextInt(30) + 1 + badQuality), badQuality, badQualityPenalty);
+                gapScore, (byte)(rg.nextInt(30) + 1 + badQuality), badQuality, badQualityPenalty);
         return new BasePatternAligner(scoring, -rg.nextInt(100), -rg.nextInt(10),
                 rg.nextInt(4), rg.nextInt(4));
     }
@@ -61,8 +61,7 @@ public class BasePatternAlignerTest {
     @Test
     public void alignmentTest() {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(0,
-                -9, -10, false, DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY,
-                -3);
+                -9, -10, DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, -3);
         BasePatternAligner patternAligner = new BasePatternAligner(scoring, -30, -10,
                 2, 1);
         NucleotideSequenceCaseSensitive pattern = new NucleotideSequenceCaseSensitive("aTTAgaca");

@@ -127,7 +127,7 @@ public class CommonTestUtils {
     }
 
     public static PatternAndTargetAlignmentScoring getTestScoring() {
-        return new PatternAndTargetAlignmentScoring(0, -9, -10, false,
+        return new PatternAndTargetAlignmentScoring(0, -9, -10,
                 DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
     }
 

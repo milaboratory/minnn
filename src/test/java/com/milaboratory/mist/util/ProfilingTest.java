@@ -61,8 +61,7 @@ public class ProfilingTest {
         final LinearGapAlignmentScoring<NucleotideSequence> scoringOld = new LinearGapAlignmentScoring<>(
                 NucleotideSequence.ALPHABET, 0, -9, -10);
         final PatternAndTargetAlignmentScoring scoringNew = new PatternAndTargetAlignmentScoring(
-                0, -9, -10, false,
-                (byte)34, (byte)0, 0);
+                0, -9, -10, (byte)34, (byte)0, 0);
         final PatternAligner patternAligner = getTestPatternAligner();
         for (int i = 0; i < 100000; i++) {
             final NucleotideSequence seq1 = TestUtil.randomSequence(NucleotideSequence.ALPHABET,
