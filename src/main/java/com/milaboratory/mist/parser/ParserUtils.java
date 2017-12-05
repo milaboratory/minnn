@@ -73,7 +73,7 @@ public final class ParserUtils {
      * @param fullString string where to search
      * @return object name
      */
-    static String getObjectName(int leftParenthesisPosition, String fullString) throws ParserException {
+    static String getObjectName(int leftParenthesisPosition, String fullString) {
         ArrayList<Character> reversedNameCharacters = new ArrayList<>();
         int currentPosition = leftParenthesisPosition - 1;
 
