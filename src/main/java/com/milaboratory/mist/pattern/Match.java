@@ -22,7 +22,6 @@ public final class Match {
 
     public Match(int numberOfPatterns, long score, int leftUppercaseDistance, int rightUppercaseDistance,
                  ArrayList<MatchedItem> matchedItems) {
-        if (score > 0) throw new IllegalArgumentException("Score must not be positive!");
         this.numberOfPatterns = numberOfPatterns;
         this.score = score;
         this.leftUppercaseDistance = leftUppercaseDistance;
