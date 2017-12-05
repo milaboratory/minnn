@@ -15,15 +15,7 @@ import static org.junit.Assert.*;
 
 public class BasePatternAlignerTest {
     private BasePatternAligner getRandomAligner() {
-        int matchScore = -rg.nextInt(10);
-        int mismatchScore = -rg.nextInt(10) - 1 + matchScore;
-        int gapScore = -rg.nextInt(10) - 1 + matchScore;
-        int badQualityPenalty = (Math.min(-mismatchScore, -gapScore) + matchScore == 0) ? 0
-                : -rg.nextInt(Math.min(-mismatchScore, -gapScore) + matchScore);
-        byte badQuality = (byte)(rg.nextInt(5));
-        PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(matchScore, mismatchScore,
-                gapScore, (byte)(rg.nextInt(30) + 1 + badQuality), badQuality, badQualityPenalty);
-        return new BasePatternAligner(scoring, -rg.nextInt(100), -rg.nextInt(10),
+        return new BasePatternAligner(getRandomScoring(), -rg.nextInt(100), -rg.nextInt(10),
                 rg.nextInt(4), rg.nextInt(4));
     }
 

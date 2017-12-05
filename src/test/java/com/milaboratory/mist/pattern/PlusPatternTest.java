@@ -342,7 +342,8 @@ public class PlusPatternTest {
         FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
                 new NucleotideSequenceCaseSensitive("gattc"), groupsEdgePositions2);
         PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(-10, 0,
-                0, -5, true, 2, -1), pattern1, pattern2);
+                0, -5, true, 2, -1, getTestScoring()),
+                pattern1, pattern2);
         NSequenceWithQuality nseq = new NSequenceWithQuality("ATAGATTC");
         MatchingResult result = plusPattern.match(nseq);
         OutputPort<Match> matchOutputPort = result.getMatches(true);

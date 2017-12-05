@@ -131,6 +131,18 @@ public class CommonTestUtils {
                 DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
     }
 
+    public static PatternAndTargetAlignmentScoring getRandomScoring() {
+        int matchScore = rg.nextInt(20) - 10;
+        int mismatchScore = Math.min(-1, matchScore - 1 - rg.nextInt(10));
+        int gapPenalty = Math.min(-1, matchScore - 1 - rg.nextInt(10));
+        byte goodQuality = (byte)(rg.nextInt(10) + 24);
+        byte badQuality = (byte)(rg.nextInt(10));
+        int minMismatchDifference = Math.min(matchScore - mismatchScore, matchScore - gapPenalty);
+        int maxQualityPenalty = (minMismatchDifference > 1) ? -rg.nextInt(minMismatchDifference) : 0;
+        return new PatternAndTargetAlignmentScoring(matchScore, mismatchScore, gapPenalty, goodQuality, badQuality,
+                maxQualityPenalty);
+    }
+
     public static PatternAligner getTestPatternAligner() {
         return getTestPatternAligner(0);
     }
@@ -160,25 +172,25 @@ public class CommonTestUtils {
     public static PatternAligner getTestPatternAligner(long penaltyThreshold, int bitapMaxErrors, long notResultScore,
                                                        long singleOverlapPenalty, boolean compatible, int maxOverlap) {
         return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty,
-                compatible, maxOverlap, -1);
+                compatible, maxOverlap, -1, getTestScoring());
     }
 
     public static PatternAligner getTestPatternAligner(long penaltyThreshold, int bitapMaxErrors, long notResultScore,
                                                        long singleOverlapPenalty, boolean compatible, int maxOverlap,
-                                                       int fixedLeftBorder) {
+                                                       int fixedLeftBorder, PatternAndTargetAlignmentScoring scoring) {
         return new PatternAligner() {
             @Override
             public Alignment<NucleotideSequenceCaseSensitive> align(NucleotideSequenceCaseSensitive pattern,
                     NSequenceWithQuality target, int rightMatchPosition) {
                 if (fixedLeftBorder == -1) {
-                    return PatternAndTargetAligner.alignLeftAdded(getTestScoring(), pattern, target,
-                            rightMatchPosition, bitapMaxErrors);
+                    return PatternAndTargetAligner.alignLeftAdded(scoring, pattern, target, rightMatchPosition,
+                            bitapMaxErrors);
                 } else {
                     Range targetRange = new Range(fixedLeftBorder, rightMatchPosition + 1);
                     NSequenceWithQuality targetPart = new NSequenceWithQuality(
                             target.getSequence().getRange(targetRange), target.getQuality().getRange(targetRange));
                     Alignment<NucleotideSequenceCaseSensitive> partAlignment = PatternAndTargetAligner.alignGlobal(
-                            getTestScoring(), pattern, targetPart);
+                            scoring, pattern, targetPart);
                     return new Alignment<>(pattern, partAlignment.getAbsoluteMutations(),
                             partAlignment.getSequence1Range(), partAlignment.getSequence2Range().move(fixedLeftBorder),
                             partAlignment.getScore());
@@ -223,13 +235,13 @@ public class CommonTestUtils {
             @Override
             public PatternAligner overridePenaltyThreshold(long newThresholdValue) {
                 return getTestPatternAligner(newThresholdValue, bitapMaxErrors, notResultScore, singleOverlapPenalty,
-                        compatible, maxOverlap, fixedLeftBorder);
+                        compatible, maxOverlap, fixedLeftBorder, scoring);
             }
 
             @Override
             public PatternAligner setLeftBorder(int leftBorder) {
                 return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty,
-                        compatible, maxOverlap, leftBorder);
+                        compatible, maxOverlap, leftBorder, scoring);
             }
         };
     }
@@ -307,7 +319,8 @@ public class CommonTestUtils {
     }
 
     public static PatternAligner getRandomPatternAligner() {
-        return getTestPatternAligner(-rg.nextInt(100), rg.nextInt(4), -rg.nextInt(4), -rg.nextInt(3));
+        return getTestPatternAligner(-rg.nextInt(100), rg.nextInt(4), -rg.nextInt(4), -rg.nextInt(3),
+                true, -1, -1, getRandomScoring());
     }
 
     public static FuzzyMatchPattern getRandomFuzzyPattern(PatternAligner patternAligner, boolean withGroups) {

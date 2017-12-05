@@ -191,7 +191,8 @@ public class SequencePatternTest {
         FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
                 new NucleotideSequenceCaseSensitive("gattc"), groupsEdgePositions2);
         SequencePattern sequencePattern = new SequencePattern(getTestPatternAligner(-10, 0,
-                0, -5, true, 2, -1), pattern1, pattern2);
+                0, -5, true, 2, -1, getTestScoring()),
+                pattern1, pattern2);
         NSequenceWithQuality nseq = new NSequenceWithQuality("ATAGATTC");
         MatchingResult result = sequencePattern.match(nseq);
         OutputPort<Match> matchOutputPort = result.getMatches(true);
