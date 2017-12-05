@@ -1,6 +1,7 @@
 package com.milaboratory.mist.pattern;
 
-import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
+import com.milaboratory.core.sequence.*;
+import com.milaboratory.test.TestUtil;
 import org.junit.Test;
 
 import static com.milaboratory.mist.util.CommonTestUtils.*;
@@ -115,6 +116,17 @@ public class CommonPatternTests {
             if (notOperator != null)
                 assertEquals(pattern.estimateComplexity(), notOperator.estimateComplexity());
             assertEquals(pattern.estimateComplexity(), mFilterPattern.estimateComplexity());
+        }
+    }
+
+    @Test
+    public void fuzzingSinglePatternTest() throws Exception {
+        for (int i = 0; i < 10000; i++) {
+            NucleotideSequence randomSeq = TestUtil.randomSequence(NucleotideSequence.ALPHABET,
+                    1, 100);
+            SinglePattern randomPattern = getRandomSinglePattern();
+            MatchingResult matchingResult = randomPattern.match(new NSequenceWithQuality(randomSeq.toString()));
+            matchingResult.getBestMatch();
         }
     }
 }
