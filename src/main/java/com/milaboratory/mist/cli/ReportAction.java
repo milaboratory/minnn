@@ -24,7 +24,7 @@ public class ReportAction implements Action {
     private final ParseActionParameters params = new ParseActionParameters();
 
     @Override
-    public void go(ActionHelper helper) throws Exception {
+    public void go(ActionHelper helper) {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(params.matchScore,
                 params.mismatchScore, params.gapScore, params.usePatternLength, params.goodQuality,
                 params.badQuality, params.maxQualityPenalty);

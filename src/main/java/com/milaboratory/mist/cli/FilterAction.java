@@ -9,7 +9,7 @@ public final class FilterAction implements Action {
     private final FilterActionParameters filterActionParameters = new FilterActionParameters();
 
     @Override
-    public void go(ActionHelper helper) throws Exception {
+    public void go(ActionHelper helper) {
 
     }
 
