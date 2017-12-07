@@ -379,11 +379,7 @@ public final class ApproximateSorter {
      * @return true if combination was already returned, otherwise false
      */
     private boolean alreadyReturned(int[] indexes) {
-        if (!conf.fairSorting) {
-            if (unfairReturnedCombinationsHashes.contains(Arrays.hashCode(indexes)))
-                return true;
-        }
-        return false;
+        return !conf.fairSorting && unfairReturnedCombinationsHashes.contains(Arrays.hashCode(indexes));
     }
 
     /**
