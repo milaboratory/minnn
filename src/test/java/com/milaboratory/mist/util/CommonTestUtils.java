@@ -408,13 +408,18 @@ public class CommonTestUtils {
     }
 
     public static MultipleReadsOperator getRandomMultiReadPattern(MultipleReadsOperator... patterns) {
-        return getRandomMultiReadPattern(getRandomPatternAligner(), patterns);
+        return getRandomMultiReadPattern(getRandomPatternAligner(), -1, patterns);
     }
 
-    public static MultipleReadsOperator getRandomMultiReadPattern(PatternAligner patternAligner,
+    public static MultipleReadsOperator getRandomMultiReadPattern(int numPatterns) {
+        return getRandomMultiReadPattern(getRandomPatternAligner(), numPatterns);
+    }
+
+    public static MultipleReadsOperator getRandomMultiReadPattern(PatternAligner patternAligner, int numPatterns,
                                                                   MultipleReadsOperator... patterns) {
         if (patterns.length == 0) {
-            int numPatterns = rg.nextInt(5) + 1;
+            if (numPatterns == -1)
+                numPatterns = rg.nextInt(5) + 1;
             SinglePattern[] basicPatterns = new SinglePattern[numPatterns];
             for (int i = 0; i < numPatterns; i++)
                 basicPatterns[i] = getRandomBasicPattern(patternAligner);

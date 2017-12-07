@@ -1,5 +1,6 @@
 package com.milaboratory.mist.pattern;
 
+import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.test.TestUtil;
 import org.junit.Test;
@@ -121,12 +122,54 @@ public class CommonPatternTests {
 
     @Test
     public void fuzzingSinglePatternTest() throws Exception {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             NucleotideSequence randomSeq = TestUtil.randomSequence(NucleotideSequence.ALPHABET,
                     1, 100);
             SinglePattern randomPattern = getRandomSinglePattern();
             MatchingResult matchingResult = randomPattern.match(new NSequenceWithQuality(randomSeq.toString()));
             matchingResult.getBestMatch();
         }
+    }
+
+    @Test
+    public void fuzzingMultiPatternTest() throws Exception {
+        for (int i = 0; i < 1000; i++) {
+            int numPatterns = rg.nextInt(5) + 1;
+            Pattern randomPattern = getRandomMultiReadPattern(numPatterns);
+            NSequenceWithQuality[] randomSequences = new NSequenceWithQuality[numPatterns];
+            for (int j = 0; j < numPatterns; j++) {
+                NucleotideSequence randomSeq = TestUtil.randomSequence(NucleotideSequence.ALPHABET,
+                        1, 100);
+                randomSequences[j] = new NSequenceWithQuality(randomSeq.toString());
+            }
+            MultiNSequenceWithQualityImpl mSeq = new MultiNSequenceWithQualityImpl(randomSequences);
+            MatchingResult matchingResult = randomPattern.match(mSeq);
+            matchingResult.getBestMatch();
+        }
+    }
+
+    @Test
+    public void specialCasesTest() throws Exception {
+        PatternAndTargetAlignmentScoring[] scorings = new PatternAndTargetAlignmentScoring[1];
+        PatternAligner[] patternAligners = new PatternAligner[2];
+        String[] sequences = new String[1];
+        NSequenceWithQuality[] targets = new NSequenceWithQuality[1];
+        SinglePattern[] patterns = new SinglePattern[3];
+
+        scorings[0] = new PatternAndTargetAlignmentScoring(0, -2, -1,
+                (byte)25, (byte)6, -1);
+        patternAligners[0] = getTestPatternAligner();
+        patternAligners[1] = getTestPatternAligner(-40, 1, 0,
+                -1, true, -1, -1, scorings[0]);
+        sequences[0] = "t";
+        targets[0] = new NSequenceWithQuality(sequences[0]);
+        patterns[0] = new RepeatPattern(patternAligners[1], new NucleotideSequenceCaseSensitive("c"),
+                1, 1, -1, 45);
+        patterns[1] = new RepeatPattern(patternAligners[0], new NucleotideSequenceCaseSensitive(sequences[0]),
+                4, 30, -1, -1);
+        patterns[2] = new SequencePattern(patternAligners[0], patterns[0], patterns[1]);
+
+        MatchingResult matchingResult = patterns[2].match(targets[0]);
+        matchingResult.getBestMatch();
     }
 }
