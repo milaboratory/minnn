@@ -542,9 +542,9 @@ public final class ApproximateSorter {
                     int thisMatchStart = -1;
                     int thisMatchEnd = -1;
                     if (previousMatchIsLeft)
-                        thisMatchStart = previousMatchEnd - estimatedMaxOverlap;
+                        thisMatchStart = Math.max(conf.from(), previousMatchEnd - estimatedMaxOverlap);
                     else
-                        thisMatchEnd = previousMatchStart + estimatedMaxOverlap;
+                        thisMatchEnd = Math.min(conf.to(), previousMatchStart + estimatedMaxOverlap);
                     currentMatch = getPortWithParams(currentOperandIndex, thisMatchStart, thisMatchEnd,
                             estimatedMaxOverlap).get(portValueIndexes[currentOperandIndex]);
                 }
