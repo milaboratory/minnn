@@ -14,7 +14,6 @@ import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -23,6 +22,7 @@ import static com.milaboratory.mist.io.MistDataFormat.*;
 import static com.milaboratory.mist.io.ReadsNumber.*;
 import static com.milaboratory.mist.output_converter.GroupUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
+import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class ReadProcessor {
     private final List<String> inputFileNames;
@@ -143,9 +143,7 @@ public final class ReadProcessor {
         writer.close();
 
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.out.println(String.format("\nProcessing time: %02d min, %02d sec",
-                TimeUnit.MILLISECONDS.toMinutes(elapsedTime), TimeUnit.MILLISECONDS.toSeconds(elapsedTime)
-                        - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(elapsedTime))));
+        System.out.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         System.out.println(String.format("Matched reads: %.1f%%\n",
                 totalReads == 0 ? 0.0 : matchedReads * 100.0 / totalReads));
     }
