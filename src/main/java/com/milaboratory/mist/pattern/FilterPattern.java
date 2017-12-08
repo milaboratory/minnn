@@ -17,7 +17,6 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
 
     public FilterPattern(PatternAligner patternAligner, Filter filter, Pattern pattern) {
         super(patternAligner);
-        testAlignersCompatibility(pattern);
         this.filter = filter;
         this.pattern = pattern;
     }

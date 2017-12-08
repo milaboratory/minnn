@@ -159,25 +159,18 @@ public class CommonTestUtils {
 
     public static PatternAligner getTestPatternAligner(long penaltyThreshold, int bitapMaxErrors, long notResultScore,
                                                        long singleOverlapPenalty) {
-        return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty,
-                true);
+        return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty, -1);
     }
 
     public static PatternAligner getTestPatternAligner(long penaltyThreshold, int bitapMaxErrors, long notResultScore,
-                                                       long singleOverlapPenalty, boolean compatible) {
+                                                       long singleOverlapPenalty, int maxOverlap) {
         return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty,
-                compatible, -1);
+                maxOverlap, -1, getTestScoring());
     }
 
     public static PatternAligner getTestPatternAligner(long penaltyThreshold, int bitapMaxErrors, long notResultScore,
-                                                       long singleOverlapPenalty, boolean compatible, int maxOverlap) {
-        return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty,
-                compatible, maxOverlap, -1, getTestScoring());
-    }
-
-    public static PatternAligner getTestPatternAligner(long penaltyThreshold, int bitapMaxErrors, long notResultScore,
-                                                       long singleOverlapPenalty, boolean compatible, int maxOverlap,
-                                                       int fixedLeftBorder, PatternAndTargetAlignmentScoring scoring) {
+                                                       long singleOverlapPenalty, int maxOverlap, int fixedLeftBorder,
+                                                       PatternAndTargetAlignmentScoring scoring) {
         return new PatternAligner() {
             @Override
             public Alignment<NucleotideSequenceCaseSensitive> align(NucleotideSequenceCaseSensitive pattern,
@@ -228,20 +221,15 @@ public class CommonTestUtils {
             }
 
             @Override
-            public boolean compatible(PatternAligner otherAligner) {
-                return compatible;
-            }
-
-            @Override
             public PatternAligner overridePenaltyThreshold(long newThresholdValue) {
                 return getTestPatternAligner(newThresholdValue, bitapMaxErrors, notResultScore, singleOverlapPenalty,
-                        compatible, maxOverlap, fixedLeftBorder, scoring);
+                        maxOverlap, fixedLeftBorder, scoring);
             }
 
             @Override
             public PatternAligner setLeftBorder(int leftBorder) {
                 return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty,
-                        compatible, maxOverlap, leftBorder, scoring);
+                        maxOverlap, leftBorder, scoring);
             }
         };
     }
@@ -320,7 +308,7 @@ public class CommonTestUtils {
 
     public static PatternAligner getRandomPatternAligner() {
         return getTestPatternAligner(-rg.nextInt(100), rg.nextInt(4), -rg.nextInt(4), -rg.nextInt(3),
-                true, -1, -1, getRandomScoring());
+                -1, -1, getRandomScoring());
     }
 
     public static FuzzyMatchPattern getRandomFuzzyPattern(PatternAligner patternAligner, boolean withGroups) {

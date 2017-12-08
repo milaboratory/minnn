@@ -269,7 +269,7 @@ public class PlusPatternTest {
             }
 
             PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(plusPenaltyThreshold, 0,
-                    0, errorScorePenalty, true, maxOverlap), pattern1, pattern2);
+                    0, errorScorePenalty, maxOverlap), pattern1, pattern2);
 
             assertEquals(plusMustBeFound, plusPattern.match(targetQ).getBestMatch(true) != null);
             assertEquals(plusMustBeFound, plusPattern.match(targetQ).getMatches(true).take() != null);
@@ -342,7 +342,7 @@ public class PlusPatternTest {
         FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
                 new NucleotideSequenceCaseSensitive("gattc"), groupsEdgePositions2);
         PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(-10, 0,
-                0, -5, true, 2, -1, getTestScoring()),
+                0, -5, 2, -1, getTestScoring()),
                 pattern1, pattern2);
         NSequenceWithQuality nseq = new NSequenceWithQuality("ATAGATTC");
         MatchingResult result = plusPattern.match(nseq);

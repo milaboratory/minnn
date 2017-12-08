@@ -88,7 +88,7 @@ public class SequencePatternTest {
             }
 
             SequencePattern sequencePattern = new SequencePattern(getTestPatternAligner(penaltyThreshold,
-                    0, 0, errorScorePenalty, true, maxOverlap),
+                    0, 0, errorScorePenalty, maxOverlap),
                     pattern1, pattern2);
 
             assertEquals(entirePatternMustMatch, sequencePattern.match(targetQ)
@@ -191,7 +191,7 @@ public class SequencePatternTest {
         FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
                 new NucleotideSequenceCaseSensitive("gattc"), groupsEdgePositions2);
         SequencePattern sequencePattern = new SequencePattern(getTestPatternAligner(-10, 0,
-                0, -5, true, 2, -1, getTestScoring()),
+                0, -5, 2, -1, getTestScoring()),
                 pattern1, pattern2);
         NSequenceWithQuality nseq = new NSequenceWithQuality("ATAGATTC");
         MatchingResult result = sequencePattern.match(nseq);

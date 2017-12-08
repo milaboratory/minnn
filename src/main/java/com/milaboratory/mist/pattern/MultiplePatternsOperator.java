@@ -21,7 +21,6 @@ abstract class MultiplePatternsOperator extends SinglePattern {
      */
     MultiplePatternsOperator(PatternAligner patternAligner, boolean checkGroupEdges, SinglePattern... operandPatterns) {
         super(patternAligner);
-        testAlignersCompatibility(operandPatterns);
         this.operandPatterns = operandPatterns;
         this.groupEdges = new ArrayList<>();
         for (SinglePattern pattern : operandPatterns)

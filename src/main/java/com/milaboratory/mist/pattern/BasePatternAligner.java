@@ -80,11 +80,6 @@ public class BasePatternAligner implements PatternAligner {
     }
 
     @Override
-    public boolean compatible(PatternAligner otherAligner) {
-        return otherAligner.getClass() == BasePatternAligner.class;
-    }
-
-    @Override
     public int leftBorder() {
         return leftBorder;
     }

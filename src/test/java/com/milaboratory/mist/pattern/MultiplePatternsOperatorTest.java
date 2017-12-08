@@ -79,14 +79,4 @@ public class MultiplePatternsOperatorTest {
         exception.expect(IllegalStateException.class);
         new AndPattern(getTestPatternAligner(), pattern, pattern);
     }
-
-    @Test
-    public void incompatiblePatternAlignersTest() throws Exception {
-        PatternAligner incompatibleAligner = getTestPatternAligner(0, 0,
-                0, 0, false);
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(),
-                new NucleotideSequenceCaseSensitive("a"));
-        exception.expect(IllegalStateException.class);
-        new AndPattern(incompatibleAligner, pattern, pattern);
-    }
 }

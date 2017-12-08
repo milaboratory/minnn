@@ -80,14 +80,6 @@ public interface PatternAligner {
     }
 
     /**
-     * Checks whether two aligners are of the same type (may be with different penalty threshold).
-     *
-     * @param otherAligner other aligner
-     * @return true if aligners are compatible
-     */
-    boolean compatible(PatternAligner otherAligner);
-
-    /**
      * Fixed left border position for alignment if it is specified; -1 if not specified.
      * If left border is specified, global aligner is used.
      *

@@ -20,15 +20,6 @@ public class BasePatternAlignerTest {
     }
 
     @Test
-    public void compatibilityTest() throws Exception {
-        for (int i = 0; i < 1000; i++) {
-            BasePatternAligner aligner = getRandomAligner();
-            assertTrue(aligner.compatible(aligner.overridePenaltyThreshold(-rg.nextInt(100))));
-            assertTrue(aligner.compatible(aligner.setLeftBorder(rg.nextInt(20))));
-        }
-    }
-
-    @Test
     public void randomAlignerTest() {
         for (int i = 0; i < 1000; i++) {
             BasePatternAligner[] aligners = new BasePatternAligner[2];

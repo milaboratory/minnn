@@ -248,7 +248,7 @@ public class ApproximateSorterTest {
         patternAligners[0] = getTestPatternAligner(-11000, 2, 0,
                 -200);
         patternAligners[1] = getTestPatternAligner(-100, 0,
-                0, 0, true, 1);
+                0, 0, 1);
         patternAligners[2] = new BasePatternAligner(new PatternAndTargetAlignmentScoring(0,
                 -1, -10, (byte)34, (byte)0, -4),
                 -100, -10, 1, 2);
@@ -316,7 +316,7 @@ public class ApproximateSorterTest {
         for (boolean fairSorting : new boolean[] {true, false}) {
             for (int i = 0; i <= 1; i++) {
                 PatternAligner patternAligner = getTestPatternAligner(-100, 0,
-                        0, 0, true, i);
+                        0, 0, i);
                 FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternAligner,
                         new NucleotideSequenceCaseSensitive("ggca"));
                 FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternAligner,
@@ -365,7 +365,7 @@ public class ApproximateSorterTest {
     @Test
     public void uppercaseLettersTest() throws Exception {
         PatternAligner patternAligner = getTestPatternAligner(-100,
-                0, 0, -1, true, 1);
+                0, 0, -1, 1);
         String[] sequences = new String[] { "aaa", "aaA", "aAa", "att", "Att", "aTt" };
         FuzzyMatchPattern[] patterns = Arrays.stream(sequences)
                 .map(s -> new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive(s)))

@@ -44,15 +44,4 @@ public abstract class Pattern {
      * @return estimated computational complexity: bigger values mean higher complexity
      */
     public abstract long estimateComplexity();
-
-    /**
-     * Check if argument patterns have compatible pattern aligners.
-     *
-     * @param patterns argument patterns
-     */
-    protected void testAlignersCompatibility(Pattern... patterns) {
-        for (Pattern pattern : patterns)
-            if (!patternAligner.compatible(pattern.getPatternAligner()))
-                throw new IllegalStateException("Found incompatible PatternAligner in operand!");
-    }
 }

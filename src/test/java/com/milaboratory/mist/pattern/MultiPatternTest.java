@@ -169,14 +169,4 @@ public class MultiPatternTest {
                 assertNull(multiPattern1.match(target).getBestMatch());
         }
     }
-
-    @Test
-    public void incompatiblePatternAlignersTest() throws Exception {
-        PatternAligner incompatibleAligner = getTestPatternAligner(0, 0,
-                0, 0, false);
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(),
-                new NucleotideSequenceCaseSensitive("a"));
-        exception.expect(IllegalStateException.class);
-        new MultiPattern(incompatibleAligner, pattern, pattern);
-    }
 }

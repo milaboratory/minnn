@@ -268,7 +268,7 @@ public class AndPatternTest {
             }
 
             AndPattern andPattern = new AndPattern(getTestPatternAligner(andPenaltyThreshold, 0,
-                    0, errorScorePenalty, true, maxOverlap), pattern1, pattern2);
+                    0, errorScorePenalty, maxOverlap), pattern1, pattern2);
 
             assertEquals(andMustBeFound, andPattern.match(targetQ).getBestMatch(true) != null);
             assertEquals(andMustBeFound, andPattern.match(targetQ).getMatches(true).take() != null);

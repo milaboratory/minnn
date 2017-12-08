@@ -160,7 +160,7 @@ public class CommonPatternTests {
                 (byte)25, (byte)6, -1);
         patternAligners[0] = getTestPatternAligner();
         patternAligners[1] = getTestPatternAligner(-40, 1, 0,
-                -1, true, -1, -1, scorings[0]);
+                -1, -1, -1, scorings[0]);
         sequences[0] = "t";
         targets[0] = new NSequenceWithQuality(sequences[0]);
         patterns[0] = new RepeatPattern(patternAligners[1], new NucleotideSequenceCaseSensitive("c"),

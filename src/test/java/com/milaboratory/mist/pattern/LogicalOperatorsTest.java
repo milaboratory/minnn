@@ -404,15 +404,4 @@ public class LogicalOperatorsTest {
                     orOperator1.match(targets[1]).getBestMatch().getScore());
         }
     }
-
-    @Test
-    public void incompatiblePatternAlignersTest() throws Exception {
-        PatternAligner incompatibleAligner = getTestPatternAligner(0, 0,
-                0, 0, false);
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(),
-                new NucleotideSequenceCaseSensitive("a"));
-        MultiPattern mpattern = new MultiPattern(getTestPatternAligner(), pattern, pattern);
-        exception.expect(IllegalStateException.class);
-        new OrOperator(incompatibleAligner, mpattern, mpattern);
-    }
 }
