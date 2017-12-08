@@ -264,7 +264,7 @@ public final class ReadProcessor {
                             || (groupsNotInsideMainDescription.length() != 0)))
                         comments.append("~");
                     if (input.reverseMatch)
-                        comments.append("|~");
+                        comments.append("||~");
                     comments.append(groupsNotInsideMainDescription);
                     if ((comments.length() != 0) && ((groupsInsideMainDescription.length() != 0)))
                         comments.append("~");
