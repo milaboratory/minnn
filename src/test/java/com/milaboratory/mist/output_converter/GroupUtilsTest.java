@@ -152,9 +152,9 @@ public class GroupUtilsTest {
                 "MainGroup", true);
         String notInsideMain = groupsToReadDescription(getGroupsInsideMain(matchedGroups, mainRange, false),
                 null, false);
-        assertEquals("GroupName~TTAG~CCCC{MainGroup~0~4}~GroupName~T~C{MainGroup~1~2}",
+        assertEquals("GroupName~TTAG~CCCC{MainGroup~0~4}|GroupName~T~C{MainGroup~1~2}",
                 insideMain);
-        assertEquals("GroupName~ATTAGACATT~CCCCCCCCCC~GroupName~ATTA~CCCC~GroupName~AGACA~CCCCC",
+        assertEquals("GroupName~ATTAGACATT~CCCCCCCCCC|GroupName~ATTA~CCCC|GroupName~AGACA~CCCCC",
                 notInsideMain);
     }
 
@@ -204,28 +204,28 @@ public class GroupUtilsTest {
 
         assertEquals("", getNotMatchedGroupsDescription(pattern1, target1, 0));
         assertEquals("", getNotMatchedGroupsDescription(pattern2, target2, 0));
-        assertEquals("2-1~~2-2~~", getNotMatchedGroupsDescription(orPattern0, target1, 0));
-        assertEquals("2-1~~2-2~~", getNotMatchedGroupsDescription(orPattern1, target1, 0));
-        assertEquals("1-1~~1-2~~", getNotMatchedGroupsDescription(orPattern0, target2, 0));
-        assertEquals("1-1~~1-2~~", getNotMatchedGroupsDescription(orPattern2, target2, 0));
-        assertEquals("1-1~~1-2~~", getNotMatchedGroupsDescription(orPattern3, target1, 0));
-        assertEquals("2-1~~2-2~~", getNotMatchedGroupsDescription(orPattern4, target2, 0));
+        assertEquals("2-1~|2-2~", getNotMatchedGroupsDescription(orPattern0, target1, 0));
+        assertEquals("2-1~|2-2~", getNotMatchedGroupsDescription(orPattern1, target1, 0));
+        assertEquals("1-1~|1-2~", getNotMatchedGroupsDescription(orPattern0, target2, 0));
+        assertEquals("1-1~|1-2~", getNotMatchedGroupsDescription(orPattern2, target2, 0));
+        assertEquals("1-1~|1-2~", getNotMatchedGroupsDescription(orPattern3, target1, 0));
+        assertEquals("2-1~|2-2~", getNotMatchedGroupsDescription(orPattern4, target2, 0));
         assertException(IllegalArgumentException.class, () -> {
             descriptionForNotMatchedGroups(orPattern0, 1, new ArrayList<>());
             return null;
         });
         assertEquals("", getNotMatchedGroupsDescription(multiPattern1, mTarget, 0));
-        assertEquals("2-1~~2-2~~", getNotMatchedGroupsDescription(multiPattern1, mTarget, 1));
-        assertEquals("1-1~~1-2~~", getNotMatchedGroupsDescription(multiPattern2, mTarget, 0));
+        assertEquals("2-1~|2-2~", getNotMatchedGroupsDescription(multiPattern1, mTarget, 1));
+        assertEquals("1-1~|1-2~", getNotMatchedGroupsDescription(multiPattern2, mTarget, 0));
         assertEquals("", getNotMatchedGroupsDescription(multiPattern2, mTarget, 1));
         assertException(ArrayIndexOutOfBoundsException.class, () -> {
             descriptionForNotMatchedGroups(multiPattern1, 2, new ArrayList<>());
             return null;
         });
         assertEquals("", getNotMatchedGroupsDescription(andOperator, mTarget, 0));
-        assertEquals("2-1~~2-2~~", getNotMatchedGroupsDescription(andOperator, mTarget, 1));
+        assertEquals("2-1~|2-2~", getNotMatchedGroupsDescription(andOperator, mTarget, 1));
         assertEquals("", getNotMatchedGroupsDescription(orOperator, mTarget, 0));
-        assertEquals("2-1~~2-2~~", getNotMatchedGroupsDescription(orOperator, mTarget, 1));
+        assertEquals("2-1~|2-2~", getNotMatchedGroupsDescription(orOperator, mTarget, 1));
     }
 
     private static String getNotMatchedGroupsDescription(Pattern pattern,

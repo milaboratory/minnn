@@ -258,19 +258,24 @@ public final class ReadProcessor {
                     String notMatchedGroupsDescription = descriptionForNotMatchedGroups(pattern, i, currentGroups);
 
                     StringBuilder comments = new StringBuilder();
+                    boolean firstGroup = true;
                     if (copyOldComments)
                         comments.append(input.read.getRead(i).getDescription());
                     if ((comments.length() != 0) && (input.reverseMatch
-                            || (groupsNotInsideMainDescription.length() != 0)))
+                            || (groupsNotInsideMainDescription.length() != 0))) {
                         comments.append("~");
+                        firstGroup = false;
+                    }
                     if (input.reverseMatch)
                         comments.append("||~");
                     comments.append(groupsNotInsideMainDescription);
-                    if ((comments.length() != 0) && ((groupsInsideMainDescription.length() != 0)))
-                        comments.append("~");
+                    if ((comments.length() != 0) && ((groupsInsideMainDescription.length() != 0))) {
+                        comments.append(firstGroup ? "~" : "|");
+                        firstGroup = false;
+                    }
                     comments.append(groupsInsideMainDescription);
                     if ((comments.length() != 0) && (notMatchedGroupsDescription.length() != 0))
-                        comments.append("~");
+                        comments.append(firstGroup ? "~" : "|");
                     comments.append(notMatchedGroupsDescription);
 
                     reads[i] = new SingleReadImpl(0, mainGroup.getValue(), comments.toString());
