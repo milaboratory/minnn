@@ -24,8 +24,8 @@ public class GroupUtilsTest {
         NSequenceWithQuality seqMulti1 = new NSequenceWithQuality("AATTAAGGCAAA");
         NSequenceWithQuality seqMulti2 = new NSequenceWithQuality("ATTAGACA");
 
-        ArrayList<MatchedItem> testMatchedItemsSingle = new ArrayList<MatchedItem>() {{
-            add(new MatchedRange(seqSingle, (byte)1, 0, new Range(6, 9)));
+        MatchedRange testMatchedRangeSingle = new MatchedRange(seqSingle, (byte)1, 0, new Range(6, 9));
+        ArrayList<MatchedGroupEdge> testMatchedGroupEdgesSingle = new ArrayList<MatchedGroupEdge>() {{
             add(new MatchedGroupEdge(seqSingle, (byte)1, 0, new GroupEdge("0", true),
                     6));
             add(new MatchedGroupEdge(seqSingle, (byte)1, 0, new GroupEdge("0", false),
@@ -36,8 +36,11 @@ public class GroupUtilsTest {
                     9));
         }};
 
-        ArrayList<MatchedItem> testMatchedItemsMulti = new ArrayList<MatchedItem>() {{
-            add(new MatchedRange(seqMulti1, (byte)1, 0, new Range(0, 9)));
+        MatchedRange[] testMatchedRangesMulti = new MatchedRange[] {
+                new MatchedRange(seqMulti1, (byte)1, 0, new Range(0, 9)),
+                new MatchedRange(seqMulti2, (byte)1, 1, new Range(0, 8))
+        };
+        ArrayList<MatchedGroupEdge> testMatchedGroupEdgesMulti = new ArrayList<MatchedGroupEdge>() {{
             add(new MatchedGroupEdge(seqMulti1, (byte)1, 0, new GroupEdge("0", true),
                     1));
             add(new MatchedGroupEdge(seqMulti1, (byte)1, 0, new GroupEdge("0", false),
@@ -46,7 +49,6 @@ public class GroupUtilsTest {
                     4));
             add(new MatchedGroupEdge(seqMulti1, (byte)1, 0, new GroupEdge("1", false),
                     8));
-            add(new MatchedRange(seqMulti2, (byte)1, 1, new Range(0, 8)));
             add(new MatchedGroupEdge(seqMulti2, (byte)1, 1, new GroupEdge("2", true),
                     0));
             add(new MatchedGroupEdge(seqMulti2, (byte)1, 1, new GroupEdge("2", false),
@@ -58,9 +60,9 @@ public class GroupUtilsTest {
         }};
 
         Match testMatchSingle = new Match(1, -5, -1, -1,
-                testMatchedItemsSingle);
+                testMatchedGroupEdgesSingle, testMatchedRangeSingle);
         Match testMatchMulti = new Match(2, -11, -1, -1,
-                testMatchedItemsMulti);
+                testMatchedGroupEdgesMulti, testMatchedRangesMulti);
         ArrayList<MatchedGroup> groupsSingle = getGroupsFromMatch(testMatchSingle);
         ArrayList<MatchedGroup> groupsMulti = getGroupsFromMatch(testMatchMulti);
 
@@ -83,15 +85,15 @@ public class GroupUtilsTest {
     @Test
     public void invalidGroupRangeTest() throws Exception {
         NSequenceWithQuality seq = new NSequenceWithQuality("A");
-        ArrayList<MatchedItem> testMatchedItems = new ArrayList<MatchedItem>() {{
-            add(new MatchedRange(seq, (byte)1, 0, new Range(0, 1)));
+        MatchedRange testMatchedRange = new MatchedRange(seq, (byte)1, 0, new Range(0, 1));
+        ArrayList<MatchedGroupEdge> testMatchedGroupEdges = new ArrayList<MatchedGroupEdge>() {{
             add(new MatchedGroupEdge(seq, (byte)1, 0, new GroupEdge("0", true),
                     0));
             add(new MatchedGroupEdge(seq, (byte)1, 0, new GroupEdge("0", false),
                     0));
         }};
         Match testMatch = new Match(1, 0, -1, -1,
-                testMatchedItems);
+                testMatchedGroupEdges, testMatchedRange);
 
         exception.expect(IllegalStateException.class);
         getGroupsFromMatch(testMatch);
@@ -100,16 +102,18 @@ public class GroupUtilsTest {
     @Test
     public void groupEdgesInDifferentPatternsTest() throws Exception {
         NSequenceWithQuality seq = new NSequenceWithQuality("AAA");
-        ArrayList<MatchedItem> testMatchedItems = new ArrayList<MatchedItem>() {{
-            add(new MatchedRange(seq, (byte)1, 0, new Range(0, 1)));
-            add(new MatchedRange(seq, (byte)1, 1, new Range(0, 2)));
+        MatchedRange[] testMatchedRanges = new MatchedRange[] {
+                new MatchedRange(seq, (byte)1, 0, new Range(0, 1)),
+                new MatchedRange(seq, (byte)1, 1, new Range(0, 2))
+        };
+        ArrayList<MatchedGroupEdge> testMatchedGroupEdges = new ArrayList<MatchedGroupEdge>() {{
             add(new MatchedGroupEdge(seq, (byte)1, 0, new GroupEdge("0", true),
                     0));
             add(new MatchedGroupEdge(seq, (byte)1, 1, new GroupEdge("0", false),
                     1));
         }};
         Match testMatch = new Match(2, 0, -1, -1,
-                testMatchedItems);
+                testMatchedGroupEdges, testMatchedRanges);
 
         exception.expect(IllegalStateException.class);
         getGroupsFromMatch(testMatch);

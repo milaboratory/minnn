@@ -70,14 +70,13 @@ public final class PatternUtils {
         Range foundRange = alignment.getSequence2Range();
         long matchScore = (long)alignment.getScore() + extraScorePenalty;
         MatchedRange matchedRange = new MatchedRange(target, targetId, 0, foundRange);
-        ArrayList<MatchedItem> matchedItems = new ArrayList<>();
-        matchedItems.add(matchedRange);
+        ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
 
         for (GroupEdgePosition groupEdgePosition : groupEdgePositions) {
             int foundGroupEdgePosition = toSeq2Position(alignment, groupEdgePosition.getPosition());
             MatchedGroupEdge matchedGroupEdge = new MatchedGroupEdge(target, targetId, 0,
                     groupEdgePosition.getGroupEdge(), foundGroupEdgePosition);
-            matchedItems.add(matchedGroupEdge);
+            matchedGroupEdges.add(matchedGroupEdge);
         }
 
         if (((firstUppercase != -1) && (firstUppercase < alignment.getSequence1Range().getLower()))
@@ -90,7 +89,8 @@ public final class PatternUtils {
         int rightUppercaseDistance = (lastUppercase == -1) ? -1
                 : foundRange.getUpper() - 1 - toSeq2Position(alignment, lastUppercase);
 
-        return new Match(1, matchScore, leftUppercaseDistance, rightUppercaseDistance, matchedItems);
+        return new Match(1, matchScore, leftUppercaseDistance, rightUppercaseDistance,
+                matchedGroupEdges, matchedRange);
     }
 
     /**

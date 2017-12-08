@@ -2,36 +2,34 @@ package com.milaboratory.mist.pattern;
 
 import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 
+import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
 
 public class MatchTest {
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
-
     @Test
     public void matchTest() throws Exception {
         NSequenceWithQuality seq0 = new NSequenceWithQuality("AATTAAGGCAAA");
         NSequenceWithQuality seq1 = new NSequenceWithQuality("ATTAGACA");
 
-        ArrayList<MatchedItem> testMatchedItems1 = new ArrayList<MatchedItem>() {{
-            add(new MatchedRange(seq0, (byte)1, 0, new Range(0, 9)));
+        MatchedRange testMatchedRange1 = new MatchedRange(seq0, (byte)1, 0, new Range(0, 9));
+        ArrayList<MatchedGroupEdge> testMatchedGroupEdges1 = new ArrayList<MatchedGroupEdge>() {{
             add(new MatchedGroupEdge(seq0, (byte)1, 0, new GroupEdge("0", true), 1));
             add(new MatchedGroupEdge(seq0, (byte)1, 0, new GroupEdge("0", false), 4));
         }};
 
-        ArrayList<MatchedItem> testMatchedItems2 = new ArrayList<MatchedItem>() {{
-            add(new MatchedRange(seq0, (byte)1, 0, new Range(0, 9)));
+        MatchedRange[] testMatchedRanges2 = new MatchedRange[] {
+                new MatchedRange(seq0, (byte)1, 0, new Range(0, 9)),
+                new MatchedRange(seq1, (byte)1, 1, new Range(0, 8))
+        };
+        ArrayList<MatchedGroupEdge> testMatchedGroupEdges2 = new ArrayList<MatchedGroupEdge>() {{
             add(new MatchedGroupEdge(seq0, (byte)1, 0, new GroupEdge("0", true), 1));
             add(new MatchedGroupEdge(seq0, (byte)1, 0, new GroupEdge("0", false), 4));
             add(new MatchedGroupEdge(seq1, (byte)1, 1, new GroupEdge("1", true), 4));
             add(new MatchedGroupEdge(seq1, (byte)1, 1, new GroupEdge("1", false), 8));
-            add(new MatchedRange(seq1, (byte)1, 1, new Range(0, 8)));
             add(new MatchedGroupEdge(seq1, (byte)1, 1, new GroupEdge("2", true), 0));
             add(new MatchedGroupEdge(seq1, (byte)1, 1, new GroupEdge("2", false), 4));
             add(new MatchedGroupEdge(seq1, (byte)1, 1, new GroupEdge("3", true), 5));
@@ -39,9 +37,9 @@ public class MatchTest {
         }};
 
         Match testMatch1 = new Match(1, -10, 1, 2,
-                testMatchedItems1);
+                testMatchedGroupEdges1, testMatchedRange1);
         Match testMatch2 = new Match(2, -5, -1, -1,
-                testMatchedItems2);
+                testMatchedGroupEdges2, testMatchedRanges2);
 
         assertEquals(1, testMatch1.getNumberOfPatterns());
         assertEquals(2, testMatch2.getNumberOfPatterns());
@@ -61,8 +59,6 @@ public class MatchTest {
         assertEquals(8, testMatch2.getMatchedGroupEdges().size());
         assertEquals(MatchedGroupEdge.class, testMatch1.getMatchedGroupEdges().get(1).getClass());
         assertEquals(MatchedGroupEdge.class, testMatch2.getMatchedGroupEdges().get(7).getClass());
-        assertNotNull(testMatch1.getMatchedItems().get(2));
-        assertNotNull(testMatch2.getMatchedItems().get(9));
         assertTrue(testMatch1.getMatchedGroupEdge("0", true).isStart());
         assertFalse(testMatch1.getMatchedGroupEdge("0", false).isStart());
         assertTrue(testMatch2.getMatchedGroupEdge("1", true).isStart());
@@ -90,7 +86,9 @@ public class MatchTest {
         assertEquals(-1, testMatch2.getRightUppercaseDistance());
         assertEquals("0", testMatch2.getMatchedGroupEdgesByPattern(0).get(0).getGroupName());
 
-        exception.expect(IllegalStateException.class);
-        testMatch2.getMatchedRange();
+        assertException(IllegalStateException.class, () -> {
+            testMatch2.getMatchedRange();
+            return null;
+        });
     }
 }

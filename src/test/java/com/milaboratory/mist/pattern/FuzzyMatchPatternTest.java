@@ -41,7 +41,7 @@ public class FuzzyMatchPatternTest {
             assertEquals(true, result.isFound());
             assertEquals(1, countMatches(result, true));
             assertEquals(1, result.getBestMatch().getNumberOfPatterns());
-            assertEquals(1, result.getBestMatch().getMatchedRanges().size());
+            assertEquals(1, result.getBestMatch().getMatchedRanges().length);
             assertEquals(0, result.getBestMatch().getMatchedGroupEdges().size());
         }
     }
@@ -178,7 +178,7 @@ public class FuzzyMatchPatternTest {
         OutputPort<Match> matches = result.getMatches(true);
         assertEquals(10, matches.take().getRange().getLower());
         assertEquals("ATTAGACA", matches.take().getValue().getSequence().toString());
-        assertEquals(24, matches.take().getMatchedRanges().get(0).getRange().getLower());
+        assertEquals(24, matches.take().getMatchedRanges()[0].getRange().getLower());
         assertEquals(46, matches.take().getMatchedRange(0).getRange().getUpper());
     }
 

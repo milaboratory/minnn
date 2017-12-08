@@ -40,7 +40,7 @@ public class RepeatPatternTest {
                 assertEquals(true, results[i].isFound());
                 assertEquals((i < 3) ? 25 : 7, countMatches(results[i], true));
                 assertEquals(1, results[i].getBestMatch(fairSorting).getNumberOfPatterns());
-                assertEquals(1, results[i].getBestMatch(fairSorting).getMatchedRanges().size());
+                assertEquals(1, results[i].getBestMatch(fairSorting).getMatchedRanges().length);
                 assertEquals(0, results[i].getBestMatch(fairSorting).getMatchedGroupEdges().size());
             }
     }
@@ -156,7 +156,7 @@ public class RepeatPatternTest {
         result = pattern.match(nseq);
         OutputPort<Match> matches = result.getMatches(true);
         assertEquals(new Range(39, 43), matches.take().getRange());
-        assertEquals(new Range(32, 35), matches.take().getMatchedRanges().get(0).getRange());
+        assertEquals(new Range(32, 35), matches.take().getMatchedRanges()[0].getRange());
         assertEquals("CCC", matches.take().getValue().getSequence().toString());
         assertEquals(new Range(40, 43), matches.take().getMatchedRange(0).getRange());
     }

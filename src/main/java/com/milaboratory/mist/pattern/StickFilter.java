@@ -3,8 +3,6 @@ package com.milaboratory.mist.pattern;
 import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 
-import java.util.ArrayList;
-
 import static com.milaboratory.mist.pattern.PatternUtils.invertCoordinate;
 
 public final class StickFilter implements Filter {
@@ -30,10 +28,10 @@ public final class StickFilter implements Filter {
     public Match checkMatch(Match match) {
         if (position < 0)
             throw new IllegalStateException("Position (" + position + ") is negative on checkMatch() stage!");
-        ArrayList<MatchedRange> matchedRanges = match.getMatchedRanges();
-        if (matchedRanges.size() != 1)
+        MatchedRange[] matchedRanges = match.getMatchedRanges();
+        if (matchedRanges.length != 1)
             throw new IllegalArgumentException("Expected exactly 1 matched range in StickFilter; got "
-                    + matchedRanges.size());
+                    + matchedRanges.length);
         else {
             Range range = match.getRange();
             // position is always inclusive; range.getFrom() is inclusive, range.getTo() is exclusive

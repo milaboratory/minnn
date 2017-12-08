@@ -65,10 +65,9 @@ public final class NotOperator extends MultipleReadsOperator {
                 if (operandIsMatching)
                     return null;
                 else {
-                    ArrayList<MatchedItem> matchedItems = new ArrayList<>();
-                    matchedItems.add(new NullMatchedRange(0));
                     return new Match(1, patternAligner.notResultScore(),
-                            -1, -1, matchedItems);
+                            -1, -1,
+                            new ArrayList<>(), new NullMatchedRange(0));
                 }
             }
         }

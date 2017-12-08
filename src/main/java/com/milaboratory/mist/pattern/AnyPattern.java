@@ -86,11 +86,13 @@ public final class AnyPattern extends SinglePattern {
                 if (!firstTake) return null;
                 firstTake = false;
 
-                ArrayList<MatchedItem> matchedItems = new ArrayList<>();
-                matchedItems.add(new MatchedRange(target, targetId, 0, new Range(from, to)));
-                matchedItems.addAll(groupEdges.stream().map(ge -> new MatchedGroupEdge(target, targetId, 0,
-                        ge, ge.isStart() ? 0 : target.size())).collect(Collectors.toList()));
-                return new Match(1, 0, -1, -1, matchedItems);
+                MatchedRange matchedRange = new MatchedRange(target, targetId, 0, new Range(from, to));
+                ArrayList<MatchedGroupEdge> matchedGroupEdges = groupEdges.stream()
+                        .map(ge -> new MatchedGroupEdge(target, targetId, 0, ge,
+                                ge.isStart() ? 0 : target.size()))
+                        .collect(Collectors.toCollection(ArrayList::new));
+                return new Match(1, 0, -1, -1,
+                        matchedGroupEdges, matchedRange);
             }
         }
     }

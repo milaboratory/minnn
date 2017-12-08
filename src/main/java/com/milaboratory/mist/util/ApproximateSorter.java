@@ -48,15 +48,16 @@ public final class ApproximateSorter {
      * @return combined match
      */
     private Match combineMatches(Match... matches) {
-        ArrayList<MatchedItem> matchedItems = new ArrayList<>();
+        ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
 
         if (conf.multipleReads) {
+            ArrayList<MatchedRange> matchedRanges = new ArrayList<>();
             int patternIndex = 0;
             boolean allMatchesAreNull = true;
             for (Match match : matches) {
                 if (match == null) {
                     if (conf.matchValidationType == LOGICAL_OR) {
-                        matchedItems.add(new NullMatchedRange(patternIndex++));
+                        matchedRanges.add(new NullMatchedRange(patternIndex++));
                         continue;
                     } else throw new IllegalStateException(
                             "Found null match when MatchValidationType doesn't allow them");
@@ -67,12 +68,12 @@ public final class ApproximateSorter {
                         if (match.getMatchedGroupEdgesByPattern(i).size() > 0)
                             throw new IllegalStateException("Null pattern contains "
                                     + match.getMatchedGroupEdgesByPattern(i).size() + " group edges");
-                        matchedItems.add(new NullMatchedRange(patternIndex++));
+                        matchedRanges.add(new NullMatchedRange(patternIndex++));
                     } else {
-                        matchedItems.add(new MatchedRange(currentMatchedRange.getTarget(),
+                        matchedRanges.add(new MatchedRange(currentMatchedRange.getTarget(),
                                 currentMatchedRange.getTargetId(), patternIndex, currentMatchedRange.getRange()));
                         for (MatchedGroupEdge matchedGroupEdge : match.getMatchedGroupEdgesByPattern(i))
-                            matchedItems.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
+                            matchedGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
                                     matchedGroupEdge.getTargetId(), patternIndex, matchedGroupEdge.getGroupEdge(),
                                     matchedGroupEdge.getPosition()));
                         patternIndex++;
@@ -83,8 +84,8 @@ public final class ApproximateSorter {
             if (allMatchesAreNull)
                 return null;
             else
-                return new Match(patternIndex, combineMatchScores(matches),
-                        -1, -1, matchedItems);
+                return new Match(patternIndex, combineMatchScores(matches), -1, -1,
+                        matchedGroupEdges, matchedRanges.toArray(new MatchedRange[matchedRanges.size()]));
         } else if (conf.matchValidationType == FIRST) {
             boolean matchExist = false;
             int bestMatchPort = 0;
@@ -106,7 +107,6 @@ public final class ApproximateSorter {
             NSequenceWithQuality target = matches[0].getMatchedRange().getTarget();
             byte targetId = matches[0].getMatchedRange().getTargetId();
             ArrayList<ArrayList<MatchedGroupEdge>> matchedGroupEdgesFromOperands = new ArrayList<>();
-            ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
 
             for (int i = 0; i < matches.length; i++) {
                 matchedGroupEdgesFromOperands.add(new ArrayList<>());
@@ -145,12 +145,12 @@ public final class ApproximateSorter {
                     matchedGroupEdges.addAll(matchedGroupEdgesFromOperands.get(i));
             }
 
-            matchedItems.addAll(matchedGroupEdges);
-            matchedItems.add(new MatchedRange(target, targetId, 0, combineRanges(sortedMatches)));
+            MatchedRange matchedRange = new MatchedRange(target, targetId, 0, combineRanges(sortedMatches));
 
             return new Match(1, combineMatchScores(matches) + rangesCombinationPenalty,
                     sortedMatches[0].getLeftUppercaseDistance(),
-                    sortedMatches[sortedMatches.length - 1].getRightUppercaseDistance(), matchedItems);
+                    sortedMatches[sortedMatches.length - 1].getRightUppercaseDistance(),
+                    matchedGroupEdges, matchedRange);
         }
     }
 
