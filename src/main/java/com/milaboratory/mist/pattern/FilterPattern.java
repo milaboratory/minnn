@@ -33,12 +33,12 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
 
     @Override
     public MatchingResult match(MultiNSequenceWithQuality target) {
-        return new FilterMatchingResult(filter, pattern, target);
+        return new FilterMatchingResult(filter, target);
     }
 
     @Override
     public MatchingResult match(NSequenceWithQuality target, int from, int to) {
-        return new FilterMatchingResult(filter, pattern, target, from, to);
+        return new FilterMatchingResult(filter, target, from, to);
     }
 
     @Override
@@ -79,32 +79,30 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
         return pattern instanceof CanFixBorders && ((CanFixBorders)pattern).isBorderFixed(left);
     }
 
-    private static class FilterMatchingResult implements MatchingResult {
+    private class FilterMatchingResult implements MatchingResult {
         private final Filter filter;
-        private final Pattern pattern;
         private final MultiNSequenceWithQuality targetMulti;
         private final NSequenceWithQuality targetSingle;
         private final int from;
         private final int to;
 
-        FilterMatchingResult(Filter filter, Pattern pattern, MultiNSequenceWithQuality targetMulti) {
-            this(filter, pattern,
+        FilterMatchingResult(Filter filter, MultiNSequenceWithQuality targetMulti) {
+            this(filter,
                     (targetMulti instanceof NSequenceWithQuality) ? null : targetMulti,
                     (targetMulti instanceof NSequenceWithQuality) ? (NSequenceWithQuality)targetMulti : null,
                     0,
                     (targetMulti instanceof NSequenceWithQuality) ? ((NSequenceWithQuality)targetMulti).size() : 0);
         }
 
-        FilterMatchingResult(Filter filter, Pattern pattern, NSequenceWithQuality targetSingle, int from, int to) {
-            this(filter, pattern, null, targetSingle, from, to);
+        FilterMatchingResult(Filter filter, NSequenceWithQuality targetSingle, int from, int to) {
+            this(filter, null, targetSingle, from, to);
         }
 
-        private FilterMatchingResult(Filter filter, Pattern pattern, MultiNSequenceWithQuality targetMulti,
+        private FilterMatchingResult(Filter filter, MultiNSequenceWithQuality targetMulti,
                                      NSequenceWithQuality targetSingle, int from, int to) {
             this.filter = filter;
             if (filter instanceof StickFilter)
                 ((StickFilter)filter).fixPosition(targetSingle);
-            this.pattern = pattern;
             this.targetMulti = targetMulti;
             this.targetSingle = targetSingle;
             this.from = from;
@@ -116,21 +114,19 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
             if (targetMulti != null) {
                 if (!(pattern instanceof MultipleReadsOperator)) throw new IllegalArgumentException(
                         "Trying to use filter with single-target pattern and multi-target match arguments.");
-                return new FilterOutputPort(filter, pattern.match(targetMulti).getMatches(fairSorting));
+                return new FilterOutputPort(pattern.match(targetMulti).getMatches(fairSorting));
             } else if (targetSingle != null) {
                 if (!(pattern instanceof SinglePattern)) throw new IllegalArgumentException(
                         "Trying to use filter with multi-target pattern and single-target match arguments.");
-                return new FilterOutputPort(filter, ((SinglePattern)pattern).match(targetSingle, from, to)
+                return new FilterOutputPort(((SinglePattern)pattern).match(targetSingle, from, to)
                         .getMatches(fairSorting));
             } else throw new IllegalStateException("Both targetMulti and targetSingle are null.");
         }
 
-        private static class FilterOutputPort implements OutputPort<Match> {
-            private final Filter filter;
+        private class FilterOutputPort implements OutputPort<Match> {
             private final OutputPort<Match> operandPort;
 
-            FilterOutputPort(Filter filter, OutputPort<Match> operandPort) {
-                this.filter = filter;
+            FilterOutputPort(OutputPort<Match> operandPort) {
                 this.operandPort = operandPort;
             }
 

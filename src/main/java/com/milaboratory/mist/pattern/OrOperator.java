@@ -21,7 +21,7 @@ public final class OrOperator extends MultipleReadsOperator {
 
     @Override
     public MatchingResult match(MultiNSequenceWithQuality target) {
-        return new OrOperatorMatchingResult(patternAligner, operandPatterns, target);
+        return new OrOperatorMatchingResult(target);
     }
 
     @Override
@@ -30,15 +30,10 @@ public final class OrOperator extends MultipleReadsOperator {
                 .orElseThrow(IllegalStateException::new);
     }
 
-    private static class OrOperatorMatchingResult implements MatchingResult {
-        private final PatternAligner patternAligner;
-        private final MultipleReadsOperator[] operandPatterns;
+    private class OrOperatorMatchingResult implements MatchingResult {
         private final MultiNSequenceWithQuality target;
 
-        OrOperatorMatchingResult(PatternAligner patternAligner, MultipleReadsOperator[] operandPatterns,
-                                  MultiNSequenceWithQuality target) {
-            this.patternAligner = patternAligner;
-            this.operandPatterns = operandPatterns;
+        OrOperatorMatchingResult(MultiNSequenceWithQuality target) {
             this.target = target;
         }
 

@@ -21,7 +21,7 @@ public final class NotOperator extends MultipleReadsOperator {
 
     @Override
     public MatchingResult match(MultiNSequenceWithQuality target) {
-        return new NotOperatorMatchingResult(patternAligner, operandPatterns[0], target);
+        return new NotOperatorMatchingResult(operandPatterns[0], target);
     }
 
     @Override
@@ -29,14 +29,11 @@ public final class NotOperator extends MultipleReadsOperator {
         return operandPatterns[0].estimateComplexity();
     }
 
-    private static class NotOperatorMatchingResult implements MatchingResult {
-        private final PatternAligner patternAligner;
+    private class NotOperatorMatchingResult implements MatchingResult {
         private final MultipleReadsOperator operandPattern;
         private final MultiNSequenceWithQuality target;
 
-        NotOperatorMatchingResult(PatternAligner patternAligner, MultipleReadsOperator operandPattern,
-                                 MultiNSequenceWithQuality target) {
-            this.patternAligner = patternAligner;
+        NotOperatorMatchingResult(MultipleReadsOperator operandPattern, MultiNSequenceWithQuality target) {
             this.operandPattern = operandPattern;
             this.target = target;
         }
@@ -46,14 +43,12 @@ public final class NotOperator extends MultipleReadsOperator {
             return new NotOperatorOutputPort(patternAligner, operandPattern.match(target).getMatches(fairSorting));
         }
 
-        private static class NotOperatorOutputPort implements OutputPort<Match> {
-            private final PatternAligner patternAligner;
+        private class NotOperatorOutputPort implements OutputPort<Match> {
             private final OutputPort<Match> operandPort;
             private boolean firstCall = true;
             private boolean operandIsMatching;
 
             NotOperatorOutputPort(PatternAligner patternAligner, OutputPort<Match> operandPort) {
-                this.patternAligner = patternAligner;
                 this.operandPort = operandPort;
             }
 

@@ -92,8 +92,7 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
         int fromWithBorder = (fixedLeftBorder == -1) ? from : Math.max(from, fixedLeftBorder);
         // to is exclusive and fixedRightBorder is inclusive
         int toWithBorder = (fixedRightBorder == -1) ? to : Math.min(to, fixedRightBorder + 1);
-        return new RepeatPatternMatchingResult(patternAligner, patternSeq, minRepeats, maxRepeats,
-                fixedLeftBorder, fixedRightBorder, groupEdgePositions, target, fromWithBorder, toWithBorder, targetId);
+        return new RepeatPatternMatchingResult(fixedLeftBorder, fixedRightBorder, target, fromWithBorder, toWithBorder);
     }
 
     @Override
@@ -155,56 +154,31 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
             return fixedRightBorder != -1;
     }
 
-    private static class RepeatPatternMatchingResult implements MatchingResult {
-        private final PatternAligner patternAligner;
-        private final NucleotideSequenceCaseSensitive patternSeq;
-        private final int minRepeats;
-        private final int maxRepeats;
+    private class RepeatPatternMatchingResult implements MatchingResult {
         private final int fixedLeftBorder;
         private final int fixedRightBorder;
-        private final List<GroupEdgePosition> groupEdgePositions;
         private final NSequenceWithQuality target;
         private final int from;
         private final int to;
-        private final byte targetId;
 
-        RepeatPatternMatchingResult(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
-                                    int minRepeats, int maxRepeats, int fixedLeftBorder, int fixedRightBorder,
-                                    List<GroupEdgePosition> groupEdgePositions,
-                                    NSequenceWithQuality target, int from, int to, byte targetId) {
-            this.patternAligner = patternAligner;
-            this.patternSeq = patternSeq;
-            this.minRepeats = minRepeats;
-            this.maxRepeats = maxRepeats;
+        RepeatPatternMatchingResult(int fixedLeftBorder, int fixedRightBorder, NSequenceWithQuality target,
+                                    int from, int to) {
             this.fixedLeftBorder = fixedLeftBorder;
             this.fixedRightBorder = fixedRightBorder;
-            this.groupEdgePositions = groupEdgePositions;
             this.target = target;
             this.from = from;
             this.to = to;
-            this.targetId = targetId;
         }
 
         @Override
         public OutputPort<Match> getMatches(boolean fairSorting) {
-            return new RepeatPatternOutputPort(patternAligner, patternSeq, minRepeats, maxRepeats, fixedLeftBorder,
-                    fixedRightBorder, groupEdgePositions, target, from, to, targetId, fairSorting);
+            return new RepeatPatternOutputPort(fairSorting);
         }
 
-        private static class RepeatPatternOutputPort implements OutputPort<Match> {
-            private final PatternAligner patternAligner;
-            private final NucleotideSequenceCaseSensitive patternSeq;
+        private class RepeatPatternOutputPort implements OutputPort<Match> {
             private final boolean uppercasePattern;
-            private final int minRepeats;
             private final int maxRepeats;
-            private final int fixedLeftBorder;
-            private final int fixedRightBorder;
             private final boolean fixedBorder;
-            private final List<GroupEdgePosition> groupEdgePositions;
-            private final NSequenceWithQuality target;
-            private final int from;
-            private final int to;
-            private final byte targetId;
             private final boolean fairSorting;
             private final TargetSections targetSections;
 
@@ -227,32 +201,14 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
             private boolean sortingPerformed = false;
             private int takenValues = 0;
 
-            RepeatPatternOutputPort(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
-                                    int minRepeats, int maxRepeats, int fixedLeftBorder, int fixedRightBorder,
-                                    List<GroupEdgePosition> groupEdgePositions,
-                                    NSequenceWithQuality target, int from, int to, byte targetId, boolean fairSorting) {
-                this.patternAligner = patternAligner;
+            RepeatPatternOutputPort(boolean fairSorting) {
                 int maxErrors = patternAligner.bitapMaxErrors();
-
-                this.fixedLeftBorder = fixedLeftBorder;
-                this.fixedRightBorder = fixedRightBorder;
                 this.fixedBorder = (fixedLeftBorder != -1) || (fixedRightBorder != -1);
-                this.from = from;
-                this.to = to;
                 if (from >= to)
                     noMoreMatches = true;
-
-                this.patternSeq = patternSeq;
                 this.uppercasePattern = Character.isUpperCase(patternSeq.symbolAt(0));
-                this.minRepeats = minRepeats;
-                this.maxRepeats = Math.min(maxRepeats, to - from);
-                maxRepeats = this.maxRepeats;
-
-                this.groupEdgePositions = groupEdgePositions;
-                this.target = target;
-                this.targetId = targetId;
+                this.maxRepeats = Math.min(RepeatPattern.this.maxRepeats, to - from);
                 this.fairSorting = fairSorting;
-
                 this.currentRepeats = maxRepeats + maxErrors;
                 if (this.currentRepeats < minRepeats)
                     noMoreMatches = true;
@@ -514,90 +470,90 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                 }
                 return currentLength + (numberOfErrors - currentErrors);
             }
+        }
+    }
 
-            /**
-             * This class represents sections in the target substring (from "from" to "to" coordinates) with array of
-             * integers. Each integer is length of section that consists of only matching or only non-matching letters.
-             * firstMatching is true if first section is matching, otherwise false.
-             */
-            private static class TargetSections {
-                final int[] sections;
-                final boolean firstMatching;
+    /**
+     * This class represents sections in the target substring (from "from" to "to" coordinates) with array of
+     * integers. Each integer is length of section that consists of only matching or only non-matching letters.
+     * firstMatching is true if first section is matching, otherwise false.
+     */
+    private static class TargetSections {
+        final int[] sections;
+        final boolean firstMatching;
 
-                private static HashMap<Character, String> allMatchingLetters = new HashMap<>();
-                static {
-                    allMatchingLetters.put('A', "Aa");
-                    allMatchingLetters.put('T', "Tt");
-                    allMatchingLetters.put('G', "Gg");
-                    allMatchingLetters.put('C', "Cc");
-                    allMatchingLetters.put('W', "AaTt");
-                    allMatchingLetters.put('S', "GgCc");
-                    allMatchingLetters.put('M', "AaCc");
-                    allMatchingLetters.put('K', "GgTt");
-                    allMatchingLetters.put('R', "AaGg");
-                    allMatchingLetters.put('Y', "CcTt");
-                    allMatchingLetters.put('B', "TtGgCc");
-                    allMatchingLetters.put('V', "AaGgCc");
-                    allMatchingLetters.put('H', "AaTtCc");
-                    allMatchingLetters.put('D', "AaTtGg");
-                    allMatchingLetters.put('N', "AaTtGgCc");
-                    new HashSet<>(allMatchingLetters.keySet())
-                            .forEach(l -> allMatchingLetters.put(Character.toLowerCase(l), allMatchingLetters.get(l)));
-                }
+        private static HashMap<Character, String> allMatchingLetters = new HashMap<>();
+        static {
+            allMatchingLetters.put('A', "Aa");
+            allMatchingLetters.put('T', "Tt");
+            allMatchingLetters.put('G', "Gg");
+            allMatchingLetters.put('C', "Cc");
+            allMatchingLetters.put('W', "AaTt");
+            allMatchingLetters.put('S', "GgCc");
+            allMatchingLetters.put('M', "AaCc");
+            allMatchingLetters.put('K', "GgTt");
+            allMatchingLetters.put('R', "AaGg");
+            allMatchingLetters.put('Y', "CcTt");
+            allMatchingLetters.put('B', "TtGgCc");
+            allMatchingLetters.put('V', "AaGgCc");
+            allMatchingLetters.put('H', "AaTtCc");
+            allMatchingLetters.put('D', "AaTtGg");
+            allMatchingLetters.put('N', "AaTtGgCc");
+            new HashSet<>(allMatchingLetters.keySet())
+                    .forEach(l -> allMatchingLetters.put(Character.toLowerCase(l), allMatchingLetters.get(l)));
+        }
 
-                TargetSections(String targetSubstring, NucleotideSequenceCaseSensitive patternSeq) {
-                    String matchingLetters = allMatchingLetters.get(patternSeq.symbolAt(0));
-                    if (matchingLetters == null)
-                        throw new IllegalArgumentException("Wrong patternSeq for RepeatPattern: "
-                                + patternSeq);
-                    if (targetSubstring.length() < 1)
-                        throw new IllegalArgumentException("Wrong targetSubstring for RepeatPattern: "
-                                + targetSubstring);
-                    else {
-                        ArrayList<Integer> sectionsList = new ArrayList<>();
-                        boolean currentSectionMatching = matchingLetters.contains(targetSubstring.substring(0, 1));
-                        int currentSectionLength = 1;
-                        this.firstMatching = currentSectionMatching;
-                        for (int i = 1; i < targetSubstring.length(); i++) {
-                            String currentLetter = targetSubstring.substring(i, i + 1);
-                            boolean currentLetterMatching = matchingLetters.contains(currentLetter);
-                            if (currentLetterMatching != currentSectionMatching) {
-                                sectionsList.add(currentSectionLength);
-                                currentSectionLength = 1;
-                                currentSectionMatching = currentLetterMatching;
-                            } else
-                                currentSectionLength++;
-                        }
+        TargetSections(String targetSubstring, NucleotideSequenceCaseSensitive patternSeq) {
+            String matchingLetters = allMatchingLetters.get(patternSeq.symbolAt(0));
+            if (matchingLetters == null)
+                throw new IllegalArgumentException("Wrong patternSeq for RepeatPattern: "
+                        + patternSeq);
+            if (targetSubstring.length() < 1)
+                throw new IllegalArgumentException("Wrong targetSubstring for RepeatPattern: "
+                        + targetSubstring);
+            else {
+                ArrayList<Integer> sectionsList = new ArrayList<>();
+                boolean currentSectionMatching = matchingLetters.contains(targetSubstring.substring(0, 1));
+                int currentSectionLength = 1;
+                this.firstMatching = currentSectionMatching;
+                for (int i = 1; i < targetSubstring.length(); i++) {
+                    String currentLetter = targetSubstring.substring(i, i + 1);
+                    boolean currentLetterMatching = matchingLetters.contains(currentLetter);
+                    if (currentLetterMatching != currentSectionMatching) {
                         sectionsList.add(currentSectionLength);
-                        this.sections = sectionsList.stream().mapToInt(i -> i).toArray();
-                    }
+                        currentSectionLength = 1;
+                        currentSectionMatching = currentLetterMatching;
+                    } else
+                        currentSectionLength++;
                 }
+                sectionsList.add(currentSectionLength);
+                this.sections = sectionsList.stream().mapToInt(i -> i).toArray();
             }
+        }
+    }
 
-            private static class UniqueAlignedSequence {
-                private Range range;
-                private int repeats;
+    private static class UniqueAlignedSequence {
+        private Range range;
+        private int repeats;
 
-                UniqueAlignedSequence(Range range, int repeats) {
-                    this.range = range;
-                    this.repeats = repeats;
-                }
+        UniqueAlignedSequence(Range range, int repeats) {
+            this.range = range;
+            this.repeats = repeats;
+        }
 
-                @Override
-                public boolean equals(Object o) {
-                    if (this == o) return true;
-                    if (o == null || getClass() != o.getClass()) return false;
-                    UniqueAlignedSequence that = (UniqueAlignedSequence) o;
-                    return repeats == that.repeats && range.equals(that.range);
-                }
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UniqueAlignedSequence that = (UniqueAlignedSequence) o;
+            return repeats == that.repeats && range.equals(that.range);
+        }
 
-                @Override
-                public int hashCode() {
-                    int result = range.hashCode();
-                    result = 31 * result + repeats;
-                    return result;
-                }
-            }
+        @Override
+        public int hashCode() {
+            int result = range.hashCode();
+            result = 31 * result + repeats;
+            return result;
         }
     }
 }

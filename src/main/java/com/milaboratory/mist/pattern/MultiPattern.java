@@ -27,7 +27,7 @@ public final class MultiPattern extends MultipleReadsOperator {
             throw new IllegalArgumentException("Mismatched number of reads (" + target.numberOfSequences()
                     + ") and patterns (" + singlePatterns.length + ")!");
 
-        return new MultiPatternMatchingResult(patternAligner, singlePatterns, target);
+        return new MultiPatternMatchingResult(target);
     }
 
     @Override
@@ -35,15 +35,10 @@ public final class MultiPattern extends MultipleReadsOperator {
         return Arrays.stream(singlePatterns).mapToLong(Pattern::estimateComplexity).sum();
     }
 
-    private static class MultiPatternMatchingResult implements MatchingResult {
-        private final PatternAligner patternAligner;
-        private final SinglePattern[] singlePatterns;
+    private class MultiPatternMatchingResult implements MatchingResult {
         private final MultiNSequenceWithQuality target;
 
-        MultiPatternMatchingResult(PatternAligner patternAligner, SinglePattern[] singlePatterns,
-                                   MultiNSequenceWithQuality target) {
-            this.patternAligner = patternAligner;
-            this.singlePatterns = singlePatterns;
+        MultiPatternMatchingResult(MultiNSequenceWithQuality target) {
             this.target = target;
         }
 

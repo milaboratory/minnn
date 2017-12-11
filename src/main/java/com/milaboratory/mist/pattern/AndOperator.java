@@ -21,7 +21,7 @@ public final class AndOperator extends MultipleReadsOperator {
 
     @Override
     public MatchingResult match(MultiNSequenceWithQuality target) {
-        return new AndOperatorMatchingResult(patternAligner, operandPatterns, target);
+        return new AndOperatorMatchingResult(target);
     }
 
     @Override
@@ -29,15 +29,10 @@ public final class AndOperator extends MultipleReadsOperator {
         return Arrays.stream(operandPatterns).mapToLong(Pattern::estimateComplexity).sum();
     }
 
-    private static class AndOperatorMatchingResult implements MatchingResult {
-        private final PatternAligner patternAligner;
-        private final MultipleReadsOperator[] operandPatterns;
+    private class AndOperatorMatchingResult implements MatchingResult {
         private final MultiNSequenceWithQuality target;
 
-        AndOperatorMatchingResult(PatternAligner patternAligner, MultipleReadsOperator[] operandPatterns,
-                                  MultiNSequenceWithQuality target) {
-            this.patternAligner = patternAligner;
-            this.operandPatterns = operandPatterns;
+        AndOperatorMatchingResult(MultiNSequenceWithQuality target) {
             this.target = target;
         }
 

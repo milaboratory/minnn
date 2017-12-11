@@ -21,7 +21,7 @@ public final class SequencePattern extends MultiplePatternsOperator implements C
 
     @Override
     public MatchingResult match(NSequenceWithQuality target, int from, int to) {
-        return new SequencePatternMatchingResult(patternAligner, operandPatterns, target, from, to);
+        return new SequencePatternMatchingResult(target, from, to);
     }
 
     @Override
@@ -68,17 +68,12 @@ public final class SequencePattern extends MultiplePatternsOperator implements C
                 && ((CanFixBorders)(operandPatterns[targetOperandIndex])).isBorderFixed(left);
     }
 
-    private static class SequencePatternMatchingResult implements MatchingResult {
-        private final PatternAligner patternAligner;
-        private final SinglePattern[] operandPatterns;
+    private class SequencePatternMatchingResult implements MatchingResult {
         private final NSequenceWithQuality target;
         private final int from;
         private final int to;
 
-        SequencePatternMatchingResult(PatternAligner patternAligner, SinglePattern[] operandPatterns,
-                                      NSequenceWithQuality target, int from, int to) {
-            this.patternAligner = patternAligner;
-            this.operandPatterns = operandPatterns;
+        SequencePatternMatchingResult(NSequenceWithQuality target, int from, int to) {
             this.target = target;
             this.from = from;
             this.to = to;

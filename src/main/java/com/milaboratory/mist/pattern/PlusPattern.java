@@ -21,7 +21,7 @@ public final class PlusPattern extends MultiplePatternsOperator implements CanFi
 
     @Override
     public MatchingResult match(NSequenceWithQuality target, int from, int to) {
-        return new PlusPatternMatchingResult(patternAligner, operandPatterns, target, from, to);
+        return new PlusPatternMatchingResult(target, from, to);
     }
 
     @Override
@@ -43,17 +43,12 @@ public final class PlusPattern extends MultiplePatternsOperator implements CanFi
                 && ((CanFixBorders)(operandPatterns[targetOperandIndex])).isBorderFixed(left);
     }
 
-    private static class PlusPatternMatchingResult implements MatchingResult {
-        private final PatternAligner patternAligner;
-        private final SinglePattern[] operandPatterns;
+    private class PlusPatternMatchingResult implements MatchingResult {
         private final NSequenceWithQuality target;
         private final int from;
         private final int to;
 
-        PlusPatternMatchingResult(PatternAligner patternAligner, SinglePattern[] operandPatterns,
-                                  NSequenceWithQuality target, int from, int to) {
-            this.patternAligner = patternAligner;
-            this.operandPatterns = operandPatterns;
+        PlusPatternMatchingResult(NSequenceWithQuality target, int from, int to) {
             this.target = target;
             this.from = from;
             this.to = to;

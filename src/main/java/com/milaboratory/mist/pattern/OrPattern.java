@@ -25,7 +25,7 @@ public final class OrPattern extends MultiplePatternsOperator implements CanFixB
 
     @Override
     public MatchingResult match(NSequenceWithQuality target, int from, int to) {
-        return new OrPatternMatchingResult(patternAligner, operandPatterns, target, from, to);
+        return new OrPatternMatchingResult(target, from, to);
     }
 
     @Override
@@ -59,17 +59,12 @@ public final class OrPattern extends MultiplePatternsOperator implements CanFixB
                 && ((CanFixBorders)p).isBorderFixed(left));
     }
 
-    private static class OrPatternMatchingResult implements MatchingResult {
-        private final PatternAligner patternAligner;
-        private final SinglePattern[] operandPatterns;
+    private class OrPatternMatchingResult implements MatchingResult {
         private final NSequenceWithQuality target;
         private final int from;
         private final int to;
 
-        OrPatternMatchingResult(PatternAligner patternAligner, SinglePattern[] operandPatterns,
-                                       NSequenceWithQuality target, int from, int to) {
-            this.patternAligner = patternAligner;
-            this.operandPatterns = operandPatterns;
+        OrPatternMatchingResult(NSequenceWithQuality target, int from, int to) {
             this.target = target;
             this.from = from;
             this.to = to;
