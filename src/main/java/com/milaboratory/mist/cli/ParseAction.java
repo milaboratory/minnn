@@ -63,17 +63,19 @@ public final class ParseAction implements Action {
             "Read target nucleotide sequence and find groups and patterns as specified in query.")
     private static final class ParseActionParameters extends ActionParameters {
         @Parameter(description = "Query, pattern specified in MiST format.",
-                names = {"--pattern"})
+                names = {"--pattern"}, order = 0, required = true)
         String query = null;
 
         @Parameter(description = "Input files. Single file means that there is 1 read or multi-read file; " +
-                    "multiple files mean that there is 1 file for each read.",
-                names = {"--input"}, variableArity = true)
+                "multiple files mean that there is 1 file for each read. " +
+                "If not specified, stdin will be used.",
+                names = {"--input"}, order = 1, variableArity = true)
         List<String> inputFileNames = new ArrayList<>();
 
         @Parameter(description = "Output files. Single file means that there is 1 read or multi-read file; " +
-                    "multiple files mean that there is 1 file for each read.",
-                names = {"--output"}, variableArity = true)
+                "multiple files mean that there is 1 file for each read. " +
+                "If not specified, stdout will be used.",
+                names = {"--output"}, order = 2, variableArity = true)
         List<String> outputFileNames = new ArrayList<>();
 
         @Parameter(description = "Input data format. \"fastq\" (default) or \"mif\".",
@@ -152,7 +154,7 @@ public final class ParseAction implements Action {
         boolean copyOldComments = false;
 
         @Parameter(description = "Copy input files to output without processing; used for debug purpose only.",
-                names = {"--test-io-speed"})
+                names = {"--test-io-speed"}, hidden = true)
         boolean testIOSpeed = false;
 
         @Override
