@@ -17,9 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static com.milaboratory.mist.io.MifReader.detectReadsNumber;
 import static com.milaboratory.mist.io.MistDataFormat.*;
-import static com.milaboratory.mist.io.ReadsNumber.*;
 import static com.milaboratory.mist.output_converter.GroupUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
@@ -35,7 +33,6 @@ public final class ReadProcessor {
     private final boolean copyOldComments;
     private final MistDataFormat inputFormat;
     private final MistDataFormat outputFormat;
-    private final ReadsNumber readsNumber;
     private final boolean testIOSpeed;
 
     public ReadProcessor(List<String> inputFileNames, List<String> outputFileNames, Pattern pattern,
@@ -67,72 +64,36 @@ public final class ReadProcessor {
         this.copyOldComments = copyOldComments;
         this.inputFormat = inputFormat;
         this.outputFormat = outputFormat;
-        if (inputFormat == FASTQ) {
-            if (inputFileNames.size() <= 1)
-                this.readsNumber = SINGLE;
-            else if (inputFileNames.size() == 2)
-                this.readsNumber = PAIRED;
-            else
-                this.readsNumber = MULTI;
-        } else if (inputFormat == MIF)
-            this.readsNumber = detectReadsNumber();
-        else
-            throw new IllegalStateException("Unknown input format: " + inputFormat);
         this.testIOSpeed = testIOSpeed;
     }
 
     public void processReadsParallel() {
         long startTime = System.currentTimeMillis();
-        List<SequenceReaderCloseable<? extends SequenceRead>> readers = new ArrayList<>();
+        SequenceReaderCloseable<? extends SequenceRead> reader;
         SequenceWriter writer;
         try {
-            readers.add(createReader(false));
-            if (!orientedReads && (readsNumber != SINGLE))
-                readers.add(createReader(true));
+            reader = createReader();
             writer = createWriter();
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
-        List<OutputPort<? extends SequenceRead>> readerPorts = new ArrayList<>(readers);
-        List<CanReportProgress> progress = readers.stream().map(r -> (CanReportProgress)r).collect(Collectors.toList());
-        SmartProgressReporter.startProgressReport("Parsing", progress.get(0));
-        if (progress.size() == 2)
-            SmartProgressReporter.startProgressReport("Parsing with swapped reads", progress.get(1));
-        List<OutputPort<? extends SequenceRead>> bufferedReaderPorts = readerPorts.stream()
-                .map(rp -> CUtils.buffered(rp, 16)).collect(Collectors.toList());
-        List<OrderedOutputPort<ParsedRead>> parsedReads = new ArrayList<>();
-        for (int i = 0; i < readers.size(); i++) {
-            OutputPort<? extends SequenceRead> inputReads = bufferedReaderPorts.get(i);
-            boolean reverseMatch = (i == 1);
-            OutputPort<ProcessorInput> processorInputs = () -> {
-                SequenceRead read = inputReads.take();
-                return (read == null) ? null : new ProcessorInput(read, reverseMatch);
-            };
-            OutputPort<ParsedRead> parsedReadsPort = new ParallelProcessor<>(processorInputs,
-                    testIOSpeed ? new TestIOSpeedProcessor() : new ReadParserProcessor(), threads);
-            OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(parsedReadsPort,
-                    object -> object.getOriginalRead().getId());
-            parsedReads.add(orderedReadsPort);
-        }
-        OutputPort<ParsedRead> bestMatchPort = () -> {
-            ParsedRead bestRead = null;
-            for (OrderedOutputPort<ParsedRead> parsedRead : parsedReads) {
-                if (bestRead == null) {
-                    bestRead = parsedRead.take();
-                    if (bestRead == null)
-                        return null;
-                } else {
-                    ParsedRead currentRead = parsedRead.take();
-                    if (currentRead.getBestMatchScore() > currentRead.getBestMatchScore())
-                        bestRead = currentRead;
-                }
-            }
-            return bestRead;
+        OutputPort<? extends SequenceRead> readerPort = reader;
+        CanReportProgress progress = (CanReportProgress)reader;
+        SmartProgressReporter.startProgressReport("Parsing", progress);
+        OutputPort<? extends SequenceRead> bufferedReaderPort = CUtils.buffered(readerPort, 2048);
+
+        OutputPort<ProcessorInput> processorInputs = () -> {
+            SequenceRead read = bufferedReaderPort.take();
+            return (read == null) ? null : new ProcessorInput(read, orientedReads);
         };
+        OutputPort<ParsedRead> parsedReadsPort = new ParallelProcessor<>(processorInputs,
+                testIOSpeed ? new TestIOSpeedProcessor() : new ReadParserProcessor(), threads);
+        OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(parsedReadsPort,
+                object -> object.getOriginalRead().getId());
 
         long totalReads = 0;
         long matchedReads = 0;
-        for (ParsedRead parsedRead : CUtils.it(bestMatchPort)) {
+        for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
             SequenceRead parsedSequenceRead = parsedRead.getParsedRead();
             totalReads++;
             if (parsedSequenceRead != null) {
@@ -148,7 +109,7 @@ public final class ReadProcessor {
                 totalReads == 0 ? 0.0 : matchedReads * 100.0 / totalReads));
     }
 
-    private SequenceReaderCloseable<? extends SequenceRead> createReader(boolean swapped) throws IOException {
+    private SequenceReaderCloseable<? extends SequenceRead> createReader() throws IOException {
         switch (inputFormat) {
             case FASTQ:
                 switch (inputFileNames.size()) {
@@ -162,33 +123,19 @@ public final class ReadProcessor {
                         else
                             return new SingleFastqReader(inputFileNames.get(0), true);
                     case 2:
-                        if (swapped)
-                            return new PairedFastqReader(inputFileNames.get(1), inputFileNames.get(0),
-                                    true);
-                        else
-                            return new PairedFastqReader(inputFileNames.get(0), inputFileNames.get(1),
-                                    true);
+                        return new PairedFastqReader(inputFileNames.get(0), inputFileNames.get(1),
+                                true);
                     default:
-                        List<SingleFastqReader> readers = new ArrayList<>();
-                        if (swapped) {
-                            for (int i = 0; i < inputFileNames.size(); i++) {
-                                if (i < inputFileNames.size() - 2)
-                                    readers.add(new SingleFastqReader(inputFileNames.get(i), true));
-                                else if (i == inputFileNames.size() - 2)
-                                    readers.add(new SingleFastqReader(inputFileNames.get(i + 1), true));
-                                else
-                                    readers.add(new SingleFastqReader(inputFileNames.get(i - 1), true));
-                            }
-                        } else
-                            for (String fileName : inputFileNames)
-                                readers.add(new SingleFastqReader(fileName, true));
-                        return new MultiReader(readers.toArray(new SingleFastqReader[readers.size()]));
+                        SingleFastqReader readers[] = new SingleFastqReader[inputFileNames.size()];
+                        for (int i = 0; i < inputFileNames.size(); i++)
+                            readers[i] = new SingleFastqReader(inputFileNames.get(i), true);
+                        return new MultiReader(readers);
                 }
             case MIF:
                 if (inputFileNames.size() == 0)
                     return new MifReader(System.in);
                 else
-                    return new MifReader(inputFileNames.get(0), swapped);
+                    return new MifReader(inputFileNames.get(0));
             default:
                 throw new IllegalStateException("Unknown input format: " + inputFormat);
         }
@@ -219,25 +166,61 @@ public final class ReadProcessor {
 
     private class ProcessorInput {
         final SequenceRead read;
-        final boolean reverseMatch;
+        final boolean orientedReads;
 
-        ProcessorInput(SequenceRead read, boolean reverseMatch) {
+        ProcessorInput(SequenceRead read, boolean orientedReads) {
             this.read = read;
-            this.reverseMatch = reverseMatch;
+            this.orientedReads = orientedReads;
         }
     }
 
     private class ReadParserProcessor implements Processor<ProcessorInput, ParsedRead> {
         @Override
         public ParsedRead process(ProcessorInput input) {
-            MultiNSequenceWithQualityImpl target = new MultiNSequenceWithQualityImpl(StreamSupport.stream(
-                    input.read.spliterator(), false).map(SingleRead::getData).toArray(NSequenceWithQuality[]::new));
-            MatchingResult result = pattern.match(target);
-            Match bestMatch = result.getBestMatch(fairSorting);
+            Match bestMatch = null;
+            int numberOfReads;
+            boolean reverseMatch = false;
+            if (input.orientedReads) {
+                MultiNSequenceWithQualityImpl target = new MultiNSequenceWithQualityImpl(StreamSupport.stream(
+                        input.read.spliterator(), false).map(SingleRead::getData)
+                        .toArray(NSequenceWithQuality[]::new));
+                bestMatch = pattern.match(target).getBestMatch(fairSorting);
+                numberOfReads = target.numberOfSequences();
+            } else {
+                NSequenceWithQuality[] sequences = StreamSupport.stream(input.read.spliterator(), false)
+                        .map(SingleRead::getData).toArray(NSequenceWithQuality[]::new);
+                numberOfReads = sequences.length;
+                if (numberOfReads == 1)
+                    bestMatch = pattern.match(sequences[0]).getBestMatch(fairSorting);
+                else {
+                    NSequenceWithQuality[] sequencesWithSwap = sequences.clone();
+                    sequencesWithSwap[0] = sequences[1];
+                    sequencesWithSwap[1] = sequences[0];
+                    MultiNSequenceWithQualityImpl notSwappedTarget = new MultiNSequenceWithQualityImpl(sequences);
+                    MultiNSequenceWithQualityImpl swappedTarget = new MultiNSequenceWithQualityImpl(sequencesWithSwap);
+                    Match notSwappedMatch = pattern.match(notSwappedTarget).getBestMatch(fairSorting);
+                    Match swappedMatch = pattern.match(swappedTarget).getBestMatch(fairSorting);
+                    if (notSwappedMatch == null) {
+                        if (swappedMatch != null) {
+                            bestMatch = swappedMatch;
+                            reverseMatch = true;
+                        }
+                    } else {
+                        if (swappedMatch != null) {
+                            if (swappedMatch.getScore() > notSwappedMatch.getScore()) {
+                                bestMatch = swappedMatch;
+                                reverseMatch = true;
+                            } else
+                                bestMatch = notSwappedMatch;
+                        } else
+                            bestMatch = notSwappedMatch;
+                    }
+                }
+            }
+
             if (bestMatch == null)
                 return new ParsedRead(input.read);
             else {
-                int numberOfReads = target.numberOfSequences();
                 SingleRead[] reads = new SingleReadImpl[numberOfReads];
                 for (int i = 0; i < numberOfReads; i++) {
                     String mainGroupName = "R" + (firstReadNumber + i);
@@ -256,24 +239,25 @@ public final class ReadProcessor {
                     String notMatchedGroupsDescription = descriptionForNotMatchedGroups(pattern, i, currentGroups);
 
                     StringBuilder comments = new StringBuilder();
-                    boolean firstGroup = true;
+                    String nextSeparator = "~";
                     if (copyOldComments)
                         comments.append(input.read.getRead(i).getDescription());
-                    if ((comments.length() != 0) && (input.reverseMatch
-                            || (groupsNotInsideMainDescription.length() != 0))) {
-                        comments.append("~");
-                        firstGroup = false;
+                    if ((comments.length() != 0) && (reverseMatch || (groupsNotInsideMainDescription.length() != 0))) {
+                        comments.append(nextSeparator);
+                        nextSeparator = "|";
                     }
-                    if (input.reverseMatch)
+                    if (reverseMatch) {
                         comments.append("||~");
+                        nextSeparator = "";
+                    }
                     comments.append(groupsNotInsideMainDescription);
-                    if ((comments.length() != 0) && ((groupsInsideMainDescription.length() != 0))) {
-                        comments.append(firstGroup ? "~" : "|");
-                        firstGroup = false;
+                    if (groupsInsideMainDescription.length() != 0) {
+                        comments.append(nextSeparator);
+                        nextSeparator = "|";
                     }
                     comments.append(groupsInsideMainDescription);
-                    if ((comments.length() != 0) && (notMatchedGroupsDescription.length() != 0))
-                        comments.append(firstGroup ? "~" : "|");
+                    if (notMatchedGroupsDescription.length() != 0)
+                        comments.append(nextSeparator);
                     comments.append(notMatchedGroupsDescription);
 
                     reads[i] = new SingleReadImpl(0, mainGroup.getValue(), comments.toString());
@@ -290,7 +274,7 @@ public final class ReadProcessor {
                     default:
                         parsedRead = new MultiRead(reads);
                 }
-                return new ParsedRead(input.read, parsedRead, getGroupsFromMatch(bestMatch), input.reverseMatch,
+                return new ParsedRead(input.read, parsedRead, getGroupsFromMatch(bestMatch), reverseMatch,
                         bestMatch.getScore());
             }
         }
