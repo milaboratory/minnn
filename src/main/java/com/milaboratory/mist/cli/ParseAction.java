@@ -62,6 +62,9 @@ public final class ParseAction implements Action {
     @Parameters(commandDescription =
             "Read target nucleotide sequence and find groups and patterns as specified in query.")
     private static final class ParseActionParameters extends ActionParameters {
+        @Parameter(description = "--pattern <pattern_query>")
+        private Void description;
+
         @Parameter(description = "Query, pattern specified in MiST format.",
                 names = {"--pattern"}, order = 0, required = true)
         String query = null;
