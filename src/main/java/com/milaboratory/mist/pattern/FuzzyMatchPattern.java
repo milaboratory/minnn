@@ -20,7 +20,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
     private int fixedLeftBorder;
     private int fixedRightBorder;
     private final List<GroupEdgePosition> groupEdgePositions;
-    private final ArrayList<Integer> groupMovements;
+    private final ArrayList<Integer> groupOffsets;
 
     public FuzzyMatchPattern(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq) {
         this(patternAligner, patternSeq, new ArrayList<>());
@@ -64,11 +64,11 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
         }
         this.sequences = new ArrayList<>();
         this.motifs = new ArrayList<>();
-        this.groupMovements = new ArrayList<>();
+        this.groupOffsets = new ArrayList<>();
         if ((leftCut == 0) && (rightCut == 0)) {
             sequences.add(patternSeq);
             motifs.add(patternSeq.toNucleotideSequence().toMotif());
-            groupMovements.add(0);
+            groupOffsets.add(0);
         } else
             for (int i = 0; i <= leftCut; i++)
                 for (int j = 0; j <= rightCut; j++) {
@@ -76,7 +76,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                             .substring(i, size - j));
                     sequences.add(seq);
                     motifs.add(seq.toNucleotideSequence().toMotif());
-                    groupMovements.add(-i);
+                    groupOffsets.add(-i);
                 }
         this.fixedLeftBorder = fixedLeftBorder;
         this.fixedRightBorder = fixedRightBorder;
@@ -320,7 +320,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                             if (alignment.getScore() >= patternAligner.penaltyThreshold())
                                 return generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
-                                        fixGroupEdgePositions(groupEdgePositions, groupMovements.get(currentIndex),
+                                        fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
                                                 currentSeq.size()), 0);
                         }
                     }
@@ -380,7 +380,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                                 uniqueRanges.add(alignment.getSequence2Range());
                                 allMatchesList.add(generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
-                                        fixGroupEdgePositions(groupEdgePositions, groupMovements.get(currentIndex),
+                                        fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
                                         currentSeq.size()), 0));
                             }
                         }
@@ -416,7 +416,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                                 uniqueRanges.add(alignment.getSequence2Range());
                                 allMatchesList.add(generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
-                                        fixGroupEdgePositions(groupEdgePositions, groupMovements.get(currentIndex),
+                                        fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
                                         currentSeq.size()), 0));
                             }
                         }
@@ -443,7 +443,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                     if (alignment.getScore() >= fixedPatternAligner.penaltyThreshold())
                         allMatchesList.add(generateMatch(alignment, target, targetId,
                                 firstUppercase(currentSeq), lastUppercase(currentSeq),
-                                fixGroupEdgePositions(groupEdgePositions, groupMovements.get(currentIndex),
+                                fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
                                 currentSeq.size()), 0));
                 }
 

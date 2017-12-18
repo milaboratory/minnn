@@ -28,7 +28,7 @@ public final class Match {
      */
     public Match(int numberOfPatterns, long score, int leftUppercaseDistance, int rightUppercaseDistance,
                  ArrayList<MatchedGroupEdge> matchedGroupEdges, MatchedRange... matchedRanges) {
-        if (matchedRanges.length <= 0) throw new IllegalArgumentException("Missing matched ranges!");
+        if (matchedRanges.length == 0) throw new IllegalArgumentException("Missing matched ranges!");
         this.numberOfPatterns = numberOfPatterns;
         this.score = score;
         this.leftUppercaseDistance = leftUppercaseDistance;
