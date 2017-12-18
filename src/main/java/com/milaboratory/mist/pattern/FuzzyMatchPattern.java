@@ -17,8 +17,8 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
     private final ArrayList<Motif<NucleotideSequence>> motifs;
     private final int leftCut;
     private final int rightCut;
-    private int fixedLeftBorder;
-    private int fixedRightBorder;
+    private final int fixedLeftBorder;
+    private final int fixedRightBorder;
     private final List<GroupEdgePosition> groupEdgePositions;
     private final ArrayList<Integer> groupOffsets;
 
@@ -152,7 +152,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
 
     @Override
     public long estimateComplexity() {
-        if (isBorderFixed())
+        if ((fixedLeftBorder != -1) || (fixedRightBorder != -1))
             return Math.min(fixedSequenceMaxComplexity, sequences.size());
         else
             return notFixedSequenceMinComplexity + (long)(sequences.size()
@@ -179,28 +179,24 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
     }
 
     @Override
-    public void fixBorder(boolean left, int position) {
+    public SinglePattern fixBorder(boolean left, int position) {
+        int newLeftBorder = fixedLeftBorder;
+        int newRightBorder = fixedRightBorder;
         if (left) {
-            if (fixedLeftBorder == -1)
-                fixedLeftBorder = position;
-            else if (fixedLeftBorder != position)
+            if (newLeftBorder == -1)
+                newLeftBorder = position;
+            else if (newLeftBorder != position)
                 throw new IllegalStateException(toString() + ": trying to set fixed left border to " + position
-                        + " when it is already fixed at " + fixedLeftBorder + "!");
+                        + " when it is already fixed at " + newLeftBorder + "!");
         } else {
-            if (fixedRightBorder == -1)
-                fixedRightBorder = position;
-            else if (fixedRightBorder != position)
+            if (newRightBorder == -1)
+                newRightBorder = position;
+            else if (newRightBorder != position)
                 throw new IllegalStateException(toString() + ": trying to set fixed right border to " + position
-                        + " when it is already fixed at " + fixedRightBorder + "!");
+                        + " when it is already fixed at " + newRightBorder + "!");
         }
-    }
-
-    @Override
-    public boolean isBorderFixed(boolean left) {
-        if (left)
-            return fixedLeftBorder != -1;
-        else
-            return fixedRightBorder != -1;
+        return new FuzzyMatchPattern(patternAligner, sequences.get(0), leftCut, rightCut, newLeftBorder, newRightBorder,
+                groupEdgePositions);
     }
 
     private class FuzzyMatchingResult implements MatchingResult {

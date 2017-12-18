@@ -48,15 +48,10 @@ public final class OrPattern extends MultiplePatternsOperator implements CanFixB
     }
 
     @Override
-    public void fixBorder(boolean left, int position) {
-        Arrays.stream(operandPatterns).filter(p -> p instanceof CanFixBorders)
-                .forEach(p -> ((CanFixBorders)p).fixBorder(left, position));
-    }
-
-    @Override
-    public boolean isBorderFixed(boolean left) {
-        return Arrays.stream(operandPatterns).allMatch(p -> p instanceof CanFixBorders
-                && ((CanFixBorders)p).isBorderFixed(left));
+    public SinglePattern fixBorder(boolean left, int position) {
+        return new OrPattern(patternAligner, Arrays.stream(operandPatterns)
+                .map(p -> (p instanceof CanFixBorders ? ((CanFixBorders)p).fixBorder(left, position) : p))
+                .toArray(SinglePattern[]::new));
     }
 
     private class OrPatternMatchingResult implements MatchingResult {

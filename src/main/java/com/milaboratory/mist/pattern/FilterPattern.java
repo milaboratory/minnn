@@ -69,14 +69,11 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
     }
 
     @Override
-    public void fixBorder(boolean left, int position) {
-        if (pattern instanceof CanFixBorders)
-            ((CanFixBorders)pattern).fixBorder(left, position);
-    }
-
-    @Override
-    public boolean isBorderFixed(boolean left) {
-        return pattern instanceof CanFixBorders && ((CanFixBorders)pattern).isBorderFixed(left);
+    public SinglePattern fixBorder(boolean left, int position) {
+        if (pattern instanceof CanFixBorders) {
+            return new FilterPattern(patternAligner, filter, ((CanFixBorders)pattern).fixBorder(left, position));
+        } else
+            return this;
     }
 
     private class FilterMatchingResult implements MatchingResult {

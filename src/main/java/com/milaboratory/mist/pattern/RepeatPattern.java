@@ -15,8 +15,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
     private final NucleotideSequenceCaseSensitive patternSeq;
     private final int minRepeats;
     private final int maxRepeats;
-    private int fixedLeftBorder;
-    private int fixedRightBorder;
+    private final int fixedLeftBorder;
+    private final int fixedRightBorder;
     private final List<GroupEdgePosition> groupEdgePositions;
 
     public RepeatPattern(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
@@ -115,7 +115,7 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
     public long estimateComplexity() {
         long repeatsRangeLength = Math.min(maxRepeats, minRepeats + repeatsRangeEstimation) - minRepeats + 1;
 
-        if (isBorderFixed())
+        if ((fixedLeftBorder != -1) || (fixedRightBorder != -1))
             return Math.min(fixedSequenceMaxComplexity, repeatsRangeLength);
         else {
             int minRepeatsFactor = nLetters.contains(patternSeq.toString()) ? 1 : minRepeats;
@@ -130,28 +130,24 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
     }
 
     @Override
-    public void fixBorder(boolean left, int position) {
+    public SinglePattern fixBorder(boolean left, int position) {
+        int newLeftBorder = fixedLeftBorder;
+        int newRightBorder = fixedRightBorder;
         if (left) {
-            if (fixedLeftBorder == -1)
-                fixedLeftBorder = position;
-            else if (fixedLeftBorder != position)
+            if (newLeftBorder == -1)
+                newLeftBorder = position;
+            else if (newLeftBorder != position)
                 throw new IllegalStateException(toString() + ": trying to set fixed left border to " + position
-                        + " when it is already fixed at " + fixedLeftBorder + "!");
+                        + " when it is already fixed at " + newLeftBorder + "!");
         } else {
-            if (fixedRightBorder == -1)
-                fixedRightBorder = position;
-            else if (fixedRightBorder != position)
+            if (newRightBorder == -1)
+                newRightBorder = position;
+            else if (newRightBorder != position)
                 throw new IllegalStateException(toString() + ": trying to set fixed right border to " + position
-                        + " when it is already fixed at " + fixedRightBorder + "!");
+                        + " when it is already fixed at " + newRightBorder + "!");
         }
-    }
-
-    @Override
-    public boolean isBorderFixed(boolean left) {
-        if (left)
-            return fixedLeftBorder != -1;
-        else
-            return fixedRightBorder != -1;
+        return new RepeatPattern(patternAligner, patternSeq, minRepeats, maxRepeats, newLeftBorder, newRightBorder,
+                groupEdgePositions);
     }
 
     private class RepeatPatternMatchingResult implements MatchingResult {

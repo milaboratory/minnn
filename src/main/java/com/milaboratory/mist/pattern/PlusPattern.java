@@ -5,6 +5,7 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.mist.util.*;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import static com.milaboratory.mist.pattern.MatchValidationType.ORDER;
 import static com.milaboratory.mist.util.UnfairSorterConfiguration.unfairSorterPortLimits;
@@ -30,17 +31,15 @@ public final class PlusPattern extends MultiplePatternsOperator implements CanFi
     }
 
     @Override
-    public void fixBorder(boolean left, int position) {
+    public SinglePattern fixBorder(boolean left, int position) {
         int targetOperandIndex = left ? 0 : operandPatterns.length - 1;
-        if (operandPatterns[targetOperandIndex] instanceof CanFixBorders)
-            ((CanFixBorders)(operandPatterns[targetOperandIndex])).fixBorder(left, position);
-    }
-
-    @Override
-    public boolean isBorderFixed(boolean left) {
-        int targetOperandIndex = left ? 0 : operandPatterns.length - 1;
-        return operandPatterns[targetOperandIndex] instanceof CanFixBorders
-                && ((CanFixBorders)(operandPatterns[targetOperandIndex])).isBorderFixed(left);
+        if (operandPatterns[targetOperandIndex] instanceof CanFixBorders) {
+            SinglePattern newOperand = ((CanFixBorders)(operandPatterns[targetOperandIndex])).fixBorder(left, position);
+            return new PlusPattern(patternAligner, IntStream.range(0, operandPatterns.length)
+                    .mapToObj((int i) -> (i == targetOperandIndex ? newOperand : operandPatterns[i]))
+                    .toArray(SinglePattern[]::new));
+        } else
+            return this;
     }
 
     private class PlusPatternMatchingResult implements MatchingResult {

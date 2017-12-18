@@ -857,12 +857,15 @@ final class NormalParsers {
     }
 
     private SinglePattern wrapWithStickFilter(SinglePattern singlePattern, boolean left, int position) {
+        SinglePattern wrappedPattern;
         if (singlePattern instanceof FuzzyMatchPattern || singlePattern instanceof RepeatPattern) {
-            ((CanFixBorders)singlePattern).fixBorder(left, position);
-            return singlePattern;
-        } else if (singlePattern instanceof CanFixBorders)
-            ((CanFixBorders)singlePattern).fixBorder(left, position);
-        return new FilterPattern(patternAligner, new StickFilter(left, position), singlePattern);
+            wrappedPattern = ((CanFixBorders)singlePattern).fixBorder(left, position);
+        } else if (singlePattern instanceof CanFixBorders) {
+            wrappedPattern = new FilterPattern(patternAligner, new StickFilter(left, position),
+                    ((CanFixBorders)singlePattern).fixBorder(left, position));
+        } else
+            wrappedPattern = singlePattern;
+        return wrappedPattern;
     }
 
     /**

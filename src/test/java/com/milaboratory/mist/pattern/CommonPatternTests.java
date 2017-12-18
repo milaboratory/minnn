@@ -107,7 +107,14 @@ public class CommonPatternTests {
                     new MultiPattern(patternAligner, pattern));
 
             if (pattern instanceof CanFixBorders) {
-                if (((CanFixBorders)pattern).isBorderFixed())
+                boolean isBorderFixed = false;
+                try {
+                    tryToFixBorder(tryToFixBorder(pattern, true, 0), false, 0);
+                    tryToFixBorder(tryToFixBorder(pattern, true, 1), false, 1);
+                } catch (IllegalStateException e) {
+                    isBorderFixed = true;
+                }
+                if (isBorderFixed)
                     assertTrue(pattern.estimateComplexity() <= fixedSequenceMaxComplexity);
                 else
                     assertTrue(pattern.estimateComplexity() >= notFixedSequenceMinComplexity);
@@ -118,6 +125,10 @@ public class CommonPatternTests {
                 assertEquals(pattern.estimateComplexity(), notOperator.estimateComplexity());
             assertEquals(pattern.estimateComplexity(), mFilterPattern.estimateComplexity());
         }
+    }
+
+    private SinglePattern tryToFixBorder(SinglePattern pattern, boolean left, int position) {
+        return ((CanFixBorders)pattern).fixBorder(left, position);
     }
 
     @Test
