@@ -1,6 +1,7 @@
 package com.milaboratory.mist.pattern;
 
 import com.milaboratory.core.Range;
+import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.mist.io.IO;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.primitivio.PrimitivI;
@@ -8,6 +9,7 @@ import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.annotations.Serializable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @Serializable(by = IO.MatchSerializer.class)
@@ -16,6 +18,7 @@ public class Match {
     private final long score;
     private final ArrayList<MatchedGroupEdge> matchedGroupEdges;
     private ArrayList<MatchedGroup> groups = null;
+    private HashMap<String, NSequenceWithQuality> groupValues = null;
 
     /**
      * Serializable final match for single- or multi-pattern.
@@ -97,6 +100,19 @@ public class Match {
         }
 
         return groups;
+    }
+
+    public NSequenceWithQuality getGroupValue(String groupName) {
+        if (groupValues == null) {
+            groupValues = new HashMap<>();
+            getGroups().forEach(group -> {
+                String name = group.getGroupName();
+                NSequenceWithQuality value = group.getTarget().getRange(group.getRange());
+                groupValues.put(name, value);
+            });
+        }
+
+        return groupValues.get(groupName);
     }
 
     public static Match read(PrimitivI input) {

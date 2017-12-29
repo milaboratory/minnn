@@ -16,4 +16,6 @@ public final class Defaults {
     public final static long DEFAULT_SINGLE_OVERLAP_PENALTY = DEFAULT_GAP_SCORE;
     public final static int DEFAULT_THREADS = 4;
     public final static String DEFAULT_INPUT_FORMAT = "fastq";
+    public final static String[] DEFAULT_SORT_GROUP_NAMES = { "UMI" };
+    public final static int DEFAULT_SORT_CHUNK_SIZE = 10000;
 }

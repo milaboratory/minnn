@@ -1,9 +1,7 @@
 package com.milaboratory.mist;
 
 import com.milaboratory.cli.JCommanderBasedMain;
-import com.milaboratory.mist.cli.FilterAction;
-import com.milaboratory.mist.cli.ExtractAction;
-import com.milaboratory.mist.cli.ReportAction;
+import com.milaboratory.mist.cli.*;
 import com.milaboratory.util.VersionInfo;
 import sun.misc.Signal;
 
@@ -16,7 +14,8 @@ public final class Main {
         JCommanderBasedMain jCommanderBasedMain = new JCommanderBasedMain("mist",
                 new ExtractAction(),
                 new FilterAction(),
-                new ReportAction());
+                new ReportAction(),
+                new SortAction());
 
         jCommanderBasedMain.setVersionInfoCallback(() -> {
             VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");
