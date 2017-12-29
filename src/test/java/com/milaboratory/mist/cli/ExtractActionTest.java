@@ -1,6 +1,5 @@
 package com.milaboratory.mist.cli;
 
-import com.milaboratory.mist.pattern.SinglePattern;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -108,14 +107,11 @@ public class ExtractActionTest {
 
     @Test
     public void mifRandomTest() throws Exception {
-        String fastqFile = EXAMPLES_PATH + "small/100.fastq";
         String mifFile1 = TEMP_DIR + "output1.mif";
         String mifFile2 = TEMP_DIR + "output2.mif";
         String mifFile3 = TEMP_DIR + "output3.mif";
         for (int i = 0; i < 100; i++) {
-            SinglePattern randomPattern = getRandomSinglePattern();
-            exec("extract --input " + fastqFile + " --output " + mifFile1 + " --devel-parser-syntax"
-                    + " --pattern \"" + randomPattern.toString() + "\"");
+            createRandomMifFile(mifFile1);
             exec("extract --input-format mif --input " + mifFile1 + " --output " + mifFile2
                     + " --pattern \"*\" --threads 1");
             // mifFile1 and mifFile2 can differ by match score, mifFile2 and mifFile3 must be equal
