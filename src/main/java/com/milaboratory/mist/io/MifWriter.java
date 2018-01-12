@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-final class MifWriter {
+final class MifWriter implements AutoCloseable {
     private final PrimitivO output;
 
     MifWriter(OutputStream outputStream, ArrayList<GroupEdge> groupEdges) {
@@ -34,7 +34,8 @@ final class MifWriter {
         output.writeObject(parsedRead);
     }
 
-    void close() {
+    @Override
+    public void close() {
         output.writeObject(null);
         output.close();
     }

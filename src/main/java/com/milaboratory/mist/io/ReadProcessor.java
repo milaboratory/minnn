@@ -49,38 +49,29 @@ public final class ReadProcessor {
 
     public void processReadsParallel() {
         long startTime = System.currentTimeMillis();
-        OutputPortCloseable<? extends SequenceRead> reader;
-        try {
-            reader = createReader();
+        long totalReads = 0;
+        long matchedReads = 0;
+        try (OutputPortCloseable<? extends SequenceRead> reader = createReader();
+             MifWriter writer = createWriter(pattern.getGroupEdges())) {
+            CanReportProgress progress = (CanReportProgress)reader;
+            SmartProgressReporter.startProgressReport("Parsing", progress);
+            OutputPort<SequenceRead> bufferedReaderPort = CUtils.buffered(() -> (SequenceRead)(reader.take()),
+                    2048);
+            OutputPort<ParsedRead> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
+                    testIOSpeed ? new TestIOSpeedProcessor() : new ReadParserProcessor(orientedReads), threads);
+            OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(parsedReadsPort,
+                    read -> (inputFormat == MIF ? indexes.get(read.getOriginalRead().getId())
+                            : read.getOriginalRead().getId()));
+            for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
+                totalReads++;
+                if (parsedRead.getBestMatch() != null) {
+                    writer.write(parsedRead);
+                    matchedReads++;
+                }
+            }
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
-        CanReportProgress progress = (CanReportProgress)reader;
-        SmartProgressReporter.startProgressReport("Parsing", progress);
-        OutputPort<SequenceRead> bufferedReaderPort = CUtils.buffered(() -> (SequenceRead)(reader.take()),
-                2048);
-        OutputPort<ParsedRead> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
-                testIOSpeed ? new TestIOSpeedProcessor() : new ReadParserProcessor(orientedReads), threads);
-        OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(parsedReadsPort,
-                read -> (inputFormat == MIF ? indexes.get(read.getOriginalRead().getId())
-                        : read.getOriginalRead().getId()));
-
-        MifWriter writer = null;
-        long totalReads = 0;
-        long matchedReads = 0;
-        for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
-            totalReads++;
-            if (parsedRead.getBestMatch() != null) {
-                if (writer == null)
-                    writer = createWriter(pattern.getGroupEdges());
-                writer.write(parsedRead);
-                matchedReads++;
-            }
-        }
-        if (writer == null)
-            writer = createWriter(new ArrayList<>());
-        reader.close();
-        writer.close();
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.out.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
@@ -119,15 +110,11 @@ public final class ReadProcessor {
         }
     }
 
-    private MifWriter createWriter(ArrayList<GroupEdge> groupEdges) {
+    private MifWriter createWriter(ArrayList<GroupEdge> groupEdges) throws IOException {
         if (outputFileName == null)
             return new MifWriter(System.out, groupEdges);
         else
-            try {
-                return new MifWriter(outputFileName, groupEdges);
-            } catch (IOException e) {
-                throw exitWithError(e.getMessage());
-            }
+            return new MifWriter(outputFileName, groupEdges);
     }
 
     private class MifSequenceReader implements OutputPortCloseable<SequenceRead>, CanReportProgress {
