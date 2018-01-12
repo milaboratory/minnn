@@ -87,7 +87,9 @@ public final class ReadProcessor {
                         return new SingleFastqReader(System.in);
                     case 1:
                         String[] s = inputFileNames.get(0).split("\\.");
-                        if (s[s.length - 1].equals("fasta") || s[s.length - 1].equals("fa"))
+                        if (s[s.length - 1].equals("fasta") || s[s.length - 1].equals("fa")
+                                || ((s.length > 2) && s[s.length - 1].equals("gz")
+                                    && (s[s.length - 2].equals("fasta") || s[s.length - 2].equals("fa"))))
                             return new FastaSequenceReaderWrapper(new FastaReader<>(
                                     inputFileNames.get(0), NucleotideSequence.ALPHABET), true);
                         else
