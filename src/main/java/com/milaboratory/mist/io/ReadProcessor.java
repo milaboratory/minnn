@@ -14,9 +14,10 @@ import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.StreamSupport;
 
+import static com.milaboratory.core.io.sequence.SequenceReadUtil.setReadId;
 import static com.milaboratory.mist.io.MistDataFormat.*;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
@@ -30,7 +31,6 @@ public final class ReadProcessor {
     private final int threads;
     private final MistDataFormat inputFormat;
     private final boolean testIOSpeed;
-    private ConcurrentHashMap<Long, Long> indexes = new ConcurrentHashMap<>();
 
     public ReadProcessor(List<String> inputFileNames, String outputFileName, Pattern pattern,
             boolean orientedReads, boolean fairSorting, int threads, MistDataFormat inputFormat, boolean testIOSpeed) {
@@ -51,17 +51,15 @@ public final class ReadProcessor {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
         long matchedReads = 0;
-        try (OutputPortCloseable<? extends SequenceRead> reader = createReader();
+        try (OutputPortCloseable<SequenceRead> reader = (OutputPortCloseable<SequenceRead>)createReader();
              MifWriter writer = createWriter(pattern.getGroupEdges())) {
             CanReportProgress progress = (CanReportProgress)reader;
             SmartProgressReporter.startProgressReport("Parsing", progress);
-            OutputPort<SequenceRead> bufferedReaderPort = CUtils.buffered(() -> (SequenceRead)(reader.take()),
-                    2048);
+            OutputPort<SequenceRead> bufferedReaderPort = CUtils.buffered(reader, 2048);
             OutputPort<ParsedRead> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
                     testIOSpeed ? new TestIOSpeedProcessor() : new ReadParserProcessor(orientedReads), threads);
             OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(parsedReadsPort,
-                    read -> (inputFormat == MIF ? indexes.get(read.getOriginalRead().getId())
-                            : read.getOriginalRead().getId()));
+                    read -> read.getOriginalRead().getId());
             for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
                 totalReads++;
                 if (parsedRead.getBestMatch() != null) {
@@ -121,7 +119,7 @@ public final class ReadProcessor {
 
     private class MifSequenceReader implements OutputPortCloseable<SequenceRead>, CanReportProgress {
         private final MifReader mifReader;
-        private long index = 0;
+        private AtomicLong index = new AtomicLong(0);
 
         MifSequenceReader(MifReader mifReader) {
             this.mifReader = mifReader;
@@ -135,13 +133,7 @@ public final class ReadProcessor {
         @Override
         public SequenceRead take() {
             ParsedRead parsedRead = mifReader.take();
-            if (parsedRead == null)
-                return null;
-            else {
-                SequenceRead originalRead = parsedRead.getOriginalRead();
-                indexes.put(originalRead.getId(), index++);
-                return originalRead;
-            }
+            return (parsedRead == null) ? null : setReadId(index.getAndIncrement(), parsedRead.getOriginalRead());
         }
 
         @Override
