@@ -56,15 +56,7 @@ final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgr
 
     @Override
     public ParsedRead take() {
-        ParsedRead parsedRead;
-        try {
-            parsedRead = input.readObject(ParsedRead.class);
-        } catch (RuntimeException e) {
-            if (e.getCause().getClass().equals(EOFException.class))
-                parsedRead = null;
-            else
-                throw(e);
-        }
+        ParsedRead parsedRead = input.readObject(ParsedRead.class);
         if (parsedRead == null)
             finished = true;
         return parsedRead;

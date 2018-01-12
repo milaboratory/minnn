@@ -35,6 +35,7 @@ final class MifWriter {
     }
 
     void close() {
+        output.writeObject(null);
         output.close();
     }
 }
