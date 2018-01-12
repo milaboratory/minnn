@@ -1,6 +1,7 @@
 package com.milaboratory.mist.io;
 
 import cc.redberry.pipe.OutputPortCloseable;
+import com.milaboratory.core.io.CompressionType;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.primitivio.PrimitivI;
@@ -12,6 +13,7 @@ import java.io.*;
 import static java.lang.Double.NaN;
 
 final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgress {
+    private static final int DEFAULT_BUFFER_SIZE = 1048576;
     private final PrimitivI input;
     private final CountingInputStream countingInputStream;
     private final long size;
@@ -20,14 +22,21 @@ final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgr
     MifReader(InputStream stream) {
         input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
         initKnownReferences();
-        size = 0;
+        size = -1;
     }
 
     MifReader(String fileName) throws IOException {
         File file = new File(fileName);
-        input = new PrimitivI(this.countingInputStream = new CountingInputStream(new FileInputStream(file)));
+        CompressionType ct = CompressionType.detectCompressionType(file);
+        this.countingInputStream = new CountingInputStream(new FileInputStream(file));
+        if (ct == CompressionType.None) {
+            input = new PrimitivI(new BufferedInputStream(this.countingInputStream, DEFAULT_BUFFER_SIZE));
+            size = file.length();
+        } else {
+            input = new PrimitivI(ct.createInputStream(this.countingInputStream, DEFAULT_BUFFER_SIZE));
+            size = -1;
+        }
         initKnownReferences();
-        size = file.length();
     }
 
     private void initKnownReferences() {
@@ -44,7 +53,7 @@ final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgr
 
     @Override
     public double getProgress() {
-        if (size == 0)
+        if (size == -1)
             return NaN;
         return (1.0 * countingInputStream.getBytesRead()) / size;
     }
