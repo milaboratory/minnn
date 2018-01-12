@@ -10,7 +10,7 @@ import java.io.*;
 import java.util.Collection;
 
 public final class ParsedReadObjectSerializer implements ObjectSerializer<ParsedRead> {
-    private static final SerializersManager serializersManager = new SerializersManager();
+    private final SerializersManager serializersManager = new SerializersManager();
 
     @Override
     public void write(Collection<ParsedRead> data, OutputStream stream) {
