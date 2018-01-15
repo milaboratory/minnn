@@ -6,7 +6,6 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.outputconverter.ParsedReadObjectSerializer;
 import com.milaboratory.mist.pattern.GroupEdge;
-import com.milaboratory.mist.pattern.MatchedGroupEdge;
 import com.milaboratory.util.SmartProgressReporter;
 import com.milaboratory.util.Sorter;
 import com.milaboratory.util.TempFileManager;
@@ -14,7 +13,6 @@ import com.milaboratory.util.TempFileManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
@@ -41,8 +39,8 @@ public final class SorterIO {
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getGroupEdges())) {
             SmartProgressReporter.startProgressReport("Sorting", reader);
-            sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize, new ParsedReadObjectSerializer(),
-                    tmpFile);
+            sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
+                    new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);
             for (ParsedRead parsedRead : CUtils.it(sorted)) {
                 totalReads++;
                 writer.write(parsedRead);
