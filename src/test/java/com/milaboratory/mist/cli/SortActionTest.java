@@ -16,15 +16,15 @@ public class SortActionTest {
         String outputFile1 = TEMP_DIR + "sortOutput1.mif";
         String outputFile2 = TEMP_DIR + "sortOutput2.mif";
         String outputFile3 = TEMP_DIR + "sortOutput3.mif";
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 200; i++) {
             createRandomMifFile(startFile);
             exec("extract --input-format mif --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:an{3}t)(G2:n{2})\" --bitap-max-errors 0");
-            exec("sort --chunk-size " + (rg.nextInt(50000) + 1) + " --input " + inputFile
+            exec("sort --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + inputFile
                     + " --output " + outputFile1 + " --groups G2 G1");
-            exec("sort --chunk-size " + (rg.nextInt(50000) + 1) + " --input " + outputFile1
+            exec("sort --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + outputFile1
                     + " --output " + outputFile2 + " --groups G1");
-            exec("sort --chunk-size " + (rg.nextInt(50000) + 1) + " --input " + outputFile2
+            exec("sort --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + outputFile2
                     + " --output " + outputFile3 + " --groups G2 G1");
             assertFileEquals(outputFile1, outputFile3);
         }
