@@ -36,50 +36,38 @@ public final class SorterIO {
 
     public void go() {
         long startTime = System.currentTimeMillis();
-        MifReader reader;
+        long totalReads = 0;
         OutputPortCloseable<ParsedRead> sorted;
-        try {
-            if (inputFileName == null)
-                reader = new MifReader(System.in);
-            else
-                reader = new MifReader(inputFileName);
+        try (MifReader reader = createReader();
+             MifWriter writer = createWriter(reader.getGroupEdges())) {
             SmartProgressReporter.startProgressReport("Sorting", reader);
             sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize, new ParsedReadObjectSerializer(),
                     tmpFile);
+            for (ParsedRead parsedRead : CUtils.it(sorted)) {
+                totalReads++;
+                writer.write(parsedRead);
+            }
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
-
-        MifWriter writer = null;
-        long totalReads = 0;
-        for (ParsedRead parsedRead : CUtils.it(sorted)) {
-            totalReads++;
-            if (writer == null) {
-                ArrayList<GroupEdge> groupEdges = parsedRead.getBestMatch().getMatchedGroupEdges().stream()
-                        .map(MatchedGroupEdge::getGroupEdge).collect(Collectors.toCollection(ArrayList::new));
-                writer = createWriter(groupEdges);
-            }
-            writer.write(parsedRead);
-        }
-        if (writer == null)
-            writer = createWriter(new ArrayList<>());
-        reader.close();
-        writer.close();
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.out.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         System.out.println("Sorted " + totalReads + " reads\n");
     }
 
-    private MifWriter createWriter(ArrayList<GroupEdge> groupEdges) {
+    private MifReader createReader() throws IOException {
+        if (inputFileName == null)
+            return new MifReader(System.in);
+        else
+            return new MifReader(inputFileName);
+    }
+
+    private MifWriter createWriter(ArrayList<GroupEdge> groupEdges) throws IOException {
         if (outputFileName == null)
             return new MifWriter(System.out, groupEdges);
         else
-            try {
-                return new MifWriter(outputFileName, groupEdges);
-            } catch (IOException e) {
-                throw exitWithError(e.getMessage());
-            }
+            return new MifWriter(outputFileName, groupEdges);
     }
 
     private class ParsedReadComparator implements Comparator<ParsedRead> {

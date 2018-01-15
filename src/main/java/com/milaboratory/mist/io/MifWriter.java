@@ -4,9 +4,7 @@ import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.primitivio.PrimitivO;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
 
 final class MifWriter implements AutoCloseable {

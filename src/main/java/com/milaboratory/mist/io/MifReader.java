@@ -9,6 +9,7 @@ import com.milaboratory.util.CanReportProgress;
 import com.milaboratory.util.CountingInputStream;
 
 import java.io.*;
+import java.util.ArrayList;
 
 import static java.lang.Double.NaN;
 
@@ -17,6 +18,7 @@ final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgr
     private final PrimitivI input;
     private final CountingInputStream countingInputStream;
     private final long size;
+    private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
     private boolean finished = false;
 
     MifReader(InputStream stream) {
@@ -41,8 +43,11 @@ final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgr
 
     private void initKnownReferences() {
         int groupEdgesNum = input.readInt();
-        for (int i = 0; i < groupEdgesNum; i++)
-            input.putKnownReference(input.readObject(GroupEdge.class));
+        for (int i = 0; i < groupEdgesNum; i++) {
+            GroupEdge groupEdge = input.readObject(GroupEdge.class);
+            input.putKnownReference(groupEdge);
+            groupEdges.add(groupEdge);
+        }
     }
 
     @Override
@@ -65,9 +70,15 @@ final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgr
 
     @Override
     public ParsedRead take() {
+        if (finished)
+            return null;
         ParsedRead parsedRead = input.readObject(ParsedRead.class);
         if (parsedRead == null)
             finished = true;
         return parsedRead;
+    }
+
+    ArrayList<GroupEdge> getGroupEdges() {
+        return groupEdges;
     }
 }
