@@ -69,7 +69,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     }
 
     @Override
-    public ParsedRead take() {
+    public synchronized ParsedRead take() {
         if (finished)
             return null;
         ParsedRead parsedRead = input.readObject(ParsedRead.class);
