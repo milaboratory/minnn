@@ -2,6 +2,7 @@ package com.milaboratory.mist.io;
 
 import cc.redberry.pipe.CUtils;
 import cc.redberry.pipe.OutputPortCloseable;
+import com.milaboratory.core.io.CompressionType;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.outputconverter.ParsedReadObjectSerializer;
@@ -74,9 +75,10 @@ public final class SorterIO {
             return DEFAULT_SORT_CHUNK_SIZE;
         else {
             // heuristic to auto-determine chunk size by input file size
-            int averageBytesPerParsedRead = 50;
-            long fileSize = new File(inputFileName).length();
-            return (int)Math.min(Math.max(16384, fileSize / averageBytesPerParsedRead / 8), 1048576);
+            File inputFile = new File(inputFileName);
+            CompressionType ct = CompressionType.detectCompressionType(inputFile);
+            int averageBytesPerParsedRead = (ct == CompressionType.None) ? 50 : 15;
+            return (int)Math.min(Math.max(16384, inputFile.length() / averageBytesPerParsedRead / 8), 1048576);
         }
     }
 
