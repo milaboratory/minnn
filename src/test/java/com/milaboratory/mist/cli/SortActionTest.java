@@ -22,8 +22,7 @@ public class SortActionTest {
                     + " --pattern \"(G1:an{3}t)(G2:n{2})\" --bitap-max-errors 0");
             exec("sort --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + inputFile
                     + " --output " + outputFile1 + " --groups G2 G1");
-            exec("sort --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + outputFile1
-                    + " --output " + outputFile2 + " --groups G1");
+            exec("sort --input " + outputFile1 + " --output " + outputFile2 + " --groups G1");
             exec("sort --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + outputFile2
                     + " --output " + outputFile3 + " --groups G2 G1");
             assertFileEquals(outputFile1, outputFile3);
