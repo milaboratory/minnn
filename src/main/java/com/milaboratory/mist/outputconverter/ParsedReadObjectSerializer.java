@@ -21,21 +21,16 @@ public final class ParsedReadObjectSerializer implements ObjectSerializer<Parsed
     @Override
     public void write(Collection<ParsedRead> data, OutputStream stream) {
         final PrimitivO out = new PrimitivO(new DataOutputStream(stream), serializersManager);
-        for (GroupEdge groupEdge : groupEdges) {
-            out.writeObject(groupEdge);
-            out.putKnownReference(groupEdge);
-        }
+        groupEdges.forEach(out::putKnownReference);
         for (ParsedRead parsedRead : data)
             out.writeObject(parsedRead);
+        out.writeObject(null);
     }
 
     @Override
     public OutputPort<ParsedRead> read(InputStream stream) {
         final PrimitivI in = new PrimitivI(new DataInputStream(stream), serializersManager);
-        for (int i = 0; i < groupEdges.size(); i++) {
-            GroupEdge groupEdge = in.readObject(GroupEdge.class);
-            in.putKnownReference(groupEdge);
-        }
+        groupEdges.forEach(in::putKnownReference);
         return () -> in.readObject(ParsedRead.class);
     }
 }
