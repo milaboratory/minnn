@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static com.milaboratory.mist.cli.Defaults.DEFAULT_SORT_CHUNK_SIZE;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -28,7 +29,7 @@ public final class SorterIO {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.sortGroupNames = sortGroupNames;
-        this.chunkSize = chunkSize;
+        this.chunkSize = (chunkSize == -1) ? estimateChunkSize() : chunkSize;
         this.tmpFile = TempFileManager.getTempFile();
     }
 
@@ -66,6 +67,17 @@ public final class SorterIO {
             return new MifWriter(System.out, groupEdges);
         else
             return new MifWriter(outputFileName, groupEdges);
+    }
+
+    private int estimateChunkSize() {
+        if (inputFileName == null)
+            return DEFAULT_SORT_CHUNK_SIZE;
+        else {
+            // heuristic to auto-determine chunk size by input file size
+            int averageBytesPerParsedRead = 50;
+            long fileSize = new File(inputFileName).length();
+            return (int)Math.min(Math.max(16384, fileSize / averageBytesPerParsedRead / 8), 1048576);
+        }
     }
 
     private class ParsedReadComparator implements Comparator<ParsedRead> {
