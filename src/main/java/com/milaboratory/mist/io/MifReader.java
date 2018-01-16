@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 import static java.lang.Double.NaN;
 
-final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgress {
+public final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgress {
     private static final int DEFAULT_BUFFER_SIZE = 1048576;
     private final PrimitivI input;
     private final CountingInputStream countingInputStream;
@@ -21,13 +21,13 @@ final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgr
     private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
     private boolean finished = false;
 
-    MifReader(InputStream stream) {
+    public MifReader(InputStream stream) {
         input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
         initKnownReferences();
         size = -1;
     }
 
-    MifReader(String fileName) throws IOException {
+    public MifReader(String fileName) throws IOException {
         File file = new File(fileName);
         CompressionType ct = CompressionType.detectCompressionType(file);
         this.countingInputStream = new CountingInputStream(new FileInputStream(file));
@@ -78,7 +78,7 @@ final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgr
         return parsedRead;
     }
 
-    ArrayList<GroupEdge> getGroupEdges() {
+    public ArrayList<GroupEdge> getGroupEdges() {
         return groupEdges;
     }
 }

@@ -7,15 +7,15 @@ import com.milaboratory.primitivio.PrimitivO;
 import java.io.*;
 import java.util.ArrayList;
 
-final class MifWriter implements AutoCloseable {
+public final class MifWriter implements AutoCloseable {
     private final PrimitivO output;
 
-    MifWriter(OutputStream outputStream, ArrayList<GroupEdge> groupEdges) {
+    public MifWriter(OutputStream outputStream, ArrayList<GroupEdge> groupEdges) {
         output = new PrimitivO(outputStream);
         initKnownReferences(groupEdges);
     }
 
-    MifWriter(String file, ArrayList<GroupEdge> groupEdges) throws IOException {
+    public MifWriter(String file, ArrayList<GroupEdge> groupEdges) throws IOException {
         output = new PrimitivO(new FileOutputStream(file));
         initKnownReferences(groupEdges);
     }
@@ -28,7 +28,7 @@ final class MifWriter implements AutoCloseable {
         }
     }
 
-    void write(ParsedRead parsedRead) {
+    public void write(ParsedRead parsedRead) {
         output.writeObject(parsedRead);
     }
 
