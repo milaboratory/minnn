@@ -4,6 +4,7 @@ import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public final class MatchIntermediate extends Match {
     private final int leftUppercaseDistance;
@@ -77,5 +78,16 @@ public final class MatchIntermediate extends Match {
 
     public int getRightUppercaseDistance() {
         return rightUppercaseDistance;
+    }
+
+    /**
+     * Return ArrayList of matched group edges with specified pattern index.
+     *
+     * @param patternIndex pattern index; group edges with this index will be searched
+     * @return ArrayList of matched group edges with specified pattern index
+     */
+    public ArrayList<MatchedGroupEdge> getMatchedGroupEdgesByPattern(int patternIndex) {
+        return matchedGroupEdges.stream().filter(mge -> mge.getPatternIndex() == patternIndex)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }

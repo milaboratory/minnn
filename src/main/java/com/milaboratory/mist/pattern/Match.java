@@ -10,13 +10,12 @@ import com.milaboratory.primitivio.annotations.Serializable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.stream.Collectors;
 
 @Serializable(by = IO.MatchSerializer.class)
 public class Match {
     protected final int numberOfPatterns;
-    private final long score;
-    private final ArrayList<MatchedGroupEdge> matchedGroupEdges;
+    protected final long score;
+    protected final ArrayList<MatchedGroupEdge> matchedGroupEdges;
     private ArrayList<MatchedGroup> groups = null;
     private HashMap<String, NSequenceWithQuality> groupValues = null;
 
@@ -46,17 +45,6 @@ public class Match {
                 return matchedGroupEdge;
         throw new IllegalStateException("Trying to get group " + (isStart ? "start" : "end") + " with name "
                 + groupName + " and it doesn't exist");
-    }
-
-    /**
-     * Return ArrayList of matched group edges with specified pattern index.
-     *
-     * @param patternIndex pattern index; group edges with this index will be searched
-     * @return ArrayList of matched group edges with specified pattern index
-     */
-    public ArrayList<MatchedGroupEdge> getMatchedGroupEdgesByPattern(int patternIndex) {
-        return matchedGroupEdges.stream().filter(mge -> mge.getPatternIndex() == patternIndex)
-                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
