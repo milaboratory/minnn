@@ -15,15 +15,6 @@ public abstract class SinglePattern extends Pattern {
     }
 
     @Override
-    public ArrayList<GroupEdge> getGroupEdges(int patternIndex) {
-        if (patternIndex != 0)
-            throw new IllegalArgumentException("getGroupEdges() called for SinglePattern with patternIndex="
-                    + patternIndex);
-        else
-            return getGroupEdges();
-    }
-
-    @Override
     public MatchingResult match(MultiNSequenceWithQuality target) {
         if (target instanceof NSequenceWithQuality)
             return match((NSequenceWithQuality)target);

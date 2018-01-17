@@ -33,16 +33,6 @@ public abstract class MultipleReadsOperator extends Pattern {
         return groupEdges;
     }
 
-    @Override
-    public ArrayList<GroupEdge> getGroupEdges(int patternIndex) {
-        if (singlePatterns.length == 0) {
-            ArrayList<GroupEdge> edges = new ArrayList<>();
-            Arrays.stream(operandPatterns).map(op -> op.getGroupEdges(patternIndex)).forEach(edges::addAll);
-            return edges;
-        } else
-            return singlePatterns[patternIndex].getGroupEdges();
-    }
-
     public int getNumberOfPatterns() {
         return Math.max(singlePatterns.length, operandPatterns.length);
     }
