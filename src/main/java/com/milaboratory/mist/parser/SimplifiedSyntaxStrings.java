@@ -17,6 +17,7 @@ final class SimplifiedSyntaxStrings {
     final static String AND_PATTERN_NAME = "AndPattern";
     final static String PLUS_PATTERN_NAME = "PlusPattern";
     final static String SEQUENCE_PATTERN_NAME = "SequencePattern";
+    final static String FULL_READ_PATTERN_NAME = "FullReadPattern";
     final static String OR_PATTERN_NAME = "OrPattern";
     final static String MULTI_PATTERN_NAME = "MultiPattern";
     final static String AND_OPERATOR_NAME = "AndOperator";
@@ -29,5 +30,4 @@ final class SimplifiedSyntaxStrings {
     final static String GROUP_EDGE_POSITION_START = GROUP_EDGE_POSITION_NAME + "(" + GROUP_EDGE_START;
     // FILTER_PATTERN_NAME here will also match on MULTIPLE_READS_FILTER_PATTERN_NAME
     final static String SCORE_FILTER_START = FILTER_PATTERN_NAME + "(" + SCORE_FILTER_NAME + "(";
-    final static String STICK_FILTER_START = FILTER_PATTERN_NAME + "(" + STICK_FILTER_NAME + "(";
 }

@@ -10,10 +10,14 @@ import static com.milaboratory.mist.pattern.MatchValidationType.LOGICAL_AND;
 import static com.milaboratory.mist.util.UnfairSorterConfiguration.unfairSorterPortLimits;
 
 public final class MultiPattern extends MultipleReadsOperator {
-    public MultiPattern(PatternAligner patternAligner, SinglePattern... singlePatterns) {
-        super(patternAligner, singlePatterns);
-        for (byte i = 1; i <= singlePatterns.length; i++)
-            singlePatterns[i - 1].setTargetId(i);
+    public MultiPattern(PatternAligner patternAligner, SinglePattern... operandPatterns) {
+        super(patternAligner, operandPatterns);
+        for (byte i = 0; i < operandPatterns.length; i++) {
+            if (!(operandPatterns[i] instanceof FullReadPattern))
+                throw new IllegalArgumentException("All MultiPattern arguments must be FullReadPattern, got "
+                        + operandPatterns[i]);
+            operandPatterns[i].setTargetId((byte)(i + 1));
+        }
     }
 
     @Override

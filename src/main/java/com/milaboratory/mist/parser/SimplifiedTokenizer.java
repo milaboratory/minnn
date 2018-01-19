@@ -151,6 +151,14 @@ final class SimplifiedTokenizer extends Tokenizer {
                     tokenizedString.tokenizeSubstring(orPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
                     break;
+                case FULL_READ_PATTERN_NAME:
+                    ArrayList<Token> fullReadPatternTokenizedSubstring = tokenizedString.getTokens(
+                            objectString.getDataStart(), objectString.getDataEnd());
+                    FullReadPattern fullReadPattern = parseFullReadPattern(currentPatternAligner,
+                            fullReadPatternTokenizedSubstring);
+                    tokenizedString.tokenizeSubstring(fullReadPattern,
+                            objectString.getFullStringStart(), objectString.getFullStringEnd());
+                    break;
                 case MULTI_PATTERN_NAME:
                     ArrayList<SinglePattern> multiPatternOperands = getPatternOperands(
                             tokenizedString, squareBracketsPairs, objectString, SinglePattern.class);
@@ -210,16 +218,21 @@ final class SimplifiedTokenizer extends Tokenizer {
         }
 
         Pattern finalPattern = tokenizedString.getFinalPattern();
-        boolean duplicateGroupsAllowed = finalPattern instanceof OrPattern || finalPattern instanceof OrOperator;
+        if (finalPattern instanceof FullReadPattern)
+            ((FullReadPattern)finalPattern).setTargetId((byte)1);
+        boolean duplicateGroupsAllowed = (finalPattern instanceof FullReadPattern
+                && ((FullReadPattern)finalPattern).getOperand() instanceof OrPattern)
+                || finalPattern instanceof OrOperator;
         validateGroupEdges(finalPattern.getGroupEdges(), true, duplicateGroupsAllowed);
     }
 
     private <P extends Pattern> ArrayList<P> getPatternOperands(TokenizedString tokenizedString,
             List<BracketsPair> squareBracketsPairs, ObjectString objectString, Class<P> operandClass)
             throws ParserException {
-        List<BracketsPair> innerSquareBrackets = squareBracketsPairs.stream().
-                filter(bp -> objectString.getParenthesesPair().contains(bp)).collect(Collectors.toList());
-        innerSquareBrackets.sort(Comparator.comparingInt((BracketsPair bp) -> bp.nestedLevel));
+        List<BracketsPair> innerSquareBrackets = squareBracketsPairs.stream()
+                .filter(bp -> objectString.getParenthesesPair().contains(bp))
+                .sorted(Comparator.comparingInt((BracketsPair bp) -> bp.nestedLevel))
+                .collect(Collectors.toList());
         if (innerSquareBrackets.size() == 0)
             throw new ParserException("Missing square bracket pair in " + objectString.getName());
         else

@@ -23,7 +23,8 @@ final class SimplifiedParsers {
      * @return FuzzyMatchPattern
      */
     static FuzzyMatchPattern parseFuzzyMatchPattern(PatternAligner patternAligner, String str,
-                                                    ArrayList<GroupEdgePosition> groupEdgePositions) throws ParserException {
+                                                    ArrayList<GroupEdgePosition> groupEdgePositions)
+            throws ParserException {
         List<QuotesPair> quotesPairs = getAllQuotes(str);
         int commaPositions[] = new int[5];
 
@@ -107,6 +108,27 @@ final class SimplifiedParsers {
         return new AnyPattern(patternAligner, groupEdges);
     }
 
+    static FullReadPattern parseFullReadPattern(PatternAligner patternAligner, ArrayList<Token> tokenizedSubstring)
+            throws ParserException {
+        boolean defaultGroupsOverride;
+        if ((tokenizedSubstring.size() == 2) && tokenizedSubstring.get(0).isString()
+                && tokenizedSubstring.get(1).isPatternAndNotNull()) {
+            String str = tokenizedSubstring.get(0).getString();
+            switch (str) {
+                case "true, ":
+                    defaultGroupsOverride = true;
+                    break;
+                case "false, ":
+                    defaultGroupsOverride = false;
+                    break;
+                default:
+                    throw new ParserException("Failed to parse defaultGroupsOverride from \"" + str + "\"");
+            }
+        } else
+            throw new ParserException("Invalid tokens as arguments for FullReadPattern: " + tokenizedSubstring);
+        return new FullReadPattern(patternAligner, defaultGroupsOverride, tokenizedSubstring.get(1).getSinglePattern());
+    }
+
     /**
      * Parse AndPattern from tokenized substring returned by getTokens() function and already parsed operand patterns.
      *
@@ -150,6 +172,10 @@ final class SimplifiedParsers {
     static MultiPattern parseMultiPattern(PatternAligner patternAligner, ArrayList<Token> tokenizedSubstring,
                                           ArrayList<SinglePattern> singlePatterns) throws ParserException {
         checkOperandArraySpelling(tokenizedSubstring);
+        for (SinglePattern singlePattern : singlePatterns)
+            if (!(singlePattern instanceof FullReadPattern))
+                throw new ParserException("Excepted FullReadPattern argument for MultiPattern, got "
+                        + singlePattern);
         SinglePattern[] operands = singlePatterns.toArray(new SinglePattern[singlePatterns.size()]);
         validateGroupEdges(true, false, true, operands);
         return new MultiPattern(patternAligner, operands);

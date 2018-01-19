@@ -10,13 +10,16 @@ public final class NotOperator extends MultipleReadsOperator {
         super(patternAligner, operandPatterns);
         if (operandPatterns.length != 1)
             throw new IllegalArgumentException("Not operator must take exactly 1 operand!");
-        if (groupEdges.size() > 0)
-            throw new IllegalStateException("Not operator must not contain group edges inside!");
     }
 
     @Override
     public String toString() {
         return "NotOperator(" + operandPatterns[0] + ")";
+    }
+
+    @Override
+    public ArrayList<GroupEdge> getGroupEdges() {
+        return new ArrayList<>();
     }
 
     @Override

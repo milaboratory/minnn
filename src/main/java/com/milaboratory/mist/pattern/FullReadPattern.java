@@ -8,6 +8,7 @@ import java.util.ArrayList;
 public final class FullReadPattern extends SinglePattern {
     private final SinglePattern operandPattern;
     private final boolean defaultGroupsOverride;
+    private boolean targetIdInitialized = false;
 
     public FullReadPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, SinglePattern operandPattern) {
         super(patternAligner);
@@ -22,6 +23,9 @@ public final class FullReadPattern extends SinglePattern {
 
     @Override
     public ArrayList<GroupEdge> getGroupEdges() {
+        if (!targetIdInitialized)
+            throw new IllegalStateException(
+                    "getGroupEdges() called for FullReadPattern when targetId is not initialized!");
         if (defaultGroupsOverride)
             return operandPattern.getGroupEdges();
         else {
@@ -31,6 +35,10 @@ public final class FullReadPattern extends SinglePattern {
             groupEdges.add(new GroupEdge(mainGroupName, false));
             return groupEdges;
         }
+    }
+
+    public ArrayList<GroupEdge> getOperandGroupEdges() {
+        return operandPattern.getGroupEdges();
     }
 
     @Override
@@ -46,6 +54,16 @@ public final class FullReadPattern extends SinglePattern {
     @Override
     public long estimateComplexity() {
         return operandPattern.estimateComplexity();
+    }
+
+    @Override
+    public void setTargetId(byte targetId) {
+        super.setTargetId(targetId);
+        targetIdInitialized = true;
+    }
+
+    public SinglePattern getOperand() {
+        return operandPattern;
     }
 
     private class FullReadPatternMatchingResult implements MatchingResult {
@@ -64,6 +82,7 @@ public final class FullReadPattern extends SinglePattern {
             OutputPort<MatchIntermediate> operandPort = operandPattern.match(target, from, to).getMatches(fairSorting);
             return defaultGroupsOverride ? operandPort : () -> {
                 MatchIntermediate match = operandPort.take();
+                if (match == null) return null;
                 String mainGroupName = "R" + targetId;
                 int patternIndex = match.getMatchedRange().getPatternIndex();
                 ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>(match.getMatchedGroupEdges());

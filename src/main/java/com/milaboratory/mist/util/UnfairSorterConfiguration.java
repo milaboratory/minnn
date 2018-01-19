@@ -18,6 +18,7 @@ public final class UnfairSorterConfiguration {
         unfairSorterPortLimits.put(PlusPattern.class, 20);
         unfairSorterPortLimits.put(SequencePattern.class, 20);
         unfairSorterPortLimits.put(OrPattern.class, 25);
+        unfairSorterPortLimits.put(FullReadPattern.class, 25);
         unfairSorterPortLimits.put(MultiPattern.class, 25);
         unfairSorterPortLimits.put(AndOperator.class, 25);
         unfairSorterPortLimits.put(OrOperator.class, 25);

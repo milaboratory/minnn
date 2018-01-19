@@ -5,7 +5,9 @@ import java.util.*;
 public abstract class MultipleReadsOperator extends Pattern {
     protected final MultipleReadsOperator[] operandPatterns;
     protected final SinglePattern[] singlePatterns;
-    protected final ArrayList<GroupEdge> groupEdges;
+    private final boolean checkGroupEdges;
+    private final boolean singlePatternOperands;
+    private ArrayList<GroupEdge> groupEdges = null;
 
     MultipleReadsOperator(PatternAligner patternAligner, MultipleReadsOperator... operandPatterns) {
         this(patternAligner, true, operandPatterns);
@@ -14,33 +16,33 @@ public abstract class MultipleReadsOperator extends Pattern {
     MultipleReadsOperator(PatternAligner patternAligner, boolean checkGroupEdges,
                           MultipleReadsOperator... operandPatterns) {
         super(patternAligner);
+        this.checkGroupEdges = checkGroupEdges;
         this.operandPatterns = operandPatterns;
         this.singlePatterns = new SinglePattern[0];
-        this.groupEdges = new ArrayList<>();
-        getGroupEdgesFromOperands(checkGroupEdges, operandPatterns);
+        this.singlePatternOperands = false;
     }
 
     MultipleReadsOperator(PatternAligner patternAligner, SinglePattern... singlePatterns) {
         super(patternAligner);
+        this.checkGroupEdges = true;
         this.singlePatterns = singlePatterns;
         this.operandPatterns = new MultipleReadsOperator[0];
-        this.groupEdges = new ArrayList<>();
-        getGroupEdgesFromOperands(true, singlePatterns);
+        this.singlePatternOperands = true;
     }
 
     @Override
     public ArrayList<GroupEdge> getGroupEdges() {
+        if (groupEdges == null) {
+            groupEdges = new ArrayList<>();
+            for (Pattern pattern : singlePatternOperands ? singlePatterns : operandPatterns)
+                groupEdges.addAll(pattern.getGroupEdges());
+            if (checkGroupEdges && (groupEdges.size() != new HashSet<>(groupEdges).size()))
+                throw new IllegalStateException("Operands contain equal group edges!");
+        }
         return groupEdges;
     }
 
     public int getNumberOfPatterns() {
         return Math.max(singlePatterns.length, operandPatterns.length);
-    }
-
-    private <T extends Pattern> void getGroupEdgesFromOperands(boolean checkGroupEdges, T[] patterns) {
-        for (T pattern : patterns)
-            groupEdges.addAll(pattern.getGroupEdges());
-        if (checkGroupEdges && (groupEdges.size() != new HashSet<>(groupEdges).size()))
-            throw new IllegalStateException("Operands contain equal group edges!");
     }
 }

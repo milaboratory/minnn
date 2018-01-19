@@ -418,6 +418,30 @@ final class NormalParsers {
     }
 
     /**
+     * Wrap all SinglePattern tokens with FullRead patterns. This function is called when all single patterns
+     * are parsed, and, if query is correct, number of single patterns must be equal to the number of reads.
+     * FullRead patterns add built-in matched groups R1, R2, ... for each read, if there are no groups in query
+     * that override some of built-in group names.
+     *
+     * @param tokenizedString tokenized string object for query string
+     * @return list of found tokens
+     */
+    ArrayList<FoundToken> parseFullReadPatterns(TokenizedString tokenizedString) throws ParserException {
+        ArrayList<FoundToken> foundTokens = new ArrayList<>();
+        List<Token> patternTokens = tokenizedString.getTokens(0, tokenizedString.getFullLength()).stream()
+                .filter(Token::isPatternAndNotNull).collect(Collectors.toList());
+        boolean defaultGroupsOverride = defaultGroupsOverride(patternTokens.size(),
+                groupNames.stream().map(gn -> gn.name).toArray(String[]::new));
+        for (Token token : patternTokens) {
+            SinglePattern pattern = token.getSinglePattern();
+            foundTokens.add(new FoundToken(new FullReadPattern(patternAligner, defaultGroupsOverride, pattern),
+                    token.getStartCoordinate(), token.getStartCoordinate() + token.getLength()));
+        }
+
+        return foundTokens;
+    }
+
+    /**
      * This function will parse operators with specified sign that are in brackets with specified nested level.
      * It will be called from loop with decreasing nested level, once for each operator on every nested
      * level, starting from operators with higher priority. Nested level -1 means to parse operators outside
@@ -469,6 +493,10 @@ final class NormalParsers {
                                         sequenceTokenEnd), operands), sequenceTokenStart, sequenceTokenEnd);
                             } else if (operatorRegexp.contains("\\\\")) {
                                 validateGroupEdges(true, false, true, operands);
+                                if (Arrays.stream(operands).anyMatch(o -> !(o instanceof FullReadPattern)))
+                                    throw new IllegalStateException(
+                                            "MultiPattern argument not wrapped with FullReadPattern: "
+                                                    + tokenizedString);
                                 foundToken = new FoundToken(new MultiPattern(getPatternAligner(sequenceTokenStart,
                                         sequenceTokenEnd), operands), sequenceTokenStart, sequenceTokenEnd);
                             } else
@@ -507,12 +535,23 @@ final class NormalParsers {
             if (!onlySinglePatterns && !onlyMultiPatterns)
                 throw new ParserException("Single read patterns are mixed with multiple reads patterns: "
                         + tokenizedString);
-            if (onlySinglePatterns)
+            if (onlySinglePatterns) {
+                if (tokens.parallelStream().filter(Token::isPatternAndNotNull)
+                        .anyMatch(t -> !(t.getPattern() instanceof FullReadPattern)))
+                    throw new IllegalStateException("MultiPattern argument not wrapped with FullReadPattern: "
+                            + tokenizedString);
                 tokens.stream().filter(Token::isPatternAndNotNull).forEach(token -> foundTokens.add(
                         new FoundToken(new MultiPattern(getPatternAligner(
-                        token.getStartCoordinate(), token.getStartCoordinate() + token.getLength()),
-                        (SinglePattern)(token.getPattern())),
-                        token.getStartCoordinate(), token.getStartCoordinate() + token.getLength())));
+                                token.getStartCoordinate(), token.getStartCoordinate() + token.getLength()),
+                                (SinglePattern)(token.getPattern())),
+                                token.getStartCoordinate(), token.getStartCoordinate() + token.getLength())));
+            }
+        } else if (tokens.size() == 1) {
+            Token token = tokens.get(0);
+            if (!token.isPatternAndNotNull())
+                throw new ParserException("Token not parsed: " + token);
+            else if (token.getPattern() instanceof SinglePattern)
+                token.getSpecificPattern(FullReadPattern.class).setTargetId((byte)1);
         }
 
         return foundTokens;

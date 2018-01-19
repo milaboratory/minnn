@@ -32,16 +32,17 @@ public class ExtractActionTest {
             String testOutput2Single = TEMP_DIR + "output2_single.mif";
 
             String[] args1 = {"extract", "--pattern",
-                    inQuotes("MultiPattern([FuzzyMatchPattern(GAAGCA, 1, 0, -1, -1, [GroupEdgePosition(" +
-                            "GroupEdge('UMI', true), 2), GroupEdgePosition(GroupEdge('UMI', false), 4)]), " +
-                            "FuzzyMatchPattern(AA, 0, 0, -1, -1)])"),
+                    inQuotes("MultiPattern([FullReadPattern(false, FuzzyMatchPattern(GAAGCA, 1, 0, -1, -1, " +
+                            "[GroupEdgePosition(GroupEdge('UMI', true), 2), " +
+                            "GroupEdgePosition(GroupEdge('UMI', false), 4)])), " +
+                            "FullReadPattern(false, FuzzyMatchPattern(AA, 0, 0, -1, -1))])"),
                     "--input", testInputR1, testInputR2, "--output", testOutput1Double,
                     "--devel-parser-syntax", "--penalty-threshold", "0"};
             main(args1);
 
             String[] args2 = {"extract", "--penalty-threshold", "0", "--devel-parser-syntax", "--match-score", "0",
-                    "--oriented", "--pattern", inQuotes("FuzzyMatchPattern(ATTAGACA, 0, 0, -1, -1)"),
-                    "--input", testInputR1, "--output", testOutput1Single};
+                    "--oriented", "--pattern", inQuotes("FullReadPattern(false, FuzzyMatchPattern(ATTAGACA, " +
+                    "0, 0, -1, -1))"), "--input", testInputR1, "--output", testOutput1Single};
             main(args2);
 
             String[] args3 = {"extract", "--pattern", "<GA(UMI:AG)CA \\ AA",

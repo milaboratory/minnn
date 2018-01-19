@@ -20,14 +20,15 @@ public class SimplifiedSyntaxGroupsTest {
     // pattern names that are valid as outer objects for group edges; this list doesn't include NOT_OPERATOR_NAME
     private final List<String> validGroupEdgeOuterObjectNames = Arrays.asList(FUZZY_MATCH_PATTERN_NAME,
             REPEAT_PATTERN_NAME, ANY_PATTERN_NAME, AND_PATTERN_NAME, PLUS_PATTERN_NAME, SEQUENCE_PATTERN_NAME,
-            OR_PATTERN_NAME, MULTI_PATTERN_NAME, AND_OPERATOR_NAME, OR_OPERATOR_NAME,
+            FULL_READ_PATTERN_NAME, OR_PATTERN_NAME, MULTI_PATTERN_NAME, AND_OPERATOR_NAME, OR_OPERATOR_NAME,
             FILTER_PATTERN_NAME, SCORE_FILTER_NAME, STICK_FILTER_NAME, MULTIPLE_READS_FILTER_PATTERN_NAME);
     // object names that are valid as not common and closest common outer objects for edges of one group
     private final List<String> validGroupPartNotCommonObjectNames = Arrays.asList(FUZZY_MATCH_PATTERN_NAME,
             REPEAT_PATTERN_NAME, PLUS_PATTERN_NAME, SEQUENCE_PATTERN_NAME,
             FILTER_PATTERN_NAME, SCORE_FILTER_NAME, STICK_FILTER_NAME);
     // object names that are valid as closed common ancestor of 2 groups with the same name
-    private final List<String> validDuplicateGroupsCommonAncestors = Arrays.asList(OR_PATTERN_NAME, OR_OPERATOR_NAME);
+    private final List<String> validDuplicateGroupsCommonAncestors = Arrays.asList(OR_PATTERN_NAME, OR_OPERATOR_NAME,
+            FULL_READ_PATTERN_NAME);
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
