@@ -50,8 +50,8 @@ public class CommonPatternTests {
                 getRandomGroupsForFuzzyMatch(8));
 
         MultipleReadsOperator[] mPatterns = new MultipleReadsOperator[4];
-        mPatterns[0] = new MultiPattern(patternAligner, patterns[14], patterns[15]);
-        mPatterns[1] = new MultiPattern(patternAligner, patterns[0], patterns[4]);
+        mPatterns[0] = createMultiPattern(patternAligner, patterns[14], patterns[15]);
+        mPatterns[1] = createMultiPattern(patternAligner, patterns[0], patterns[4]);
         mPatterns[2] = new AndOperator(patternAligner, mPatterns[0], mPatterns[1]);
         mPatterns[3] = new OrOperator(patternAligner, mPatterns[0], mPatterns[1]);
 
@@ -102,9 +102,9 @@ public class CommonPatternTests {
             Filter filter = new ScoreFilter(-rg.nextInt(75));
             FilterPattern filterPattern = new FilterPattern(patternAligner, filter, pattern);
             NotOperator notOperator = hasGroups ? null
-                    : new NotOperator(patternAligner, new MultiPattern(patternAligner, pattern));
+                    : new NotOperator(patternAligner, createMultiPattern(patternAligner, pattern));
             MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(patternAligner, filter,
-                    new MultiPattern(patternAligner, pattern));
+                    createMultiPattern(patternAligner, pattern));
 
             if (pattern instanceof CanFixBorders) {
                 boolean isBorderFixed = false;

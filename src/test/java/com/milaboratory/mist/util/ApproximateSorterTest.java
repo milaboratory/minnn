@@ -30,11 +30,11 @@ public class ApproximateSorterTest {
         patterns[4] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("att"));
         patterns[5] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("gcc"));
 
-        mPatterns[0] = new MultiPattern(patternAligner, patterns[0], patterns[3]);
-        mPatterns[1] = new MultiPattern(patternAligner, patterns[2], patterns[5]);
-        mPatterns[2] = new MultiPattern(patternAligner, patterns[2], patterns[0], patterns[0]);
-        mPatterns[3] = new MultiPattern(patternAligner, patterns[3], patterns[3], patterns[3]);
-        mPatterns[4] = new MultiPattern(patternAligner, patterns[0], patterns[0]);
+        mPatterns[0] = createMultiPattern(patternAligner, patterns[0], patterns[3]);
+        mPatterns[1] = createMultiPattern(patternAligner, patterns[2], patterns[5]);
+        mPatterns[2] = createMultiPattern(patternAligner, patterns[2], patterns[0], patterns[0]);
+        mPatterns[3] = createMultiPattern(patternAligner, patterns[3], patterns[3], patterns[3]);
+        mPatterns[4] = createMultiPattern(patternAligner, patterns[0], patterns[0]);
 
         targets[0] = new NSequenceWithQuality("ACTGCGATAAATTAGACAGTACGTATTAGACATTATTATTAGACAGAGACAGT");
         targets[1] = new NSequenceWithQuality("ATTATTGCCGCCATTATTGCCGCC");
@@ -346,9 +346,9 @@ public class ApproximateSorterTest {
                 new NucleotideSequenceCaseSensitive("a"));
         FuzzyMatchPattern notMatchingPattern = new FuzzyMatchPattern(patternAligner,
                 new NucleotideSequenceCaseSensitive("ccc"));
-        MultiPattern matchingMPattern = new MultiPattern(patternAligner,
+        MultiPattern matchingMPattern = createMultiPattern(patternAligner,
                 matchingPattern, matchingPattern, matchingPattern);
-        MultiPattern notMatchingMPattern = new MultiPattern(patternAligner,
+        MultiPattern notMatchingMPattern = createMultiPattern(patternAligner,
                 matchingPattern, notMatchingPattern, matchingPattern);
         NotOperator matchingNot = new NotOperator(patternAligner, notMatchingMPattern);
         NotOperator notMatchingNot = new NotOperator(patternAligner, matchingMPattern);

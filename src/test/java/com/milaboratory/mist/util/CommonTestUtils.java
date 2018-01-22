@@ -411,7 +411,7 @@ public class CommonTestUtils {
             SinglePattern[] basicPatterns = new SinglePattern[numPatterns];
             for (int i = 0; i < numPatterns; i++)
                 basicPatterns[i] = getRandomBasicPattern(patternAligner);
-            return new MultiPattern(patternAligner, basicPatterns);
+            return createMultiPattern(patternAligner, basicPatterns);
         } else {
             switch (rg.nextInt(4)) {
                 case 0:
@@ -434,8 +434,16 @@ public class CommonTestUtils {
 
     public static MultipleReadsOperator[] singleToMultiPatterns(PatternAligner patternAligner,
                                                                 SinglePattern... singlePatterns) {
-        return Arrays.stream(singlePatterns).map(sp -> new MultiPattern(patternAligner, sp))
+        return Arrays.stream(singlePatterns)
+                .map(sp -> new MultiPattern(patternAligner,
+                        new FullReadPattern(patternAligner, true, sp)))
                 .toArray(MultipleReadsOperator[]::new);
+    }
+
+    public static MultiPattern createMultiPattern(PatternAligner patternAligner, SinglePattern... singlePatterns) {
+        return new MultiPattern(patternAligner, Arrays.stream(singlePatterns)
+                .map(sp -> new FullReadPattern(patternAligner, true, sp))
+                .toArray(SinglePattern[]::new));
     }
 
     public static String bestToString(MatchingResult matchingResult) {

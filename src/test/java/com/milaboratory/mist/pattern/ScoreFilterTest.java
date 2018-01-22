@@ -24,7 +24,7 @@ public class ScoreFilterTest {
             FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(rg.nextInt(5)), motif);
             FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(),
                     new ScoreFilter(scoreThreshold), pattern);
-            MultiPattern multiPattern = new MultiPattern(getTestPatternAligner(), pattern, filterPattern);
+            MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), pattern, filterPattern);
             MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(getTestPatternAligner(),
                     new ScoreFilter(scoreThreshold * 2), multiPattern);
             AndOperator andOperator = new AndOperator(getTestPatternAligner(), multiPattern, mFilterPattern);

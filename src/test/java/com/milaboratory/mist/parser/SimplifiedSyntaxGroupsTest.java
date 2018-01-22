@@ -52,8 +52,9 @@ public class SimplifiedSyntaxGroupsTest {
                         getRandomSinglePattern(patternAligner, fuzzyMatchPatterns.get(rg.nextInt(3))),
                         repeatPatterns.get(rg.nextInt(3)),
                         getRandomSinglePattern(patternAligner, repeatPatterns.get(rg.nextInt(3)))));
-                multiPatterns.add(new MultiPattern(patternAligner, getRandomSinglePattern(patternAligner,
-                        rg.nextBoolean() ? fuzzyMatchPatterns.get(rg.nextInt(3)) : repeatPatterns.get(rg.nextInt(3))),
+                multiPatterns.add(createMultiPattern(patternAligner, getRandomSinglePattern(patternAligner,
+                        rg.nextBoolean() ? fuzzyMatchPatterns.get(rg.nextInt(3))
+                                : repeatPatterns.get(rg.nextInt(3))),
                         getRandomBasicPattern(patternAligner)));
                 orOperators.add(new OrOperator(patternAligner, multiPatterns.get(j),
                         new AndOperator(patternAligner, multiPatterns.get(j)),

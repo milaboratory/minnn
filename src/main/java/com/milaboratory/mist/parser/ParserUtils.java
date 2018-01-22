@@ -168,13 +168,30 @@ public final class ParserUtils {
             throw new ParserException("Group names must contain only letters and digits; invalid group name: " + groupName);
     }
 
+    /**
+     * Filter group edges for validation by excluding default built-in groups (R1, R2 etc).
+     *
+     * @param groupEdges all group edges
+     * @return filtered group edges
+     */
+    static ArrayList<GroupEdge> filterGroupEdgesForValidation(ArrayList<GroupEdge> groupEdges) {
+        if (savedDefaultGroupNames.size() == 0)
+            return groupEdges;
+        else
+            return groupEdges.stream().filter(ge -> !savedDefaultGroupNames.contains(ge.getGroupName()))
+                    .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    /**
+     * Get filtered group edges from pattern. For FullReadPattern we must use getOperandGroupEdges()
+     * because targetId is not initialized on this stage.
+     *
+     * @param pattern pattern to get group edges
+     * @return filtered group edges
+     */
     private static ArrayList<GroupEdge> getGroupEdgesForValidation(Pattern pattern) {
-        // for FullReadPattern we must use getOperandGroupEdges() because targetId is not initialized on this stage
-        return (pattern instanceof FullReadPattern
-                    ? ((FullReadPattern)pattern).getOperandGroupEdges()
-                    : pattern.getGroupEdges())
-                .stream().filter(ge -> !savedDefaultGroupNames.contains(ge.getGroupName()))
-                .collect(Collectors.toCollection(ArrayList::new));
+        return filterGroupEdgesForValidation(pattern instanceof FullReadPattern
+                    ? ((FullReadPattern)pattern).getOperandGroupEdges() : pattern.getGroupEdges());
     }
 
     /**

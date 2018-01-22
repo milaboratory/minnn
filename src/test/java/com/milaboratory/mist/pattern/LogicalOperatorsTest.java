@@ -27,10 +27,10 @@ public class LogicalOperatorsTest {
         AndPattern pattern3 = new AndPattern(getTestPatternAligner(),
                 new FuzzyMatchPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("at")),
                 new FuzzyMatchPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("gcat")));
-        MultiPattern multiPattern1 = new MultiPattern(getTestPatternAligner(), pattern1, pattern2, pattern3);
-        MultiPattern multiPattern2 = new MultiPattern(getTestPatternAligner(), pattern1, pattern3);
-        MultiPattern multiPattern3 = new MultiPattern(getTestPatternAligner(), pattern3, pattern2);
-        MultiPattern multiPattern4 = new MultiPattern(getTestPatternAligner(), pattern1);
+        MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), pattern1, pattern2, pattern3);
+        MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), pattern1, pattern3);
+        MultiPattern multiPattern3 = createMultiPattern(getTestPatternAligner(), pattern3, pattern2);
+        MultiPattern multiPattern4 = createMultiPattern(getTestPatternAligner(), pattern1);
 
         MultiNSequenceWithQuality mseq1 = new MultiNSequenceWithQualityImpl(
                 new NSequenceWithQuality("ACAATTAGACA"),
@@ -101,7 +101,7 @@ public class LogicalOperatorsTest {
         AndPattern pattern3 = new AndPattern(getTestPatternAligner(),
                 new FuzzyMatchPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("at")),
                 new FuzzyMatchPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("gcat")));
-        MultiPattern multiPattern = new MultiPattern(getTestPatternAligner(), pattern1, pattern2, pattern3);
+        MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), pattern1, pattern2, pattern3);
 
         MultiNSequenceWithQuality mseq = new MultiNSequenceWithQualityImpl(
                 new NSequenceWithQuality("ACAATTAGACA"),
@@ -200,23 +200,12 @@ public class LogicalOperatorsTest {
         FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), testSeq, groups2);
         FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternAligner(), testSeq, groups3);
         FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(getTestPatternAligner(), testSeq, groups4);
-        MultiPattern multiPattern1 = new MultiPattern(getTestPatternAligner(), pattern1, pattern3);
-        MultiPattern multiPattern2 = new MultiPattern(getTestPatternAligner(), pattern2, pattern4);
+        MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), pattern1, pattern3);
+        MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), pattern2, pattern4);
 
-        exception.expect(IllegalStateException.class);
-        new AndOperator(getTestPatternAligner(), multiPattern1, multiPattern2);
-    }
-
-    @Test
-    public void groupsInNotTest() throws Exception {
-        ArrayList<GroupEdgePosition> groups = new ArrayList<GroupEdgePosition>() {{
-            add(new GroupEdgePosition(new GroupEdge("0", true), 0)); }};
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(),
-                new NucleotideSequenceCaseSensitive("a"), groups);
-        MultiPattern multiPattern = new MultiPattern(getTestPatternAligner(), pattern);
-
-        exception.expect(IllegalStateException.class);
-        new NotOperator(getTestPatternAligner(), multiPattern);
+        // group edge validity now checked in parser; AndOperator must remove duplicate group edges
+        assertEquals(15,
+                new AndOperator(getTestPatternAligner(), multiPattern1, multiPattern2).getGroupEdges().size());
     }
 
     @Test
@@ -243,9 +232,9 @@ public class LogicalOperatorsTest {
                 new NucleotideSequenceCaseSensitive("cagatgca"), groups2);
         FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternAligner(),
                 new NucleotideSequenceCaseSensitive("a"));
-        MultiPattern multiPattern1 = new MultiPattern(getTestPatternAligner(), pattern1, pattern3);
-        MultiPattern multiPattern2 = new MultiPattern(getTestPatternAligner(), pattern3, pattern2);
-        MultiPattern multiPattern3 = new MultiPattern(getTestPatternAligner(), pattern3, pattern3);
+        MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), pattern1, pattern3);
+        MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), pattern3, pattern2);
+        MultiPattern multiPattern3 = createMultiPattern(getTestPatternAligner(), pattern3, pattern3);
         NotOperator notOperator = new NotOperator(getTestPatternAligner(), multiPattern3);
         OrOperator orOperator = new OrOperator(getTestPatternAligner(), notOperator, multiPattern1, notOperator);
         AndOperator andOperator = new AndOperator(getTestPatternAligner(), multiPattern2, orOperator);
@@ -330,7 +319,7 @@ public class LogicalOperatorsTest {
         assertEquals(new NSequenceWithQuality("ACAGACATCTAGAA"),
                 plusPattern.match(sequences[4]).getMatches().take().getValue());
 
-        MultiPattern multiPattern = new MultiPattern(getTestPatternAligner(), fuzzyPattern, andPattern, plusPattern);
+        MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), fuzzyPattern, andPattern, plusPattern);
         NotOperator notOperator = new NotOperator(getTestPatternAligner(), multiPattern);
         OrOperator orOperator = new OrOperator(getTestPatternAligner(), multiPattern, notOperator, multiPattern);
         AndOperator andOperator = new AndOperator(getTestPatternAligner(), orOperator, multiPattern, orOperator);
@@ -370,7 +359,7 @@ public class LogicalOperatorsTest {
                 targets[j] = new MultiNSequenceWithQualityImpl(
                         new NSequenceWithQuality(motifs[j * 2].toString()),
                         new NSequenceWithQuality(motifs[j * 2 + 1].toString()));
-                multiPatterns[j] = new MultiPattern(getTestPatternAligner(),
+                multiPatterns[j] = createMultiPattern(getTestPatternAligner(),
                         fuzzyPatterns[j * 2], fuzzyPatterns[j * 2 + 1]);
             }
 

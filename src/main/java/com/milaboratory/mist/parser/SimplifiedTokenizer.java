@@ -222,8 +222,9 @@ final class SimplifiedTokenizer extends Tokenizer {
             ((FullReadPattern)finalPattern).setTargetId((byte)1);
         boolean duplicateGroupsAllowed = (finalPattern instanceof FullReadPattern
                 && ((FullReadPattern)finalPattern).getOperand() instanceof OrPattern)
-                || finalPattern instanceof OrOperator;
-        validateGroupEdges(finalPattern.getGroupEdges(), true, duplicateGroupsAllowed);
+                || finalPattern instanceof OrPattern || finalPattern instanceof OrOperator;
+        validateGroupEdges(filterGroupEdgesForValidation(finalPattern.getGroupEdges()), true,
+                duplicateGroupsAllowed);
     }
 
     private <P extends Pattern> ArrayList<P> getPatternOperands(TokenizedString tokenizedString,

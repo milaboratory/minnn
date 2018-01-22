@@ -6,7 +6,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static com.milaboratory.mist.util.CommonTestUtils.getTestPatternAligner;
+import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
 
 public class TokenizedStringTest {
@@ -43,7 +43,7 @@ public class TokenizedStringTest {
         AndPattern andPattern = new AndPattern(getTestPatternAligner(), fuzzyMatchPattern, fuzzyMatchPattern);
         ScoreFilter scoreFilter = new ScoreFilter(-1);
         FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(), scoreFilter, fuzzyMatchPattern);
-        MultiPattern multiPattern = new MultiPattern(getTestPatternAligner(), andPattern, filterPattern);
+        MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), andPattern, filterPattern);
         TokenizedString ts = new TokenizedString(multiPattern.toString());
         ts.tokenizeSubstring(fuzzyMatchPattern, 5, 10);
         assertEquals(3, ts.getTokens(1, 20).size());

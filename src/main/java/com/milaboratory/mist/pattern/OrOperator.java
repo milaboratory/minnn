@@ -11,7 +11,7 @@ import static com.milaboratory.mist.util.UnfairSorterConfiguration.unfairSorterP
 
 public final class OrOperator extends MultipleReadsOperator {
     public OrOperator(PatternAligner patternAligner, MultipleReadsOperator... operandPatterns) {
-        super(patternAligner, false, operandPatterns);
+        super(patternAligner, operandPatterns);
     }
 
     @Override
