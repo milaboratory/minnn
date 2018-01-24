@@ -16,7 +16,7 @@ public class SortActionTest {
         String outputFile1 = TEMP_DIR + "sortOutput1.mif";
         String outputFile2 = TEMP_DIR + "sortOutput2.mif";
         String outputFile3 = TEMP_DIR + "sortOutput3.mif";
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 100; i++) {
             createRandomMifFile(startFile);
             exec("extract --input-format mif --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:an{3}t)(G2:n{2})\" --bitap-max-errors 0");
