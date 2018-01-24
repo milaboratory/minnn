@@ -48,9 +48,8 @@ public final class ApproximateSorter {
      * @return combined match
      */
     private MatchIntermediate combineMatches(MatchIntermediate... matches) {
-        ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
-
         if (conf.multipleReads) {
+            HashMap<GroupEdge, MatchedGroupEdge> matchedGroupEdges = new HashMap<>();
             ArrayList<MatchedRange> matchedRanges = new ArrayList<>();
             int patternIndex = 0;
             boolean allMatchesAreNull = true;
@@ -73,11 +72,11 @@ public final class ApproximateSorter {
                         matchedRanges.add(new MatchedRange(currentMatchedRange.getTarget(),
                                 currentMatchedRange.getTargetId(), patternIndex, currentMatchedRange.getRange()));
                         for (MatchedGroupEdge matchedGroupEdge : match.getMatchedGroupEdgesByPattern(i)) {
-                            // remove duplicated R1, R2... group edges from results
-                            if (matchedGroupEdges.stream().map(MatchedGroupEdge::getGroupEdge)
-                                    .noneMatch(ge -> ge.equals(matchedGroupEdge.getGroupEdge())))
-                                matchedGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
-                                        matchedGroupEdge.getTargetId(), patternIndex, matchedGroupEdge.getGroupEdge(),
+                            // put only unique R1, R2... group edges to avoid duplicates
+                            GroupEdge groupEdge = matchedGroupEdge.getGroupEdge();
+                            if (!matchedGroupEdges.containsKey(groupEdge))
+                                matchedGroupEdges.put(groupEdge, new MatchedGroupEdge(matchedGroupEdge.getTarget(),
+                                        matchedGroupEdge.getTargetId(), patternIndex, groupEdge,
                                         matchedGroupEdge.getPosition()));
                         }
                         patternIndex++;
@@ -89,7 +88,7 @@ public final class ApproximateSorter {
                 return null;
             else
                 return new MatchIntermediate(patternIndex, combineMatchScores(matches),
-                        -1, -1, matchedGroupEdges,
+                        -1, -1, new ArrayList<>(matchedGroupEdges.values()),
                         matchedRanges.toArray(new MatchedRange[matchedRanges.size()]));
         } else if (conf.matchValidationType == FIRST) {
             boolean matchExist = false;
@@ -112,6 +111,7 @@ public final class ApproximateSorter {
             NSequenceWithQuality target = matches[0].getMatchedRange().getTarget();
             byte targetId = matches[0].getMatchedRange().getTargetId();
             ArrayList<ArrayList<MatchedGroupEdge>> matchedGroupEdgesFromOperands = new ArrayList<>();
+            ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
 
             for (int i = 0; i < matches.length; i++) {
                 matchedGroupEdgesFromOperands.add(new ArrayList<>());
