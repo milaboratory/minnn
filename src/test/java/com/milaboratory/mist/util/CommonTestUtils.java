@@ -434,15 +434,18 @@ public class CommonTestUtils {
 
     public static MultipleReadsOperator[] singleToMultiPatterns(PatternAligner patternAligner,
                                                                 SinglePattern... singlePatterns) {
-        return Arrays.stream(singlePatterns)
-                .map(sp -> new MultiPattern(patternAligner,
-                        new FullReadPattern(patternAligner, true, sp)))
+        return Arrays.stream(singlePatterns).map(sp -> createMultiPattern(patternAligner, sp))
                 .toArray(MultipleReadsOperator[]::new);
     }
 
     public static MultiPattern createMultiPattern(PatternAligner patternAligner, SinglePattern... singlePatterns) {
+        return createMultiPattern(patternAligner, true, singlePatterns);
+    }
+
+    public static MultiPattern createMultiPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
+                                                  SinglePattern... singlePatterns) {
         return new MultiPattern(patternAligner, Arrays.stream(singlePatterns)
-                .map(sp -> new FullReadPattern(patternAligner, true, sp))
+                .map(sp -> new FullReadPattern(patternAligner, defaultGroupsOverride, sp))
                 .toArray(SinglePattern[]::new));
     }
 

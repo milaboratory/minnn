@@ -37,10 +37,10 @@ public class SimplifiedTokenizerTest {
         OrPattern orPattern = new OrPattern(getTestPatternAligner(), plusPattern, andPattern);
         ScoreFilter scoreFilter = new ScoreFilter(-3);
         FilterPattern scoreFilterPatternS = new FilterPattern(getTestPatternAligner(), scoreFilter, plusPattern);
-        MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), orPattern, scoreFilterPatternS,
-                fuzzyMatchPattern1, andPattern);
-        MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), scoreFilterPatternS,
-                fuzzyMatchPattern2, andPattern);
+        MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), true,
+                orPattern, scoreFilterPatternS, fuzzyMatchPattern1, andPattern);
+        MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), false,
+                scoreFilterPatternS, fuzzyMatchPattern2, andPattern);
         AndOperator andOperator1 = new AndOperator(getTestPatternAligner(), multiPattern1, multiPattern2);
         AndOperator andOperator2 = new AndOperator(getTestPatternAligner(), multiPattern2, multiPattern2);
         MultipleReadsFilterPattern scoreFilterPatternM = new MultipleReadsFilterPattern(getTestPatternAligner(),
@@ -69,7 +69,7 @@ public class SimplifiedTokenizerTest {
             assertNotNull(parseResult);
             assertEquals(singlePatterns.get(0).toString(), parseResult.toString());
             ArrayList<MultipleReadsOperator> multiPatterns = new ArrayList<>();
-            multiPatterns.add(createMultiPattern(getRandomPatternAligner(), singlePatterns.get(0)));
+            multiPatterns.add(createMultiPattern(getRandomPatternAligner(), rg.nextBoolean(), singlePatterns.get(0)));
             multiPatterns.add(getRandomMultiReadPattern());
             for (int j = 1; j < nestedMultiLevel; j++) {
                 multiPatterns.add(getRandomMultiReadPattern(multiPatterns.toArray(
@@ -79,7 +79,7 @@ public class SimplifiedTokenizerTest {
             parseResult = parser.parseQuery(multiPatterns.get(0).toString(), SIMPLIFIED);
             assertNotNull(parseResult);
             assertEquals(multiPatterns.get(0).toString(), parseResult.toString());
-            multiPatterns.add(createMultiPattern(getRandomPatternAligner(), getRandomSinglePattern(
+            multiPatterns.add(createMultiPattern(getRandomPatternAligner(), rg.nextBoolean(), getRandomSinglePattern(
                     getRandomBasicPattern(true), getRandomBasicPattern(), singlePatterns.get(0))));
             parseResult = parser.parseQuery(multiPatterns.get(multiPatterns.size() - 1).toString(), SIMPLIFIED);
             assertNotNull(parseResult);

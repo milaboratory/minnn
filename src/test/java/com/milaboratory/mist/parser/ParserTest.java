@@ -219,25 +219,32 @@ public class ParserTest {
         assertGroupRange(testGroups1, "1", new Range(7, 11));
         assertGroupRange(testGroups1, "2", new Range(11, 16));
         assertGroupRange(testGroups1, "3", new Range(11, 15));
-        assertEquals(0, testGroups1.stream().filter(g -> g.getGroupName().equals("4")).count());
+        assertGroupCount(testGroups1, "4", 0);
+        assertGroupCount(testGroups1, "R1", 1);
+        assertGroupRange(testGroups1, "R1", new Range(0, 19));
+        assertGroupCount(testGroups1, "R2", 0);
 
         ArrayList<MatchedGroup> testGroups2 = getGroupsFromSample(
                 "(1:[[^[0:[<AA+T]+G]TG>]]<<ATAT(2:G+G+TG+[(3:T+GA>{1})]C)C)$", "AATTGTGTTATGAGATGATAGCC");
         assertGroupRange(testGroups2, "1", new Range(0, 23));
         assertGroupRange(testGroups2, "2", new Range(11, 22));
         assertGroupRange(testGroups2, "3", new Range(18, 21));
+        assertGroupRange(testGroups2, "R1", new Range(0, 23));
 
         ArrayList<MatchedGroup> testGroups3 = getGroupsFromSample(
                 "(1:(2:(3:(4:(5:(6:(7:(8:(9:(10:A))))))))))", "A");
         for (int i = 1; i <= 10; i++)
             assertGroupRange(testGroups3, Integer.toString(i), new Range(0, 1));
+        assertGroupRange(testGroups3, "R1", new Range(0, 1));
 
         ArrayList<MatchedGroup> testGroups4 = getGroupsFromSample(
                 "^<ATTA ( UMI: GACA ) [ ATT + ( G1: GCC ) + TTA ] || ^<AGC(UMI:GC) ATTGAGCC(G2:TTG)GG$",
                 "TTAGACAATTATTGTTCTTCGCCGCCTTAT");
         assertGroupRange(testGroups4, "UMI", new Range(3, 7));
         assertGroupRange(testGroups4, "G1", new Range(20, 23));
-        assertEquals(0, testGroups4.stream().filter(g -> g.getGroupName().equals("G2")).count());
+        assertGroupCount(testGroups4, "G2", 0);
+        assertGroupCount(testGroups4, "R1", 1);
+        assertGroupRange(testGroups4, "R1", new Range(0, 30));
     }
 
     @Test
@@ -269,18 +276,26 @@ public class ParserTest {
 
     private static void testSample(String query, String target, Range expectedRange) throws Exception {
         Pattern pattern = strictParser.parseQuery(query);
-        MatchIntermediate bestMatch = pattern.match(new NSequenceWithQuality(target)).getBestMatch(true);
+        NSequenceWithQuality parsedTarget = new NSequenceWithQuality(target);
+        MatchIntermediate bestMatch = pattern.match(parsedTarget).getBestMatch(true);
         Range matchedRange = (bestMatch == null) ? null : bestMatch.getRange();
         assertEquals(expectedRange, matchedRange);
+        if (bestMatch != null)
+            assertDefaultGroupsCorrect(bestMatch, parsedTarget);
     }
 
     private static void testMultiSample(String query, String multiTarget, boolean mustMatch) throws Exception {
         Pattern pattern = strictParser.parseQuery(query);
-        MatchingResult results = pattern.match(parseMultiTargetString(multiTarget));
-        assertEquals(mustMatch, results.getBestMatch(true) != null);
+        MultiNSequenceWithQuality parsedTarget = parseMultiTargetString(multiTarget);
+        MatchingResult results = pattern.match(parsedTarget);
+        MatchIntermediate bestMatch = results.getBestMatch(true);
+        assertEquals(mustMatch, bestMatch != null);
+        if ((bestMatch != null) && Arrays.stream(bestMatch.getMatchedRanges())
+                .noneMatch(matchedRange -> matchedRange instanceof NullMatchedRange))
+            assertDefaultGroupsCorrect(bestMatch, parsedTarget);
     }
 
-    private static void testBadSample(String query) throws Exception {
+    private static void testBadSample(String query) {
         assertException(ParserException.class, () -> {
             strictParser.parseQuery(query);
             return null;
@@ -297,5 +312,18 @@ public class ParserTest {
         Range groupRange = groups.stream().filter(g -> g.getGroupName().equals(groupName)).findFirst()
                 .orElseThrow(IllegalArgumentException::new).getRange();
         assertEquals(expectedRange, groupRange);
+    }
+
+    private static void assertGroupCount(List<MatchedGroup> groups, String groupName, int expectedCount) {
+        assertEquals(expectedCount, groups.stream().filter(g -> g.getGroupName().equals(groupName)).count());
+    }
+
+    private static void assertDefaultGroupsCorrect(Match bestMatch, MultiNSequenceWithQuality target) {
+        ArrayList<MatchedGroup> matchedGroups = bestMatch.getGroups();
+        for (int i = 1; i <= target.numberOfSequences(); i++) {
+            String readGroupName = "R" + i;
+            Range expectedRange = new Range(0, target.get(i - 1).size());
+            assertGroupRange(matchedGroups, readGroupName, expectedRange);
+        }
     }
 }
