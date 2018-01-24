@@ -464,6 +464,24 @@ public class CommonTestUtils {
                 .toArray(new NSequenceWithQuality[repeats]));
     }
 
+    public static <T> void assertUnorderedArrayEquals(T[] array1, T[] array2) {
+        assertEquals(array1.length, array2.length);
+        Comparator<T> comparator = Comparator.comparing(Object::hashCode);
+        List<T> list1Sorted = Arrays.stream(array1).sorted(comparator).collect(Collectors.toList());
+        List<T> list2Sorted = Arrays.stream(array2).sorted(comparator).collect(Collectors.toList());
+        for (int i = 0; i < array1.length; i++)
+            assertEquals(list1Sorted.get(i), list2Sorted.get(i));
+    }
+
+    public static <T> void assertUnorderedListEquals(List<T> list1, List<T> list2) {
+        assertEquals(list1.size(), list2.size());
+        Comparator<T> comparator = Comparator.comparing(Object::hashCode);
+        List<T> list1Sorted = list1.stream().sorted(comparator).collect(Collectors.toList());
+        List<T> list2Sorted = list2.stream().sorted(comparator).collect(Collectors.toList());
+        for (int i = 0; i < list1.size(); i++)
+            assertEquals(list1Sorted.get(i), list2Sorted.get(i));
+    }
+
     public static void assertFileEquals(String fileName1, String fileName2) throws Exception {
         assertArrayEquals(Files.readAllBytes(Paths.get(fileName1)), Files.readAllBytes(Paths.get(fileName2)));
     }
