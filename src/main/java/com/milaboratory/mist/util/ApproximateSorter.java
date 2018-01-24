@@ -72,10 +72,14 @@ public final class ApproximateSorter {
                     } else {
                         matchedRanges.add(new MatchedRange(currentMatchedRange.getTarget(),
                                 currentMatchedRange.getTargetId(), patternIndex, currentMatchedRange.getRange()));
-                        for (MatchedGroupEdge matchedGroupEdge : match.getMatchedGroupEdgesByPattern(i))
-                            matchedGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
-                                    matchedGroupEdge.getTargetId(), patternIndex, matchedGroupEdge.getGroupEdge(),
-                                    matchedGroupEdge.getPosition()));
+                        for (MatchedGroupEdge matchedGroupEdge : match.getMatchedGroupEdgesByPattern(i)) {
+                            // remove duplicated R1, R2... group edges from results
+                            if (matchedGroupEdges.stream().map(MatchedGroupEdge::getGroupEdge)
+                                    .noneMatch(ge -> ge.equals(matchedGroupEdge.getGroupEdge())))
+                                matchedGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
+                                        matchedGroupEdge.getTargetId(), patternIndex, matchedGroupEdge.getGroupEdge(),
+                                        matchedGroupEdge.getPosition()));
+                        }
                         patternIndex++;
                     }
                 }
