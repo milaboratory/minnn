@@ -11,6 +11,10 @@ public final class MatchedGroupEdge extends MatchedItem {
     private final GroupEdge groupEdge;
     private final int position;
 
+    public MatchedGroupEdge(NSequenceWithQuality target, byte targetId, GroupEdge groupEdge, int position) {
+        this(target, targetId, 0, groupEdge, position);
+    }
+
     public MatchedGroupEdge(NSequenceWithQuality target, byte targetId, int patternIndex, GroupEdge groupEdge,
                             int position) {
         super(target, targetId, patternIndex);
@@ -49,7 +53,7 @@ public final class MatchedGroupEdge extends MatchedItem {
         NSequenceWithQuality target = input.readObject(NSequenceWithQuality.class);
         byte targetId = input.readByte();
         // patternIndex is not serialized
-        return new MatchedGroupEdge(target, targetId, 0, groupEdge, position);
+        return new MatchedGroupEdge(target, targetId, groupEdge, position);
     }
 
     public static void write(PrimitivO output, MatchedGroupEdge object) {
