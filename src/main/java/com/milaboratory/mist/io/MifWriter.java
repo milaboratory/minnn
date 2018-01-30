@@ -8,6 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 public final class MifWriter implements AutoCloseable {
+    private static final int DEFAULT_BUFFER_SIZE = 1048576;
     private final PrimitivO output;
 
     public MifWriter(OutputStream outputStream, ArrayList<GroupEdge> groupEdges) {
@@ -16,7 +17,7 @@ public final class MifWriter implements AutoCloseable {
     }
 
     public MifWriter(String file, ArrayList<GroupEdge> groupEdges) throws IOException {
-        output = new PrimitivO(new FileOutputStream(file));
+        output = new PrimitivO(new BufferedOutputStream(new FileOutputStream(file), DEFAULT_BUFFER_SIZE));
         initKnownReferences(groupEdges);
     }
 
