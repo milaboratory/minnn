@@ -64,7 +64,7 @@ public class Match {
         return score;
     }
 
-    public ArrayList<MatchedGroup> getGroups() {
+    public void assembleGroups() {
         if (groups == null) {
             groups = new ArrayList<>();
             ArrayList<MatchedGroupEdge> matchedGroupEdges = getMatchedGroupEdges();
@@ -82,7 +82,10 @@ public class Match {
                             matchedGroupEdge.getTargetId(), currentRange));
                 }
         }
+    }
 
+    public ArrayList<MatchedGroup> getGroups() {
+        assembleGroups();
         return new ArrayList<>(groups);
     }
 

@@ -1,7 +1,9 @@
 package com.milaboratory.mist.io;
 
 import cc.redberry.pipe.*;
+import cc.redberry.pipe.blocks.Merger;
 import cc.redberry.pipe.blocks.ParallelProcessor;
+import cc.redberry.pipe.util.Chunk;
 import cc.redberry.pipe.util.OrderedOutputPort;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.io.sequence.fasta.*;
@@ -55,9 +57,11 @@ public final class ReadProcessor {
              MifWriter writer = createWriter(pattern.getGroupEdges())) {
             CanReportProgress progress = (CanReportProgress)reader;
             SmartProgressReporter.startProgressReport("Parsing", progress);
-            Merger<Chunk<SequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader, 4 * 64), 4 * 16);
+            Merger<Chunk<SequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader,
+                    4 * 64), 4 * 16);
             OutputPort<Chunk<ParsedRead>> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
-                    testIOSpeed ? CUtils.chunked(new TestIOSpeedProcessor()) : CUtils.chunked(new ReadParserProcessor(orientedReads)), threads);
+                    testIOSpeed ? CUtils.chunked(new TestIOSpeedProcessor())
+                            : CUtils.chunked(new ReadParserProcessor(orientedReads)), threads);
             OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(CUtils.unchunked(parsedReadsPort),
                     read -> read.getOriginalRead().getId());
             for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
@@ -207,7 +211,7 @@ public final class ReadProcessor {
             }
 
             if (bestMatch != null)
-                bestMatch.getGroups();
+                bestMatch.assembleGroups();
             return new ParsedRead(input, reverseMatch, bestMatch);
         }
     }
