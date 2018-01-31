@@ -18,12 +18,13 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     private final PrimitivI input;
     private final CountingInputStream countingInputStream;
     private final long size;
-    private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
     private boolean finished = false;
+    private int numberOfReads;
+    private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
 
     public MifReader(InputStream stream) {
         input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
-        initKnownReferences();
+        readHeader();
         size = -1;
     }
 
@@ -38,10 +39,11 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
             input = new PrimitivI(ct.createInputStream(this.countingInputStream, DEFAULT_BUFFER_SIZE));
             size = -1;
         }
-        initKnownReferences();
+        readHeader();
     }
 
-    private void initKnownReferences() {
+    private void readHeader() {
+        numberOfReads = input.readInt();
         int groupEdgesNum = input.readInt();
         for (int i = 0; i < groupEdgesNum; i++) {
             GroupEdge groupEdge = input.readObject(GroupEdge.class);
@@ -78,7 +80,15 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
         return parsedRead;
     }
 
+    public int getNumberOfReads() {
+        return numberOfReads;
+    }
+
     public ArrayList<GroupEdge> getGroupEdges() {
         return groupEdges;
+    }
+
+    public MifHeader getHeader() {
+        return new MifHeader(numberOfReads, groupEdges);
     }
 }

@@ -6,7 +6,6 @@ import com.milaboratory.core.io.CompressionType;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.outputconverter.ParsedReadObjectSerializer;
-import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.util.SmartProgressReporter;
 import com.milaboratory.util.Sorter;
 import com.milaboratory.util.TempFileManager;
@@ -39,7 +38,7 @@ public final class SorterIO {
         long totalReads = 0;
         OutputPortCloseable<ParsedRead> sorted;
         try (MifReader reader = createReader();
-             MifWriter writer = createWriter(reader.getGroupEdges())) {
+             MifWriter writer = createWriter(reader.getHeader())) {
             SmartProgressReporter.startProgressReport("Sorting", reader);
             sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
                     new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);
@@ -57,17 +56,12 @@ public final class SorterIO {
     }
 
     private MifReader createReader() throws IOException {
-        if (inputFileName == null)
-            return new MifReader(System.in);
-        else
-            return new MifReader(inputFileName);
+        return (inputFileName == null) ? new MifReader(System.in) : new MifReader(inputFileName);
     }
 
-    private MifWriter createWriter(ArrayList<GroupEdge> groupEdges) throws IOException {
-        if (outputFileName == null)
-            return new MifWriter(System.out, groupEdges);
-        else
-            return new MifWriter(outputFileName, groupEdges);
+    private MifWriter createWriter(MifHeader mifHeader) throws IOException {
+        return (outputFileName == null) ? new MifWriter(System.out, mifHeader)
+                : new MifWriter(outputFileName, mifHeader);
     }
 
     private int estimateChunkSize() {

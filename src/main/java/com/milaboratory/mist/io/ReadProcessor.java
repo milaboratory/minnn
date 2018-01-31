@@ -33,6 +33,7 @@ public final class ReadProcessor {
     private final int threads;
     private final MistDataFormat inputFormat;
     private final boolean testIOSpeed;
+    private int numberOfReads;
 
     public ReadProcessor(List<String> inputFileNames, String outputFileName, Pattern pattern,
             boolean orientedReads, boolean fairSorting, int threads, MistDataFormat inputFormat, boolean testIOSpeed) {
@@ -54,7 +55,7 @@ public final class ReadProcessor {
         long totalReads = 0;
         long matchedReads = 0;
         try (OutputPortCloseable<SequenceRead> reader = (OutputPortCloseable<SequenceRead>)createReader();
-             MifWriter writer = createWriter(pattern.getGroupEdges())) {
+             MifWriter writer = createWriter()) {
             CanReportProgress progress = (CanReportProgress)reader;
             SmartProgressReporter.startProgressReport("Parsing", progress);
             Merger<Chunk<SequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader,
@@ -82,43 +83,58 @@ public final class ReadProcessor {
     }
 
     private OutputPortCloseable<? extends SequenceRead> createReader() throws IOException {
+        OutputPortCloseable<? extends SequenceRead> reader;
         switch (inputFormat) {
             case FASTQ:
                 switch (inputFileNames.size()) {
                     case 0:
-                        return new SingleFastqReader(System.in);
+                        numberOfReads = 1;
+                        reader = new SingleFastqReader(System.in);
+                        break;
                     case 1:
+                        numberOfReads = 1;
                         String[] s = inputFileNames.get(0).split("\\.");
                         if (s[s.length - 1].equals("fasta") || s[s.length - 1].equals("fa")
                                 || ((s.length > 2) && s[s.length - 1].equals("gz")
                                     && (s[s.length - 2].equals("fasta") || s[s.length - 2].equals("fa"))))
-                            return new FastaSequenceReaderWrapper(new FastaReader<>(
+                            reader = new FastaSequenceReaderWrapper(new FastaReader<>(
                                     inputFileNames.get(0), NucleotideSequence.ALPHABET));
                         else
-                            return new SingleFastqReader(inputFileNames.get(0));
+                            reader = new SingleFastqReader(inputFileNames.get(0));
+                        break;
                     case 2:
-                        return new PairedFastqReader(inputFileNames.get(0), inputFileNames.get(1));
+                        numberOfReads = 2;
+                        reader = new PairedFastqReader(inputFileNames.get(0), inputFileNames.get(1));
+                        break;
                     default:
+                        numberOfReads = inputFileNames.size();
                         SingleFastqReader readers[] = new SingleFastqReader[inputFileNames.size()];
                         for (int i = 0; i < inputFileNames.size(); i++)
                             readers[i] = new SingleFastqReader(inputFileNames.get(i));
-                        return new MultiReader(readers);
+                        reader = new MultiReader(readers);
                 }
+                break;
             case MIF:
-                if (inputFileNames.size() == 0)
-                    return new MifSequenceReader(new MifReader(System.in));
-                else
-                    return new MifSequenceReader(new MifReader(inputFileNames.get(0)));
+                MifReader mifReader = (inputFileNames.size() == 0) ? new MifReader(System.in)
+                        : new MifReader(inputFileNames.get(0));
+                numberOfReads = mifReader.getNumberOfReads();
+                reader = new MifSequenceReader(mifReader);
+                break;
             default:
                 throw new IllegalStateException("Unknown input format: " + inputFormat);
         }
+        int readsInPattern = pattern instanceof SinglePattern ? 1
+                : ((MultipleReadsOperator)pattern).getNumberOfPatterns();
+        if (numberOfReads != readsInPattern)
+            throw exitWithError("Mismatched number of patterns (" + readsInPattern + ") and reads ("
+                    + numberOfReads + ")!");
+        return reader;
     }
 
-    private MifWriter createWriter(ArrayList<GroupEdge> groupEdges) throws IOException {
-        if (outputFileName == null)
-            return new MifWriter(System.out, groupEdges);
-        else
-            return new MifWriter(outputFileName, groupEdges);
+    private MifWriter createWriter() throws IOException {
+        MifHeader mifHeader = new MifHeader(numberOfReads, pattern.getGroupEdges());
+        return (outputFileName == null) ? new MifWriter(System.out, mifHeader)
+                : new MifWriter(outputFileName, mifHeader);
     }
 
     private class MifSequenceReader implements OutputPortCloseable<SequenceRead>, CanReportProgress {
@@ -153,7 +169,6 @@ public final class ReadProcessor {
 
     private class ReadParserProcessor implements Processor<SequenceRead, ParsedRead> {
         private final boolean orientedReads;
-        private boolean readsNumberChecked = false;
 
         public ReadParserProcessor(boolean orientedReads) {
             this.orientedReads = orientedReads;
@@ -161,16 +176,6 @@ public final class ReadProcessor {
 
         @Override
         public ParsedRead process(SequenceRead input) {
-            if (!readsNumberChecked) {
-                int readsNumberInPattern = pattern instanceof SinglePattern ? 1
-                        : ((MultipleReadsOperator)pattern).getNumberOfPatterns();
-                int readsNumberInInput = input.numberOfReads();
-                if (readsNumberInPattern != readsNumberInInput)
-                    throw exitWithError("Mismatched number of patterns (" + readsNumberInPattern
-                            + ") and reads (" + readsNumberInInput + ")!");
-                readsNumberChecked = true;
-            }
-
             Match bestMatch = null;
             boolean reverseMatch = false;
             if (orientedReads) {

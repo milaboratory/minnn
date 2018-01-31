@@ -5,25 +5,25 @@ import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.primitivio.PrimitivO;
 
 import java.io.*;
-import java.util.ArrayList;
 
 public final class MifWriter implements AutoCloseable {
     private static final int DEFAULT_BUFFER_SIZE = 1 << 22;
     private final PrimitivO output;
 
-    public MifWriter(OutputStream outputStream, ArrayList<GroupEdge> groupEdges) {
+    public MifWriter(OutputStream outputStream, MifHeader mifHeader) {
         output = new PrimitivO(outputStream);
-        initKnownReferences(groupEdges);
+        writeHeader(mifHeader);
     }
 
-    public MifWriter(String file, ArrayList<GroupEdge> groupEdges) throws IOException {
+    public MifWriter(String file, MifHeader mifHeader) throws IOException {
         output = new PrimitivO(new BufferedOutputStream(new FileOutputStream(file), DEFAULT_BUFFER_SIZE));
-        initKnownReferences(groupEdges);
+        writeHeader(mifHeader);
     }
 
-    private void initKnownReferences(ArrayList<GroupEdge> groupEdges) {
-        output.writeInt(groupEdges.size());
-        for (GroupEdge groupEdge : groupEdges) {
+    private void writeHeader(MifHeader mifHeader) {
+        output.writeInt(mifHeader.getNumberOfReads());
+        output.writeInt(mifHeader.getGroupEdges().size());
+        for (GroupEdge groupEdge : mifHeader.getGroupEdges()) {
             output.writeObject(groupEdge);
             output.putKnownReference(groupEdge);
         }
