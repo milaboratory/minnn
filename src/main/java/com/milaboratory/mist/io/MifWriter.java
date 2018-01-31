@@ -8,7 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 public final class MifWriter implements AutoCloseable {
-    private static final int DEFAULT_BUFFER_SIZE = 1048576;
+    private static final int DEFAULT_BUFFER_SIZE = 1 << 22;
     private final PrimitivO output;
 
     public MifWriter(OutputStream outputStream, ArrayList<GroupEdge> groupEdges) {

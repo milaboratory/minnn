@@ -55,10 +55,10 @@ public final class ReadProcessor {
              MifWriter writer = createWriter(pattern.getGroupEdges())) {
             CanReportProgress progress = (CanReportProgress)reader;
             SmartProgressReporter.startProgressReport("Parsing", progress);
-            OutputPort<SequenceRead> bufferedReaderPort = CUtils.buffered(reader, 2048);
-            OutputPort<ParsedRead> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
-                    testIOSpeed ? new TestIOSpeedProcessor() : new ReadParserProcessor(orientedReads), threads);
-            OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(parsedReadsPort,
+            Merger<Chunk<SequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader, 4 * 64), 4 * 16);
+            OutputPort<Chunk<ParsedRead>> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
+                    testIOSpeed ? CUtils.chunked(new TestIOSpeedProcessor()) : CUtils.chunked(new ReadParserProcessor(orientedReads)), threads);
+            OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(CUtils.unchunked(parsedReadsPort),
                     read -> read.getOriginalRead().getId());
             for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
                 totalReads++;
@@ -89,15 +89,15 @@ public final class ReadProcessor {
                                 || ((s.length > 2) && s[s.length - 1].equals("gz")
                                     && (s[s.length - 2].equals("fasta") || s[s.length - 2].equals("fa"))))
                             return new FastaSequenceReaderWrapper(new FastaReader<>(
-                                    inputFileNames.get(0), NucleotideSequence.ALPHABET), true);
+                                    inputFileNames.get(0), NucleotideSequence.ALPHABET));
                         else
-                            return new SingleFastqReader(inputFileNames.get(0), true);
+                            return new SingleFastqReader(inputFileNames.get(0));
                     case 2:
-                        return new PairedFastqReader(inputFileNames.get(0), inputFileNames.get(1), true);
+                        return new PairedFastqReader(inputFileNames.get(0), inputFileNames.get(1));
                     default:
                         SingleFastqReader readers[] = new SingleFastqReader[inputFileNames.size()];
                         for (int i = 0; i < inputFileNames.size(); i++)
-                            readers[i] = new SingleFastqReader(inputFileNames.get(i), true);
+                            readers[i] = new SingleFastqReader(inputFileNames.get(i));
                         return new MultiReader(readers);
                 }
             case MIF:
@@ -206,6 +206,8 @@ public final class ReadProcessor {
                 }
             }
 
+            if (bestMatch != null)
+                bestMatch.getGroups();
             return new ParsedRead(input, reverseMatch, bestMatch);
         }
     }
