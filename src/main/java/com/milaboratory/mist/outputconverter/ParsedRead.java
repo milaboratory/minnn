@@ -145,9 +145,9 @@ public final class ParsedRead {
                             + " not found in this ParsedRead; available groups: " + matchedGroups.keySet());
                 singleReads.add(new SingleRead() {
                     private final SingleRead thisRead = this;
-                    private String comments = null;
 
-                    private void initComments() {
+                    @Override
+                    public String getDescription() {
                         ArrayList<MatchedGroup> groupsInsideMain = new ArrayList<>();
                         ArrayList<MatchedGroup> groupsNotInsideMain = new ArrayList<>();
                         String oldComments;
@@ -192,15 +192,8 @@ public final class ParsedRead {
                         for (String currentGroupName : groupNamesNotInsideMain)
                             groupsNotInsideMain.add(new MatchedGroup(currentGroupName,
                                     bestMatch.getGroupValue(currentGroupName), (byte)0, null));
-                       comments = generateComments(groupsInsideMain, groupsNotInsideMain, allGroupEdges,
-                               reverseMatch, oldComments);
-                    }
-
-                    @Override
-                    public String getDescription() {
-                        if (comments == null)
-                            initComments();
-                        return comments;
+                        return generateComments(groupsInsideMain, groupsNotInsideMain, allGroupEdges,
+                                reverseMatch, oldComments);
                     }
 
                     @Override
