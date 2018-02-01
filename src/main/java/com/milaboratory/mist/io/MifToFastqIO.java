@@ -8,6 +8,7 @@ import com.milaboratory.core.io.sequence.fastq.MultiFastqWriter;
 import com.milaboratory.core.io.sequence.fastq.PairedFastqWriter;
 import com.milaboratory.core.io.sequence.fastq.SingleFastqWriter;
 import com.milaboratory.mist.outputconverter.ParsedRead;
+import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
@@ -85,9 +86,11 @@ public final class MifToFastqIO {
 
     private class SequenceReadOutputPort implements OutputPortCloseable<SequenceRead> {
         private final MifReader reader;
+        private final ArrayList<GroupEdge> groupEdges;
 
         SequenceReadOutputPort(MifReader reader) {
             this.reader = reader;
+            this.groupEdges = reader.getGroupEdges();
         }
 
         @Override
@@ -96,7 +99,7 @@ public final class MifToFastqIO {
             if (parsedRead == null)
                 return null;
             else
-                return parsedRead.toSequenceRead(copyOldComments, noDefaultGroups, groupNames);
+                return parsedRead.toSequenceRead(copyOldComments, noDefaultGroups, groupEdges, groupNames);
         }
 
         @Override

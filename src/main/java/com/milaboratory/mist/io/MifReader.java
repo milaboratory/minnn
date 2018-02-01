@@ -85,7 +85,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     }
 
     public ArrayList<GroupEdge> getGroupEdges() {
-        return groupEdges;
+        return new ArrayList<>(groupEdges);
     }
 
     public MifHeader getHeader() {

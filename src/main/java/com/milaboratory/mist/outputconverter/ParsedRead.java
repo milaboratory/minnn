@@ -124,7 +124,8 @@ public final class ParsedRead {
         return new ParsedRead(originalRead, reverseMatch, targetMatch);
     }
 
-    public SequenceRead toSequenceRead(boolean copyOldComments, boolean noDefaultGroups, String... groupNames) {
+    public SequenceRead toSequenceRead(boolean copyOldComments, boolean noDefaultGroups,
+                                       ArrayList<GroupEdge> allGroupEdges, String... groupNames) {
         ArrayList<SingleRead> singleReads = new ArrayList<>();
         LinkedHashSet<String> outputGroupNames = noDefaultGroups || defaultGroupsOverride(groupNames)
                 ? new LinkedHashSet<>() : getDefaultGroupNames();
@@ -191,7 +192,8 @@ public final class ParsedRead {
                         for (String currentGroupName : groupNamesNotInsideMain)
                             groupsNotInsideMain.add(new MatchedGroup(currentGroupName,
                                     bestMatch.getGroupValue(currentGroupName), (byte)0, null));
-                       comments = generateComments(groupsInsideMain, groupsNotInsideMain, reverseMatch, oldComments);
+                       comments = generateComments(groupsInsideMain, groupsNotInsideMain, allGroupEdges,
+                               reverseMatch, oldComments);
                     }
 
                     @Override

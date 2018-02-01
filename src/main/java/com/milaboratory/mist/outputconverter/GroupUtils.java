@@ -1,13 +1,13 @@
 package com.milaboratory.mist.outputconverter;
 
+import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.mist.pattern.MatchedGroupEdge;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public final class GroupUtils {
     static String generateComments(List<MatchedGroup> groupsInsideMain, List<MatchedGroup> groupsNotInsideMain,
-                                   boolean reverseMatch, String oldComments) {
+                                   List<GroupEdge> allGroupEdges, boolean reverseMatch, String oldComments) {
         return oldComments;
     }
 
