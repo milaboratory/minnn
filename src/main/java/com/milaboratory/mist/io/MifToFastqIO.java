@@ -61,6 +61,10 @@ public final class MifToFastqIO {
     private SequenceWriter createWriter(int numberOfReads) throws IOException {
         LinkedHashSet<String> outputGroupNames = noDefaultGroups ? new LinkedHashSet<>() : IntStream.rangeClosed(1,
                 numberOfReads).mapToObj(n -> "R" + n).collect(Collectors.toCollection(LinkedHashSet::new));
+        List<String> overrideGroupsList = noDefaultGroups ? new ArrayList<>() : Arrays.stream(groupNames)
+                .filter(outputGroupNames::contains).collect(Collectors.toList());
+        if (overrideGroupsList.size() > 0)
+            System.out.println("Warning! Overriding default group names: " + overrideGroupsList);
         outputGroupNames.addAll(Arrays.asList(groupNames));
         int outputFilesNum = (outputFileNames.size() == 0) ? 1 : outputFileNames.size();
         if (outputGroupNames.size() != outputFilesNum)
