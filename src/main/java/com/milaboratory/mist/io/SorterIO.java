@@ -36,11 +36,10 @@ public final class SorterIO {
     public void go() {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
-        OutputPortCloseable<ParsedRead> sorted;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
             SmartProgressReporter.startProgressReport("Sorting", reader);
-            sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
+            OutputPortCloseable<ParsedRead> sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
                     new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);
             for (ParsedRead parsedRead : CUtils.it(sorted)) {
                 totalReads++;

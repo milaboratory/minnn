@@ -15,7 +15,8 @@ public final class Main {
                 new ExtractAction(),
                 new FilterAction(),
                 new ReportAction(),
-                new SortAction());
+                new SortAction(),
+                new MifToFastqAction());
 
         jCommanderBasedMain.setVersionInfoCallback(() -> {
             VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");
