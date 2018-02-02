@@ -1,8 +1,7 @@
 package com.milaboratory.mist.outputconverter;
 
 import com.milaboratory.core.Range;
-import com.milaboratory.core.io.sequence.SequenceRead;
-import com.milaboratory.core.io.sequence.SingleRead;
+import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.mist.io.IO;
 import com.milaboratory.mist.pattern.*;
@@ -143,149 +142,81 @@ public final class ParsedRead {
                 if (!matchedGroups.containsKey(outputGroupName))
                     throw new IllegalArgumentException("Group " + outputGroupName
                             + " not found in this ParsedRead; available groups: " + matchedGroups.keySet());
-                singleReads.add(new SingleRead() {
-                    private final SingleRead thisRead = this;
-
-                    @Override
-                    public String getDescription() {
-                        ArrayList<MatchedGroup> groupsInsideMain = new ArrayList<>();
-                        ArrayList<MatchedGroup> groupsNotInsideMain = new ArrayList<>();
-                        String oldComments;
-                        if (copyOldComments) {
-                            LinkedHashSet<String> defaultGroupNames = getDefaultGroupNames();
-                            String readNumberStr;
-                            if (defaultGroupNames.contains(outputGroupName))
-                                readNumberStr = outputGroupName.substring(1);
-                            else
-                                readNumberStr = defaultGroupNames.stream()
-                                        .filter(defaultGroupName -> innerGroupEdgesCache.containsKey(defaultGroupName))
-                                        .filter(defaultGroupName -> innerGroupEdgesCache.get(defaultGroupName).stream()
-                                                .anyMatch(groupEdgePosition -> groupEdgePosition.getGroupEdge()
-                                                        .getGroupName().equals(outputGroupName)))
-                                        .findFirst().orElse("R0").substring(1);
-                            if (readNumberStr.equals("0"))
-                                oldComments = "";
-                            else
-                                oldComments = originalRead.getRead(Integer.parseInt(readNumberStr) - 1)
-                                        .getDescription();
-                        } else
-                            oldComments = "";
-
-                        ArrayList<GroupEdgePosition> groupEdgePositionsInsideMain = innerGroupEdgesCache
-                                .get(outputGroupName);
-                        for (GroupEdgePosition groupEdgePosition : groupEdgePositionsInsideMain) {
-                            String currentGroupName = groupEdgePosition.getGroupEdge().getGroupName();
-                            if (groupEdgePosition.getGroupEdge().isStart()) {
-                                GroupEdgePosition endPosition = groupEdgePositionsInsideMain.stream()
-                                        .filter(gep -> currentGroupName.equals(gep.getGroupEdge().getGroupName())
-                                                && !gep.getGroupEdge().isStart())
-                                        .findFirst().orElseThrow(IllegalStateException::new);
-                                groupsInsideMain.add(new MatchedGroup(currentGroupName,
-                                        bestMatch.getGroupValue(currentGroupName), (byte)0,
-                                        new Range(0, endPosition.getPosition())));
-                            }
-                        }
-                        List<String> groupNamesNotInsideMain = getGroups().stream().map(MatchedGroup::getGroupName)
-                                .filter(groupName -> groupEdgePositionsInsideMain.stream()
-                                        .noneMatch(gep -> gep.getGroupEdge().getGroupName().equals(groupName)))
-                                .collect(Collectors.toList());
-                        for (String currentGroupName : groupNamesNotInsideMain)
-                            groupsNotInsideMain.add(new MatchedGroup(currentGroupName,
-                                    bestMatch.getGroupValue(currentGroupName), (byte)0, null));
-                        return generateComments(groupsInsideMain, groupsNotInsideMain, allGroupEdges,
-                                reverseMatch, oldComments);
-                    }
-
-                    @Override
-                    public NSequenceWithQuality getData() {
-                        return bestMatch.getGroupValue(outputGroupName);
-                    }
-
-                    @Override
-                    public int numberOfReads() {
-                        return 1;
-                    }
-
-                    @Override
-                    public SingleRead getRead(int i) {
-                        if (i == 0)
-                            return thisRead;
-                        else
-                            throw new IndexOutOfBoundsException();
-                    }
-
-                    @Override
-                    public long getId() {
-                        return originalRead.getId();
-                    }
-
-                    @Override
-                    public Iterator<SingleRead> iterator() {
-                        return new Iterator<SingleRead>() {
-                            private boolean hasNext = true;
-
-                            @Override
-                            public boolean hasNext() {
-                                return hasNext;
-                            }
-
-                            @Override
-                            public SingleRead next() {
-                                if (hasNext) {
-                                    hasNext = false;
-                                    return thisRead;
-                                }
-                                return null;
-                            }
-                        };
-                    }
-                });
+                singleReads.add(new SingleReadImpl(originalRead.getId(), bestMatch.getGroupValue(outputGroupName),
+                        generateReadDescription(copyOldComments, allGroupEdges, outputGroupName)));
             }
         }
 
-        return new SequenceRead() {
-            @Override
-            public int numberOfReads() {
-                return singleReads.size();
-            }
-
-            @Override
-            public SingleRead getRead(int i) {
-                return singleReads.get(i);
-            }
-
-            @Override
-            public long getId() {
-                return originalRead.getId();
-            }
-
-            @Override
-            public Iterator<SingleRead> iterator() {
-                return new Iterator<SingleRead>() {
-                    private final ArrayList<SingleRead> reads = new ArrayList<>(singleReads);
-                    private int index = 0;
-
-                    @Override
-                    public boolean hasNext() {
-                        return index < reads.size();
-                    }
-
-                    @Override
-                    public SingleRead next() {
-                        if (hasNext())
-                            return reads.get(index++);
-                        return null;
-                    }
-                };
-            }
-        };
+        switch (singleReads.size()) {
+            case 1:
+                return singleReads.get(0);
+            case 2:
+                return new PairedRead(singleReads.get(0), singleReads.get(1));
+            default:
+                return new MultiRead(singleReads.toArray(new SingleRead[singleReads.size()]));
+        }
     }
 
     public static ParsedRead fromSequenceRead(SequenceRead sequenceRead) {
-        ArrayList<String> comments = new ArrayList<>();
-        sequenceRead.iterator().forEachRemaining(singleRead -> comments.add(singleRead.getDescription()));
-        Match targetMatch = new Match(sequenceRead.numberOfReads(), 0, parseGroupEdgesFromComments(comments));
-        return new ParsedRead(sequenceRead, parseReverseMatchFlag(comments.get(0)), targetMatch);
+        ArrayList<String> mistComments = new ArrayList<>();
+        sequenceRead.iterator()
+                .forEachRemaining(singleRead -> mistComments.add(extractMistComments(singleRead.getDescription())));
+        Match targetMatch = new Match(sequenceRead.numberOfReads(), 0, parseGroupEdgesFromComments(mistComments));
+        return new ParsedRead(sequenceRead, parseReverseMatchFlag(mistComments.get(0)), targetMatch);
+    }
+
+    private String generateReadDescription(boolean copyOldComments, ArrayList<GroupEdge> allGroupEdges,
+                                           String outputGroupName) {
+        String oldComments;
+        if (copyOldComments) {
+            LinkedHashSet<String> defaultGroupNames = getDefaultGroupNames();
+            String readNumberStr;
+            if (defaultGroupNames.contains(outputGroupName))
+                readNumberStr = outputGroupName.substring(1);
+            else
+                readNumberStr = defaultGroupNames.stream()
+                        .filter(defaultGroupName -> innerGroupEdgesCache.containsKey(defaultGroupName))
+                        .filter(defaultGroupName -> innerGroupEdgesCache.get(defaultGroupName).stream()
+                                .anyMatch(groupEdgePosition -> groupEdgePosition.getGroupEdge()
+                                        .getGroupName().equals(outputGroupName)))
+                        .findFirst().orElse("R0").substring(1);
+            if (readNumberStr.equals("0"))
+                oldComments = "";
+            else
+                oldComments = originalRead.getRead(Integer.parseInt(readNumberStr) - 1).getDescription();
+        } else
+            oldComments = "";
+
+        Set<String> matchedGroupNames = getGroups().stream().map(MatchedGroup::getGroupName)
+                .collect(Collectors.toSet());
+        HashSet<String> groupNamesInsideMain = new HashSet<>();
+        ArrayList<MatchedGroup> groupsInsideMain = new ArrayList<>();
+        ArrayList<GroupEdgePosition> groupEdgePositionsInsideMain = innerGroupEdgesCache.get(outputGroupName);
+        for (GroupEdgePosition groupEdgePosition : groupEdgePositionsInsideMain) {
+            String currentGroupName = groupEdgePosition.getGroupEdge().getGroupName();
+            groupNamesInsideMain.add(currentGroupName);
+            if (groupEdgePosition.getGroupEdge().isStart()) {
+                GroupEdgePosition endPosition = groupEdgePositionsInsideMain.stream()
+                        .filter(gep -> currentGroupName.equals(gep.getGroupEdge().getGroupName())
+                                && !gep.getGroupEdge().isStart())
+                        .findFirst().orElseThrow(IllegalStateException::new);
+                groupsInsideMain.add(new MatchedGroup(currentGroupName,
+                        bestMatch.getGroupValue(currentGroupName), (byte)0, new Range(0, endPosition.getPosition())));
+            }
+        }
+
+        HashSet<String> groupNamesNotInsideMain = new HashSet<>(matchedGroupNames);
+        groupNamesNotInsideMain.removeAll(groupNamesInsideMain);
+        ArrayList<MatchedGroup> groupsNotInsideMain = new ArrayList<>();
+        for (String currentGroupName : groupNamesNotInsideMain)
+            groupsNotInsideMain.add(new MatchedGroup(currentGroupName,
+                    bestMatch.getGroupValue(currentGroupName), (byte)0, null));
+
+        List<String> notMatchedGroupNames = allGroupEdges.stream().filter(GroupEdge::isStart)
+                .map(GroupEdge::getGroupName).filter(gn -> !matchedGroupNames.contains(gn))
+                .collect(Collectors.toList());
+
+        return generateComments(groupsInsideMain, groupsNotInsideMain, notMatchedGroupNames, reverseMatch, oldComments);
     }
 
     public static ParsedRead read(PrimitivI input) {
