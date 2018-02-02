@@ -16,19 +16,17 @@ public final class GroupUtils {
             nextSeparator = "";
         }
         if (groupsInsideMain.size() > 0) {
-            if (comments.length() > 0) {
+            if (comments.length() > 0)
                 comments.append(nextSeparator);
-                nextSeparator = "|";
-            }
+            nextSeparator = "|";
             groupsInsideMain.stream().map(MatchedGroupDescription::new)
                     .forEach(groupDescription -> comments.append(groupDescription.getDescription(true)));
             comments.setLength(comments.length() - 1);  // trim last separator
         }
         if (groupsNotInsideMain.size() > 0) {
-            if (comments.length() > 0) {
+            if (comments.length() > 0)
                 comments.append(nextSeparator);
-                nextSeparator = "|";
-            }
+            nextSeparator = "|";
             groupsNotInsideMain.stream().map(MatchedGroupDescription::new)
                     .forEach(groupDescription -> comments.append(groupDescription.getDescription(false)));
             comments.setLength(comments.length() - 1);
