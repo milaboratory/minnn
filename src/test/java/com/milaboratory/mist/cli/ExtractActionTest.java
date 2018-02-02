@@ -9,7 +9,7 @@ import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
 import static com.milaboratory.mist.util.TestSettings.*;
-import static com.milaboratory.mist.Main.main;
+import static com.milaboratory.mist.cli.Main.main;
 import static org.junit.Assert.*;
 
 public class ExtractActionTest {

@@ -2,7 +2,7 @@ package com.milaboratory.mist.cli;
 
 import com.milaboratory.mist.pattern.SinglePattern;
 
-import static com.milaboratory.mist.Main.main;
+import static com.milaboratory.mist.cli.Main.main;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.TestSettings.*;
 

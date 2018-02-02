@@ -1,4 +1,4 @@
-package com.milaboratory.mist;
+package com.milaboratory.mist.cli;
 
 import com.milaboratory.cli.JCommanderBasedMain;
 import com.milaboratory.mist.cli.*;
