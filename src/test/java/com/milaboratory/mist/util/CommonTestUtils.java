@@ -34,12 +34,6 @@ public class CommonTestUtils {
         return streamPort(port).count();
     }
 
-    public static void printPortValues(OutputPort<MatchIntermediate> port) {
-        long i = 0;
-        for (MatchIntermediate match : CUtils.it(port))
-            System.out.println(i++ + ": " + match.getRange() + " " + match.getScore() + " " + match.getValue());
-    }
-
     public static long countMatches(MatchingResult matchingResult, boolean fair) {
         return countPortValues(matchingResult.getMatches(fair));
     }
