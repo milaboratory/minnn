@@ -8,8 +8,8 @@ import com.milaboratory.primitivio.PrimitivI;
 import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.annotations.Serializable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Serializable(by = IO.MatchSerializer.class)
 public class Match {
@@ -18,6 +18,7 @@ public class Match {
     protected final ArrayList<MatchedGroupEdge> matchedGroupEdges;
     private ArrayList<MatchedGroup> groups = null;
     private HashMap<String, NSequenceWithQuality> groupValues = null;
+    private HashMap<MatchedGroupEdgeIndex, MatchedGroupEdge> matchedGroupEdgesCache = null;
 
     /**
      * Serializable final match for single- or multi-pattern.
@@ -40,11 +41,21 @@ public class Match {
      * @return MatchedRange for specified pattern
      */
     public MatchedGroupEdge getMatchedGroupEdge(String groupName, boolean isStart) {
-        for (MatchedGroupEdge matchedGroupEdge : matchedGroupEdges)
-            if (matchedGroupEdge.getGroupName().equals(groupName) && (matchedGroupEdge.isStart() == isStart))
-                return matchedGroupEdge;
-        throw new IllegalStateException("Trying to get group " + (isStart ? "start" : "end") + " with name "
-                + groupName + " and it doesn't exist");
+        if (matchedGroupEdgesCache == null)
+            matchedGroupEdgesCache = new HashMap<>();
+        MatchedGroupEdgeIndex index = new MatchedGroupEdgeIndex(groupName, isStart);
+        MatchedGroupEdge cachedMatchedGroupEdge = matchedGroupEdgesCache.get(index);
+        if (cachedMatchedGroupEdge != null)
+            return cachedMatchedGroupEdge;
+        else {
+            for (MatchedGroupEdge matchedGroupEdge : matchedGroupEdges)
+                if (matchedGroupEdge.getGroupName().equals(groupName) && (matchedGroupEdge.isStart() == isStart)) {
+                    matchedGroupEdgesCache.put(index, matchedGroupEdge);
+                    return matchedGroupEdge;
+                }
+            throw new IllegalStateException("Trying to get group " + (isStart ? "start" : "end") + " with name "
+                    + groupName + " and it doesn't exist");
+        }
     }
 
     /**
@@ -68,19 +79,28 @@ public class Match {
         if (groups == null) {
             groups = new ArrayList<>();
             ArrayList<MatchedGroupEdge> matchedGroupEdges = getMatchedGroupEdges();
-            MatchedGroupEdge endOfCurrentGroup;
-            Range currentRange;
-
-            for (MatchedGroupEdge matchedGroupEdge : matchedGroupEdges)
-                if (matchedGroupEdge.isStart()) {
-                    endOfCurrentGroup = getMatchedGroupEdge(matchedGroupEdge.getGroupName(), false);
-                    if (matchedGroupEdge.getPosition() >= endOfCurrentGroup.getPosition())
-                        throw new IllegalStateException("Group start must be lower than the end. Start: "
-                                + matchedGroupEdge.getPosition() + ", end: " + endOfCurrentGroup.getPosition());
-                    currentRange = new Range(matchedGroupEdge.getPosition(), endOfCurrentGroup.getPosition());
-                    groups.add(new MatchedGroup(matchedGroupEdge.getGroupName(), matchedGroupEdge.getTarget(),
-                            matchedGroupEdge.getTargetId(), currentRange));
-                }
+            /* in matches made with ParsedRead.retarget() we can have duplicate groups; in this case use first instance
+               of each group */
+            LinkedHashSet<String> groupNames = matchedGroupEdges.stream()
+                    .map(MatchedGroupEdge::getGroupName).collect(Collectors.toCollection(LinkedHashSet::new));
+            MatchedGroupEdge start;
+            MatchedGroupEdge end;
+            Range range;
+            for (String groupName : groupNames) {
+                start = getMatchedGroupEdge(groupName, true);
+                end = getMatchedGroupEdge(groupName, false);
+                if (start.getPosition() >= end.getPosition())
+                    throw new IllegalStateException("Group start must be lower than the end. Start: "
+                            + start.getPosition() + ", end: " + end.getPosition());
+                if (start.getTargetId() != end.getTargetId())
+                    throw new IllegalStateException("Group start has targetId " + start.getTargetId()
+                            + ", end has targetId " + end.getTargetId());
+                if (!start.getTarget().equals(end.getTarget()))
+                    throw new IllegalStateException("Group start has target " + start.getTarget()
+                            + ", end has target " + end.getTarget());
+                range = new Range(start.getPosition(), end.getPosition());
+                groups.add(new MatchedGroup(groupName, start.getTarget(), start.getTargetId(), range));
+            }
         }
     }
 
@@ -118,5 +138,32 @@ public class Match {
         output.writeVarIntZigZag(object.getMatchedGroupEdges().size());
         for (MatchedGroupEdge matchedGroupEdge : object.getMatchedGroupEdges())
             output.writeObject(matchedGroupEdge);
+    }
+
+    private class MatchedGroupEdgeIndex {
+        private final String groupName;
+        private final boolean isStart;
+
+        MatchedGroupEdgeIndex(String groupName, boolean isStart) {
+            this.groupName = groupName;
+            this.isStart = isStart;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MatchedGroupEdgeIndex that = (MatchedGroupEdgeIndex)o;
+
+            return isStart == that.isStart && groupName.equals(that.groupName);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = groupName.hashCode();
+            result = 31 * result + (isStart ? 1 : 0);
+            return result;
+        }
     }
 }
