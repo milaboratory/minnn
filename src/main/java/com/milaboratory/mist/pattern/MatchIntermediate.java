@@ -3,13 +3,13 @@ package com.milaboratory.mist.pattern;
 import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 
-import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public final class MatchIntermediate extends Match {
     private final int leftUppercaseDistance;
     private final int rightUppercaseDistance;
     private final MatchedRange[] matchedRanges;
+    private HashMap<Integer, ArrayList<MatchedGroupEdge>> edgesByPatternCache = null;
 
     /**
      * Single match for single- or multi-pattern. This match holds some intermediate variables that used in patterns.
@@ -87,7 +87,16 @@ public final class MatchIntermediate extends Match {
      * @return ArrayList of matched group edges with specified pattern index
      */
     public ArrayList<MatchedGroupEdge> getMatchedGroupEdgesByPattern(int patternIndex) {
-        return matchedGroupEdges.stream().filter(mge -> mge.getPatternIndex() == patternIndex)
-                .collect(Collectors.toCollection(ArrayList::new));
+        if (edgesByPatternCache == null) {
+            edgesByPatternCache = new HashMap<>();
+            for (MatchedGroupEdge matchedGroupEdge : matchedGroupEdges) {
+                int currentPatternIndex = matchedGroupEdge.getPatternIndex();
+                edgesByPatternCache.computeIfAbsent(currentPatternIndex, k -> new ArrayList<>());
+                edgesByPatternCache.get(currentPatternIndex).add(matchedGroupEdge);
+            }
+        }
+
+        edgesByPatternCache.computeIfAbsent(patternIndex, k -> new ArrayList<>());
+        return edgesByPatternCache.get(patternIndex);
     }
 }

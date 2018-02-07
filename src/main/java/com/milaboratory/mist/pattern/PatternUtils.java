@@ -7,7 +7,6 @@ import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public final class PatternUtils {
     public static int invertCoordinate(int x) {
@@ -43,12 +42,22 @@ public final class PatternUtils {
      */
     static List<GroupEdgePosition> fixGroupEdgePositions(List<GroupEdgePosition> groupEdgePositions,
                                                          int move, int maxPosition) {
-        return groupEdgePositions.stream()
-                .map(gp -> (move == 0) ? gp : new GroupEdgePosition(gp.getGroupEdge(),
-                        (gp.getPosition() + move >= 0) ? gp.getPosition() + move : 0))
-                .map(gp -> (gp.getPosition() <= maxPosition) ? gp
-                        : new GroupEdgePosition(gp.getGroupEdge(), maxPosition))
-                .collect(Collectors.toList());
+        ArrayList<GroupEdgePosition> fixedPositions = new ArrayList<>();
+        for (GroupEdgePosition groupEdgePosition : groupEdgePositions) {
+            int currentPosition = groupEdgePosition.getPosition();
+            if ((move == 0) && (currentPosition <= maxPosition))
+                fixedPositions.add(groupEdgePosition);
+            else {
+                currentPosition += move;
+                if (currentPosition < 0)
+                    currentPosition = 0;
+                if (currentPosition > maxPosition)
+                    currentPosition = maxPosition;
+                fixedPositions.add(new GroupEdgePosition(groupEdgePosition.getGroupEdge(), currentPosition));
+            }
+        }
+
+        return fixedPositions;
     }
 
     /**

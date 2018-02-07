@@ -15,7 +15,7 @@ import static com.milaboratory.mist.util.UnfairSorterConfiguration.*;
 public final class ApproximateSorter {
     private final ApproximateSorterConfiguration conf;
     private final OutputPort<MatchIntermediate> matchesOutputPort;
-    private final ArrayList<SpecificOutputPort> unfairOutputPorts = new ArrayList<>();
+    private final HashMap<SpecificOutputPortIndex, SpecificOutputPort> unfairOutputPorts = new HashMap<>();
     private final HashSet<IncompatibleIndexes> allIncompatibleIndexes = new HashSet<>();
     private final HashSet<Integer> unfairReturnedCombinationsHashes = new HashSet<>();
 
@@ -467,8 +467,8 @@ public final class ApproximateSorter {
      * @return new SpecificOutputPort with specified parameters
      */
     private SpecificOutputPort getPortWithParams(int operandIndex, int from, int to, int estimatedMaxOverlap) {
-        SpecificOutputPort currentPort = unfairOutputPorts.stream().filter(p -> p.paramsEqualTo(operandIndex,
-                from, to)).findFirst().orElse(null);
+        SpecificOutputPortIndex currentPortIndex = new SpecificOutputPortIndex(operandIndex, from, to);
+        SpecificOutputPort currentPort = unfairOutputPorts.get(currentPortIndex);
         if (currentPort == null) {
             Pattern currentPattern = conf.operandPatterns[operandIndex];
             int matchFrom = -1;
@@ -513,7 +513,7 @@ public final class ApproximateSorter {
                     : ((SinglePattern)currentPattern)
                         .match(conf.target.get(0), matchFrom, matchTo).getMatches(false),
                     operandIndex, from, to, portLimit);
-            unfairOutputPorts.add(currentPort);
+            unfairOutputPorts.put(currentPortIndex, currentPort);
         }
         return currentPort;
     }
@@ -598,6 +598,36 @@ public final class ApproximateSorter {
             hashCode = hashCode * 37 + this.index2;
 
             return hashCode;
+        }
+    }
+
+    private static class SpecificOutputPortIndex {
+        private final int operandIndex;
+        private final int from;
+        private final int to;
+
+        SpecificOutputPortIndex(int operandIndex, int from, int to) {
+            this.operandIndex = operandIndex;
+            this.from = from;
+            this.to = to;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SpecificOutputPortIndex that = (SpecificOutputPortIndex)o;
+
+            return operandIndex == that.operandIndex && from == that.from && to == that.to;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = operandIndex;
+            result = 31 * result + from;
+            result = 31 * result + to;
+            return result;
         }
     }
 
