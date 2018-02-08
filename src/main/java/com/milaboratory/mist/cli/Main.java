@@ -15,7 +15,9 @@ public final class Main {
                 new FilterAction(),
                 new ReportAction(),
                 new SortAction(),
-                new MifToFastqAction());
+                new MifToFastqAction(),
+                new StatGroupsAction(),
+                new StatPositionsAction());
 
         jCommanderBasedMain.setVersionInfoCallback(() -> {
             VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");

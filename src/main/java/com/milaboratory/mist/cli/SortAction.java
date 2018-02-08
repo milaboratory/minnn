@@ -10,7 +10,7 @@ import com.milaboratory.mist.io.SorterIO;
 
 import java.util.List;
 
-public class SortAction implements Action {
+public final class SortAction implements Action {
     private final SortActionParameters params = new SortActionParameters();
 
     @Override

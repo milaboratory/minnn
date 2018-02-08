@@ -19,7 +19,7 @@ import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.parser.ParserUtils.parseMultiTargetString;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 
-public class ReportAction implements Action {
+public final class ReportAction implements Action {
     private final ParseActionParameters params = new ParseActionParameters();
 
     @Override
