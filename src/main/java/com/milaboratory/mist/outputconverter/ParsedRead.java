@@ -72,11 +72,11 @@ public final class ParsedRead {
      */
     private void fillGroupEdgesCache() {
         innerGroupEdgesCache = new HashMap<>();
-        for (String groupName : matchedGroups.keySet()) {
-            MatchedGroup outerGroup = matchedGroups.get(groupName);
+        for (Map.Entry<String, MatchedGroup> outerGroupEntry : matchedGroups.entrySet()) {
+            byte currentTargetId = outerGroupEntry.getValue().getTargetId();
             List<MatchedGroup> sameTargetGroups = getGroups().stream()
-                    .filter(mg -> mg.getTargetId() == outerGroup.getTargetId()).collect(Collectors.toList());
-            Range outerRange = outerGroup.getRange();
+                    .filter(mg -> mg.getTargetId() == currentTargetId).collect(Collectors.toList());
+            Range outerRange = outerGroupEntry.getValue().getRange();
             ArrayList<GroupEdgePosition> groupEdgePositions = new ArrayList<>();
             for (MatchedGroup innerGroup : sameTargetGroups) {
                 Range innerRange = innerGroup.getRange();
@@ -87,7 +87,7 @@ public final class ParsedRead {
                             innerRange.getUpper() - outerRange.getLower()));
                 }
             }
-            innerGroupEdgesCache.put(groupName, groupEdgePositions);
+            innerGroupEdgesCache.put(outerGroupEntry.getKey(), groupEdgePositions);
         }
     }
 
