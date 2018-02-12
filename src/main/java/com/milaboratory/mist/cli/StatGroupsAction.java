@@ -15,9 +15,9 @@ public final class StatGroupsAction implements Action {
 
     @Override
     public void go(ActionHelper helper) {
-        StatGroupsIO statGroupsIO = new StatGroupsIO(params.groupList, params.inputFileName, params.numberOfReads,
-                params.readQualityFilter, params.minQualityFilter, params.avgQualityFilter, params.minCountFilter,
-                params.minFracFilter);
+        StatGroupsIO statGroupsIO = new StatGroupsIO(params.groupList, params.inputFileName, params.outputFileName,
+                params.numberOfReads, params.readQualityFilter, params.minQualityFilter, params.avgQualityFilter,
+                params.minCountFilter, params.minFracFilter);
         statGroupsIO.go();
     }
 
@@ -46,9 +46,13 @@ public final class StatGroupsAction implements Action {
                 names = {"--input"}, order = 1)
         String inputFileName = null;
 
+        @Parameter(description = "Output text file. If not specified, stdout will be used.",
+                names = {"--output"}, order = 2)
+        String outputFileName = null;
+
         @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
                 names = {"-n", "--number-of-reads"})
-        int numberOfReads = 0;
+        long numberOfReads = 0;
 
         @Parameter(description = "Filter group values with a min (non-aggregated) quality below a given threshold, " +
                 "applied on by-read basis, should be applied prior to any aggregation. 0 value means no threshold.",

@@ -18,6 +18,8 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     private final PrimitivI input;
     private final CountingInputStream countingInputStream;
     private final long size;
+    private long parsedReadsLimit = -1;
+    private long parsedReadsTaken = 0;
     private boolean finished = false;
     private int numberOfReads;
     private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
@@ -60,9 +62,18 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
 
     @Override
     public double getProgress() {
-        if (size == -1)
-            return NaN;
-        return (1.0 * countingInputStream.getBytesRead()) / size;
+        if (parsedReadsLimit == -1) {
+            if (size == -1)
+                return NaN;
+            else
+                return (double)(countingInputStream.getBytesRead()) / size;
+        } else {
+            double estimationByTakenReads = (double)parsedReadsTaken / parsedReadsLimit;
+            if (size == -1)
+                return estimationByTakenReads;
+            else
+                return Math.max(estimationByTakenReads, (double)(countingInputStream.getBytesRead()) / size);
+        }
     }
 
     @Override
@@ -77,6 +88,12 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
         ParsedRead parsedRead = input.readObject(ParsedRead.class);
         if (parsedRead == null)
             finished = true;
+        else {
+            parsedReadsTaken++;
+            if ((parsedReadsLimit != -1) && (parsedReadsTaken > parsedReadsLimit))
+                throw new IllegalStateException("Specified parsed reads limit (" + parsedReadsLimit + ") was "
+                        + "exceeded in MifReader!");
+        }
         return parsedRead;
     }
 
@@ -90,5 +107,14 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
 
     public MifHeader getHeader() {
         return new MifHeader(numberOfReads, groupEdges);
+    }
+
+    /**
+     * If number of parsed reads is limited by command line parameter, we can use it for better progress reporting.
+     *
+     * @param limit maximum number of parsed reads that we can take from input file
+     */
+    public void setParsedReadsLimit(long limit) {
+        parsedReadsLimit = limit;
     }
 }
