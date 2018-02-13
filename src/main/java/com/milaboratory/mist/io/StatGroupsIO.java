@@ -72,21 +72,18 @@ public final class StatGroupsIO {
             throw exitWithError(e.getMessage());
         }
 
-        HashSet<StatGroupsKey> ignoredKeys = new HashSet<>();
+        ArrayList<StatGroupsTableLine> table = new ArrayList<>();
         for (HashMap.Entry<StatGroupsKey, StatGroupsValue> statGroup : statGroups.entrySet()) {
             final float PRECISION = 0.00001f;
             StatGroupsValue value = statGroup.getValue();
-            if (((minCountFilter > 0) && (value.count < minCountFilter))
-                    || ((minFracFilter > PRECISION) && ((float)(value.count) / totalReads < minFracFilter))
-                    || IntStream.range(0, groupList.size())
-                        .anyMatch(i -> (((minQualityFilter > 0) && (value.getMinQuality(i) < minQualityFilter))
+            if (((minCountFilter == 0) || (value.count >= minCountFilter))
+                    && ((minFracFilter < PRECISION) || ((float)(value.count) / totalReads >= minFracFilter))
+                    && IntStream.range(0, groupList.size())
+                        .noneMatch(i -> (((minQualityFilter > 0) && (value.getMinQuality(i) < minQualityFilter))
                                 || ((avgQualityFilter > 0) && (value.getAvgQuality(i) < avgQualityFilter)))))
-                ignoredKeys.add(statGroup.getKey());
+                table.add(new StatGroupsTableLine(statGroup));
         }
-
-        List<StatGroupsTableLine> table = statGroups.entrySet().stream()
-                .filter(entry -> !ignoredKeys.contains(entry.getKey()))
-                .map(StatGroupsTableLine::new).sorted().collect(Collectors.toList());
+        Collections.sort(table);
 
         try (PrintStream writer = createWriter()) {
             writer.println(table.get(0).getHeader());
