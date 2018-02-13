@@ -16,7 +16,8 @@ public final class StatPositionsAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         StatPositionsIO statPositionsIO = new StatPositionsIO(params.groupList, params.readIdList, params.outputWithSeq,
-                params.inputFileName, params.numberOfReads, params.minCountFilter, params.minFracFilter);
+                params.inputFileName, params.outputFileName, params.numberOfReads, params.minCountFilter,
+                params.minFracFilter);
         statPositionsIO.go();
     }
 
@@ -53,6 +54,10 @@ public final class StatPositionsAction implements Action {
         @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",
                 names = {"--input"}, order = 3)
         String inputFileName = null;
+
+        @Parameter(description = "Output text file. If not specified, stdout will be used.",
+                names = {"--output"}, order = 4)
+        String outputFileName = null;
 
         @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
                 names = {"-n", "--number-of-reads"})
