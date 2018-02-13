@@ -16,7 +16,7 @@ public final class DebugUtils {
             throw new RuntimeException(e);
         }
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.out.println(label + ": " + elapsedTime + " ms");
+        System.err.println(label + ": " + elapsedTime + " ms");
     }
 
     public static void countExecutionTime(String label, Callable<Void> f) {

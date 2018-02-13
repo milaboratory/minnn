@@ -38,7 +38,7 @@ public final class SorterIO {
         long totalReads = 0;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
-            SmartProgressReporter.startProgressReport("Sorting", reader);
+            SmartProgressReporter.startProgressReport("Sorting", reader, System.err);
             OutputPortCloseable<ParsedRead> sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
                     new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);
             for (ParsedRead parsedRead : CUtils.it(sorted)) {
@@ -50,8 +50,8 @@ public final class SorterIO {
         }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.out.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.out.println("Sorted " + totalReads + " reads\n");
+        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        System.err.println("Sorted " + totalReads + " reads\n");
     }
 
     private MifReader createReader() throws IOException {
@@ -59,7 +59,7 @@ public final class SorterIO {
     }
 
     private MifWriter createWriter(MifHeader mifHeader) throws IOException {
-        return (outputFileName == null) ? new MifWriter(System.out, mifHeader)
+        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
                 : new MifWriter(outputFileName, mifHeader);
     }
 

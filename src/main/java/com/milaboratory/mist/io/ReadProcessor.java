@@ -57,7 +57,7 @@ public final class ReadProcessor {
         try (OutputPortCloseable<SequenceRead> reader = (OutputPortCloseable<SequenceRead>)createReader();
              MifWriter writer = createWriter()) {
             CanReportProgress progress = (CanReportProgress)reader;
-            SmartProgressReporter.startProgressReport("Parsing", progress);
+            SmartProgressReporter.startProgressReport("Parsing", progress, System.err);
             Merger<Chunk<SequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader,
                     4 * 64), 4 * 16);
             OutputPort<Chunk<ParsedRead>> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
@@ -77,8 +77,8 @@ public final class ReadProcessor {
         }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.out.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.out.println(String.format("Matched reads: %.1f%%\n",
+        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        System.err.println(String.format("Matched reads: %.1f%%\n",
                 totalReads == 0 ? 0.0 : matchedReads * 100.0 / totalReads));
     }
 
@@ -133,7 +133,7 @@ public final class ReadProcessor {
 
     private MifWriter createWriter() throws IOException {
         MifHeader mifHeader = new MifHeader(numberOfReads, pattern.getGroupEdges());
-        return (outputFileName == null) ? new MifWriter(System.out, mifHeader)
+        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
                 : new MifWriter(outputFileName, mifHeader);
     }
 

@@ -40,7 +40,7 @@ public final class MifToFastqIO {
         long totalReads = 0;
         try (MifReader reader = createReader();
              SequenceWriter writer = createWriter(reader.getNumberOfReads())) {
-            SmartProgressReporter.startProgressReport("Processing", reader);
+            SmartProgressReporter.startProgressReport("Processing", reader, System.err);
             OutputPortCloseable<SequenceRead> sequenceReads = new SequenceReadOutputPort(reader);
             for (SequenceRead sequenceRead : CUtils.it(sequenceReads)) {
                 totalReads++;
@@ -51,8 +51,8 @@ public final class MifToFastqIO {
         }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.out.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.out.println("Processed " + totalReads + " reads\n");
+        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        System.err.println("Processed " + totalReads + " reads\n");
     }
 
     private MifReader createReader() throws IOException {
@@ -65,7 +65,7 @@ public final class MifToFastqIO {
         List<String> overrideGroupsList = noDefaultGroups ? new ArrayList<>() : Arrays.stream(groupNames)
                 .filter(outputGroupNames::contains).collect(Collectors.toList());
         if (overrideGroupsList.size() > 0)
-            System.out.println("Warning! Overriding default group names: " + overrideGroupsList);
+            System.err.println("Warning! Overriding default group names: " + overrideGroupsList);
         outputGroupNames.addAll(Arrays.asList(groupNames));
         int outputFilesNum = (outputFileNames.size() == 0) ? 1 : outputFileNames.size();
         if (outputGroupNames.size() != outputFilesNum)
@@ -74,7 +74,7 @@ public final class MifToFastqIO {
 
         switch (outputFileNames.size()) {
             case 0:
-                return new SingleFastqWriter(System.out);
+                return new SingleFastqWriter(new SystemOutStream());
             case 1:
                 return new SingleFastqWriter(outputFileNames.get(0));
             case 2:

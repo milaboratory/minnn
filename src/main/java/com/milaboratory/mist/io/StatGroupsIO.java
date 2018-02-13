@@ -49,7 +49,7 @@ public final class StatGroupsIO {
         try (MifReader reader = createReader()) {
             if (numberOfReads > 0)
                 reader.setParsedReadsLimit(numberOfReads);
-            SmartProgressReporter.startProgressReport("Processing", reader);
+            SmartProgressReporter.startProgressReport("Processing", reader, System.err);
             for (ParsedRead parsedRead : CUtils.it(reader)) {
                 Map<String, MatchedGroup> matchedGroups = parsedRead.getGroups().stream()
                         .collect(Collectors.toMap(MatchedGroup::getGroupName, mg -> mg));
@@ -97,9 +97,9 @@ public final class StatGroupsIO {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         int countedReadsPercent = (int)((float)table.stream().mapToLong(line -> line.count).sum() / totalReads * 100);
-        System.out.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.out.println("Checked " + totalReads + " reads");
-        System.out.println("Counted reads: " + countedReadsPercent + "% of checked reads\n");
+        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        System.err.println("Checked " + totalReads + " reads");
+        System.err.println("Counted reads: " + countedReadsPercent + "% of checked reads\n");
     }
 
     private MifReader createReader() throws IOException {
@@ -107,7 +107,7 @@ public final class StatGroupsIO {
     }
 
     private PrintStream createWriter() throws IOException {
-        return (outputFileName == null) ? new PrintStream(System.out)
+        return (outputFileName == null) ? new PrintStream(new SystemOutStream())
                 : new PrintStream(new FileOutputStream(outputFileName));
     }
 
