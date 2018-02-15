@@ -66,20 +66,24 @@ public class ExtractActionTest {
         String posR1 = EXAMPLES_PATH + "positional/polyfid10_R1.fastq.gz";
         String posR2 = EXAMPLES_PATH + "positional/polyfid10_R2.fastq.gz";
         String outPos = TEMP_DIR + "outputPos.mif";
-        String positionalArgs = "extract --input " + posR1 + " " + posR2 + " --output " + outPos;
+        String positionalArgs = "extract --input-format fastq --input " + posR1 + " " + posR2 + " --output " + outPos;
 
         String oneR1 = EXAMPLES_PATH + "onesided/sl4000_R1.fastq.gz";
         String oneR2 = EXAMPLES_PATH + "onesided/sl4000_R2.fastq.gz";
         String outOne = TEMP_DIR + "outputOne.mif";
-        String onesidedArgs = "extract --input " + oneR1 + " " + oneR2 + " --output " + outOne;
+        String onesidedArgs = "extract --input-format fastq --input " + oneR1 + " " + oneR2 + " --output " + outOne;
 
         String twoR1 = EXAMPLES_PATH + "twosided/p109_R1.fastq.gz";
         String twoR2 = EXAMPLES_PATH + "twosided/p109_R2.fastq.gz";
         String outTwo = TEMP_DIR + "outputTwo.mif";
-        String twosidedArgs = "extract --input " + twoR1 + " " + twoR2 + " --output " + outTwo;
+        String twosidedArgs = "extract --input-format fastq --input " + twoR1 + " " + twoR2 + " --output " + outTwo;
 
-        String configuration = " --input-format fastq --match-score 0 --mismatch-score -7 --gap-score -11 "
-                + "--single-overlap-penalty -10 --bitap-max-errors 3 --threads 4";
+        String twoMif = EXAMPLES_PATH + "mif/twosided.mif.gz";
+        String outTwoMif = TEMP_DIR + "outputTwoMif.mif";
+        String twosidedMifArgs = "extract --input-format mif --input " + twoMif + " --output " + outTwoMif;
+
+        String configuration = " --match-score 0 --mismatch-score -7 --gap-score -11 --single-overlap-penalty -10 "
+                + "--bitap-max-errors 3 --threads 4";
 
         String patternPos = "^(UMI:N{14})n{22}(SB:N{4}) \\ *";
         String penaltyPos = " --penalty-threshold -200";
@@ -93,6 +97,9 @@ public class ExtractActionTest {
         exec(positionalArgs + configuration + penaltyPos + " --pattern " + inQuotes(patternPos));
         exec(onesidedArgs + configuration + penaltyOne + " --pattern " + inQuotes(patternOne));
         exec(twosidedArgs + configuration + penaltyTwo + " --pattern " + inQuotes(patternTwo));
+        exec(twosidedMifArgs + configuration + penaltyTwo + " --pattern " + inQuotes(patternTwo));
+
+        assertFileEquals(outTwo, outTwoMif);
     }
 
     @Test
@@ -121,7 +128,7 @@ public class ExtractActionTest {
         String mifFile1 = TEMP_DIR + "output1.mif";
         String mifFile2 = TEMP_DIR + "output2.mif";
         String mifFile3 = TEMP_DIR + "output3.mif";
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 50; i++) {
             createRandomMifFile(mifFile1);
             exec("extract --input-format mif --input " + mifFile1 + " --output " + mifFile2
                     + " --pattern \"*\" --threads 1");
