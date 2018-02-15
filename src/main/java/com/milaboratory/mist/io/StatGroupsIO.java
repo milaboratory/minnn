@@ -86,7 +86,7 @@ public final class StatGroupsIO {
         Collections.sort(table);
 
         try (PrintStream writer = createWriter()) {
-            writer.println(table.get(0).getHeader());
+            writer.println(getHeader());
             table.forEach(line -> writer.println(line.getTableLine()));
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
@@ -110,6 +110,17 @@ public final class StatGroupsIO {
 
     private boolean checkQuality(NSequenceWithQuality seq) {
         return (readQualityFilter == 0) || (seq.getQuality().minValue() >= readQualityFilter);
+    }
+
+    private String getHeader() {
+        StringBuilder header = new StringBuilder();
+        for (String groupName : groupList) {
+            header.append(groupName).append(".seq ");
+            header.append(groupName).append(".qual.min ");
+            header.append(groupName).append(".qual.avg ");
+        }
+        header.append("count");
+        return header.toString();
     }
 
     private class StatGroupsKey {
@@ -222,17 +233,6 @@ public final class StatGroupsIO {
         @Override
         public int compareTo(StatGroupsTableLine that) {
             return Long.compare(that.count, count);     // reversed to start from bigger counts
-        }
-
-        String getHeader() {
-            StringBuilder header = new StringBuilder();
-            for (String groupName : groupList) {
-                header.append(groupName).append(".seq ");
-                header.append(groupName).append(".qual.min ");
-                header.append(groupName).append(".qual.avg ");
-            }
-            header.append("count");
-            return header.toString();
         }
 
         String getTableLine() {

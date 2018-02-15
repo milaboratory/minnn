@@ -85,7 +85,7 @@ public final class StatPositionsIO {
         Collections.sort(table);
 
         try (PrintStream writer = createWriter()) {
-            writer.println(table.get(0).getHeader());
+            writer.println(getHeader());
             table.forEach(line -> writer.println(line.getTableLine()));
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
@@ -116,6 +116,13 @@ public final class StatPositionsIO {
             else if (readNumber == 1)
                 readNumber = 0;
         return "R" + (readNumber + 1);
+    }
+
+    private String getHeader() {
+        if (outputWithSeq)
+            return "group.id read pos count seq";
+        else
+            return "group.id read pos count";
     }
 
     private class StatGroupsKey {
@@ -168,13 +175,6 @@ public final class StatPositionsIO {
         @Override
         public int compareTo(StatGroupsTableLine that) {
             return Long.compare(that.count, count);     // reversed to start from bigger counts
-        }
-
-        String getHeader() {
-            if (outputWithSeq)
-                return "group.id read pos count seq";
-            else
-                return "group.id read pos count";
         }
 
         String getTableLine() {
