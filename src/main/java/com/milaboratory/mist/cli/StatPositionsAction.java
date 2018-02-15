@@ -8,7 +8,7 @@ import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
 import com.milaboratory.mist.io.StatPositionsIO;
 
-import java.util.List;
+import java.util.*;
 
 public final class StatPositionsAction implements Action {
     private final StatPositionsActionParameters params = new StatPositionsActionParameters();

@@ -8,7 +8,9 @@ import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
 import com.milaboratory.mist.io.StatGroupsIO;
 
-import java.util.List;
+import java.util.*;
+
+import static com.milaboratory.mist.cli.CliUtils.*;
 
 public final class StatGroupsAction implements Action {
     private final StatGroupsActionParameters params = new StatGroupsActionParameters();
@@ -16,8 +18,8 @@ public final class StatGroupsAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         StatGroupsIO statGroupsIO = new StatGroupsIO(params.groupList, params.inputFileName, params.outputFileName,
-                params.numberOfReads, params.readQualityFilter, params.minQualityFilter, params.avgQualityFilter,
-                params.minCountFilter, params.minFracFilter);
+                params.numberOfReads, (byte)(params.readQualityFilter), (byte)(params.minQualityFilter),
+                (byte)(params.avgQualityFilter), params.minCountFilter, params.minFracFilter);
         statGroupsIO.go();
     }
 
@@ -57,15 +59,15 @@ public final class StatGroupsAction implements Action {
         @Parameter(description = "Filter group values with a min (non-aggregated) quality below a given threshold, " +
                 "applied on by-read basis, should be applied prior to any aggregation. 0 value means no threshold.",
                 names = {"--read-quality-filter"})
-        byte readQualityFilter = 0;
+        int readQualityFilter = 0;
 
         @Parameter(description = "Filter group values based on min aggregated quality. 0 value means no filtering.",
                 names = {"--min-quality-filter"})
-        byte minQualityFilter = 0;
+        int minQualityFilter = 0;
 
         @Parameter(description = "Filter group values based on average aggregated quality. 0 value means no filtering.",
                 names = {"--avg-quality-filter"})
-        byte avgQualityFilter = 0;
+        int avgQualityFilter = 0;
 
         @Parameter(description = "Filter unique group values represented by less than specified number of reads.",
                 names = {"--min-count-filter"})
@@ -79,6 +81,9 @@ public final class StatGroupsAction implements Action {
         public void validate() {
             if (groupList == null)
                 throw new ParameterException("List of output groups is not specified!");
+            validateQuality(readQualityFilter);
+            validateQuality(minQualityFilter);
+            validateQuality(avgQualityFilter);
         }
     }
 }

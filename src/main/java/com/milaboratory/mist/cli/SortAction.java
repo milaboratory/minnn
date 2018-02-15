@@ -8,7 +8,7 @@ import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
 import com.milaboratory.mist.io.SorterIO;
 
-import java.util.List;
+import java.util.*;
 
 public final class SortAction implements Action {
     private final SortActionParameters params = new SortActionParameters();

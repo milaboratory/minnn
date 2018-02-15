@@ -13,8 +13,9 @@ import com.milaboratory.mist.parser.Parser;
 import com.milaboratory.mist.parser.ParserException;
 import com.milaboratory.mist.pattern.*;
 
-import java.util.ArrayList;
+import java.util.*;
 
+import static com.milaboratory.mist.cli.CliUtils.*;
 import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.parser.ParserUtils.parseMultiTargetString;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
@@ -25,7 +26,8 @@ public final class ReportAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(params.matchScore,
-                params.mismatchScore, params.gapScore, params.goodQuality, params.badQuality, params.maxQualityPenalty);
+                params.mismatchScore, params.gapScore, (byte)(params.goodQuality), (byte)(params.badQuality),
+                params.maxQualityPenalty);
         PatternAligner patternAligner = new BasePatternAligner(scoring, params.penaltyThreshold,
                 params.singleOverlapPenalty, params.bitapMaxErrors, params.maxOverlap);
         Parser patternParser = new Parser(patternAligner);
@@ -123,12 +125,12 @@ public final class ReportAction implements Action {
         @Parameter(description = "This or better quality value will be considered good quality, " +
                 "without score penalties.",
                 names = {"--good-quality-value"})
-        byte goodQuality = DEFAULT_GOOD_QUALITY;
+        int goodQuality = DEFAULT_GOOD_QUALITY;
 
         @Parameter(description = "This or worse quality value will be considered bad quality, " +
                 "with maximal score penalty.",
                 names = {"--bad-quality-value"})
-        byte badQuality = DEFAULT_BAD_QUALITY;
+        int badQuality = DEFAULT_BAD_QUALITY;
 
         @Parameter(description = "Maximal score penalty for bad quality nucleotide in target.",
                 names = {"--max-quality-penalty"})
@@ -156,6 +158,8 @@ public final class ReportAction implements Action {
                 throw new ParameterException("Pattern not specified!");
             if (target == null)
                 throw new ParameterException("Target not specified!");
+            validateQuality(goodQuality);
+            validateQuality(badQuality);
         }
     }
 }
