@@ -92,10 +92,12 @@ public final class StatPositionsIO {
         }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
-        long countedReadsPercent = (countedReads * 100) / totalReads;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         System.err.println("Checked " + totalReads + " reads");
-        System.err.println("Counted reads: " + countedReadsPercent + "% of checked reads\n");
+        if (totalReads > 0) {
+            long countedReadsPercent = (countedReads * 100) / totalReads;
+            System.err.println("Counted reads: " + countedReadsPercent + "% of checked reads\n");
+        }
     }
 
     private MifReader createReader() throws IOException {
@@ -111,11 +113,11 @@ public final class StatPositionsIO {
         int readNumber = matchedGroupEdge.getTargetId();
         // this will not work for retargeted .mif files!
         if (reverseMatch)
-            if (readNumber == 0)
+            if (readNumber == 1)
+                readNumber = 2;
+            else if (readNumber == 2)
                 readNumber = 1;
-            else if (readNumber == 1)
-                readNumber = 0;
-        return "R" + (readNumber + 1);
+        return "R" + readNumber;
     }
 
     private String getHeader() {

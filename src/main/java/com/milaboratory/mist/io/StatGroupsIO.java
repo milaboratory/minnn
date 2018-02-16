@@ -93,10 +93,13 @@ public final class StatGroupsIO {
         }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
-        int countedReadsPercent = (int)((float)table.stream().mapToLong(line -> line.count).sum() / totalReads * 100);
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         System.err.println("Checked " + totalReads + " reads");
-        System.err.println("Counted reads: " + countedReadsPercent + "% of checked reads\n");
+        if (totalReads > 0) {
+            int countedReadsPercent = (int)((float)table.stream()
+                    .mapToLong(line -> line.count).sum() / totalReads * 100);
+            System.err.println("Counted reads: " + countedReadsPercent + "% of checked reads\n");
+        }
     }
 
     private MifReader createReader() throws IOException {
