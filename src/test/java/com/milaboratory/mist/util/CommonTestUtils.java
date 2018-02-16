@@ -8,6 +8,7 @@ import com.milaboratory.core.sequence.*;
 import com.milaboratory.mist.pattern.*;
 import com.milaboratory.test.TestUtil;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -481,6 +482,21 @@ public class CommonTestUtils {
 
     public static void assertFileEquals(String fileName1, String fileName2) throws Exception {
         assertArrayEquals(Files.readAllBytes(Paths.get(fileName1)), Files.readAllBytes(Paths.get(fileName2)));
+    }
+
+    public static long getFileSize(String fileName) {
+        return new File(fileName).length();
+    }
+
+    public static long countLinesInFile(String fileName) throws Exception {
+        Scanner scanner = new Scanner(new File(fileName));
+        long count = 0;
+        while (scanner.hasNextLine()) {
+            scanner.nextLine();
+            count++;
+        }
+        scanner.close();
+        return count;
     }
 
     @FunctionalInterface
