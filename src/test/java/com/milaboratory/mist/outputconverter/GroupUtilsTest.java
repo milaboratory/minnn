@@ -101,118 +101,116 @@ public class GroupUtilsTest {
 
     @Test
     public void generateCommentsTest() throws Exception {
-        ArrayList<MatchedGroup> groupsInsideMain = new ArrayList<MatchedGroup>() {{
-            add(generateMatchedGroup(new Range(0, 10), false));
-            add(generateMatchedGroup(new Range(1, 5), false));
-            add(generateMatchedGroup(new Range(0, 4), false));
-            add(generateMatchedGroup(new Range(3, 8), false));
-            add(generateMatchedGroup(new Range(2, 3), false));
+        TreeSet<FastqCommentGroup> commentGroupsInsideMain = new TreeSet<FastqCommentGroup>() {{
+            add(generateCommentGroup(new Range(0, 10), 9, false));
+            add(generateCommentGroup(new Range(1, 5), 3, false));
+            add(generateCommentGroup(new Range(0, 4), 5, false));
+            add(generateCommentGroup(new Range(3, 8), 0, false));
+            add(generateCommentGroup(new Range(2, 3), 1, false));
         }};
-        ArrayList<MatchedGroup> groupsNotInsideMain = new ArrayList<>();
-        for (int i = 0; i < 3; i++)
-            groupsNotInsideMain.add(generateMatchedGroup(new Range(i, i + 4), false));
-        ArrayList<String> notMatchedGroupNames = new ArrayList<String>() {{
-            add("Test1"); add("Test2"); add("Test3");
+        TreeSet<FastqCommentGroup> commentGroupsNotInsideMain = new TreeSet<FastqCommentGroup>() {{
+            for (int i = 1; i < 4; i++)
+                add(generateCommentGroup(null, i * 2, false));
+        }};
+        TreeSet<FastqCommentGroup> commentGroupsNotMatched = new TreeSet<FastqCommentGroup>() {{
+            add(new FastqCommentGroup("Z-Test1"));
+            add(new FastqCommentGroup("G-Test2"));
+            add(new FastqCommentGroup("A-Test3"));
+        }};
+        TreeSet<FastqCommentGroup> commentGroups = new TreeSet<FastqCommentGroup>() {{
+            addAll(commentGroupsInsideMain);
+            addAll(commentGroupsNotInsideMain);
+            addAll(commentGroupsNotMatched);
         }};
 
-        String expectedInsideMain = "GroupName~ATTAGACATT~CCCCCCCCCC{0~10}|GroupName~TTAG~CCCC{1~5}|"
-                + "GroupName~ATTA~CCCC{0~4}|GroupName~AGACA~CCCCC{3~8}|GroupName~T~C{2~3}";
-        String expectedNotInsideMain = "GroupName~ATTA~CCCC|GroupName~TTAG~CCCC|GroupName~TAGA~CCCC";
-        String expectedNotMatched = "Test1|Test2|Test3";
+        String expectedAllGroups = "A-Test3|G-Test2|Group0~AGACA~CCCCC{3~8}|Group1~T~C{2~3}|Group2~ATTA~CCCC|"
+                + "Group3~TTAG~CCCC{1~5}|Group4~ATTA~CCCC|Group5~ATTA~CCCC{0~4}|Group6~ATTA~CCCC|"
+                + "Group9~ATTAGACATT~CCCCCCCCCC{0~10}|Z-Test1";
 
-        assertEquals("ABC~||~" + expectedInsideMain + "|" + expectedNotInsideMain + "|" + expectedNotMatched,
-                generateComments(groupsInsideMain, groupsNotInsideMain, notMatchedGroupNames,
-                        true, "ABC"));
-        assertEquals("||~" + expectedInsideMain + "|" + expectedNotInsideMain + "|" + expectedNotMatched,
-                generateComments(groupsInsideMain, groupsNotInsideMain, notMatchedGroupNames,
-                        true, ""));
-        assertEquals("ABC~" + expectedInsideMain + "|" + expectedNotInsideMain + "|" + expectedNotMatched,
-                generateComments(groupsInsideMain, groupsNotInsideMain, notMatchedGroupNames,
-                        false, "ABC"));
-        assertEquals(expectedInsideMain + "|" + expectedNotInsideMain + "|" + expectedNotMatched,
-                generateComments(groupsInsideMain, groupsNotInsideMain, notMatchedGroupNames,
-                        false, ""));
-        assertEquals("ABC~||~" + expectedNotMatched, generateComments(new ArrayList<>(), new ArrayList<>(),
-                notMatchedGroupNames, true, "ABC"));
-        assertEquals("ABC~" + expectedInsideMain + "|" + expectedNotMatched,
-                generateComments(groupsInsideMain, new ArrayList<>(), notMatchedGroupNames,
-                        false, "ABC"));
-        assertEquals(expectedNotInsideMain, generateComments(new ArrayList<>(), groupsNotInsideMain, new ArrayList<>(),
-                false, ""));
-        assertEquals("x~||~", generateComments(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                true, "x"));
-        assertEquals("||~", generateComments(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                true, ""));
-        assertEquals("x", generateComments(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                false, "x"));
-        assertEquals("", generateComments(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                false, ""));
+        assertEquals("ABC~" + expectedAllGroups + "~||~",
+                generateComments(commentGroups, true, "ABC"));
+        assertEquals(expectedAllGroups + "~||~",
+                generateComments(commentGroups, true, ""));
+        assertEquals("ABC~" + expectedAllGroups,
+                generateComments(commentGroups, false, "ABC"));
+        assertEquals(expectedAllGroups,
+                generateComments(commentGroups, false, ""));
+        assertEquals("ABC~A-Test3|G-Test2|Z-Test1~||~",
+                generateComments(commentGroupsNotMatched, true, "ABC"));
+        assertEquals("ABC~A-Test3|G-Test2|Group0~AGACA~CCCCC{3~8}|Group1~T~C{2~3}|"
+                        + "Group3~TTAG~CCCC{1~5}|Group5~ATTA~CCCC{0~4}|Group9~ATTAGACATT~CCCCCCCCCC{0~10}|Z-Test1",
+                generateComments(new TreeSet<FastqCommentGroup>() {{ addAll(commentGroupsInsideMain);
+                    addAll(commentGroupsNotMatched); }}, false, "ABC"));
+        assertEquals("Group2~ATTA~CCCC|Group4~ATTA~CCCC|Group6~ATTA~CCCC",
+                generateComments(commentGroupsNotInsideMain, false, ""));
+        assertEquals("x~||~", generateComments(new TreeSet<>(), true, "x"));
+        assertEquals("||~", generateComments(new TreeSet<>(), true, ""));
+        assertEquals("x", generateComments(new TreeSet<>(), false, "x"));
+        assertEquals("", generateComments(new TreeSet<>(), false, ""));
     }
 
     @Test
     public void generateCommentsFuzzingTest() throws Exception {
         for (int i = 0; i < 10000; i++) {
-            ArrayList<MatchedGroup> groupsInsideMain = new ArrayList<>();
-            ArrayList<MatchedGroup> groupsNotInsideMain = new ArrayList<>();
-            ArrayList<String> notMatchedGroupNames = new ArrayList<>();
+            TreeSet<FastqCommentGroup> commentGroups = new TreeSet<>();
             for (int j = 0; j < rg.nextInt(15); j++)
-                groupsInsideMain.add(generateMatchedGroup(new Range(rg.nextInt(3), rg.nextInt(7) + 1),
-                        true));
+                commentGroups.add(generateCommentGroup(new Range(rg.nextInt(3), rg.nextInt(7) + 1),
+                        0, true));
             for (int j = 0; j < rg.nextInt(15); j++)
-                groupsNotInsideMain.add(generateMatchedGroup(new Range(0, rg.nextInt(10) + 1), true));
+                commentGroups.add(generateCommentGroup(null, 0, true));
             for (int j = 0; j < rg.nextInt(15); j++)
-                notMatchedGroupNames.add(getRandomString(rg.nextInt(30) + 1));
-            generateComments(groupsInsideMain, groupsNotInsideMain, notMatchedGroupNames, rg.nextBoolean(),
-                    getRandomString(100) + 1);
+                commentGroups.add(new FastqCommentGroup(getRandomString(rg.nextInt(30) + 1)));
+            generateComments(commentGroups, rg.nextBoolean(), getRandomString(100) + 1);
         }
     }
 
-    private static MatchedGroup generateMatchedGroup(Range range, boolean random) {
-        return new MatchedGroup(random ? getRandomString(rg.nextInt(30) + 1, "", LETTERS_AND_NUMBERS)
-                : "GroupName", new NSequenceWithQuality("ATTAGACATT"), (byte)(random ? rg.nextInt(20) - 10 : 1),
-                range);
+    private static FastqCommentGroup generateCommentGroup(Range range, int groupNumber, boolean random) {
+        return new FastqCommentGroup(random
+                ? getRandomString(rg.nextInt(30) + 1, "", LETTERS_AND_NUMBERS) : "Group" + groupNumber,
+                true, range != null, new NSequenceWithQuality("ATTAGACATT").getRange(
+                        (range == null) ? new Range(0, 4) : range), range);
     }
 
     @Test
     public void commentsFromParsedReadTest() {
         NSequenceWithQuality read1Value = new NSequenceWithQuality("ATTAGCTTAGGACCT");
         NSequenceWithQuality read2Value = new NSequenceWithQuality("GTTAAATAAA");
-        SingleRead read1 = new SingleReadImpl(10, read1Value, "abc");
-        SingleRead read2 = new SingleReadImpl(10, read2Value, "123");
+        SingleRead read1 = new SingleReadImpl(10, read1Value, "123");
+        SingleRead read2 = new SingleReadImpl(10, read2Value, "abc");
         PairedRead pairedRead = new PairedRead(read1, read2);
         ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<MatchedGroupEdge>() {{
-            add(new MatchedGroupEdge(read1Value, (byte)0, new GroupEdge("R1", true), 0));
-            add(new MatchedGroupEdge(read1Value, (byte)0, new GroupEdge("R1", false), 15));
-            add(new MatchedGroupEdge(read2Value, (byte)1, new GroupEdge("R2", true), 0));
-            add(new MatchedGroupEdge(read2Value, (byte)1, new GroupEdge("R2", false), 10));
-            add(new MatchedGroupEdge(read1Value, (byte)0, new GroupEdge("G1", true), 3));
-            add(new MatchedGroupEdge(read1Value, (byte)0, new GroupEdge("G1", false), 6));
-            add(new MatchedGroupEdge(read1Value, (byte)0, new GroupEdge("G2", true), 1));
-            add(new MatchedGroupEdge(read1Value, (byte)0, new GroupEdge("G2", false), 9));
-            add(new MatchedGroupEdge(read2Value, (byte)1, new GroupEdge("G3", true), 1));
-            add(new MatchedGroupEdge(read2Value, (byte)1, new GroupEdge("G3", false), 8));
+            add(new MatchedGroupEdge(read1Value, (byte)1, new GroupEdge("R1", true), 0));
+            add(new MatchedGroupEdge(read1Value, (byte)1, new GroupEdge("R1", false), 15));
+            add(new MatchedGroupEdge(read2Value, (byte)2, new GroupEdge("R2", true), 0));
+            add(new MatchedGroupEdge(read2Value, (byte)2, new GroupEdge("R2", false), 10));
+            add(new MatchedGroupEdge(read1Value, (byte)1, new GroupEdge("G1", true), 3));
+            add(new MatchedGroupEdge(read1Value, (byte)1, new GroupEdge("G1", false), 6));
+            add(new MatchedGroupEdge(read1Value, (byte)1, new GroupEdge("G2", true), 1));
+            add(new MatchedGroupEdge(read1Value, (byte)1, new GroupEdge("G2", false), 9));
+            add(new MatchedGroupEdge(read2Value, (byte)2, new GroupEdge("G3", true), 1));
+            add(new MatchedGroupEdge(read2Value, (byte)2, new GroupEdge("G3", false), 8));
         }};
         Match match = new Match(2, 0, matchedGroupEdges);
         ParsedRead parsedRead = new ParsedRead(pairedRead, true, match);
         ArrayList<GroupEdge> allGroupEdges = new ArrayList<GroupEdge>() {{
-            for (int i = 1; i <= 5; i++) {
+            for (int i = 0; i <= 4; i++) {
                 add(new GroupEdge("G" + i, true));
                 add(new GroupEdge("G" + i, false));
             }
         }};
-        SequenceRead convertedRead = parsedRead.toSequenceRead(true, false, allGroupEdges,
-                "G2", "G1", "G3");
+        SequenceRead convertedRead = parsedRead.toSequenceRead(true, allGroupEdges,
+                "R1", "R2", "G2", "G1", "G3");
 
         assertEquals(5, convertedRead.numberOfReads());
-        assertEquals("abc~||~G1~AGC~CCC{3~6}|G2~TTAGCTTA~CCCCCCCC{1~9}|G3~TTAAATA~CCCCCCC|G4|G5",
+        assertEquals("abc~G0|G1~AGC~CCC{3~6}|G2~TTAGCTTA~CCCCCCCC{1~9}|G3~TTAAATA~CCCCCCC|G4~||~",
                 convertedRead.getRead(0).getDescription());
-        assertEquals("123~||~G3~TTAAATA~CCCCCCC{1~8}|G1~AGC~CCC|G2~TTAGCTTA~CCCCCCCC|G4|G5",
+        assertEquals("123~G0|G1~AGC~CCC|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC{1~8}|G4~||~",
                 convertedRead.getRead(1).getDescription());
-        assertEquals("abc~||~G1~AGC~CCC{2~5}|G2~TTAGCTTA~CCCCCCCC{0~8}|G3~TTAAATA~CCCCCCC|G4|G5",
+        assertEquals("abc~G0|G1~AGC~CCC{2~5}|G2~TTAGCTTA~CCCCCCCC{0~8}|G3~TTAAATA~CCCCCCC|G4~||~",
                 convertedRead.getRead(2).getDescription());
-        assertEquals("abc~||~G1~AGC~CCC{0~3}|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC|G4|G5",
+        assertEquals("abc~G0|G1~AGC~CCC{0~3}|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC|G4~||~",
                 convertedRead.getRead(3).getDescription());
-        assertEquals("123~||~G3~TTAAATA~CCCCCCC{0~7}|G1~AGC~CCC|G2~TTAGCTTA~CCCCCCCC|G4|G5",
+        assertEquals("123~G0|G1~AGC~CCC|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC{0~7}|G4~||~",
                 convertedRead.getRead(4).getDescription());
     }
 }

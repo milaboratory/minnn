@@ -13,25 +13,26 @@ import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class MifToFastqIO {
     private final String inputFileName;
-    private final List<String> outputFileNames;
-    private final String[] groupNames;
-    private final boolean noDefaultGroups;
+    private final String[] outputGroupNames;
+    private final String[] outputFileNames;
     private final boolean copyOldComments;
 
-    public MifToFastqIO(String inputFileName, List<String> outputFileNames, List<String> groupNames,
-                        boolean noDefaultGroups, boolean copyOldComments) {
+    public MifToFastqIO(String inputFileName, LinkedHashMap<String, String> outputGroups, boolean copyOldComments) {
         this.inputFileName = inputFileName;
-        this.outputFileNames = outputFileNames;
-        this.groupNames = groupNames.toArray(new String[groupNames.size()]);
-        this.noDefaultGroups = noDefaultGroups;
+        this.outputGroupNames = new String[outputGroups.size()];
+        this.outputFileNames = new String[outputGroups.size()];
+        int index = 0;
+        for (HashMap.Entry<String, String> entry : outputGroups.entrySet()) {
+            outputGroupNames[index] = entry.getKey();
+            outputFileNames[index] = entry.getValue();
+            index++;
+        }
         this.copyOldComments = copyOldComments;
     }
 
@@ -39,7 +40,7 @@ public final class MifToFastqIO {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
         try (MifReader reader = createReader();
-             SequenceWriter writer = createWriter(reader.getNumberOfReads())) {
+             SequenceWriter writer = createWriter() {
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
             OutputPortCloseable<SequenceRead> sequenceReads = new SequenceReadOutputPort(reader);
             for (SequenceRead sequenceRead : CUtils.it(sequenceReads)) {
@@ -59,28 +60,14 @@ public final class MifToFastqIO {
         return (inputFileName == null) ? new MifReader(System.in) : new MifReader(inputFileName);
     }
 
-    private SequenceWriter createWriter(int numberOfReads) throws IOException {
-        LinkedHashSet<String> outputGroupNames = noDefaultGroups ? new LinkedHashSet<>() : IntStream.rangeClosed(1,
-                numberOfReads).mapToObj(n -> "R" + n).collect(Collectors.toCollection(LinkedHashSet::new));
-        List<String> overrideGroupsList = noDefaultGroups ? new ArrayList<>() : Arrays.stream(groupNames)
-                .filter(outputGroupNames::contains).collect(Collectors.toList());
-        if (overrideGroupsList.size() > 0)
-            System.err.println("Warning! Overriding default group names: " + overrideGroupsList);
-        outputGroupNames.addAll(Arrays.asList(groupNames));
-        int outputFilesNum = (outputFileNames.size() == 0) ? 1 : outputFileNames.size();
-        if (outputGroupNames.size() != outputFilesNum)
-            throw exitWithError("Mismatched number of output files (" + outputFilesNum + ") and output "
-                    + "reads (" + outputGroupNames.size() + ")! Group names for output reads: " + outputGroupNames);
-
-        switch (outputFileNames.size()) {
-            case 0:
-                return new SingleFastqWriter(new SystemOutStream());
+    private SequenceWriter createWriter() throws IOException {
+        switch (outputFileNames.length) {
             case 1:
-                return new SingleFastqWriter(outputFileNames.get(0));
+                return new SingleFastqWriter(outputFileNames[0]);
             case 2:
-                return new PairedFastqWriter(outputFileNames.get(0), outputFileNames.get(1));
+                return new PairedFastqWriter(outputFileNames[0], outputFileNames[1]);
             default:
-                return new MultiFastqWriter(outputFileNames.toArray(new String[outputFileNames.size()]));
+                return new MultiFastqWriter(outputFileNames);
         }
     }
 
@@ -99,7 +86,7 @@ public final class MifToFastqIO {
             if (parsedRead == null)
                 return null;
             else
-                return parsedRead.toSequenceRead(copyOldComments, noDefaultGroups, groupEdges, groupNames);
+                return parsedRead.toSequenceRead(copyOldComments, groupEdges, outputGroupNames);
         }
 
         @Override
