@@ -17,7 +17,7 @@ public class Match {
     protected final long score;
     protected final ArrayList<MatchedGroupEdge> matchedGroupEdges;
     private ArrayList<MatchedGroup> groups = null;
-    private HashMap<String, NSequenceWithQuality> groupValues = null;
+    private Map<String, NSequenceWithQuality> groupValues = null;
     private HashMap<MatchedGroupEdgeIndex, MatchedGroupEdge> matchedGroupEdgesCache = null;
 
     /**
@@ -110,15 +110,9 @@ public class Match {
     }
 
     public NSequenceWithQuality getGroupValue(String groupName) {
-        if (groupValues == null) {
-            groupValues = new HashMap<>();
-            getGroups().forEach(group -> {
-                String name = group.getGroupName();
-                NSequenceWithQuality value = group.getTarget().getRange(group.getRange());
-                groupValues.put(name, value);
-            });
-        }
-
+        if (groupValues == null)
+            groupValues = getGroups().stream()
+                    .collect(Collectors.toMap(MatchedGroup::getGroupName, MatchedRange::getValue));
         return groupValues.get(groupName);
     }
 
