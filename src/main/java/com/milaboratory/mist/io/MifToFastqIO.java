@@ -40,7 +40,7 @@ public final class MifToFastqIO {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
         try (MifReader reader = createReader();
-             SequenceWriter writer = createWriter() {
+             SequenceWriter writer = createWriter()) {
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
             OutputPortCloseable<SequenceRead> sequenceReads = new SequenceReadOutputPort(reader);
             for (SequenceRead sequenceRead : CUtils.it(sequenceReads)) {
