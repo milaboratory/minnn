@@ -135,6 +135,11 @@ public final class ParsedRead {
                 .filter(gn -> !defaultGroups.contains(gn)).collect(Collectors.toSet());
     }
 
+    public static void clearStaticCache() {
+        defaultGroups = null;
+        groupsFromHeader = null;
+    }
+
     public ParsedRead retarget(String... groupNames) {
         if (groupNames.length == 0)
             throw new IllegalArgumentException("Basic groups for output parsed read are not specified!");

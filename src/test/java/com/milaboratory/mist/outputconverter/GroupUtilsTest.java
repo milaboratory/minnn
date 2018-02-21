@@ -18,6 +18,11 @@ public class GroupUtilsTest {
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
+    @Before
+    public void setUp() {
+        ParsedRead.clearStaticCache();
+    }
+
     @Test
     public void getGroupsFromMatchTest() throws Exception {
         NSequenceWithQuality seqSingle = new NSequenceWithQuality("AATTAAGGCAAA");

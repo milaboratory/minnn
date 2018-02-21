@@ -1,5 +1,6 @@
 package com.milaboratory.mist.cli;
 
+import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.SinglePattern;
 
 import static com.milaboratory.mist.cli.Main.main;
@@ -8,6 +9,7 @@ import static com.milaboratory.mist.util.TestSettings.*;
 
 class CommandLineTestUtils {
     static void exec(String cmdLine) throws Exception {
+        ParsedRead.clearStaticCache();
         main(cmdLine.split("[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)"));
     }
 

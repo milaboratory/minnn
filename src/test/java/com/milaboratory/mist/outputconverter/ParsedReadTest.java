@@ -3,7 +3,7 @@ package com.milaboratory.mist.outputconverter;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.mist.pattern.*;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.*;
 
@@ -11,6 +11,11 @@ import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
 
 public class ParsedReadTest {
+    @Before
+    public void setUp() {
+        ParsedRead.clearStaticCache();
+    }
+
     private NSequenceWithQuality[] testReadValues = new NSequenceWithQuality[] {
             new NSequenceWithQuality("ATT"), new NSequenceWithQuality("TA"), new NSequenceWithQuality("GACA")
     };
