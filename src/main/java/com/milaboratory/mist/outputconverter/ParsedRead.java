@@ -24,7 +24,7 @@ public final class ParsedRead {
     private HashMap<String, ArrayList<GroupEdgePosition>> innerGroupEdgesCache = null;
     private HashMap<String, HashMap<String, Range>> innerRangesCache = null;
     private HashMap<String, String> commentsCache = null;
-    private static Set<String> excludedGroups = null;
+    private static Set<String> defaultGroups = null;
     private static Set<String> groupsFromHeader = null;
 
     public ParsedRead(SequenceRead originalRead, boolean reverseMatch, Match bestMatch) {
@@ -54,6 +54,25 @@ public final class ParsedRead {
 
     public long getBestMatchScore() {
         return (bestMatch == null) ? Long.MIN_VALUE : bestMatch.getScore();
+    }
+
+    public NSequenceWithQuality getGroupValue(String groupName) {
+        if (bestMatch == null) {
+            if (defaultGroups == null)
+                calculateDefaultGroups(originalRead.numberOfReads());
+            if (defaultGroups.contains(groupName)) {
+                byte targetId = Byte.parseByte(groupName.substring(1));
+                if (reverseMatch) {
+                    if (targetId == 1)
+                        targetId = 2;
+                    else if (targetId == 2)
+                        targetId = 1;
+                }
+                return originalRead.getRead(targetId - 1).getData();
+            } else
+                return NSequenceWithQuality.EMPTY;
+        } else
+            return bestMatch.getGroupValue(groupName);
     }
 
     /**
@@ -97,13 +116,13 @@ public final class ParsedRead {
     }
 
     /**
-     * Calculate group names that will not be included in comments for FASTQ file. This cache is static because
+     * Calculate built-in group names that will not be included in comments for FASTQ file. This cache is static because
      * it depends only on number of reads, and it's the same for all reads.
      *
      * @param numberOfReads number of reads in input
      */
-    private static void calculateExcludedGroups(int numberOfReads) {
-        excludedGroups = IntStream.rangeClosed(1, numberOfReads).mapToObj(i -> "R" + i).collect(Collectors.toSet());
+    private static void calculateDefaultGroups(int numberOfReads) {
+        defaultGroups = IntStream.rangeClosed(1, numberOfReads).mapToObj(i -> "R" + i).collect(Collectors.toSet());
     }
 
     /**
@@ -113,7 +132,7 @@ public final class ParsedRead {
      */
     private static void collectGroupNamesFromHeader(ArrayList<GroupEdge> allGroupEdges) {
         groupsFromHeader = allGroupEdges.stream().filter(GroupEdge::isStart).map(GroupEdge::getGroupName)
-                .filter(gn -> !excludedGroups.contains(gn)).collect(Collectors.toSet());
+                .filter(gn -> !defaultGroups.contains(gn)).collect(Collectors.toSet());
     }
 
     public ParsedRead retarget(String... groupNames) {
@@ -131,13 +150,13 @@ public final class ParsedRead {
             if (!matchedGroups.containsKey(outputGroupName))
                 throw new IllegalArgumentException("Group " + outputGroupName
                         + " not found in this ParsedRead; available groups: " + matchedGroups.keySet());
-            NSequenceWithQuality target = bestMatch.getGroupValue(outputGroupName);
+            NSequenceWithQuality target = getGroupValue(outputGroupName);
             for (GroupEdgePosition groupEdgePosition : innerGroupEdgesCache.get(outputGroupName))
                 matchedGroupEdges.add(new MatchedGroupEdge(target, i, groupEdgePosition.getGroupEdge(),
                         groupEdgePosition.getPosition()));
         }
 
-        Match targetMatch = new Match(groupNames.length, bestMatch.getScore(), matchedGroupEdges);
+        Match targetMatch = new Match(groupNames.length, getBestMatchScore(), matchedGroupEdges);
         return new ParsedRead(originalRead, reverseMatch, targetMatch);
     }
 
@@ -152,8 +171,8 @@ public final class ParsedRead {
             matchedGroups = getGroups().stream().collect(Collectors.toMap(MatchedGroup::getGroupName, mg -> mg));
         if (innerRangesCache == null)
             fillInnerGroupsCache(false, true);
-        if (excludedGroups == null) {
-            calculateExcludedGroups(originalRead.numberOfReads());
+        if (defaultGroups == null) {
+            calculateDefaultGroups(originalRead.numberOfReads());
             collectGroupNamesFromHeader(allGroupEdges);
         }
 
@@ -162,7 +181,7 @@ public final class ParsedRead {
             if (!matchedGroups.containsKey(outputGroupName))
                 throw new IllegalArgumentException("Group " + outputGroupName
                         + " not found in this ParsedRead; available groups: " + matchedGroups.keySet());
-            singleReads.add(new SingleReadImpl(originalRead.getId(), bestMatch.getGroupValue(outputGroupName),
+            singleReads.add(new SingleReadImpl(originalRead.getId(), getGroupValue(outputGroupName),
                     generateReadDescription(copyOldComments, outputGroupName)));
         }
 
@@ -194,9 +213,9 @@ public final class ParsedRead {
                 HashMap<String, Range> innerRanges = innerRangesCache.get(outputGroupName);
                 if (innerRanges.containsKey(groupName))
                     commentGroups.add(new FastqCommentGroup(groupName, true, true,
-                            bestMatch.getGroupValue(groupName), innerRanges.get(groupName)));
+                            getGroupValue(groupName), innerRanges.get(groupName)));
                 else
-                    commentGroups.add(new FastqCommentGroup(groupName, bestMatch.getGroupValue(groupName)));
+                    commentGroups.add(new FastqCommentGroup(groupName, getGroupValue(groupName)));
             } else
                 commentGroups.add(new FastqCommentGroup(groupName));
         }
