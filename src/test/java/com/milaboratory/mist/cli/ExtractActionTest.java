@@ -1,7 +1,6 @@
 package com.milaboratory.mist.cli;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.File;
 

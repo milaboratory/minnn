@@ -1,16 +1,25 @@
 package com.milaboratory.mist.cli;
 
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.File;
 import java.util.*;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
+import static com.milaboratory.mist.util.SystemUtils.*;
 import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class FastqActionsTest {
+    @BeforeClass
+    public static void init() {
+        exitOnError = false;
+        File outputFilesDirectory = new File(TEMP_DIR);
+        if (!outputFilesDirectory.exists())
+            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+    }
+
     @Test
     public void simpleTest() throws Exception {
         String inputFile = EXAMPLES_PATH + "mif/singleReadWithG1-G3.mif.gz";

@@ -1,15 +1,24 @@
 package com.milaboratory.mist.cli;
 
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.File;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
+import static com.milaboratory.mist.util.SystemUtils.*;
 import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class SortActionTest {
+    @BeforeClass
+    public static void init() {
+        exitOnError = false;
+        File outputFilesDirectory = new File(TEMP_DIR);
+        if (!outputFilesDirectory.exists())
+            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+    }
+
     @Test
     public void randomTest() throws Exception {
         String startFile = TEMP_DIR + "sortStart.mif";
