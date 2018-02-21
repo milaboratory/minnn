@@ -35,8 +35,8 @@ public final class MifToFastqAction implements Action {
         String inputFileName = null;
 
         @DynamicParameter(description = "Groups and their file names for output reads. At least 1 group must be " +
-                "specified. Built-in groups R1, R2, R3... used for input reads. Example: --groupR1 out_R1.fastq " +
-                "--groupR2 out_R2.fastq --groupUMI UMI.fastq",
+                "specified. Built-in groups R1, R2, R3... used for input reads. Example: --groupR1=out_R1.fastq " +
+                "--groupR2=out_R2.fastq --groupUMI=UMI.fastq",
                 names = {"--group"})
         LinkedHashMap<String, String> groups = new LinkedHashMap<>();
 
