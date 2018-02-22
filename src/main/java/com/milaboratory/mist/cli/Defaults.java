@@ -17,4 +17,8 @@ public final class Defaults {
     public final static int DEFAULT_THREADS = 4;
     public final static String DEFAULT_INPUT_FORMAT = "fastq";
     public final static int DEFAULT_SORT_CHUNK_SIZE = 1000000;
+    public final static int DEFAULT_CORRECT_MAX_MISMATCHES = 2;
+    public final static int DEFAULT_CORRECT_MAX_DELETIONS = 2;
+    public final static int DEFAULT_CORRECT_MAX_INSERTIONS = 2;
+    public final static int DEFAULT_CORRECT_MAX_TOTAL_ERRORS = 3;
 }

@@ -7,12 +7,15 @@ import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
 import com.milaboratory.mist.io.CorrectBarcodesIO;
 
+import static com.milaboratory.mist.cli.Defaults.*;
+
 public final class CorrectAction implements Action {
     private final CorrectActionParameters params = new CorrectActionParameters();
 
     @Override
     public void go(ActionHelper helper) {
-        CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(params.inputFileName, params.outputFileName);
+        CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(params.inputFileName, params.outputFileName,
+                params.mismatches, params.deletions, params.insertions, params.totalErrors);
         correctBarcodesIO.go();
     }
 
@@ -39,5 +42,21 @@ public final class CorrectAction implements Action {
         @Parameter(description = "Output file in \"mif\" format. If not specified, stdout will be used.",
                 names = {"--output"}, order = 1)
         String outputFileName = null;
+
+        @Parameter(description = "Maximum number of mismatches between barcodes for which they are considered " +
+                "identical.", names = {"--max-mismatches"})
+        int mismatches = DEFAULT_CORRECT_MAX_MISMATCHES;
+
+        @Parameter(description = "Maximum number of deletions between barcodes for which they are considered " +
+                "identical.", names = {"--max-deletions"})
+        int deletions = DEFAULT_CORRECT_MAX_DELETIONS;
+
+        @Parameter(description = "Maximum number of insertions between barcodes for which they are considered " +
+                "identical.", names = {"--max-insertions"})
+        int insertions = DEFAULT_CORRECT_MAX_INSERTIONS;
+
+        @Parameter(description = "Maximum Levenshtein distance between barcodes for which they are considered " +
+                "identical.", names = {"--max-total-errors"})
+        int totalErrors = DEFAULT_CORRECT_MAX_TOTAL_ERRORS;
     }
 }

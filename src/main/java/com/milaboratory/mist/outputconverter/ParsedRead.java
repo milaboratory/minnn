@@ -52,6 +52,13 @@ public final class ParsedRead {
             return bestMatch.getGroups();
     }
 
+    public ArrayList<MatchedGroupEdge> getMatchedGroupEdges() {
+        if (bestMatch == null)
+            return new ArrayList<>();
+        else
+            return new ArrayList<>(bestMatch.getMatchedGroupEdges());
+    }
+
     public long getBestMatchScore() {
         return (bestMatch == null) ? Long.MIN_VALUE : bestMatch.getScore();
     }
