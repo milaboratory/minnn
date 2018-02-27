@@ -20,6 +20,25 @@ public class CorrectActionTest {
     }
 
     @Test
+    public void randomTest() throws Exception {
+        String startFile = TEMP_DIR + "correctStart.mif";
+        String inputFile = TEMP_DIR + "correctInput.mif";
+        String outputFile = TEMP_DIR + "correctOutput.mif";
+        for (int i = 0; i < 50; i++) {
+            createRandomMifFile(startFile);
+            exec("extract --input-format mif --input " + startFile + " --output " + inputFile
+                    + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
+            exec("correct --threads " + (rg.nextInt(10) + 1) + " --max-mismatches " + rg.nextInt(4)
+                    + " --max-deletions " + rg.nextInt(4) + " --max-total-errors " + rg.nextInt(5)
+                    + " --max-insertions " + rg.nextInt(4) + " --input " + inputFile
+                    + " --output " + outputFile);
+            assertFileNotEquals(inputFile, outputFile);
+        }
+        for (String fileName : new String[] { startFile, inputFile, outputFile })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
     public void preparedMifTest() throws Exception {
         String startFile = EXAMPLES_PATH + "mif/twosided.mif.gz";
         String inputFile = TEMP_DIR + "correct0.mif";
