@@ -44,19 +44,19 @@ public final class CorrectAction implements Action {
         String outputFileName = null;
 
         @Parameter(description = "Maximum number of mismatches between barcodes for which they are considered " +
-                "identical.", names = {"--max-mismatches"})
+                "identical.", names = {"--max-mismatches"}, order = 2)
         int mismatches = DEFAULT_CORRECT_MAX_MISMATCHES;
 
         @Parameter(description = "Maximum number of deletions between barcodes for which they are considered " +
-                "identical.", names = {"--max-deletions"})
+                "identical.", names = {"--max-deletions"}, order = 3)
         int deletions = DEFAULT_CORRECT_MAX_DELETIONS;
 
         @Parameter(description = "Maximum number of insertions between barcodes for which they are considered " +
-                "identical.", names = {"--max-insertions"})
+                "identical.", names = {"--max-insertions"}, order = 4)
         int insertions = DEFAULT_CORRECT_MAX_INSERTIONS;
 
         @Parameter(description = "Maximum Levenshtein distance between barcodes for which they are considered " +
-                "identical.", names = {"--max-total-errors"})
+                "identical.", names = {"--max-total-errors"}, order = 5)
         int totalErrors = DEFAULT_CORRECT_MAX_TOTAL_ERRORS;
     }
 }

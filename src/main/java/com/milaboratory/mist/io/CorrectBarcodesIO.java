@@ -3,6 +3,7 @@ package com.milaboratory.mist.io;
 import cc.redberry.pipe.CUtils;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.SequenceTreeMap;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 import static com.milaboratory.mist.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
@@ -52,10 +54,12 @@ public final class CorrectBarcodesIO {
             Set<String> keyGroups = pass1Reader.getGroupEdges().stream().filter(GroupEdge::isStart)
                     .map(GroupEdge::getGroupName).filter(groupName -> !defaultGroups.contains(groupName))
                     .collect(Collectors.toSet());
-            Map<String, HashMap<NucleotideSequence, SequenceCounter>> unsortedMaps = keyGroups.stream()
-                    .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
+            Map<String, SequenceTreeMap<NucleotideSequence, SequenceCounter>> sequenceTreeMaps = keyGroups.stream()
+                    .collect(Collectors.toMap(groupName -> groupName,
+                            groupName -> new SequenceTreeMap<>(NucleotideSequence.ALPHABET)));
             for (ParsedRead parsedRead : CUtils.it(pass1Reader))
-                for (Map.Entry<String, HashMap<NucleotideSequence, SequenceCounter>> entry : unsortedMaps.entrySet()) {
+                for (Map.Entry<String, SequenceTreeMap<NucleotideSequence, SequenceCounter>> entry
+                        : sequenceTreeMaps.entrySet()) {
                     NucleotideSequence groupValue = parsedRead.getGroupValue(entry.getKey()).getSequence();
                     SequenceCounter counter = entry.getValue().get(groupValue);
                     if (counter == null)
@@ -64,46 +68,42 @@ public final class CorrectBarcodesIO {
                         counter.increaseCount();
                 }
 
-            Map<String, SequenceTreeMap<NucleotideSequence, SequenceCounter>> sortedMaps = keyGroups.stream()
-                    .collect(Collectors.toMap(groupName -> groupName,
-                            groupName -> new SequenceTreeMap<>(NucleotideSequence.ALPHABET)));
-            for (Map.Entry<String, HashMap<NucleotideSequence, SequenceCounter>> entry : unsortedMaps.entrySet()) {
-                SequenceTreeMap<NucleotideSequence, SequenceCounter> currentSortedMap = sortedMaps.get(entry.getKey());
-                entry.getValue().entrySet().stream().sorted(Map.Entry.comparingByValue())
-                        .forEachOrdered(e -> currentSortedMap.put(e.getKey(), e.getValue()));
-            }
-
             SmartProgressReporter.startProgressReport("Correcting barcodes", pass2Reader, System.err);
             for (ParsedRead parsedRead : CUtils.it(pass2Reader)) {
                 Map<String, MatchedGroupData> matchedGroups = parsedRead.getGroups().stream()
+                        .filter(group -> !defaultGroups.contains(group.getGroupName()))
                         .collect(Collectors.toMap(MatchedGroup::getGroupName,
                                 group -> new MatchedGroupData(group.getValue().getSequence())));
-                for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges()) {
-                    MatchedGroupData matchedGroup = matchedGroups.get(matchedGroupEdge.getGroupName());
-                    if (matchedGroupEdge.isStart())
-                        matchedGroup.setStartEdge(matchedGroupEdge);
-                    else
-                        matchedGroup.setEndEdge(matchedGroupEdge);
-                }
+                for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges())
+                    if (!defaultGroups.contains(matchedGroupEdge.getGroupName())) {
+                        MatchedGroupData matchedGroup = matchedGroups.get(matchedGroupEdge.getGroupName());
+                        if (matchedGroupEdge.isStart())
+                            matchedGroup.setStartEdge(matchedGroupEdge);
+                        else
+                            matchedGroup.setEndEdge(matchedGroupEdge);
+                    }
 
                 ArrayList<MatchedGroupEdge> newGroupEdges = new ArrayList<>();
                 for (Map.Entry<String, MatchedGroupData> entry : matchedGroups.entrySet()) {
-                    SequenceTreeMap<NucleotideSequence, SequenceCounter> sequenceTreeMap = sortedMaps
+                    SequenceTreeMap<NucleotideSequence, SequenceCounter> sequenceTreeMap = sequenceTreeMaps
                             .get(entry.getKey());
-                    SequenceCounter correctedSequenceCounter = sequenceTreeMap
+                    NeighborhoodIterator<NucleotideSequence, SequenceCounter> neighborhoodIterator = sequenceTreeMap
                             .getNeighborhoodIterator(entry.getValue().getSequence(),
-                                    mismatches, deletions, insertions, totalErrors).next();
+                                    mismatches, deletions, insertions, totalErrors);
+                    SequenceCounter correctedSequenceCounter = StreamSupport.stream(neighborhoodIterator.it()
+                                    .spliterator(), false).max(SequenceCounter::compareTo).orElse(null);
+                    MatchedGroupEdge startEdge = entry.getValue().getStartEdge();
+                    MatchedGroupEdge endEdge = entry.getValue().getEndEdge();
                     if (correctedSequenceCounter == null) {
-                        newGroupEdges.add(entry.getValue().getStartEdge());
-                        newGroupEdges.add(entry.getValue().getEndEdge());
+                        newGroupEdges.add(startEdge);
+                        newGroupEdges.add(endEdge);
                     } else {
                         NucleotideSequence correctValue = correctedSequenceCounter.getSequence();
-                        int offset = entry.getValue().getOffset();
-                        newGroupEdges.add(convertMatchedGroupEdge(entry.getValue().getStartEdge(),
-                                correctValue, offset));
-                        newGroupEdges.add(convertMatchedGroupEdge(entry.getValue().getEndEdge(),
-                                correctValue, offset));
-                        correctedBarcodes++;
+                        ConversionResult conversionResult = convertMatchedGroupEdges(startEdge, endEdge, correctValue);
+                        newGroupEdges.add(conversionResult.startEdge);
+                        newGroupEdges.add(conversionResult.endEdge);
+                        if (conversionResult.converted)
+                            correctedBarcodes++;
                     }
                 }
 
@@ -128,17 +128,23 @@ public final class CorrectBarcodesIO {
                 : new MifWriter(outputFileName, outputHeader);
     }
 
-    private MatchedGroupEdge convertMatchedGroupEdge(MatchedGroupEdge originalEdge, NucleotideSequence newValue,
-                                                     int offset) {
-        NSequenceWithQuality originalTarget = originalEdge.getTarget();
+    private ConversionResult convertMatchedGroupEdges(MatchedGroupEdge startEdge, MatchedGroupEdge endEdge,
+                                                      NucleotideSequence newValue) {
+        NSequenceWithQuality originalTarget = startEdge.getTarget();
+        int offset = startEdge.getPosition();
+        if (originalTarget.getSequence().getRange(offset, offset + newValue.size()).equals(newValue))
+            return new ConversionResult(startEdge, endEdge, false);
         NSequenceWithQuality newPart = new NSequenceWithQuality(newValue,
-                originalTarget.getRange(offset, newValue.size()).getQuality());
+                originalTarget.getRange(offset, offset + newValue.size()).getQuality());
         NSequenceWithQuality firstPart = (offset == 0) ? newPart
                 : originalTarget.getRange(0, offset).concatenate(newPart);
         NSequenceWithQuality newTarget = (offset == originalTarget.size() - newValue.size()) ? firstPart
                 : firstPart.concatenate(originalTarget.getRange(offset + newValue.size(), originalTarget.size()));
-        return new MatchedGroupEdge(newTarget, originalEdge.getTargetId(), originalEdge.getGroupEdge(),
-                originalEdge.getPosition());
+        MatchedGroupEdge newStartEdge = new MatchedGroupEdge(newTarget, startEdge.getTargetId(),
+                startEdge.getGroupEdge(), startEdge.getPosition());
+        MatchedGroupEdge newEndEdge = new MatchedGroupEdge(newTarget, endEdge.getTargetId(),
+                endEdge.getGroupEdge(), endEdge.getPosition());
+        return new ConversionResult(newStartEdge, newEndEdge, true);
     }
 
     private static class SequenceCounter implements Comparable<SequenceCounter> {
@@ -164,7 +170,7 @@ public final class CorrectBarcodesIO {
 
         @Override
         public int compareTo(SequenceCounter other) {
-            return Long.compare(other.getCount(), count);   // inverted to make bigger counts first
+            return Long.compare(count, other.getCount());
         }
     }
 
@@ -200,9 +206,17 @@ public final class CorrectBarcodesIO {
                 throw new IllegalStateException("Ending group edge is null in MatchedGroupData!");
             return endEdge;
         }
+    }
 
-        int getOffset() {
-            return getStartEdge().getPosition();
+    private static class ConversionResult {
+        final MatchedGroupEdge startEdge;
+        final MatchedGroupEdge endEdge;
+        final boolean converted;
+
+        ConversionResult(MatchedGroupEdge startEdge, MatchedGroupEdge endEdge, boolean converted) {
+            this.startEdge = startEdge;
+            this.endEdge = endEdge;
+            this.converted = converted;
         }
     }
 }
