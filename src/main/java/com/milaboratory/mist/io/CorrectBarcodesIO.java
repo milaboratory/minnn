@@ -81,8 +81,8 @@ public final class CorrectBarcodesIO {
                 }
 
             SmartProgressReporter.startProgressReport("Correcting barcodes", pass2Reader, System.err);
-            Merger<Chunk<ParsedRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(pass2Reader,
-                    4 * 64), 4 * 16);
+            Merger<Chunk<ParsedRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(
+                    new NumberedParsedReadsPort(pass2Reader), 4 * 64), 4 * 16);
             OutputPort<Chunk<ParsedRead>> correctedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
                     CUtils.chunked(new CorrectBarcodesProcessor()), threads);
             OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(
