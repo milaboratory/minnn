@@ -13,6 +13,11 @@ class CommandLineTestUtils {
         main(cmdLine.split("[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)"));
     }
 
+    static Void callableExec(String cmdLine) throws Exception {
+        exec(cmdLine);
+        return null;
+    }
+
     static void createRandomMifFile(String fileName) throws Exception {
         String fastqFile = EXAMPLES_PATH + "small/100.fastq";
         SinglePattern randomPattern = getRandomSinglePattern();
