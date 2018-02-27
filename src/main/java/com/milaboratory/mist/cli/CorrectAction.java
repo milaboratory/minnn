@@ -15,7 +15,7 @@ public final class CorrectAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(params.inputFileName, params.outputFileName,
-                params.mismatches, params.deletions, params.insertions, params.totalErrors);
+                params.mismatches, params.deletions, params.insertions, params.totalErrors, params.threads);
         correctBarcodesIO.go();
     }
 
@@ -58,5 +58,9 @@ public final class CorrectAction implements Action {
         @Parameter(description = "Maximum Levenshtein distance between barcodes for which they are considered " +
                 "identical.", names = {"--max-total-errors"}, order = 5)
         int totalErrors = DEFAULT_CORRECT_MAX_TOTAL_ERRORS;
+
+        @Parameter(description = "Number of threads for correcting barcodes.",
+                names = {"--threads"})
+        int threads = DEFAULT_THREADS;
     }
 }
