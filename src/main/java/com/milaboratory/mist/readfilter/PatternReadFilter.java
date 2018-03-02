@@ -27,7 +27,7 @@ public class PatternReadFilter implements ReadFilter {
         try {
             pattern = patternParser.parseQuery(patternQuery);
         } catch (ParserException e) {
-            System.err.println("Error while parsing the pattern!");
+            System.err.println("Error while parsing pattern " + patternQuery);
             throw exitWithError(e.getMessage());
         }
         this.pattern = pattern;
