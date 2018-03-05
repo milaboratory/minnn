@@ -1,15 +1,27 @@
 grammar FilterGrammar;
 
-filter : or | and | pattern | len ;
-or : or_operand '|' or_operand ('|' or_operand)* ;
-or_operand : and | pattern | len ;
-and : and_operand '&' and_operand ('&' and_operand)* ;
-and_operand : pattern | len ;
-pattern : GROUP_NAME '~' STRING ;
-len : LEN '(' GROUP_NAME ')=' NUMBER ;
+filter : filterInParentheses | anySingleFilter ;
+filterInParentheses : OPEN_PARENTHESIS anySingleFilter CLOSED_PARENTHESIS ;
+anySingleFilter : or | and | pattern | len ;
+or : orOperand OR orOperand (OR orOperand)* ;
+orOperand : and | pattern | len | filterInParentheses ;
+and : andOperand AND andOperand (AND andOperand)* ;
+andOperand : pattern | len | filterInParentheses ;
+pattern : groupName TILDE patternString ;
+len : LEN OPEN_PARENTHESIS groupName CLOSED_PARENTHESIS EQUALS groupLength ;
+patternString : STRING ;
+groupName : GROUP_NAME ;
+groupLength : NUMBER ;
 
-STRING : '"' ('""'|~'"')* '"' ;
+SINGLE_QUOTE : '\'' ;
+STRING : SINGLE_QUOTE .*? SINGLE_QUOTE ;
 LEN : 'Len' ;
-NUMBER : [0-9a-zA-Z]+ ;
+NUMBER : [0-9]+ ;
 GROUP_NAME : [0-9a-zA-Z]+ ;
+OPEN_PARENTHESIS : '(' ;
+CLOSED_PARENTHESIS : ')' ;
+EQUALS : '=' ;
+TILDE : '~' ;
+AND : '&' ;
+OR : '|' ;
 WS : [ \t\n\r]+ -> skip ;

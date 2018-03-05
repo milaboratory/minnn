@@ -28,6 +28,30 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterFilterInParentheses(FilterGrammarParser.FilterInParenthesesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFilterInParentheses(FilterGrammarParser.FilterInParenthesesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAnySingleFilter(FilterGrammarParser.AnySingleFilterContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAnySingleFilter(FilterGrammarParser.AnySingleFilterContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterOr(FilterGrammarParser.OrContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -40,13 +64,13 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOr_operand(FilterGrammarParser.Or_operandContext ctx) { }
+	@Override public void enterOrOperand(FilterGrammarParser.OrOperandContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOr_operand(FilterGrammarParser.Or_operandContext ctx) { }
+	@Override public void exitOrOperand(FilterGrammarParser.OrOperandContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -64,13 +88,13 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAnd_operand(FilterGrammarParser.And_operandContext ctx) { }
+	@Override public void enterAndOperand(FilterGrammarParser.AndOperandContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAnd_operand(FilterGrammarParser.And_operandContext ctx) { }
+	@Override public void exitAndOperand(FilterGrammarParser.AndOperandContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -95,6 +119,42 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitLen(FilterGrammarParser.LenContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPatternString(FilterGrammarParser.PatternStringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPatternString(FilterGrammarParser.PatternStringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGroupName(FilterGrammarParser.GroupNameContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGroupName(FilterGrammarParser.GroupNameContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGroupLength(FilterGrammarParser.GroupLengthContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGroupLength(FilterGrammarParser.GroupLengthContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
