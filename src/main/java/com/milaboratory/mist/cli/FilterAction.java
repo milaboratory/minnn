@@ -23,9 +23,10 @@ public final class FilterAction implements Action {
 
     @Override
     public void go(ActionHelper helper) {
-        ReadFilter parsedReadFilter = parseFilterQuery(params.filterQuery);
+        String filterQuery = String.join("", params.filterQuery);
+        ReadFilter parsedReadFilter = parseFilterQuery(filterQuery);
         if (parsedReadFilter == null)
-            throw exitWithError("Filter query not parsed: " + params.filterQuery);
+            throw exitWithError("Filter query not parsed: " + filterQuery);
         FilterIO filterIO = new FilterIO(parsedReadFilter, params.inputFileName, params.outputFileName, params.threads);
         filterIO.go();
     }
@@ -44,7 +45,7 @@ public final class FilterAction implements Action {
             "Filter target nucleotide sequences, pass only sequences matching the query.")
     private static final class FilterActionParameters extends ActionParameters {
         @Parameter(description = "\"<filter_query>\"", order = 0, required = true)
-        String filterQuery = null;
+        List<String> filterQuery = new ArrayList<>();
 
         @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",
                 names = {"--input"}, order = 1)
