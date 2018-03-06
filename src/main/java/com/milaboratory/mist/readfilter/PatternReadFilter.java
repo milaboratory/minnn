@@ -4,16 +4,14 @@ import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.parser.Parser;
 import com.milaboratory.mist.parser.ParserException;
-import com.milaboratory.mist.pattern.BasePatternAligner;
-import com.milaboratory.mist.pattern.Pattern;
-import com.milaboratory.mist.pattern.PatternAligner;
+import com.milaboratory.mist.pattern.*;
 
 import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
 
 public class PatternReadFilter implements ReadFilter {
     private final String groupName;
-    private final Pattern pattern;
+    private final SinglePattern pattern;
     private final boolean fairSorting;
 
     public PatternReadFilter(String groupName, String patternQuery, boolean fairSorting) {
@@ -30,7 +28,10 @@ public class PatternReadFilter implements ReadFilter {
             System.err.println("Error while parsing pattern " + patternQuery);
             throw exitWithError(e.getMessage());
         }
-        this.pattern = pattern;
+        if (!(pattern instanceof SinglePattern))
+            throw exitWithError("Only single-read patterns are allowed in filters, found wrong pattern "
+                    + patternQuery);
+        this.pattern = (SinglePattern)pattern;
         this.fairSorting = fairSorting;
     }
 
