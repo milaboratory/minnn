@@ -8,13 +8,15 @@ import com.milaboratory.core.sequence.*;
 import com.milaboratory.mist.pattern.*;
 import com.milaboratory.test.TestUtil;
 
-import java.io.File;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.stream.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.pattern.PatternUtils.invertCoordinate;
@@ -484,6 +486,41 @@ public class CommonTestUtils {
         assertArrayEquals(Files.readAllBytes(Paths.get(fileName1)), Files.readAllBytes(Paths.get(fileName2)));
     }
 
+    public static void assertFileNotEquals(String fileName1, String fileName2) throws Exception {
+        byte[] file1Bytes = Files.readAllBytes(Paths.get(fileName1));
+        byte[] file2Bytes = Files.readAllBytes(Paths.get(fileName2));
+        if (file1Bytes.length == file2Bytes.length) {
+            for (int i = 0; i < file1Bytes.length; i++)
+                if (file1Bytes[i] != file2Bytes[i])
+                    return;
+            throw new AssertionError();
+        }
+    }
+
+    public static void gzip(String inputFile, String outputFile) throws IOException {
+        try (GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(new File(outputFile)))) {
+            try (FileInputStream in = new FileInputStream(inputFile)) {
+                byte[] buffer = new byte[1 << 20];
+                int len;
+                while ((len = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, len);
+                }
+            }
+        }
+    }
+
+    public static void gunzip(String inputFile, String outputFile) throws IOException {
+        try (GZIPInputStream in = new GZIPInputStream(new FileInputStream(new File(inputFile)))) {
+            try (FileOutputStream out = new FileOutputStream(new File(outputFile))) {
+                byte[] buffer = new byte[1 << 20];
+                int len;
+                while ((len = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, len);
+                }
+            }
+        }
+    }
+
     public static long getFileSize(String fileName) {
         return new File(fileName).length();
     }
@@ -547,6 +584,23 @@ public class CommonTestUtils {
                 throw new RuntimeException(e);
         }
         assertTrue(exceptionThrown);
+    }
+
+    public static void assertOutputContains(boolean stderr, String str, Callable<Void> f) throws Exception {
+        PrintStream previousOut = stderr ? System.err : System.out;
+        ByteArrayOutputStream capturedStream = new ByteArrayOutputStream();
+        if (stderr)
+            System.setErr(new PrintStream(capturedStream));
+        else
+            System.setOut(new PrintStream(capturedStream));
+
+        f.call();
+        assertTrue(capturedStream.toString().contains(str));
+
+        if (stderr)
+            System.setErr(previousOut);
+        else
+            System.setOut(previousOut);
     }
 
     public static void repeatAndExpectExceptionEveryTime(int iterations, Class exceptionClass, Callable<Void> f) {
