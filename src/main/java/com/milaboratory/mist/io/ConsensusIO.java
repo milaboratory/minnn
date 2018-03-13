@@ -1,6 +1,11 @@
 package com.milaboratory.mist.io;
 
+import com.milaboratory.util.SmartProgressReporter;
+
 import java.io.IOException;
+
+import static com.milaboratory.mist.util.SystemUtils.*;
+import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class ConsensusIO {
     private final String inputFileName;
@@ -12,7 +17,20 @@ public final class ConsensusIO {
     }
 
     public void go() {
+        long startTime = System.currentTimeMillis();
+        long totalReads = 0;
+        try (MifReader reader = createReader();
+             MifWriter writer = createWriter(reader.getHeader())) {
+            SmartProgressReporter.startProgressReport("Calculating consensus", reader, System.err);
+            if (!reader.isCorrected())
+                System.err.println("WARNING: calculating consensus for not corrected MIF file!");
+        } catch (IOException e) {
+            throw exitWithError(e.getMessage());
+        }
 
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        System.err.println("Processed " + totalReads + " reads\n");
     }
 
     private MifReader createReader() throws IOException {
