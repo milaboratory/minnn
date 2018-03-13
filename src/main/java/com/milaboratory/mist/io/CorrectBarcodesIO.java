@@ -7,6 +7,7 @@ import cc.redberry.pipe.blocks.Merger;
 import cc.redberry.pipe.blocks.ParallelProcessor;
 import cc.redberry.pipe.util.Chunk;
 import cc.redberry.pipe.util.OrderedOutputPort;
+import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.tree.NeighborhoodIterator;
@@ -39,7 +40,8 @@ public final class CorrectBarcodesIO {
     private Set<String> defaultGroups;
     private Map<String, SequenceTreeMap<NucleotideSequence, SequenceCounter>> sequenceTreeMaps;
     private int numberOfReads;
-    private AtomicLong correctedBarcodes = new AtomicLong(0);
+    private AtomicLong corrected = new AtomicLong(0);
+    private AtomicLong overlaps = new AtomicLong(0);
 
     public CorrectBarcodesIO(String inputFileName, String outputFileName, int mismatches, int deletions, int insertions,
                              int totalErrors, int threads) {
@@ -97,7 +99,9 @@ public final class CorrectBarcodesIO {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.err.println("Processed " + totalReads + " reads, corrected " + correctedBarcodes + " barcodes\n");
+        System.err.println("Processed " + totalReads + " reads");
+        System.err.println("Reads with corrected barcodes: " + corrected);
+        System.err.println("Reads with barcode overlaps: " + overlaps + "\n");
     }
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
@@ -137,109 +141,114 @@ public final class CorrectBarcodesIO {
     private class CorrectBarcodesProcessor implements Processor<ParsedRead, ParsedRead> {
         @Override
         public ParsedRead process(ParsedRead parsedRead) {
-            Map<String, MatchedGroupData> matchedGroups = parsedRead.getGroups().stream()
+            Map<String, MatchedGroup> matchedGroups = parsedRead.getGroups().stream()
                     .filter(group -> !defaultGroups.contains(group.getGroupName()))
-                    .collect(Collectors.toMap(MatchedGroup::getGroupName,
-                            group -> new MatchedGroupData(group.getValue().getSequence())));
-            for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges())
-                if (!defaultGroups.contains(matchedGroupEdge.getGroupName())) {
-                    MatchedGroupData matchedGroup = matchedGroups.get(matchedGroupEdge.getGroupName());
-                    if (matchedGroupEdge.isStart())
-                        matchedGroup.setStartEdge(matchedGroupEdge);
-                    else
-                        matchedGroup.setEndEdge(matchedGroupEdge);
-                }
+                    .collect(Collectors.toMap(MatchedGroup::getGroupName, group -> group));
 
-            ArrayList<MatchedGroupEdge> newGroupEdges = new ArrayList<>();
-            for (Map.Entry<String, MatchedGroupData> entry : matchedGroups.entrySet()) {
-                SequenceTreeMap<NucleotideSequence, SequenceCounter> sequenceTreeMap = sequenceTreeMaps
-                        .get(entry.getKey());
+            HashMap<Byte, NSequenceWithQuality> oldTargets = new HashMap<>();
+            HashMap<Byte, ArrayList<TargetPatch>> targetPatches = new HashMap<>();
+            boolean isCorrection = false;
+            for (Map.Entry<String, MatchedGroup> entry : matchedGroups.entrySet()) {
+                String groupName = entry.getKey();
+                MatchedGroup matchedGroup = entry.getValue();
+                byte targetId = matchedGroup.getTargetId();
+                NucleotideSequence oldValue = matchedGroup.getValue().getSequence();
+                oldTargets.computeIfAbsent(targetId, id -> matchedGroup.getTarget());
+                SequenceTreeMap<NucleotideSequence, SequenceCounter> sequenceTreeMap = sequenceTreeMaps.get(groupName);
                 NeighborhoodIterator<NucleotideSequence, SequenceCounter> neighborhoodIterator = sequenceTreeMap
-                        .getNeighborhoodIterator(entry.getValue().getSequence(),
-                                mismatches, deletions, insertions, totalErrors);
+                        .getNeighborhoodIterator(oldValue, mismatches, deletions, insertions, totalErrors);
                 SequenceCounter correctedSequenceCounter = StreamSupport.stream(neighborhoodIterator.it()
                         .spliterator(), false).max(SequenceCounter::compareTo).orElse(null);
-                MatchedGroupEdge startEdge = entry.getValue().getStartEdge();
-                MatchedGroupEdge endEdge = entry.getValue().getEndEdge();
-                if (correctedSequenceCounter == null) {
-                    newGroupEdges.add(startEdge);
-                    newGroupEdges.add(endEdge);
-                } else {
-                    NucleotideSequence correctValue = correctedSequenceCounter.getSequence();
-                    ConversionResult conversionResult = convertMatchedGroupEdges(startEdge, endEdge, correctValue);
-                    newGroupEdges.add(conversionResult.startEdge);
-                    newGroupEdges.add(conversionResult.endEdge);
-                    if (conversionResult.converted)
-                        correctedBarcodes.incrementAndGet();
+                NucleotideSequence correctValue = (correctedSequenceCounter == null) ? oldValue
+                        : correctedSequenceCounter.getSequence();
+                isCorrection |= !correctValue.equals(oldValue);
+                targetPatches.computeIfAbsent(targetId, id -> new ArrayList<>());
+                targetPatches.get(targetId).add(new TargetPatch(groupName, correctValue, matchedGroup.getRange()));
+            }
+
+            ArrayList<MatchedGroupEdge> newGroupEdges;
+            if (!isCorrection)
+                newGroupEdges = parsedRead.getMatchedGroupEdges();
+            else {
+                boolean isOverlap = false;
+                newGroupEdges = new ArrayList<>();
+                Set<Byte> targetIds = oldTargets.keySet();
+                for (byte targetId : targetIds) {
+                    NSequenceWithQuality newTarget = NSequenceWithQuality.EMPTY;
+                    ArrayList<TargetPatch> currentTargetPatches = targetPatches.get(targetId);
+                    Collections.sort(currentTargetPatches);
+                    NSequenceWithQuality currentOldTarget = oldTargets.get(targetId);
+                    for (int i = 0; i < currentTargetPatches.size(); i++) {
+                        TargetPatch currentPatch = currentTargetPatches.get(i);
+                        if (i > 0)
+                            isOverlap |= currentPatch.trimRange(currentTargetPatches.get(i - 1));
+                        else if (currentPatch.range.getLower() > 0)
+                            newTarget = oldTargets.get(targetId).getRange(0, currentPatch.range.getLower());
+                        currentPatch.newLower = newTarget.size();
+                        newTarget = newTarget.concatenate(new NSequenceWithQuality(currentPatch.correctValue));
+                        currentPatch.newUpper = newTarget.size();
+                        int oldTargetPartLower = currentPatch.range.getUpper();
+                        int oldTargetPartUpper = (i < currentTargetPatches.size() - 1)
+                                ? currentTargetPatches.get(i + 1).range.getLower() : currentOldTarget.size();
+                        if (oldTargetPartLower < oldTargetPartUpper)
+                            newTarget = newTarget.concatenate(currentOldTarget
+                                    .getRange(oldTargetPartLower, oldTargetPartUpper));
+                    }
+
+                    Map<String, TargetPatch> currentTargetPatchesMap = currentTargetPatches.stream()
+                            .collect(Collectors.toMap(tp -> tp.groupName, tp -> tp));
+                    for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges().stream()
+                            .filter(mge -> mge.getTargetId() == targetId).collect(Collectors.toList())) {
+                        int matchedGroupEdgePosition;
+                        GroupEdge groupEdge = matchedGroupEdge.getGroupEdge();
+                        TargetPatch currentTargetPatch = currentTargetPatchesMap.get(groupEdge.getGroupName());
+                        if (currentTargetPatch != null) {
+                            matchedGroupEdgePosition = groupEdge.isStart() ? currentTargetPatch.newLower
+                                    : currentTargetPatch.newUpper;
+                            if (matchedGroupEdgePosition == -1)
+                                throw new IllegalStateException("New group edge position was not calculated!");
+                        } else if (defaultGroups.contains(groupEdge.getGroupName()))
+                            matchedGroupEdgePosition = groupEdge.isStart() ? 0 : newTarget.size();
+                        else
+                            throw new IllegalStateException("Group " + groupEdge.getGroupName() + " with target id "
+                                    + targetId + " is not default and not in target patches!");
+                        newGroupEdges.add(new MatchedGroupEdge(newTarget, matchedGroupEdge.getTargetId(),
+                                matchedGroupEdge.getGroupEdge(), matchedGroupEdgePosition));
+                    }
                 }
+                if (isOverlap)
+                    overlaps.getAndIncrement();
+                corrected.getAndIncrement();
             }
 
             Match newMatch = new Match(numberOfReads, parsedRead.getBestMatchScore(), newGroupEdges);
             return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), newMatch);
         }
 
-        private ConversionResult convertMatchedGroupEdges(MatchedGroupEdge startEdge, MatchedGroupEdge endEdge,
-                                                          NucleotideSequence newValue) {
-            NSequenceWithQuality originalTarget = startEdge.getTarget();
-            int offset = startEdge.getPosition();
-            if (originalTarget.getSequence().getRange(offset, offset + newValue.size()).equals(newValue))
-                return new ConversionResult(startEdge, endEdge, false);
-            NSequenceWithQuality newPart = new NSequenceWithQuality(newValue,
-                    originalTarget.getRange(offset, offset + newValue.size()).getQuality());
-            NSequenceWithQuality firstPart = (offset == 0) ? newPart
-                    : originalTarget.getRange(0, offset).concatenate(newPart);
-            NSequenceWithQuality newTarget = (offset == originalTarget.size() - newValue.size()) ? firstPart
-                    : firstPart.concatenate(originalTarget.getRange(offset + newValue.size(), originalTarget.size()));
-            MatchedGroupEdge newStartEdge = new MatchedGroupEdge(newTarget, startEdge.getTargetId(),
-                    startEdge.getGroupEdge(), startEdge.getPosition());
-            MatchedGroupEdge newEndEdge = new MatchedGroupEdge(newTarget, endEdge.getTargetId(),
-                    endEdge.getGroupEdge(), endEdge.getPosition());
-            return new ConversionResult(newStartEdge, newEndEdge, true);
-        }
+        private class TargetPatch implements Comparable<TargetPatch> {
+            final String groupName;
+            final NucleotideSequence correctValue;
+            Range range;
+            int newLower = -1;
+            int newUpper = -1;
 
-        private class ConversionResult {
-            final MatchedGroupEdge startEdge;
-            final MatchedGroupEdge endEdge;
-            final boolean converted;
-
-            ConversionResult(MatchedGroupEdge startEdge, MatchedGroupEdge endEdge, boolean converted) {
-                this.startEdge = startEdge;
-                this.endEdge = endEdge;
-                this.converted = converted;
-            }
-        }
-
-        private class MatchedGroupData {
-            private final NucleotideSequence sequence;
-            private MatchedGroupEdge startEdge = null;
-            private MatchedGroupEdge endEdge = null;
-
-            MatchedGroupData(NucleotideSequence sequence) {
-                this.sequence = sequence;
+            TargetPatch(String groupName, NucleotideSequence correctValue, Range range) {
+                this.groupName = groupName;
+                this.correctValue = correctValue;
+                this.range = range;
             }
 
-            NucleotideSequence getSequence() {
-                return sequence;
+            boolean trimRange(TargetPatch other) {
+                if (range.getLower() < other.range.getUpper()) {
+                    range = new Range(other.range.getUpper(), Math.max(range.getUpper(), other.range.getUpper()));
+                    return true;
+                } else
+                    return false;
             }
 
-            void setStartEdge(MatchedGroupEdge startEdge) {
-                this.startEdge = startEdge;
-            }
-
-            void setEndEdge(MatchedGroupEdge endEdge) {
-                this.endEdge = endEdge;
-            }
-
-            MatchedGroupEdge getStartEdge() {
-                if (startEdge == null)
-                    throw new IllegalStateException("Starting group edge is null in MatchedGroupData!");
-                return startEdge;
-            }
-
-            MatchedGroupEdge getEndEdge() {
-                if (endEdge == null)
-                    throw new IllegalStateException("Ending group edge is null in MatchedGroupData!");
-                return endEdge;
+            @Override
+            public int compareTo(TargetPatch other) {
+                return Integer.compare(range.getLower(), other.range.getLower());
             }
         }
     }
