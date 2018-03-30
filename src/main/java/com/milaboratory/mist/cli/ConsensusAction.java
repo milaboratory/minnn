@@ -9,12 +9,15 @@ import com.milaboratory.mist.io.ConsensusIO;
 
 import java.util.*;
 
+import static com.milaboratory.mist.cli.Defaults.*;
+
 public final class ConsensusAction implements Action {
     private final ConsensusActionParameters params = new ConsensusActionParameters();
 
     @Override
     public void go(ActionHelper helper) {
-        ConsensusIO consensusIO = new ConsensusIO(params.groupList, params.inputFileName, params.outputFileName);
+        ConsensusIO consensusIO = new ConsensusIO(params.groupList, params.inputFileName, params.outputFileName,
+                params.alignerWidth, params.threads);
         consensusIO.go();
     }
 
@@ -41,5 +44,13 @@ public final class ConsensusAction implements Action {
         @Parameter(description = "List of groups that represent barcodes. If not specified, all groups will be used.",
                 names = {"--group-list"}, variableArity = true)
         List<String> groupList = null;
+
+        @Parameter(description = "Window width (maximum allowed number of indels) for banded aligner.",
+                names = {"--width"})
+        int alignerWidth = DEFAULT_CONSENSUS_ALIGNER_WIDTH;
+
+        @Parameter(description = "Number of threads for calculating consensus sequences.",
+                names = {"--threads"})
+        int threads = DEFAULT_THREADS;
     }
 }

@@ -21,4 +21,5 @@ public final class Defaults {
     public final static int DEFAULT_CORRECT_MAX_DELETIONS = 2;
     public final static int DEFAULT_CORRECT_MAX_INSERTIONS = 2;
     public final static int DEFAULT_CORRECT_MAX_TOTAL_ERRORS = 3;
+    public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 5;
 }
