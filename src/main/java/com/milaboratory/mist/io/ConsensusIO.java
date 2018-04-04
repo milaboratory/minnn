@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 
 import static com.milaboratory.core.alignment.BandedLinearAligner.alignLocalGlobal;
 import static com.milaboratory.mist.cli.Defaults.*;
+import static com.milaboratory.mist.pattern.PatternUtils.invertCoordinate;
 import static com.milaboratory.mist.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -258,6 +259,7 @@ public final class ConsensusIO {
         private Consensus generateConsensus(ArrayList<AlignedSubsequences> subsequencesList,
                                             NSequenceWithQuality[] bestSequences) {
             int numTargets = bestSequences.length;
+            ArrayList<LettersWithPositions> lettersList = new ArrayList<>();
             for (int targetIndex = 0; targetIndex < numTargets; targetIndex++) {
                 for (int position = 0; position < bestSequences[targetIndex].size(); position++) {
                     ArrayList<NSequenceWithQuality> currentPositionSequences = new ArrayList<>();
@@ -276,16 +278,21 @@ public final class ConsensusIO {
                     }
                     if (bestQualityIndex == -1)
                         throw new IllegalStateException("bestQualityIndex not found in " + subsequencesList);
-                    ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
+                    LettersMatrix lettersMatrix = new LettersMatrix(currentPositionSequences.get(bestQualityIndex),
+                            bestQualityIndex);
                     for (int i = 0; i < currentPositionSequences.size(); i++) {
-                        NSequenceWithQuality currentSeq = currentPositionSequences.get(i);
-                        if ((i != bestQualityIndex) && (currentSeq != NSequenceWithQuality.EMPTY))
-                            alignments.add(alignLocalGlobal(scoring,
+                        if (i != bestQualityIndex) {
+                            NSequenceWithQuality currentSeq = currentPositionSequences.get(i);
+                            if (currentSeq != NSequenceWithQuality.EMPTY)
+                                lettersMatrix.add(currentSeq, alignLocalGlobal(scoring,
                                     currentPositionSequences.get(bestQualityIndex).getSequence(),
                                     currentPositionSequences.get(i).getSequence(), alignerWidth));
-                        else
-                            alignments.add(null);
+                            else
+                                lettersMatrix.addEmpty();
+                        }
                     }
+
+
                 }
             }
         }
@@ -301,8 +308,86 @@ public final class ConsensusIO {
             protected int index(int targetIndex, int position) {
                 return indexes[targetIndex] + position;
             }
+        }
 
-            abstract NSequenceWithQuality get(int targetIndex, int position);
+        private class AlignedSubsequences extends MultiTargetArray {
+            AlignedSubsequences(NSequenceWithQuality[] bestSequences) {
+                super(bestSequences.length);
+                int currentIndex = 0;
+                for (int i = 0; i < bestSequences.length; i++) {
+                    indexes[i] = currentIndex;
+                    currentIndex += bestSequences[i].size();
+                }
+                sequences = new NSequenceWithQuality[currentIndex];
+            }
+
+            void set(int targetIndex, int position, NSequenceWithQuality value) {
+                sequences[index(targetIndex, position)] = value;
+            }
+
+            NSequenceWithQuality get(int targetIndex, int position) {
+                NSequenceWithQuality value = sequences[index(targetIndex, position)];
+                if (value == null)
+                    throw new IllegalStateException("Subsequence with targetIndex " + targetIndex + " and position "
+                            + position + " is not initialized!");
+                else
+                    return value;
+            }
+        }
+
+        private class LettersWithPositions extends MultiTargetArray {
+            private List<Boolean> initializedReads;
+            private HashMap<Integer, ArrayList<NSequenceWithQuality>> tempValues = new HashMap<>();
+            private boolean initialized = false;
+
+            LettersWithPositions(int numTargets) {
+                super(numTargets);
+                initializedReads = Collections.nCopies(numTargets, false);
+            }
+
+            void set(int targetIndex, ArrayList<NSequenceWithQuality> values) {
+                if (initialized)
+                    throw new IllegalStateException("LettersWithPositions already initialized, but set(" + targetIndex
+                            + ", " + values + ") was called!");
+                if (initializedReads.get(targetIndex))
+                    throw new IllegalStateException("Trying to initialize letters for targetIndex " + targetIndex
+                            + " with values " + values + " while there are already stored values "
+                            + tempValues.get(targetIndex));
+                for (NSequenceWithQuality value : values)
+                    if ((value != NSequenceWithQuality.EMPTY) && (value.size() != 1))
+                        throw new IllegalArgumentException("Trying to write sequence " + value
+                                + " to LettersWithPositions");
+                tempValues.put(targetIndex, values);
+                initializedReads.set(targetIndex, true);
+                if (!initializedReads.contains(false)) {
+                    int currentIndex = 0;
+                    for (int i = 0; i < indexes.length; i++) {
+                        indexes[i] = currentIndex;
+                        currentIndex += tempValues.get(i).size();
+                    }
+                    sequences = new NSequenceWithQuality[currentIndex];
+                    for (int i = 0; i < indexes.length; i++) {
+                        ArrayList<NSequenceWithQuality> currentValues = tempValues.get(i);
+                        for (int j = 0; j < currentValues.size(); j++)
+                            sequences[index(i, j)] = currentValues.get(j);
+                    }
+                    tempValues = null;
+                    initializedReads = null;
+                    initialized = true;
+                }
+            }
+
+            NSequenceWithQuality get(int targetIndex, int position) {
+                if (!initialized)
+                    throw new IllegalStateException("LettersWithPositions was not initialized, but get(" + targetIndex
+                            + ", " + position + ") was called! Current sequences array: " + Arrays.toString(sequences));
+                NSequenceWithQuality letter = sequences[index(targetIndex, position)];
+                if (letter == null)
+                    throw new IllegalStateException("Letter with targetIndex " + targetIndex + " and position "
+                            + position + " is not initialized!");
+                else
+                    return letter;
+            }
 
             byte getDeletionQuality(int targetIndex, int position) {
                 if (get(targetIndex, position) != NSequenceWithQuality.EMPTY)
@@ -348,83 +433,163 @@ public final class ConsensusIO {
             }
         }
 
-        private class AlignedSubsequences extends MultiTargetArray {
-            AlignedSubsequences(NSequenceWithQuality[] bestSequences) {
-                super(bestSequences.length);
-                int currentIndex = 0;
-                for (int i = 0; i < bestSequences.length; i++) {
-                    indexes[i] = currentIndex;
-                    currentIndex += bestSequences[i].size();
-                }
-                sequences = new NSequenceWithQuality[currentIndex];
+        private class LettersMatrix {
+            // column numbers in the matrix corresponding to base sequence letters; last value is row length
+            private final int[] baseLettersCoordinates;
+            private final int baseSequenceRealIndex;
+            private final ArrayList<ArrayList<Integer>> positionsCache = new ArrayList<>();
+            private final ArrayList<NSequenceWithQuality> sequences = new ArrayList<>();
+
+            LettersMatrix(NSequenceWithQuality baseSequence, int baseSequenceRealIndex) {
+                baseLettersCoordinates = IntStream.rangeClosed(0, baseSequence.size()).toArray();
+                sequences.add(baseSequence);
+                this.baseSequenceRealIndex = baseSequenceRealIndex;
             }
 
-            void set(int targetIndex, int position, NSequenceWithQuality value) {
-                sequences[index(targetIndex, position)] = value;
+            int getRowLength() {
+                return baseLettersCoordinates[baseLettersCoordinates.length - 1];
             }
 
-            NSequenceWithQuality get(int targetIndex, int position) {
-                NSequenceWithQuality value = sequences[index(targetIndex, position)];
-                if (value == null)
-                    throw new IllegalStateException("Subsequence with targetIndex " + targetIndex + " and position "
-                            + position + " is not initialized!");
-                else
-                    return value;
-            }
-        }
-
-        private class LettersWithPositions extends MultiTargetArray {
-            private List<Boolean> initializedReads;
-            private HashMap<Integer, ArrayList<NSequenceWithQuality>> tempValues = new HashMap<>();
-            private boolean initialized = false;
-
-            LettersWithPositions(int numberOfReads) {
-                super(numberOfReads);
-                initializedReads = Collections.nCopies(numberOfReads, false);
-            }
-
-            void set(int targetIndex, ArrayList<NSequenceWithQuality> values) {
-                if (initialized)
-                    throw new IllegalStateException("LettersWithPositions already initialized, but set(" + targetIndex
-                            + ", " + values + ") was called!");
-                if (initializedReads.get(targetIndex))
-                    throw new IllegalStateException("Trying to initialize letters for targetIndex " + targetIndex
-                            + " with values " + values + " while there are already stored values "
-                            + tempValues.get(targetIndex));
-                for (NSequenceWithQuality value : values)
-                    if ((value != NSequenceWithQuality.EMPTY) && (value.size() != 1))
-                        throw new IllegalArgumentException("Trying to write sequence " + value
-                                + " to LettersWithPositions");
-                tempValues.put(targetIndex, values);
-                initializedReads.set(targetIndex, true);
-                if (!initializedReads.contains(false)) {
-                    int currentIndex = 0;
-                    for (int i = 0; i < indexes.length; i++) {
-                        indexes[i] = currentIndex;
-                        currentIndex += tempValues.get(i).size();
+            void add(NSequenceWithQuality sequence, Alignment<NucleotideSequence> alignment) {
+                int stage = 0;  // 0 - before base start, 1 - inside alignment range, 2 - after base end
+                int leftTailLength = 0;
+                int rightTailLength = 0;
+                int currentPartLength = 1;
+                sequences.add(sequence);
+                ArrayList<Integer> currentPositions = new ArrayList<>();
+                NSequenceWithQuality baseSequence = sequences.get(0);
+                for (int i = 0; i < sequence.size(); i++) {
+                    int baseSequencePosition = alignment.convertToSeq1Position(i);
+                    if (baseSequencePosition == -1) {
+                        if (stage == 0) {
+                            currentPositions.add(-1);
+                            leftTailLength++;
+                        } else {
+                            currentPositions.add(baseSequence.size());
+                            stage = 2;
+                            rightTailLength++;
+                        }
+                    } else {
+                        if (stage == 2)
+                            throw new IllegalArgumentException("3 or more contiguous parts of seq2 are out of range "
+                                    + "in seq1; seq1: " + baseSequence + ", seq2: " + sequence + ", alignment: "
+                                    + alignment);
+                        else if (stage == 0) {
+                            currentPositions.add((baseSequencePosition > 0) ? baseSequencePosition
+                                    : invertCoordinate(baseSequencePosition));
+                            stage = 1;
+                            extend(0, leftTailLength);
+                        } else {
+                            int currentCoordinate = (baseSequencePosition > 0) ? baseSequencePosition
+                                    : invertCoordinate(baseSequencePosition);
+                            int previousCoordinate = currentPositions.get(i - 1);
+                            currentPositions.add(currentCoordinate);
+                            if (currentCoordinate == previousCoordinate)
+                                currentPartLength++;
+                            else {
+                                if (currentPartLength > 1) {
+                                    if (currentCoordinate - previousCoordinate != 1)
+                                        throw new IllegalStateException("Something is wrong with alignment: seq1: "
+                                                + baseSequence + ", seq2: " + sequence + ", alignment: " + alignment
+                                                + ", currentCoordinate: " + currentCoordinate + ", previousCoordinate:"
+                                                + previousCoordinate + ", currentPartLength: " + currentPartLength);
+                                    extend(currentCoordinate, currentPartLength);
+                                }
+                                currentPartLength = 1;
+                            }
+                        }
                     }
-                    sequences = new NSequenceWithQuality[currentIndex];
-                    for (int i = 0; i < indexes.length; i++) {
-                        ArrayList<NSequenceWithQuality> currentValues = tempValues.get(i);
-                        for (int j = 0; j < currentValues.size(); j++)
-                            sequences[index(i, j)] = currentValues.get(j);
-                    }
-                    tempValues = null;
-                    initializedReads = null;
-                    initialized = true;
+                }
+                extend(baseLettersCoordinates.length - 1, rightTailLength);
+                positionsCache.add(currentPositions);
+            }
+
+            void addEmpty() {
+                sequences.add(NSequenceWithQuality.EMPTY);
+                positionsCache.add(new ArrayList<>());
+            }
+
+            /**
+             * Extend matrix to fit longer subsequence into it.
+             *
+             * @param arrayIndex 0 means that we put subsequence before 1st base letter,
+             *                   (baseLettersCoordinates.length - 1) means that we put it after last letter
+             * @param newLength length of subsequence that we put to the gap specified by arrayIndex
+             */
+            private void extend(int arrayIndex, int newLength) {
+                int currentLength = (arrayIndex == 0) ? baseLettersCoordinates[0]
+                        : baseLettersCoordinates[arrayIndex] - baseLettersCoordinates[arrayIndex - 1] - 1;
+                if (newLength > currentLength) {
+                    int diff = newLength - currentLength;
+                    for (int i = arrayIndex; i < baseLettersCoordinates.length; i++)
+                        baseLettersCoordinates[i] += diff;
                 }
             }
 
-            NSequenceWithQuality get(int targetIndex, int position) {
-                if (!initialized)
-                    throw new IllegalStateException("LettersWithPositions was not initialized, but get(" + targetIndex
-                            + ", " + position + ") was called! Current sequences array: " + Arrays.toString(sequences));
-                NSequenceWithQuality letter = sequences[index(targetIndex, position)];
-                if (letter == null)
-                    throw new IllegalStateException("Letter with targetIndex " + targetIndex + " and position "
-                            + position + " is not initialized!");
-                else
-                    return letter;
+            NSequenceWithQuality getLetterByCoordinate(int sequenceRealIndex, int coordinate) {
+                if (sequenceRealIndex == baseSequenceRealIndex) {
+                    for (int i = 0; i < baseLettersCoordinates.length - 1; i++) {
+                        int currentCoordinate = baseLettersCoordinates[i];
+                        if (currentCoordinate == coordinate)
+                            return letterAt(sequences.get(0), i);
+                        else if (currentCoordinate > coordinate)
+                            return NSequenceWithQuality.EMPTY;
+                    }
+                    return NSequenceWithQuality.EMPTY;
+                } else {
+                    int sequenceIndex = (sequenceRealIndex > baseSequenceRealIndex) ? sequenceRealIndex
+                            : sequenceRealIndex + 1;
+                    NSequenceWithQuality sequence = sequences.get(sequenceIndex);
+                    if (sequence.size() == 0)
+                        return NSequenceWithQuality.EMPTY;
+                    ArrayList<Integer> positions = positionsCache.get(sequenceIndex - 1);
+                    int basePosition = -1;
+                    int currentBasePosition = -1;
+                    int currentPartLength = 1;
+                    int seqPosition;
+                    for (seqPosition = 0; seqPosition < sequence.size(); seqPosition++) {
+                        currentBasePosition = positions.get(seqPosition);
+                        if (currentBasePosition > -1) {
+                            int currentBaseCoordinate = baseLettersCoordinates[currentBasePosition];
+                            if (currentBaseCoordinate == coordinate)
+                                return letterAt(sequence, seqPosition);
+                            else if (currentBaseCoordinate > coordinate)
+                                break;
+                            else if (currentBasePosition == basePosition)
+                                currentPartLength++;
+                            else
+                                currentPartLength = 1;
+                        }
+                        basePosition = currentBasePosition;
+                    }
+                    if (currentBasePosition == -1)
+                        throw new IllegalStateException("LettersMatrix error in sequence: " + sequence
+                                + "; sequenceIndex: " + sequenceIndex + ", coordinate: " + coordinate);
+                    if (basePosition == -1) {
+                        int seqStartCoordinate = baseLettersCoordinates[0] - seqPosition;
+                        if (coordinate >= baseLettersCoordinates[0])
+                            throw new IllegalStateException("Wrong base position found: sequence: " + sequence
+                                    + ", sequenceIndex: " + sequenceIndex + ", coordinate: " + coordinate
+                                    + ", basePosition: -1, baseLettersCoordinates[0]: " + baseLettersCoordinates[0]
+                                    + ", seqPosition: " + seqPosition);
+                        else if (coordinate < seqStartCoordinate)
+                            return NSequenceWithQuality.EMPTY;
+                        else
+                            return letterAt(sequence, coordinate - seqStartCoordinate);
+                    } else {
+                        int currentPartStart = seqPosition - currentPartLength;
+                        int wantedSeqPosition = currentPartStart + coordinate - baseLettersCoordinates[basePosition];
+                        if (wantedSeqPosition >= seqPosition)
+                            return NSequenceWithQuality.EMPTY;
+                        else
+                            return letterAt(sequence, wantedSeqPosition);
+                    }
+                }
+            }
+
+            private NSequenceWithQuality letterAt(NSequenceWithQuality seq, int position) {
+                return new NSequenceWithQuality(new NucleotideSequence(new char[] { seq.getSequence()
+                        .symbolAt(position) }), seq.getQuality().value(position));
             }
         }
     }
