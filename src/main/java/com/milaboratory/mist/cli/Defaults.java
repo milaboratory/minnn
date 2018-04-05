@@ -23,4 +23,5 @@ public final class Defaults {
     public final static int DEFAULT_CORRECT_MAX_TOTAL_ERRORS = 3;
     public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 5;
     public final static int DEFAULT_CONSENSUS_PENALTY_THRESHOLD = -100;
+    public final static float DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT = 0.5f;
 }

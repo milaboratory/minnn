@@ -19,7 +19,7 @@ public final class ConsensusAction implements Action {
     public void go(ActionHelper helper) {
         ConsensusIO consensusIO = new ConsensusIO(params.groupList, params.inputFileName, params.outputFileName,
                 params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore, params.penaltyThreshold,
-                params.threads);
+                params.skippedFractionToRepeat, params.threads);
         consensusIO.go();
     }
 
@@ -66,6 +66,12 @@ public final class ConsensusAction implements Action {
         @Parameter(description = "Score penalty threshold that used to filter reads for calculating consensus.",
                 names = {"--penalty-threshold"})
         long penaltyThreshold = DEFAULT_CONSENSUS_PENALTY_THRESHOLD;
+
+        @Parameter(description = "Fraction of reads skipped by penalty threshold that must start the search for " +
+                "another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of " +
+                "reads with identical barcodes.",
+                names = {"--skipped-fraction-to-repeat"})
+        float skippedFractionToRepeat = DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT;
 
         @Parameter(description = "Number of threads for calculating consensus sequences.",
                 names = {"--threads"})

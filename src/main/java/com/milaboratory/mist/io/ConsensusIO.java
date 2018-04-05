@@ -37,13 +37,15 @@ public final class ConsensusIO {
     private final int mismatchScore;
     private final int gapScore;
     private final long penaltyThreshold;
+    private final float skippedFractionToRepeat;
     private final int threads;
     private final AtomicLong totalReads = new AtomicLong(0);
     private final AtomicLong consensusReads = new AtomicLong(0);
     private Set<String> groupList;
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
-                       int matchScore, int mismatchScore, int gapScore, long penaltyThreshold, int threads) {
+                       int matchScore, int mismatchScore, int gapScore, long penaltyThreshold,
+                       float skippedFractionToRepeat, int threads) {
         this.groupList = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -52,6 +54,7 @@ public final class ConsensusIO {
         this.mismatchScore = mismatchScore;
         this.gapScore = gapScore;
         this.penaltyThreshold = penaltyThreshold;
+        this.skippedFractionToRepeat = skippedFractionToRepeat;
         this.threads = threads;
     }
 
@@ -211,8 +214,6 @@ public final class ConsensusIO {
         public CalculatedConsensuses process(Dataset dataset) {
             CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(dataset.orderedPortIndex);
             ArrayList<DataFromParsedRead> data = dataset.data;
-            ArrayList<ArrayList<NSequenceWithQuality>> subsequences = new ArrayList<>();
-            ArrayList<HashMap<NucleotideSequence, Integer>> lettersInPositions = new ArrayList<>();
 
             // stage 1: align to best quality
             long bestSumQuality = 0;
@@ -225,16 +226,28 @@ public final class ConsensusIO {
                 }
             }
             NSequenceWithQuality[] bestSequences = data.get(bestSeqIndex).sequences;
+            List<AlignedSubsequences> subsequencesList = Collections.nCopies(data.size(),
+                    new AlignedSubsequences(bestSequences));
+            ArrayList<Integer> filteredOutSubsequences = new ArrayList<>();
             for (int i = 0; i < data.size(); i++) {
+                AlignedSubsequences currentSubsequences = subsequencesList.get(i);
                 if (i != bestSeqIndex) {
                     for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
                         NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
                         Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
                                 bestSequences[targetIndex].getSequence(), currentSequence.getSequence(), alignerWidth);
-
+                        if (alignment.getScore() < penaltyThreshold)
+                            filteredOutSubsequences.add(i);
+                        else {
+                            
+                        }
                     }
                 } else {
-
+                    for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
+                        NSequenceWithQuality currentSequence = bestSequences[targetIndex];
+                        for (int position = 0; position < currentSequence.size(); position++)
+                            currentSubsequences.set(targetIndex, position, letterAt(currentSequence, position));
+                    }
                 }
             }
 
@@ -259,13 +272,20 @@ public final class ConsensusIO {
         private Consensus generateConsensus(ArrayList<AlignedSubsequences> subsequencesList,
                                             NSequenceWithQuality[] bestSequences) {
             int numTargets = bestSequences.length;
-            ArrayList<LettersWithPositions> lettersList = new ArrayList<>();
+            int numSequences = subsequencesList.size();
+            NSequenceWithQuality[] sequences = new NSequenceWithQuality[numTargets];
+            List<LettersWithPositions> lettersList = Collections.nCopies(numSequences,
+                    new LettersWithPositions(numTargets));
+            int calculationsCount = 0;
+            float sumScore = 0;
             for (int targetIndex = 0; targetIndex < numTargets; targetIndex++) {
+                List<ArrayList<NSequenceWithQuality>> lettersMatrixList = Collections.nCopies(numSequences,
+                        new ArrayList<>());
                 for (int position = 0; position < bestSequences[targetIndex].size(); position++) {
                     ArrayList<NSequenceWithQuality> currentPositionSequences = new ArrayList<>();
                     int bestQualityIndex = -1;
                     byte bestQuality = 0;
-                    for (int i = 0; i < subsequencesList.size(); i++) {
+                    for (int i = 0; i < numSequences; i++) {
                         AlignedSubsequences currentSubsequences = subsequencesList.get(i);
                         NSequenceWithQuality currentSequence = currentSubsequences.get(targetIndex, position);
                         currentPositionSequences.add(currentSequence);
@@ -291,10 +311,66 @@ public final class ConsensusIO {
                                 lettersMatrix.addEmpty();
                         }
                     }
-
-
+                    for (int sequenceIndex = 0; sequenceIndex < numSequences; sequenceIndex++) {
+                        ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(sequenceIndex);
+                        for (int letterIndex = 0; letterIndex < lettersMatrix.getRowLength(); letterIndex++)
+                            currentLettersRow.add(lettersMatrix.getLetterByCoordinate(sequenceIndex, letterIndex));
+                    }
                 }
+
+                for (int i = 0; i < numSequences; i++) {
+                    ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(i);
+                    LettersWithPositions currentLettersWithPositions = lettersList.get(i);
+                    currentLettersWithPositions.set(targetIndex, currentLettersRow);
+                }
+
+                ArrayList<NucleotideSequence> consensusLetters = new ArrayList<>();
+                for (int position = 0; position < lettersList.get(0).getTargetRowLength(targetIndex); position++) {
+                    HashMap<NucleotideSequence, Long> currentPositionQualitySums = new HashMap<>();
+                    for (LettersWithPositions currentLettersWithPositions : lettersList) {
+                        NSequenceWithQuality currentLetter = currentLettersWithPositions.get(targetIndex, position);
+                        if (currentLetter == NSequenceWithQuality.EMPTY) {
+                            currentPositionQualitySums.putIfAbsent(NucleotideSequence.EMPTY, 0L);
+                            currentPositionQualitySums.put(NucleotideSequence.EMPTY,
+                                    currentPositionQualitySums.get(NucleotideSequence.EMPTY)
+                                            + currentLettersWithPositions.getDeletionQuality(targetIndex, position));
+                        } else {
+                            NucleotideSequence letterWithoutQuality = currentLetter.getSequence();
+                            currentPositionQualitySums.putIfAbsent(letterWithoutQuality, 0L);
+                            currentPositionQualitySums.put(letterWithoutQuality,
+                                    currentPositionQualitySums.get(letterWithoutQuality)
+                                            + currentLetter.getQuality().value(0));
+                        }
+                    }
+                    long bestSum = 0;
+                    long totalSum = 0;
+                    NucleotideSequence consensusLetter = NucleotideSequence.EMPTY;
+                    for (HashMap.Entry<NucleotideSequence, Long> entry : currentPositionQualitySums.entrySet()) {
+                        if (entry.getValue() > bestSum) {
+                            bestSum = entry.getValue();
+                            consensusLetter = entry.getKey();
+                        }
+                        totalSum += entry.getValue();
+                    }
+                    if (consensusLetter != NucleotideSequence.EMPTY)
+                        consensusLetters.add(consensusLetter);
+                    calculationsCount++;
+                    if (totalSum > 0)
+                        sumScore += (float)bestSum / totalSum;
+                }
+
+                NucleotideSequence consensusSequence = NucleotideSequence.EMPTY;
+                for (NucleotideSequence letter : consensusLetters)
+                    consensusSequence = consensusSequence.concatenate(letter);
+                sequences[targetIndex] = new NSequenceWithQuality(consensusSequence, DEFAULT_GOOD_QUALITY);
             }
+
+            return new Consensus(sequences, (calculationsCount == 0) ? 0 : (int)(sumScore / calculationsCount * 1000));
+        }
+
+        private NSequenceWithQuality letterAt(NSequenceWithQuality seq, int position) {
+            return new NSequenceWithQuality(new NucleotideSequence(new char[] { seq.getSequence()
+                    .symbolAt(position) }), seq.getQuality().value(position));
         }
 
         private abstract class MultiTargetArray {
@@ -387,6 +463,15 @@ public final class ConsensusIO {
                             + position + " is not initialized!");
                 else
                     return letter;
+            }
+
+            int getTargetRowLength(int targetIndex) {
+                if (targetIndex == indexes.length - 1)
+                    return sequences.length - index(targetIndex, 0);
+                else if (targetIndex == 0)
+                    return index(targetIndex + 1, 0);
+                else
+                    return index(targetIndex + 1, 0) - index(targetIndex, 0);
             }
 
             byte getDeletionQuality(int targetIndex, int position) {
@@ -585,11 +670,6 @@ public final class ConsensusIO {
                             return letterAt(sequence, wantedSeqPosition);
                     }
                 }
-            }
-
-            private NSequenceWithQuality letterAt(NSequenceWithQuality seq, int position) {
-                return new NSequenceWithQuality(new NucleotideSequence(new char[] { seq.getSequence()
-                        .symbolAt(position) }), seq.getQuality().value(position));
             }
         }
     }
