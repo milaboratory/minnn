@@ -10,6 +10,7 @@ import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.SequenceWithQuality;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.GroupEdge;
@@ -226,30 +227,70 @@ public final class ConsensusIO {
                 }
             }
             NSequenceWithQuality[] bestSequences = data.get(bestSeqIndex).sequences;
-            List<AlignedSubsequences> subsequencesList = Collections.nCopies(data.size(),
-                    new AlignedSubsequences(bestSequences));
+            ArrayList<AlignedSubsequences> subsequencesList = new ArrayList<>();
             ArrayList<Integer> filteredOutSubsequences = new ArrayList<>();
             for (int i = 0; i < data.size(); i++) {
-                AlignedSubsequences currentSubsequences = subsequencesList.get(i);
                 if (i != bestSeqIndex) {
+                    int sumScore = 0;
+                    ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
                     for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
                         NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
                         Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
                                 bestSequences[targetIndex].getSequence(), currentSequence.getSequence(), alignerWidth);
-                        if (alignment.getScore() < penaltyThreshold)
-                            filteredOutSubsequences.add(i);
-                        else {
-                            
+                        alignments.add(alignment);
+                        sumScore += alignment.getScore();
+                    }
+                    if (sumScore < penaltyThreshold)
+                        filteredOutSubsequences.add(i);
+                    else {
+                        AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
+                        for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
+                            NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
+                            NSequenceWithQuality alignedBestSequence = bestSequences[targetIndex];
+                            int previousSeqPosition = -1;
+                            for (int position = 0; position < alignedBestSequence.size(); position++) {
+                                Alignment<NucleotideSequence> alignment = alignments.get(targetIndex);
+                                int seqPosition = alignment.convertToSeq2Position(position);
+                                if (previousSeqPosition < 0) {
+                                    if (seqPosition < 0)
+                                        currentSubsequences.set(targetIndex, position, NSequenceWithQuality.EMPTY);
+                                    else
+                                        currentSubsequences.set(targetIndex, position, getSubSequence(currentSequence,
+                                                0, seqPosition + 1));
+                                    previousSeqPosition = seqPosition;
+                                } else {
+                                    if (seqPosition < 0)
+                                        currentSubsequences.set(targetIndex, position, NSequenceWithQuality.EMPTY);
+                                    else {
+                                        if (position == alignedBestSequence.size() - 1)
+                                            currentSubsequences.set(targetIndex, position,
+                                                    getSubSequence(currentSequence, previousSeqPosition + 1,
+                                                            currentSequence.size()));
+                                        else
+                                            currentSubsequences.set(targetIndex, position,
+                                                    getSubSequence(currentSequence, previousSeqPosition + 1,
+                                                            seqPosition + 1));
+                                        previousSeqPosition = seqPosition;
+                                    }
+                                }
+                            }
                         }
                     }
                 } else {
+                    AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
                     for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
                         NSequenceWithQuality currentSequence = bestSequences[targetIndex];
                         for (int position = 0; position < currentSequence.size(); position++)
                             currentSubsequences.set(targetIndex, position, letterAt(currentSequence, position));
                     }
+                    subsequencesList.add(currentSubsequences);
                 }
             }
+
+            Consensus stage1Consensus = generateConsensus(subsequencesList, bestSequences);
+
+            // stage 2: align to consensus from stage 1
+
 
             return calculatedConsensuses;
         }
@@ -369,8 +410,13 @@ public final class ConsensusIO {
         }
 
         private NSequenceWithQuality letterAt(NSequenceWithQuality seq, int position) {
-            return new NSequenceWithQuality(new NucleotideSequence(new char[] { seq.getSequence()
-                    .symbolAt(position) }), seq.getQuality().value(position));
+            SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(position, position + 1);
+            return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
+        }
+
+        private NSequenceWithQuality getSubSequence(NSequenceWithQuality seq, int from, int to) {
+            SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(from, to);
+            return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
         }
 
         private abstract class MultiTargetArray {
