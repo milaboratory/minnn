@@ -10,6 +10,7 @@ import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.SequenceQuality;
 import com.milaboratory.core.sequence.SequenceWithQuality;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
@@ -39,6 +40,8 @@ public final class ConsensusIO {
     private final int gapScore;
     private final long penaltyThreshold;
     private final float skippedFractionToRepeat;
+    private final byte badTailQuality;
+    private final int minGoodSeqLength;
     private final int threads;
     private final AtomicLong totalReads = new AtomicLong(0);
     private final AtomicLong consensusReads = new AtomicLong(0);
@@ -46,7 +49,7 @@ public final class ConsensusIO {
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
                        int matchScore, int mismatchScore, int gapScore, long penaltyThreshold,
-                       float skippedFractionToRepeat, int threads) {
+                       float skippedFractionToRepeat, byte badTailQuality, int minGoodSeqLength, int threads) {
         this.groupList = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -56,6 +59,8 @@ public final class ConsensusIO {
         this.gapScore = gapScore;
         this.penaltyThreshold = penaltyThreshold;
         this.skippedFractionToRepeat = skippedFractionToRepeat;
+        this.badTailQuality = badTailQuality;
+        this.minGoodSeqLength = minGoodSeqLength;
         this.threads = threads;
     }
 
@@ -154,6 +159,10 @@ public final class ConsensusIO {
             sequences = new NSequenceWithQuality[extractedGroups.size()];
             extractedGroups.forEach(g -> sequences[g.getTargetId() - 1] = g.getValue());
         }
+
+        DataFromParsedRead(NSequenceWithQuality[] sequences) {
+            this.sequences = sequences;
+        }
     }
 
     private class Consensus {
@@ -214,83 +223,40 @@ public final class ConsensusIO {
         @Override
         public CalculatedConsensuses process(Dataset dataset) {
             CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(dataset.orderedPortIndex);
-            ArrayList<DataFromParsedRead> data = dataset.data;
+            List<DataFromParsedRead> data = dataset.data;
 
-            // stage 1: align to best quality
-            long bestSumQuality = 0;
-            int bestSeqIndex = 0;
-            for (int i = 0; i < data.size(); i++) {
-                long sumQuality = Arrays.stream(data.get(i).sequences).mapToLong(this::calculateSumQuality).sum();
-                if (sumQuality > bestSumQuality) {
-                    bestSumQuality = sumQuality;
-                    bestSeqIndex = i;
+            while (data.size() > 0) {
+                // stage 1: align to best quality
+                long bestSumQuality = 0;
+                int bestSeqIndex = 0;
+                for (int i = 0; i < data.size(); i++) {
+                    long sumQuality = Arrays.stream(data.get(i).sequences).mapToLong(this::calculateSumQuality).sum();
+                    if (sumQuality > bestSumQuality) {
+                        bestSumQuality = sumQuality;
+                        bestSeqIndex = i;
+                    }
                 }
+                NSequenceWithQuality[] bestSequences = data.get(bestSeqIndex).sequences;
+                HashSet<Integer> filteredOutReads = new HashSet<>();
+                ArrayList<AlignedSubsequences> subsequencesList = getAlignedSubsequencesList(data, filteredOutReads,
+                        bestSequences, bestSeqIndex);
+                Consensus stage1Consensus = generateConsensus(subsequencesList, bestSequences);
+
+                // stage 2: align to consensus from stage 1
+                subsequencesList = getAlignedSubsequencesList(cutBadQualityTails(data), filteredOutReads,
+                        stage1Consensus.sequences, -1);
+                Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences);
+                calculatedConsensuses.consensuses.add(stage2Consensus);
+
+                if ((float)filteredOutReads.size() / data.size() >= skippedFractionToRepeat) {
+                    ArrayList<DataFromParsedRead> remainingData = new ArrayList<>();
+                    for (int i = 0; i < data.size(); i++)
+                        if (filteredOutReads.contains(i))
+                            remainingData.add(data.get(i));
+                    data = remainingData;
+                } else
+                    data = new ArrayList<>();
             }
-            NSequenceWithQuality[] bestSequences = data.get(bestSeqIndex).sequences;
-            ArrayList<AlignedSubsequences> subsequencesList = new ArrayList<>();
-            ArrayList<Integer> filteredOutSubsequences = new ArrayList<>();
-            for (int i = 0; i < data.size(); i++) {
-                if (i != bestSeqIndex) {
-                    int sumScore = 0;
-                    ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
-                    for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
-                        NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
-                        Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
-                                bestSequences[targetIndex].getSequence(), currentSequence.getSequence(), alignerWidth);
-                        alignments.add(alignment);
-                        sumScore += alignment.getScore();
-                    }
-                    if (sumScore < penaltyThreshold)
-                        filteredOutSubsequences.add(i);
-                    else {
-                        AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
-                        for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
-                            NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
-                            NSequenceWithQuality alignedBestSequence = bestSequences[targetIndex];
-                            int previousSeqPosition = -1;
-                            for (int position = 0; position < alignedBestSequence.size(); position++) {
-                                Alignment<NucleotideSequence> alignment = alignments.get(targetIndex);
-                                int seqPosition = alignment.convertToSeq2Position(position);
-                                if (previousSeqPosition < 0) {
-                                    if (seqPosition < 0)
-                                        currentSubsequences.set(targetIndex, position, NSequenceWithQuality.EMPTY);
-                                    else
-                                        currentSubsequences.set(targetIndex, position, getSubSequence(currentSequence,
-                                                0, seqPosition + 1));
-                                    previousSeqPosition = seqPosition;
-                                } else {
-                                    if (seqPosition < 0)
-                                        currentSubsequences.set(targetIndex, position, NSequenceWithQuality.EMPTY);
-                                    else {
-                                        if (position == alignedBestSequence.size() - 1)
-                                            currentSubsequences.set(targetIndex, position,
-                                                    getSubSequence(currentSequence, previousSeqPosition + 1,
-                                                            currentSequence.size()));
-                                        else
-                                            currentSubsequences.set(targetIndex, position,
-                                                    getSubSequence(currentSequence, previousSeqPosition + 1,
-                                                            seqPosition + 1));
-                                        previousSeqPosition = seqPosition;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
-                    for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
-                        NSequenceWithQuality currentSequence = bestSequences[targetIndex];
-                        for (int position = 0; position < currentSequence.size(); position++)
-                            currentSubsequences.set(targetIndex, position, letterAt(currentSequence, position));
-                    }
-                    subsequencesList.add(currentSubsequences);
-                }
-            }
-
-            Consensus stage1Consensus = generateConsensus(subsequencesList, bestSequences);
-
-            // stage 2: align to consensus from stage 1
-
 
             return calculatedConsensuses;
         }
@@ -310,6 +276,143 @@ public final class ConsensusIO {
             return minQuality;
         }
 
+        private NSequenceWithQuality letterAt(NSequenceWithQuality seq, int position) {
+            SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(position, position + 1);
+            return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
+        }
+
+        private NSequenceWithQuality getSubSequence(NSequenceWithQuality seq, int from, int to) {
+            SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(from, to);
+            return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
+        }
+
+        private List<DataFromParsedRead> cutBadQualityTails(List<DataFromParsedRead> data) {
+            List<DataFromParsedRead> processedData = new ArrayList<>();
+            for (DataFromParsedRead dataFromParsedRead : data) {
+                NSequenceWithQuality[] sequences = dataFromParsedRead.sequences;
+                NSequenceWithQuality[] processedSequences = new NSequenceWithQuality[sequences.length];
+                boolean allSequencesAreGood = true;
+                for (int i = 0; i < sequences.length; i++) {
+                    NSequenceWithQuality seq = sequences[i];
+                    int firstGoodPosition = -1;
+                    int lastGoodPosition = -1;
+                    SequenceQuality currentQuality = seq.getQuality();
+                    for (int position = 0; position < seq.size(); position++)
+                        if (currentQuality.value(position) > badTailQuality) {
+                            firstGoodPosition = position;
+                            break;
+                        }
+                    if (firstGoodPosition == -1) {
+                        allSequencesAreGood = false;
+                        break;
+                    }
+                    for (int position = seq.size() - 1; position >= firstGoodPosition + minGoodSeqLength - 1;
+                         position--)
+                        if (currentQuality.value(position) > badTailQuality) {
+                            lastGoodPosition = position;
+                            break;
+                        }
+                    if (lastGoodPosition == -1) {
+                        allSequencesAreGood = false;
+                        break;
+                    }
+                    processedSequences[i] = getSubSequence(seq, firstGoodPosition, lastGoodPosition + 1);
+                }
+                if (allSequencesAreGood)
+                    processedData.add(new DataFromParsedRead(processedSequences));
+                else
+                    processedData.add(null);
+            }
+
+            return processedData;
+        }
+
+        /**
+         * Align sequences and generate list of AlignedSubsequences objects that is needed for generateConsensus().
+         *
+         * @param data              data from group of parsed reads with same barcodes
+         * @param filteredOutReads  mutable set of filtered out reads: this function will add to this set
+         *                          indexes of all reads that didn't fit penalty threshold
+         * @param bestSequences     best array of sequences: 1 sequence in array corresponding to 1 target
+         * @param bestSeqIndex      index of best sequences in dataset; or -1 if they are not from dataset
+         * @return                  list of aligned subsequences for generateConsensus() function
+         */
+        private ArrayList<AlignedSubsequences> getAlignedSubsequencesList(List<DataFromParsedRead> data,
+                HashSet<Integer> filteredOutReads, NSequenceWithQuality[] bestSequences, int bestSeqIndex) {
+            ArrayList<AlignedSubsequences> subsequencesList = new ArrayList<>();
+            for (int i = 0; i < data.size(); i++) {
+                if (i != bestSeqIndex) {
+                    if (!filteredOutReads.contains(i) && (data.get(i) != null)) {
+                        int sumScore = 0;
+                        ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
+                        for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
+                            NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
+                            Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
+                                    bestSequences[targetIndex].getSequence(), currentSequence.getSequence(),
+                                    alignerWidth);
+                            alignments.add(alignment);
+                            sumScore += alignment.getScore();
+                        }
+                        if (sumScore < penaltyThreshold)
+                            filteredOutReads.add(i);
+                        else {
+                            AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
+                            for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
+                                NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
+                                NSequenceWithQuality alignedBestSequence = bestSequences[targetIndex];
+                                int previousSeqPosition = -1;
+                                for (int position = 0; position < alignedBestSequence.size(); position++) {
+                                    Alignment<NucleotideSequence> alignment = alignments.get(targetIndex);
+                                    int seqPosition = alignment.convertToSeq2Position(position);
+                                    if (previousSeqPosition < 0) {
+                                        if (seqPosition < 0)
+                                            currentSubsequences.set(targetIndex, position, NSequenceWithQuality.EMPTY);
+                                        else
+                                            currentSubsequences.set(targetIndex, position, getSubSequence(
+                                                    currentSequence, 0, seqPosition + 1));
+                                        previousSeqPosition = seqPosition;
+                                    } else {
+                                        if (seqPosition < 0)
+                                            currentSubsequences.set(targetIndex, position, NSequenceWithQuality.EMPTY);
+                                        else {
+                                            if (position == alignedBestSequence.size() - 1)
+                                                currentSubsequences.set(targetIndex, position,
+                                                        getSubSequence(currentSequence, previousSeqPosition + 1,
+                                                                currentSequence.size()));
+                                            else
+                                                currentSubsequences.set(targetIndex, position,
+                                                        getSubSequence(currentSequence, previousSeqPosition + 1,
+                                                                seqPosition + 1));
+                                            previousSeqPosition = seqPosition;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
+                    for (int targetIndex = 0; targetIndex < bestSequences.length; targetIndex++) {
+                        NSequenceWithQuality currentSequence = bestSequences[targetIndex];
+                        for (int position = 0; position < currentSequence.size(); position++)
+                            currentSubsequences.set(targetIndex, position, letterAt(currentSequence, position));
+                    }
+                    subsequencesList.add(currentSubsequences);
+                }
+            }
+
+            return subsequencesList;
+        }
+
+        /**
+         * Generate consensus from prepared aligned subsequences list.
+         *
+         * @param subsequencesList  1 element of this list corresponding to 1 read; AlignedSubsequences structure
+         *                          contains sequences from dataset splitted by coordinates that came from alignment
+         *                          of sequences from this array to sequences from best array
+         * @param bestSequences     best array of sequences: 1 sequence in array corresponding to 1 target
+         * @return                  consensus: array of sequences (1 sequence for 1 target) and consensus score
+         */
         private Consensus generateConsensus(ArrayList<AlignedSubsequences> subsequencesList,
                                             NSequenceWithQuality[] bestSequences) {
             int numTargets = bestSequences.length;
@@ -407,16 +510,6 @@ public final class ConsensusIO {
             }
 
             return new Consensus(sequences, (calculationsCount == 0) ? 0 : (int)(sumScore / calculationsCount * 1000));
-        }
-
-        private NSequenceWithQuality letterAt(NSequenceWithQuality seq, int position) {
-            SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(position, position + 1);
-            return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
-        }
-
-        private NSequenceWithQuality getSubSequence(NSequenceWithQuality seq, int from, int to) {
-            SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(from, to);
-            return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
         }
 
         private abstract class MultiTargetArray {

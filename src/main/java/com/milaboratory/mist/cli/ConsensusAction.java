@@ -19,7 +19,7 @@ public final class ConsensusAction implements Action {
     public void go(ActionHelper helper) {
         ConsensusIO consensusIO = new ConsensusIO(params.groupList, params.inputFileName, params.outputFileName,
                 params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore, params.penaltyThreshold,
-                params.skippedFractionToRepeat, params.threads);
+                params.skippedFractionToRepeat, params.badTailQuality, params.minGoodSeqLength, params.threads);
         consensusIO.go();
     }
 
@@ -72,6 +72,16 @@ public final class ConsensusAction implements Action {
                 "reads with identical barcodes.",
                 names = {"--skipped-fraction-to-repeat"})
         float skippedFractionToRepeat = DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT;
+
+        @Parameter(description = "This and lower quality will be considered bad when we trim bad quality tails " +
+                "before calculating consensus.",
+                names = {"--bad-tail-quality"})
+        byte badTailQuality = DEFAULT_CONSENSUS_BAD_TAIL_QUALITY;
+
+        @Parameter(description = "Minimal length of good sequence that will be still considered good after trimming " +
+                "bad quality tails.",
+                names = {"--min-good-sequence-length"})
+        int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
         @Parameter(description = "Number of threads for calculating consensus sequences.",
                 names = {"--threads"})
