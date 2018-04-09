@@ -44,7 +44,7 @@ public final class ConsensusAction implements Action {
         String outputFileName = null;
 
         @Parameter(description = "List of groups that represent barcodes. If not specified, all groups will be used.",
-                names = {"--group-list"}, variableArity = true)
+                names = {"--groups"}, variableArity = true)
         List<String> groupList = null;
 
         @Parameter(description = "Window width (maximum allowed number of indels) for banded aligner.",

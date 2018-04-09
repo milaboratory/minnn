@@ -245,8 +245,10 @@ public final class ConsensusIO {
                 // stage 2: align to consensus from stage 1
                 subsequencesList = getAlignedSubsequencesList(cutBadQualityTails(data), filteredOutReads,
                         stage1Consensus.sequences, -1);
-                Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences);
-                calculatedConsensuses.consensuses.add(stage2Consensus);
+                if (subsequencesList.size() > 0) {
+                    Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences);
+                    calculatedConsensuses.consensuses.add(stage2Consensus);
+                }
 
                 if ((float)filteredOutReads.size() / data.size() >= skippedFractionToRepeat) {
                     ArrayList<DataFromParsedRead> remainingData = new ArrayList<>();
@@ -551,13 +553,13 @@ public final class ConsensusIO {
         }
 
         private class LettersWithPositions extends MultiTargetArray {
-            private List<Boolean> initializedReads;
+            private ArrayList<Boolean> initializedReads;
             private HashMap<Integer, ArrayList<NSequenceWithQuality>> tempValues = new HashMap<>();
             private boolean initialized = false;
 
             LettersWithPositions(int numTargets) {
                 super(numTargets);
-                initializedReads = Collections.nCopies(numTargets, false);
+                initializedReads = new ArrayList<>(Collections.nCopies(numTargets, false));
             }
 
             void set(int targetIndex, ArrayList<NSequenceWithQuality> values) {
