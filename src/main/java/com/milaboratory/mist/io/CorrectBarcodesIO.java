@@ -146,8 +146,8 @@ public final class CorrectBarcodesIO {
             Map<String, MatchedGroup> matchedGroups = parsedRead.getGroups().stream()
                     .filter(group -> !defaultGroups.contains(group.getGroupName()))
                     .collect(Collectors.toMap(MatchedGroup::getGroupName, group -> group));
-
             HashMap<Byte, NSequenceWithQuality> oldTargets = new HashMap<>();
+            parsedRead.getGroups().forEach(g -> oldTargets.putIfAbsent(g.getTargetId(), g.getTarget()));
             HashMap<Byte, ArrayList<TargetPatch>> targetPatches = new HashMap<>();
             boolean isCorrection = false;
             for (Map.Entry<String, MatchedGroup> entry : matchedGroups.entrySet()) {
@@ -155,7 +155,6 @@ public final class CorrectBarcodesIO {
                 MatchedGroup matchedGroup = entry.getValue();
                 byte targetId = matchedGroup.getTargetId();
                 NucleotideSequence oldValue = matchedGroup.getValue().getSequence();
-                oldTargets.computeIfAbsent(targetId, id -> matchedGroup.getTarget());
                 SequenceTreeMap<NucleotideSequence, SequenceCounter> sequenceTreeMap = sequenceTreeMaps.get(groupName);
                 NeighborhoodIterator<NucleotideSequence, SequenceCounter> neighborhoodIterator = sequenceTreeMap
                         .getNeighborhoodIterator(oldValue, mismatches, deletions, insertions, totalErrors);
@@ -174,48 +173,52 @@ public final class CorrectBarcodesIO {
             else {
                 boolean isOverlap = false;
                 newGroupEdges = new ArrayList<>();
-                Set<Byte> targetIds = oldTargets.keySet();
-                for (byte targetId : targetIds) {
+                for (byte targetId : oldTargets.keySet()) {
                     NSequenceWithQuality newTarget = NSequenceWithQuality.EMPTY;
                     ArrayList<TargetPatch> currentTargetPatches = targetPatches.get(targetId);
-                    Collections.sort(currentTargetPatches);
-                    NSequenceWithQuality currentOldTarget = oldTargets.get(targetId);
-                    for (int i = 0; i < currentTargetPatches.size(); i++) {
-                        TargetPatch currentPatch = currentTargetPatches.get(i);
-                        if (i > 0)
-                            isOverlap |= currentPatch.trimRange(currentTargetPatches.get(i - 1));
-                        else if (currentPatch.range.getLower() > 0)
-                            newTarget = oldTargets.get(targetId).getRange(0, currentPatch.range.getLower());
-                        currentPatch.newLower = newTarget.size();
-                        newTarget = newTarget.concatenate(new NSequenceWithQuality(currentPatch.correctValue));
-                        currentPatch.newUpper = newTarget.size();
-                        int oldTargetPartLower = currentPatch.range.getUpper();
-                        int oldTargetPartUpper = (i < currentTargetPatches.size() - 1)
-                                ? currentTargetPatches.get(i + 1).range.getLower() : currentOldTarget.size();
-                        if (oldTargetPartLower < oldTargetPartUpper)
-                            newTarget = newTarget.concatenate(currentOldTarget
-                                    .getRange(oldTargetPartLower, oldTargetPartUpper));
-                    }
+                    if (currentTargetPatches == null)
+                        parsedRead.getMatchedGroupEdges().stream()
+                                .filter(mge -> mge.getTargetId() == targetId).forEach(newGroupEdges::add);
+                    else {
+                        Collections.sort(currentTargetPatches);
+                        NSequenceWithQuality currentOldTarget = oldTargets.get(targetId);
+                        for (int i = 0; i < currentTargetPatches.size(); i++) {
+                            TargetPatch currentPatch = currentTargetPatches.get(i);
+                            if (i > 0)
+                                isOverlap |= currentPatch.trimRange(currentTargetPatches.get(i - 1));
+                            else if (currentPatch.range.getLower() > 0)
+                                newTarget = currentOldTarget.getRange(0, currentPatch.range.getLower());
+                            currentPatch.newLower = newTarget.size();
+                            newTarget = newTarget.concatenate(new NSequenceWithQuality(currentPatch.correctValue));
+                            currentPatch.newUpper = newTarget.size();
+                            int oldTargetPartLower = currentPatch.range.getUpper();
+                            int oldTargetPartUpper = (i < currentTargetPatches.size() - 1)
+                                    ? currentTargetPatches.get(i + 1).range.getLower() : currentOldTarget.size();
+                            if (oldTargetPartLower < oldTargetPartUpper)
+                                newTarget = newTarget.concatenate(currentOldTarget
+                                        .getRange(oldTargetPartLower, oldTargetPartUpper));
+                        }
 
-                    Map<String, TargetPatch> currentTargetPatchesMap = currentTargetPatches.stream()
-                            .collect(Collectors.toMap(tp -> tp.groupName, tp -> tp));
-                    for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges().stream()
-                            .filter(mge -> mge.getTargetId() == targetId).collect(Collectors.toList())) {
-                        int matchedGroupEdgePosition;
-                        GroupEdge groupEdge = matchedGroupEdge.getGroupEdge();
-                        TargetPatch currentTargetPatch = currentTargetPatchesMap.get(groupEdge.getGroupName());
-                        if (currentTargetPatch != null) {
-                            matchedGroupEdgePosition = groupEdge.isStart() ? currentTargetPatch.newLower
-                                    : currentTargetPatch.newUpper;
-                            if (matchedGroupEdgePosition == -1)
-                                throw new IllegalStateException("New group edge position was not calculated!");
-                        } else if (defaultGroups.contains(groupEdge.getGroupName()))
-                            matchedGroupEdgePosition = groupEdge.isStart() ? 0 : newTarget.size();
-                        else
-                            throw new IllegalStateException("Group " + groupEdge.getGroupName() + " with target id "
-                                    + targetId + " is not default and not in target patches!");
-                        newGroupEdges.add(new MatchedGroupEdge(newTarget, matchedGroupEdge.getTargetId(),
-                                matchedGroupEdge.getGroupEdge(), matchedGroupEdgePosition));
+                        Map<String, TargetPatch> currentTargetPatchesMap = currentTargetPatches.stream()
+                                .collect(Collectors.toMap(tp -> tp.groupName, tp -> tp));
+                        for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges().stream()
+                                .filter(mge -> mge.getTargetId() == targetId).collect(Collectors.toList())) {
+                            int matchedGroupEdgePosition;
+                            GroupEdge groupEdge = matchedGroupEdge.getGroupEdge();
+                            TargetPatch currentTargetPatch = currentTargetPatchesMap.get(groupEdge.getGroupName());
+                            if (currentTargetPatch != null) {
+                                matchedGroupEdgePosition = groupEdge.isStart() ? currentTargetPatch.newLower
+                                        : currentTargetPatch.newUpper;
+                                if (matchedGroupEdgePosition == -1)
+                                    throw new IllegalStateException("New group edge position was not calculated!");
+                            } else if (defaultGroups.contains(groupEdge.getGroupName()))
+                                matchedGroupEdgePosition = groupEdge.isStart() ? 0 : newTarget.size();
+                            else
+                                throw new IllegalStateException("Group " + groupEdge.getGroupName() + " with target id "
+                                        + targetId + " is not default and not in target patches!");
+                            newGroupEdges.add(new MatchedGroupEdge(newTarget, matchedGroupEdge.getTargetId(),
+                                    matchedGroupEdge.getGroupEdge(), matchedGroupEdgePosition));
+                        }
                     }
                 }
                 if (isOverlap)
@@ -224,6 +227,11 @@ public final class CorrectBarcodesIO {
             }
 
             Match newMatch = new Match(numberOfReads, parsedRead.getBestMatchScore(), newGroupEdges);
+            if (newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
+                    .filter(defaultGroups::contains).count() != numberOfReads)
+                throw new IllegalStateException("Missing default groups in new Match: expected " + defaultGroups
+                        + ", got " + newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
+                        .filter(defaultGroups::contains).collect(Collectors.toList()));
             return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), newMatch);
         }
 
