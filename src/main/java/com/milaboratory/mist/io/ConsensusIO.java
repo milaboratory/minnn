@@ -10,7 +10,6 @@ import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
-import com.milaboratory.core.sequence.SequenceQuality;
 import com.milaboratory.core.sequence.SequenceWithQuality;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
@@ -26,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.milaboratory.core.alignment.BandedLinearAligner.alignLocalGlobal;
+import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.pattern.PatternUtils.invertCoordinate;
 import static com.milaboratory.mist.util.SystemUtils.*;
@@ -38,19 +38,22 @@ public final class ConsensusIO {
     private final int matchScore;
     private final int mismatchScore;
     private final int gapScore;
-    private final long penaltyThreshold;
+    private final long scoreThreshold;
     private final float skippedFractionToRepeat;
-    private final byte badTailQuality;
     private final int minGoodSeqLength;
     private final int threads;
+    private final int maxConsensusesPerCluster;
+    private final float avgQualityThreshold;
+    private final int windowSize;
     private final AtomicLong totalReads = new AtomicLong(0);
     private final AtomicLong consensusReads = new AtomicLong(0);
     private Set<String> groupList;
     private int numberOfTargets;
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
-                       int matchScore, int mismatchScore, int gapScore, long penaltyThreshold,
-                       float skippedFractionToRepeat, byte badTailQuality, int minGoodSeqLength, int threads) {
+                       int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
+                       float skippedFractionToRepeat, int minGoodSeqLength, int threads, int maxConsensusesPerCluster,
+                       float avgQualityThreshold, int windowSize) {
         this.groupList = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -58,18 +61,20 @@ public final class ConsensusIO {
         this.matchScore = matchScore;
         this.mismatchScore = mismatchScore;
         this.gapScore = gapScore;
-        this.penaltyThreshold = penaltyThreshold;
+        this.scoreThreshold = scoreThreshold;
         this.skippedFractionToRepeat = skippedFractionToRepeat;
-        this.badTailQuality = badTailQuality;
         this.minGoodSeqLength = minGoodSeqLength;
         this.threads = threads;
+        this.maxConsensusesPerCluster = maxConsensusesPerCluster;
+        this.avgQualityThreshold = avgQualityThreshold;
+        this.windowSize = windowSize;
     }
 
     public void go() {
         long startTime = System.currentTimeMillis();
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
-            SmartProgressReporter.startProgressReport("Calculating consensus", reader, System.err);
+            SmartProgressReporter.startProgressReport("Calculating consensuses", reader, System.err);
             if (!reader.isCorrected())
                 System.err.println("WARNING: calculating consensus for not corrected MIF file!");
             if (!reader.isSorted())
@@ -247,19 +252,27 @@ public final class ConsensusIO {
                 Consensus stage1Consensus = generateConsensus(subsequencesList, bestSequences);
 
                 // stage 2: align to consensus from stage 1
-                subsequencesList = getAlignedSubsequencesList(cutBadQualityTails(data), filteredOutReads,
+                subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data), filteredOutReads,
                         stage1Consensus.sequences, -1);
+
                 if (subsequencesList.size() > 0) {
                     Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences);
                     calculatedConsensuses.consensuses.add(stage2Consensus);
                 }
 
-                if ((float)filteredOutReads.size() / data.size() >= skippedFractionToRepeat) {
-                    ArrayList<DataFromParsedRead> remainingData = new ArrayList<>();
-                    for (int i = 0; i < data.size(); i++)
-                        if (filteredOutReads.contains(i))
-                            remainingData.add(data.get(i));
-                    data = remainingData;
+                if ((float)filteredOutReads.size() / cluster.data.size() >= skippedFractionToRepeat) {
+                    if (calculatedConsensuses.consensuses.size() < maxConsensusesPerCluster) {
+                        ArrayList<DataFromParsedRead> remainingData = new ArrayList<>();
+                        for (int i = 0; i < data.size(); i++)
+                            if (filteredOutReads.contains(i))
+                                remainingData.add(data.get(i));
+                        data = remainingData;
+                    } else {
+                        System.err.println("WARNING: max consensuses per cluster exceeded; not processed "
+                                + filteredOutReads.size() + " reads from cluster of " + cluster.data.size()
+                                + " reads!");
+                        data = new ArrayList<>();
+                    }
                 } else
                     data = new ArrayList<>();
             }
@@ -297,38 +310,39 @@ public final class ConsensusIO {
             return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
         }
 
-        private List<DataFromParsedRead> cutBadQualityTails(List<DataFromParsedRead> data) {
+        /**
+         * Trim bad quality tails and filter out entirely bad sequences from data.
+         *
+         * @param data  data from cluster of parsed reads with same barcodes
+         * @return      trimmed and filtered data
+         */
+        private List<DataFromParsedRead> trimBadQualityTails(List<DataFromParsedRead> data) {
             List<DataFromParsedRead> processedData = new ArrayList<>();
             for (DataFromParsedRead dataFromParsedRead : data) {
                 NSequenceWithQuality[] sequences = dataFromParsedRead.sequences;
                 NSequenceWithQuality[] processedSequences = new NSequenceWithQuality[numberOfTargets];
+
                 boolean allSequencesAreGood = true;
                 for (int i = 0; i < numberOfTargets; i++) {
-                    NSequenceWithQuality seq = sequences[i];
-                    int firstGoodPosition = -1;
-                    int lastGoodPosition = -1;
-                    SequenceQuality currentQuality = seq.getQuality();
-                    for (int position = 0; position < seq.size(); position++)
-                        if (currentQuality.value(position) > badTailQuality) {
-                            firstGoodPosition = position;
-                            break;
-                        }
-                    if (firstGoodPosition == -1) {
+                    NSequenceWithQuality sequence = sequences[i];
+                    int trimResultLeft = trim(sequence.getQuality(), 0, sequence.size(), 1,
+                            true, avgQualityThreshold, windowSize);
+                    if (trimResultLeft < -1) {
                         allSequencesAreGood = false;
                         break;
                     }
-                    for (int position = seq.size() - 1; position >= firstGoodPosition + minGoodSeqLength - 1;
-                         position--)
-                        if (currentQuality.value(position) > badTailQuality) {
-                            lastGoodPosition = position;
-                            break;
-                        }
-                    if (lastGoodPosition == -1) {
+                    int trimResultRight = trim(sequence.getQuality(), 0, sequence.size(), -1,
+                            true, avgQualityThreshold, windowSize);
+                    if (trimResultRight < 0)
+                        throw new IllegalStateException("Unexpected negative trimming result");
+                    else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
                         allSequencesAreGood = false;
                         break;
                     }
-                    processedSequences[i] = getSubSequence(seq, firstGoodPosition, lastGoodPosition + 1);
+                    else
+                        processedSequences[i] = getSubSequence(sequence, trimResultLeft + 1, trimResultRight);
                 }
+
                 if (allSequencesAreGood)
                     processedData.add(new DataFromParsedRead(processedSequences));
                 else
@@ -341,9 +355,9 @@ public final class ConsensusIO {
         /**
          * Align sequences and generate list of AlignedSubsequences objects that is needed for generateConsensus().
          *
-         * @param data              data from group of parsed reads with same barcodes
+         * @param data              data from cluster of parsed reads with same barcodes
          * @param filteredOutReads  mutable set of filtered out reads: this function will add to this set
-         *                          indexes of all reads that didn't fit penalty threshold
+         *                          indexes of all reads that didn't fit score threshold
          * @param bestSequences     best array of sequences: 1 sequence in array corresponding to 1 target
          * @param bestSeqIndex      index of best sequences in cluster; or -1 if they are not from cluster
          * @return                  list of aligned subsequences for generateConsensus() function
@@ -364,7 +378,8 @@ public final class ConsensusIO {
                             alignments.add(alignment);
                             sumScore += alignment.getScore();
                         }
-                        if (sumScore < penaltyThreshold)
+                        if (bestSeqIndex == -1)
+                        if (sumScore < scoreThreshold)
                             filteredOutReads.add(i);
                         else {
                             AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
@@ -400,6 +415,7 @@ public final class ConsensusIO {
                                     }
                                 }
                             }
+                            subsequencesList.add(currentSubsequences);
                         }
                     }
                 } else {
@@ -429,14 +445,15 @@ public final class ConsensusIO {
                                             NSequenceWithQuality[] bestSequences) {
             int numSequences = subsequencesList.size();
             NSequenceWithQuality[] sequences = new NSequenceWithQuality[numberOfTargets];
-            List<LettersWithPositions> lettersList = Collections.nCopies(numSequences, new LettersWithPositions());
+            List<LettersWithPositions> lettersList = IntStream.range(0, numSequences)
+                    .mapToObj(i -> new LettersWithPositions()).collect(Collectors.toList());
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                List<ArrayList<NSequenceWithQuality>> lettersMatrixList = Collections.nCopies(numSequences,
-                        new ArrayList<>());
+                List<ArrayList<NSequenceWithQuality>> lettersMatrixList = IntStream.range(0, numSequences)
+                        .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());
                 for (int position = 0; position < bestSequences[targetIndex].size(); position++) {
                     ArrayList<NSequenceWithQuality> currentPositionSequences = new ArrayList<>();
                     int bestQualityIndex = -1;
-                    byte bestQuality = 0;
+                    byte bestQuality = -1;
                     for (int i = 0; i < numSequences; i++) {
                         AlignedSubsequences currentSubsequences = subsequencesList.get(i);
                         NSequenceWithQuality currentSequence = currentSubsequences.get(targetIndex, position);
@@ -571,7 +588,7 @@ public final class ConsensusIO {
                 if (get(targetIndex, position) != NSequenceWithQuality.EMPTY)
                     throw new IllegalArgumentException("getDeletionQuality() called for sequence "
                             + get(targetIndex, position));
-                ArrayList<NSequenceWithQuality> currentLetters = targetSequences.get(position);
+                ArrayList<NSequenceWithQuality> currentLetters = targetSequences.get(targetIndex);
 
                 NSequenceWithQuality foundPreviousSeq = null;
                 NSequenceWithQuality foundNextSeq = null;
@@ -647,12 +664,12 @@ public final class ConsensusIO {
                                     + "in seq1; seq1: " + baseSequence + ", seq2: " + sequence + ", alignment: "
                                     + alignment);
                         else if (stage == 0) {
-                            currentPositions.add((baseSequencePosition > 0) ? baseSequencePosition
+                            currentPositions.add((baseSequencePosition >= 0) ? baseSequencePosition
                                     : invertCoordinate(baseSequencePosition));
                             stage = 1;
                             extend(0, leftTailLength);
                         } else {
-                            int currentCoordinate = (baseSequencePosition > 0) ? baseSequencePosition
+                            int currentCoordinate = (baseSequencePosition >= 0) ? baseSequencePosition
                                     : invertCoordinate(baseSequencePosition);
                             int previousCoordinate = currentPositions.get(i - 1);
                             currentPositions.add(currentCoordinate);
@@ -714,6 +731,8 @@ public final class ConsensusIO {
                     NSequenceWithQuality sequence = sequences.get(sequenceIndex);
                     if (sequence.size() == 0)
                         return NSequenceWithQuality.EMPTY;
+                    /* get positions in current sequence relative to base sequence;
+                       sequenceIndex - 1 because there is no base sequence as 1st element */
                     ArrayList<Integer> positions = positionsCache.get(sequenceIndex - 1);
                     int basePosition = -1;
                     int currentBasePosition = -1;
@@ -725,9 +744,11 @@ public final class ConsensusIO {
                             int currentBaseCoordinate = baseLettersCoordinates[currentBasePosition];
                             if (currentBaseCoordinate == coordinate)
                                 return letterAt(sequence, seqPosition);
-                            else if (currentBaseCoordinate > coordinate)
+                            else if (currentBaseCoordinate > coordinate) {
+                                if (seqPosition == 0)
+                                    return NSequenceWithQuality.EMPTY;
                                 break;
-                            else if (currentBasePosition == basePosition)
+                            } else if (currentBasePosition == basePosition)
                                 currentPartLength++;
                             else
                                 currentPartLength = 1;
@@ -739,12 +760,10 @@ public final class ConsensusIO {
                                 + "; sequenceIndex: " + sequenceIndex + ", coordinate: " + coordinate);
                     if (basePosition == -1) {
                         int seqStartCoordinate = baseLettersCoordinates[0] - seqPosition;
-                        if (coordinate >= baseLettersCoordinates[0])
-                            throw new IllegalStateException("Wrong base position found: sequence: " + sequence
-                                    + ", sequenceIndex: " + sequenceIndex + ", coordinate: " + coordinate
-                                    + ", basePosition: -1, baseLettersCoordinates[0]: " + baseLettersCoordinates[0]
-                                    + ", seqPosition: " + seqPosition);
-                        else if (coordinate < seqStartCoordinate)
+                        if (coordinate >= baseLettersCoordinates[0]) {
+                            // there are deletions on base sequence start positions, and we pick one of them
+                            return NSequenceWithQuality.EMPTY;
+                        } else if (coordinate < seqStartCoordinate)
                             return NSequenceWithQuality.EMPTY;
                         else
                             return letterAt(sequence, coordinate - seqStartCoordinate);

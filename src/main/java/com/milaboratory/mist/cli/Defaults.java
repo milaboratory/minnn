@@ -21,9 +21,11 @@ public final class Defaults {
     public final static int DEFAULT_CORRECT_MAX_DELETIONS = 2;
     public final static int DEFAULT_CORRECT_MAX_INSERTIONS = 2;
     public final static int DEFAULT_CORRECT_MAX_TOTAL_ERRORS = 3;
-    public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 5;
-    public final static int DEFAULT_CONSENSUS_PENALTY_THRESHOLD = -100;
+    public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 20;
+    public final static int DEFAULT_CONSENSUS_SCORE_THRESHOLD = -500;
     public final static float DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT = 0.5f;
-    public final static byte DEFAULT_CONSENSUS_BAD_TAIL_QUALITY = 10;
     public final static byte DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH = 5;
+    public final static int DEFAULT_CONSENSUS_MAX_PER_CLUSTER = 10;
+    public final static float DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD = 10.0f;
+    public final static int DEFAULT_CONSENSUS_QUALITY_WINDOW_SIZE = 20;
 }

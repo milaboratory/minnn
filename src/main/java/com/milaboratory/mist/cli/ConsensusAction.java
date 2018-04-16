@@ -1,8 +1,6 @@
 package com.milaboratory.mist.cli;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
-import com.beust.jcommander.Parameters;
+import com.beust.jcommander.*;
 import com.milaboratory.cli.Action;
 import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
@@ -18,8 +16,9 @@ public final class ConsensusAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         ConsensusIO consensusIO = new ConsensusIO(params.groupList, params.inputFileName, params.outputFileName,
-                params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore, params.penaltyThreshold,
-                params.skippedFractionToRepeat, params.badTailQuality, params.minGoodSeqLength, params.threads);
+                params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore, params.scoreThreshold,
+                params.skippedFractionToRepeat, params.minGoodSeqLength, params.threads,
+                params.maxConsensusesPerCluster, params.avgQualityThreshold, params.windowSize);
         consensusIO.go();
     }
 
@@ -63,20 +62,15 @@ public final class ConsensusAction implements Action {
                 names = {"--aligner-gap-score"})
         int gapScore = DEFAULT_GAP_SCORE;
 
-        @Parameter(description = "Score penalty threshold that used to filter reads for calculating consensus.",
-                names = {"--penalty-threshold"})
-        long penaltyThreshold = DEFAULT_CONSENSUS_PENALTY_THRESHOLD;
+        @Parameter(description = "Score threshold that used to filter reads for calculating consensus.",
+                names = {"--score-threshold"})
+        long scoreThreshold = DEFAULT_CONSENSUS_SCORE_THRESHOLD;
 
-        @Parameter(description = "Fraction of reads skipped by penalty threshold that must start the search for " +
+        @Parameter(description = "Fraction of reads skipped by score threshold that must start the search for " +
                 "another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of " +
                 "reads with identical barcodes.",
                 names = {"--skipped-fraction-to-repeat"})
         float skippedFractionToRepeat = DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT;
-
-        @Parameter(description = "This and lower quality will be considered bad when we trim bad quality tails " +
-                "before calculating consensus.",
-                names = {"--bad-tail-quality"})
-        byte badTailQuality = DEFAULT_CONSENSUS_BAD_TAIL_QUALITY;
 
         @Parameter(description = "Minimal length of good sequence that will be still considered good after trimming " +
                 "bad quality tails.",
@@ -87,13 +81,18 @@ public final class ConsensusAction implements Action {
                 names = {"--threads"})
         int threads = DEFAULT_THREADS;
 
-        @Override
-        public void validate() {
-            if (matchScore > 0 || mismatchScore >= 0 || gapScore >= 0)
-                throw new ParameterException("For consensus aligner, match score must be 0 or negative, "
-                        + "mismatch and gap score must be negative.");
-            if (penaltyThreshold > 0)
-                throw new ParameterException("Penalty threshold must be 0 or negative.");
-        }
+        @Parameter(description = "Maximal number of consensuses generated from 1 cluster. Every time this threshold " +
+                "is applied to stop searching for new consensuses, warning will be displayed. Too many consensuses " +
+                "per cluster indicate that score threshold, aligner width or skipped fraction to repeat is too low.",
+                names = {"--max-consensuses-per-cluster"})
+        int maxConsensusesPerCluster = DEFAULT_CONSENSUS_MAX_PER_CLUSTER;
+
+        @Parameter(description = "Minimal average quality for bad quality tails trimmer.",
+                names = {"--avg-quality-threshold"})
+        float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
+
+        @Parameter(description = "Window size for bad quality tails trimmer.",
+                names = {"--window-size"})
+        int windowSize = DEFAULT_CONSENSUS_QUALITY_WINDOW_SIZE;
     }
 }

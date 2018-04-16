@@ -28,10 +28,9 @@ public class ConsensusActionTest {
         exec("correct --input " + inputFile + " --output " + correctedFile);
         exec("sort --input " + correctedFile + " --output " + sortedFile + " --groups G3 G4 G1 G2 R1 R2");
         exec("consensus --input " + sortedFile + " --output " + consensusFile + " --groups G3 G4 G1"
-                + " --threads 4 --penalty-threshold -300");
-
-//        for (String fileName : new String[] { correctedFile, sortedFile, consensusFile })
-//            assertTrue(new File(fileName).delete());
+                + " --threads 4 --score-threshold -1200 --width 30 --max-consensuses-per-cluster 5"
+                + " --skipped-fraction-to-repeat 0.75");
+        for (String fileName : new String[] { correctedFile, sortedFile, consensusFile })
+            assertTrue(new File(fileName).delete());
     }
-
 }
