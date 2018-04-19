@@ -281,6 +281,8 @@ public final class ConsensusIO {
         }
 
         private long calculateSumQuality(NSequenceWithQuality seq) {
+            if ((seq == null) || (seq == NSequenceWithQuality.EMPTY))
+                return 0;
             long sum = 0;
             for (byte quality : seq.getQuality().asArray())
                 sum += quality;
@@ -288,6 +290,8 @@ public final class ConsensusIO {
         }
 
         private byte calculateMinQuality(NSequenceWithQuality seq) {
+            if ((seq == null) || (seq == NSequenceWithQuality.EMPTY))
+                return 0;
             byte minQuality = DEFAULT_GOOD_QUALITY;
             for (byte quality : seq.getQuality().asArray())
                 if (quality < minQuality)
@@ -296,16 +300,17 @@ public final class ConsensusIO {
         }
 
         private NSequenceWithQuality letterAt(NSequenceWithQuality seq, int position) {
-            if (position >= seq.size())
-                return NSequenceWithQuality.EMPTY;
+            if ((seq == null) || (position < 0) || (position >= seq.size()))
+                return null;
             SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(position, position + 1);
             return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
         }
 
         private NSequenceWithQuality getSubSequence(NSequenceWithQuality seq, int from, int to) {
+            from = Math.max(0, from);
             to = Math.min(seq.size(), to);
             if (to - from < 1)
-                return NSequenceWithQuality.EMPTY;
+                return null;
             SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(from, to);
             return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
         }
@@ -392,14 +397,14 @@ public final class ConsensusIO {
                                     int seqPosition = alignment.convertToSeq2Position(position);
                                     if (previousSeqPosition < 0) {
                                         if (seqPosition < 0)
-                                            currentSubsequences.set(targetIndex, position, NSequenceWithQuality.EMPTY);
+                                            currentSubsequences.set(targetIndex, position, null);
                                         else
                                             currentSubsequences.set(targetIndex, position, getSubSequence(
                                                     currentSequence, 0, seqPosition + 1));
                                         previousSeqPosition = seqPosition;
                                     } else {
                                         if (seqPosition < 0)
-                                            currentSubsequences.set(targetIndex, position, NSequenceWithQuality.EMPTY);
+                                            currentSubsequences.set(targetIndex, position, null);
                                         else {
                                             if ((position == alignedBestSequence.size() - 1)
                                                     || (previousSeqPosition == currentSequence.size() - 1))
@@ -458,26 +463,32 @@ public final class ConsensusIO {
                         AlignedSubsequences currentSubsequences = subsequencesList.get(i);
                         NSequenceWithQuality currentSequence = currentSubsequences.get(targetIndex, position);
                         currentPositionSequences.add(currentSequence);
-                        byte currentQuality = (currentSequence == NSequenceWithQuality.EMPTY)
-                                ? 0 : calculateMinQuality(currentSequence);
-                        if (currentQuality > bestQuality) {
-                            bestQuality = currentQuality;
-                            bestQualityIndex = i;
+                        if (currentSequence != null) {
+                            byte currentQuality = calculateMinQuality(currentSequence);
+                            if (currentQuality > bestQuality) {
+                                bestQuality = currentQuality;
+                                bestQualityIndex = i;
+                            }
                         }
                     }
-                    if (bestQualityIndex == -1)
-                        throw new IllegalStateException("bestQualityIndex not found in " + subsequencesList);
-                    LettersMatrix lettersMatrix = new LettersMatrix(currentPositionSequences.get(bestQualityIndex),
-                            bestQualityIndex);
-                    for (int i = 0; i < currentPositionSequences.size(); i++) {
-                        if (i != bestQualityIndex) {
-                            NSequenceWithQuality currentSeq = currentPositionSequences.get(i);
-                            if (currentSeq != NSequenceWithQuality.EMPTY)
-                                lettersMatrix.add(currentSeq, alignLocalGlobal(scoring,
-                                    currentPositionSequences.get(bestQualityIndex).getSequence(),
-                                    currentPositionSequences.get(i).getSequence(), alignerWidth));
-                            else
-                                lettersMatrix.addEmpty();
+
+                    LettersMatrix lettersMatrix;
+                    if (bestQualityIndex == -1) {
+                        // in this case lettersMatrix is a column of nulls and getRowLength() will return 0
+                        lettersMatrix = new LettersMatrix(null, 0);
+                    } else {
+                        lettersMatrix = new LettersMatrix(currentPositionSequences.get(bestQualityIndex),
+                                bestQualityIndex);
+                        for (int i = 0; i < currentPositionSequences.size(); i++) {
+                            if (i != bestQualityIndex) {
+                                NSequenceWithQuality currentSeq = currentPositionSequences.get(i);
+                                if (currentSeq != null)
+                                    lettersMatrix.add(currentSeq, alignLocalGlobal(scoring,
+                                            currentPositionSequences.get(bestQualityIndex).getSequence(),
+                                            currentPositionSequences.get(i).getSequence(), alignerWidth));
+                                else
+                                    lettersMatrix.addNull();
+                            }
                         }
                     }
                     for (int sequenceIndex = 0; sequenceIndex < numSequences; sequenceIndex++) {
@@ -503,7 +514,7 @@ public final class ConsensusIO {
                             currentPositionQualitySums.put(NucleotideSequence.EMPTY,
                                     currentPositionQualitySums.get(NucleotideSequence.EMPTY)
                                             + currentLettersWithPositions.getDeletionQuality(targetIndex, position));
-                        } else {
+                        } else if (currentLetter != null) {
                             NucleotideSequence letterWithoutQuality = currentLetter.getSequence();
                             currentPositionQualitySums.putIfAbsent(letterWithoutQuality, 0L);
                             currentPositionQualitySums.put(letterWithoutQuality,
@@ -549,12 +560,7 @@ public final class ConsensusIO {
             }
 
             NSequenceWithQuality get(int targetIndex, int position) {
-                NSequenceWithQuality value = sequences[index(targetIndex, position)];
-                if (value == null)
-                    throw new IllegalStateException("Subsequence with targetIndex " + targetIndex + " and position "
-                            + position + " is not initialized!");
-                else
-                    return value;
+                return sequences[index(targetIndex, position)];
             }
 
             private int index(int targetIndex, int position) {
@@ -567,7 +573,7 @@ public final class ConsensusIO {
 
             void set(int targetIndex, ArrayList<NSequenceWithQuality> values) {
                 for (NSequenceWithQuality value : values)
-                    if ((value != NSequenceWithQuality.EMPTY) && (value.size() != 1))
+                    if ((value != null) && (value != NSequenceWithQuality.EMPTY) && (value.size() != 1))
                         throw new IllegalArgumentException("Trying to write sequence " + value
                                 + " to LettersWithPositions");
                 if (targetSequences.containsKey(targetIndex))
@@ -596,6 +602,8 @@ public final class ConsensusIO {
                 int currentNextIndex = position + 1;
                 while (currentPreviousIndex >= 0) {
                     NSequenceWithQuality currentSeq = currentLetters.get(currentPreviousIndex);
+                    if (currentSeq == null)
+                        break;
                     if (currentSeq != NSequenceWithQuality.EMPTY) {
                         foundPreviousSeq = currentSeq;
                         break;
@@ -604,6 +612,8 @@ public final class ConsensusIO {
                 }
                 while (currentNextIndex < currentLetters.size()) {
                     NSequenceWithQuality currentSeq = currentLetters.get(currentNextIndex);
+                    if (currentSeq == null)
+                        break;
                     if (currentSeq != NSequenceWithQuality.EMPTY) {
                         foundNextSeq = currentSeq;
                         break;
@@ -628,18 +638,28 @@ public final class ConsensusIO {
             private final int baseSequenceRealIndex;
             private final ArrayList<ArrayList<Integer>> positionsCache = new ArrayList<>();
             private final ArrayList<NSequenceWithQuality> sequences = new ArrayList<>();
+            private final boolean nullBaseSequence;
 
             LettersMatrix(NSequenceWithQuality baseSequence, int baseSequenceRealIndex) {
-                baseLettersCoordinates = IntStream.rangeClosed(0, baseSequence.size()).toArray();
+                if (baseSequence == null) {
+                    baseLettersCoordinates = null;
+                    nullBaseSequence = true;
+                } else {
+                    baseLettersCoordinates = IntStream.rangeClosed(0, baseSequence.size()).toArray();
+                    nullBaseSequence = false;
+                }
                 sequences.add(baseSequence);
                 this.baseSequenceRealIndex = baseSequenceRealIndex;
             }
 
             int getRowLength() {
-                return baseLettersCoordinates[baseLettersCoordinates.length - 1];
+                return nullBaseSequence ? 0 : baseLettersCoordinates[baseLettersCoordinates.length - 1];
             }
 
             void add(NSequenceWithQuality sequence, Alignment<NucleotideSequence> alignment) {
+                if (nullBaseSequence)
+                    throw new IllegalStateException("add(" + sequence + ", " + alignment + " called for LettersMatrix "
+                            + "with null base sequence!");
                 int stage = 0;  // 0 - before base start, 1 - inside alignment range, 2 - after base end
                 int leftTailLength = 0;
                 int rightTailLength = 0;
@@ -693,8 +713,8 @@ public final class ConsensusIO {
                 positionsCache.add(currentPositions);
             }
 
-            void addEmpty() {
-                sequences.add(NSequenceWithQuality.EMPTY);
+            void addNull() {
+                sequences.add(null);
                 positionsCache.add(new ArrayList<>());
             }
 
@@ -716,6 +736,9 @@ public final class ConsensusIO {
             }
 
             NSequenceWithQuality getLetterByCoordinate(int sequenceRealIndex, int coordinate) {
+                if (nullBaseSequence)
+                    throw new IllegalStateException("getLetterByCoordinate(" + sequenceRealIndex + ", " + coordinate
+                            + " called for LettersMatrix with null base sequence!");
                 if (sequenceRealIndex == baseSequenceRealIndex) {
                     for (int i = 0; i < baseLettersCoordinates.length - 1; i++) {
                         int currentCoordinate = baseLettersCoordinates[i];
@@ -724,13 +747,13 @@ public final class ConsensusIO {
                         else if (currentCoordinate > coordinate)
                             return NSequenceWithQuality.EMPTY;
                     }
-                    return NSequenceWithQuality.EMPTY;
+                    return null;
                 } else {
                     int sequenceIndex = (sequenceRealIndex > baseSequenceRealIndex) ? sequenceRealIndex
                             : sequenceRealIndex + 1;
                     NSequenceWithQuality sequence = sequences.get(sequenceIndex);
-                    if (sequence.size() == 0)
-                        return NSequenceWithQuality.EMPTY;
+                    if (sequence == null)
+                        return null;
                     /* get positions in current sequence relative to base sequence;
                        sequenceIndex - 1 because there is no base sequence as 1st element */
                     ArrayList<Integer> positions = positionsCache.get(sequenceIndex - 1);
@@ -746,7 +769,7 @@ public final class ConsensusIO {
                                 return letterAt(sequence, seqPosition);
                             else if (currentBaseCoordinate > coordinate) {
                                 if (seqPosition == 0)
-                                    return NSequenceWithQuality.EMPTY;
+                                    return null;
                                 break;
                             } else if (currentBasePosition == basePosition)
                                 currentPartLength++;
@@ -764,15 +787,20 @@ public final class ConsensusIO {
                             // there are deletions on base sequence start positions, and we pick one of them
                             return NSequenceWithQuality.EMPTY;
                         } else if (coordinate < seqStartCoordinate)
-                            return NSequenceWithQuality.EMPTY;
+                            return null;
                         else
                             return letterAt(sequence, coordinate - seqStartCoordinate);
                     } else {
                         int currentPartStart = seqPosition - currentPartLength;
                         int wantedSeqPosition = currentPartStart + coordinate - baseLettersCoordinates[basePosition];
-                        if (wantedSeqPosition >= seqPosition)
-                            return NSequenceWithQuality.EMPTY;
-                        else
+                        if (wantedSeqPosition >= seqPosition) {
+                            /* if nucleotide not found and this is not last position in sequence, this is a deletion,
+                               otherwise we are on the right from all sequence and return null */
+                            if (seqPosition < sequence.size() - 1)
+                                return NSequenceWithQuality.EMPTY;
+                            else
+                                return null;
+                        } else
                             return letterAt(sequence, wantedSeqPosition);
                     }
                 }
