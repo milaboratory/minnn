@@ -252,13 +252,21 @@ public final class ConsensusIO {
                         bestSequences, bestSeqIndex);
                 Consensus stage1Consensus = generateConsensus(subsequencesList, bestSequences);
 
-                // stage 2: align to consensus from stage 1
-                subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data), filteredOutReads,
-                        stage1Consensus.sequences, -1);
-
-                if (subsequencesList.size() > 0) {
-                    Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences);
-                    calculatedConsensuses.consensuses.add(stage2Consensus);
+                if (stage1Consensus == null)
+                    System.err.println("WARNING: consensus assembled from " + (data.size() - filteredOutReads.size())
+                            + " reads discarded on stage 1 after quality trimming!");
+                else {
+                    // stage 2: align to consensus from stage 1
+                    subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data), filteredOutReads,
+                            stage1Consensus.sequences, -1);
+                    if (subsequencesList.size() > 0) {
+                        Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences);
+                        if (stage2Consensus == null)
+                            System.err.println("WARNING: consensus assembled from " + (data.size()
+                                    - filteredOutReads.size()) + " reads discarded on stage 2 after quality trimming!");
+                        else
+                            calculatedConsensuses.consensuses.add(stage2Consensus);
+                    }
                 }
 
                 if ((float)filteredOutReads.size() / cluster.data.size() >= skippedFractionToRepeat) {
@@ -543,9 +551,22 @@ public final class ConsensusIO {
                     }
                 }
 
+                // consensus sequence assembling and quality trimming
                 NSequenceWithQuality consensusSequence = NSequenceWithQuality.EMPTY;
                 for (NSequenceWithQuality letter : consensusLetters)
                     consensusSequence = consensusSequence.concatenate(letter);
+
+                int trimResultLeft = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
+                        1, true, avgQualityThreshold, windowSize);
+                if (trimResultLeft < -1)
+                    return null;
+                int trimResultRight = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
+                        -1, true, avgQualityThreshold, windowSize);
+                if (trimResultRight < 0)
+                    throw new IllegalStateException("Unexpected negative trimming result");
+                else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength)
+                    return null;
+                consensusSequence = getSubSequence(consensusSequence, trimResultLeft + 1, trimResultRight);
                 sequences[targetIndex] = consensusSequence;
             }
 
