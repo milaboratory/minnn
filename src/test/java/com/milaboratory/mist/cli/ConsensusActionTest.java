@@ -25,12 +25,17 @@ public class ConsensusActionTest {
         String correctedFile = TEMP_DIR + "corrected.mif";
         String sortedFile = TEMP_DIR + "sorted.mif";
         String consensusFile = TEMP_DIR + "consensus.mif";
+        String recalculatedConsensusFile = TEMP_DIR + "consensus2.mif";
         exec("correct --input " + inputFile + " --output " + correctedFile);
         exec("sort --input " + correctedFile + " --output " + sortedFile + " --groups G3 G4 G1 G2 R1 R2");
         exec("consensus --input " + sortedFile + " --output " + consensusFile + " --groups G3 G4 G1"
                 + " --threads 4 --score-threshold -1200 --width 30 --max-consensuses-per-cluster 5"
                 + " --skipped-fraction-to-repeat 0.75");
-        for (String fileName : new String[] { correctedFile, sortedFile, consensusFile })
+        exec("consensus --input " + consensusFile + " --output " + recalculatedConsensusFile
+                + " --groups G3 G4 G1 --threads 1 --score-threshold -1200 --width 30"
+                + " --skipped-fraction-to-repeat 0.75");
+        assertFileEquals(consensusFile, recalculatedConsensusFile);
+        for (String fileName : new String[] { correctedFile, sortedFile, consensusFile, recalculatedConsensusFile })
             assertTrue(new File(fileName).delete());
     }
 }

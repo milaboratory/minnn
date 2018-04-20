@@ -169,6 +169,11 @@ public final class ConsensusIO {
             this.from = from;
             this.to = to;
         }
+
+        @Override
+        public String toString() {
+            return "Barcode{" + "groupName='" + groupName + '\'' + ", from=" + from + ", to=" + to + '}';
+        }
     }
 
     private class TargetBarcodes {
@@ -176,6 +181,11 @@ public final class ConsensusIO {
 
         TargetBarcodes(ArrayList<Barcode> targetBarcodes) {
             this.targetBarcodes = targetBarcodes;
+        }
+
+        @Override
+        public String toString() {
+            return "TargetBarcodes{" + "targetBarcodes=" + targetBarcodes + '}';
         }
     }
 
@@ -216,6 +226,14 @@ public final class ConsensusIO {
         Consensus(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes) {
             this.sequences = sequences;
             this.barcodes = barcodes;
+            for (int i = 0; i < numberOfTargets; i++) {
+                NSequenceWithQuality sequence = sequences[i];
+                ArrayList<Barcode> targetBarcodes = barcodes[i].targetBarcodes;
+                if (targetBarcodes.stream()
+                        .anyMatch(barcode -> (barcode.from >= sequence.size()) || (barcode.to > sequence.size())))
+                    throw new IllegalStateException("Consensus barcode is out of bounds! Sequences: "
+                            + Arrays.toString(sequences) + ", barcodes: " + Arrays.toString(barcodes));
+            }
         }
 
         ParsedRead toParsedRead(long readId) {
@@ -358,10 +376,8 @@ public final class ConsensusIO {
         }
 
         private NSequenceWithQuality getSubSequence(NSequenceWithQuality seq, int from, int to) {
-            from = Math.max(0, from);
-            to = Math.min(seq.size(), to);
-            if (to - from < 1)
-                return null;
+            if ((from < 0) || (to > seq.size()) || (to - from < 1))
+                throw new IndexOutOfBoundsException("seq.size(): " + seq.size() + ", from: " + from + ", to: " + to);
             SequenceWithQuality<NucleotideSequence> subsequence = seq.getSubSequence(from, to);
             return new NSequenceWithQuality(subsequence.getSequence(), subsequence.getQuality());
         }
@@ -481,8 +497,9 @@ public final class ConsensusIO {
                                         if (seqPosition < 0)
                                             currentSubsequences.set(targetIndex, position, null);
                                         else {
-                                            if ((position == alignedBestSequence.size() - 1)
-                                                    || (previousSeqPosition == currentSequence.size() - 1))
+                                            if (previousSeqPosition == currentSequence.size() - 1)
+                                                currentSubsequences.set(targetIndex, position, null);
+                                            else if (position == alignedBestSequence.size() - 1)
                                                 currentSubsequences.set(targetIndex, position,
                                                         getSubSequence(currentSequence, previousSeqPosition + 1,
                                                                 currentSequence.size()));
