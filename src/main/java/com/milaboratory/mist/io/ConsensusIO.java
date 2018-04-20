@@ -5,6 +5,7 @@ import cc.redberry.pipe.OutputPort;
 import cc.redberry.pipe.Processor;
 import cc.redberry.pipe.blocks.ParallelProcessor;
 import cc.redberry.pipe.util.OrderedOutputPort;
+import com.milaboratory.core.Range;
 import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
 import com.milaboratory.core.io.sequence.*;
@@ -48,14 +49,14 @@ public final class ConsensusIO {
     private final int windowSize;
     private final AtomicLong totalReads = new AtomicLong(0);
     private final AtomicLong consensusReads = new AtomicLong(0);
-    private Set<String> groupList;
+    private Set<String> groupSet;
     private int numberOfTargets;
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
                        int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
                        float skippedFractionToRepeat, int minGoodSeqLength, int threads, int maxConsensusesPerCluster,
                        float avgQualityThreshold, int windowSize) {
-        this.groupList = (groupList == null) ? null : new LinkedHashSet<>(groupList);
+        this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.alignerWidth = alignerWidth;
@@ -101,14 +102,14 @@ public final class ConsensusIO {
                             Set<String> allGroups = parsedRead.getGroups().stream().map(MatchedGroup::getGroupName)
                                     .filter(groupName -> !defaultGroups.contains(groupName))
                                     .collect(Collectors.toSet());
-                            if (groupList != null) {
-                                for (String groupName : groupList)
+                            if (groupSet != null) {
+                                for (String groupName : groupSet)
                                     if (!allGroups.contains(groupName))
                                         throw exitWithError("Group " + groupName + " not found in the input!");
                             } else
-                                groupList = allGroups;
+                                groupSet = allGroups;
                             LinkedHashMap<String, NucleotideSequence> currentGroups = parsedRead.getGroups().stream()
-                                    .filter(g -> groupList.contains(g.getGroupName()))
+                                    .filter(g -> groupSet.contains(g.getGroupName()))
                                     .collect(LinkedHashMap::new, (m, g) -> m.put(g.getGroupName(),
                                             g.getValue().getSequence()), Map::putAll);
                             if (!currentGroups.equals(previousGroups)) {
@@ -158,11 +159,33 @@ public final class ConsensusIO {
                 : new MifWriter(outputFileName, mifHeader);
     }
 
+    private class Barcode {
+        final String groupName;
+        final int from;
+        final int to;
+
+        Barcode(String groupName, int from, int to) {
+            this.groupName = groupName;
+            this.from = from;
+            this.to = to;
+        }
+    }
+
+    private class TargetBarcodes {
+        final ArrayList<Barcode> targetBarcodes;
+
+        TargetBarcodes(ArrayList<Barcode> targetBarcodes) {
+            this.targetBarcodes = targetBarcodes;
+        }
+    }
+
     private class DataFromParsedRead {
         final NSequenceWithQuality[] sequences;
+        final TargetBarcodes[] barcodes;
 
         DataFromParsedRead(ParsedRead parsedRead, Set<String> defaultGroups) {
-            List<MatchedGroup> extractedGroups = parsedRead.getGroups().stream()
+            List<MatchedGroup> parsedReadGroups = parsedRead.getGroups();
+            List<MatchedGroup> extractedGroups = parsedReadGroups.stream()
                     .filter(g -> defaultGroups.contains(g.getGroupName())).collect(Collectors.toList());
             if (extractedGroups.size() != numberOfTargets)
                 throw new IllegalArgumentException("Wrong number of target groups in ParsedRead: expected "
@@ -170,18 +193,29 @@ public final class ConsensusIO {
                         .map(MatchedGroup::getGroupName).filter(defaultGroups::contains).collect(Collectors.toList()));
             sequences = new NSequenceWithQuality[numberOfTargets];
             extractedGroups.forEach(g -> sequences[g.getTargetId() - 1] = g.getValue());
+            barcodes = IntStream.range(0, numberOfTargets).mapToObj(i -> new TargetBarcodes(new ArrayList<>()))
+                    .toArray(TargetBarcodes[]::new);
+            parsedReadGroups.stream().filter(g -> groupSet.contains(g.getGroupName())).forEachOrdered(group -> {
+                Range groupRange = group.getRange();
+                int targetIndex = group.getTargetId() - 1;
+                ArrayList<Barcode> currentTargetList = barcodes[targetIndex].targetBarcodes;
+                currentTargetList.add(new Barcode(group.getGroupName(), groupRange.getFrom(), groupRange.getTo()));
+            });
         }
 
-        DataFromParsedRead(NSequenceWithQuality[] sequences) {
+        DataFromParsedRead(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes) {
             this.sequences = sequences;
+            this.barcodes = barcodes;
         }
     }
 
     private class Consensus {
         final NSequenceWithQuality[] sequences;
+        final TargetBarcodes[] barcodes;
 
-        Consensus(NSequenceWithQuality[] sequences) {
+        Consensus(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes) {
             this.sequences = sequences;
+            this.barcodes = barcodes;
         }
 
         ParsedRead toParsedRead(long readId) {
@@ -190,11 +224,18 @@ public final class ConsensusIO {
             ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
             for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
                 NSequenceWithQuality currentSequence = sequences[targetId - 1];
+                TargetBarcodes targetBarcodes = barcodes[targetId - 1];
                 reads[targetId - 1] = new SingleReadImpl(readId, currentSequence, "Consensus");
                 matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
                         new GroupEdge("R" + targetId, true), 0));
                 matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
                         new GroupEdge("R" + targetId, false), currentSequence.size()));
+                for (Barcode barcode : targetBarcodes.targetBarcodes) {
+                    matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
+                            new GroupEdge(barcode.groupName, true), barcode.from));
+                    matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
+                            new GroupEdge(barcode.groupName, false), barcode.to));
+                }
             }
             if (numberOfTargets == 1)
                 originalRead = reads[0];
@@ -238,19 +279,19 @@ public final class ConsensusIO {
             while (data.size() > 0) {
                 // stage 1: align to best quality
                 long bestSumQuality = 0;
-                int bestSeqIndex = 0;
+                int bestDataIndex = 0;
                 for (int i = 0; i < data.size(); i++) {
                     long sumQuality = Arrays.stream(data.get(i).sequences).mapToLong(this::calculateSumQuality).sum();
                     if (sumQuality > bestSumQuality) {
                         bestSumQuality = sumQuality;
-                        bestSeqIndex = i;
+                        bestDataIndex = i;
                     }
                 }
-                NSequenceWithQuality[] bestSequences = data.get(bestSeqIndex).sequences;
+                DataFromParsedRead bestData = data.get(bestDataIndex);
                 HashSet<Integer> filteredOutReads = new HashSet<>();
                 ArrayList<AlignedSubsequences> subsequencesList = getAlignedSubsequencesList(data, filteredOutReads,
-                        bestSequences, bestSeqIndex);
-                Consensus stage1Consensus = generateConsensus(subsequencesList, bestSequences);
+                        bestData.sequences, bestDataIndex);
+                Consensus stage1Consensus = generateConsensus(subsequencesList, bestData.sequences, bestData.barcodes);
 
                 if (stage1Consensus == null)
                     System.err.println("WARNING: consensus assembled from " + (data.size() - filteredOutReads.size())
@@ -260,7 +301,8 @@ public final class ConsensusIO {
                     subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data), filteredOutReads,
                             stage1Consensus.sequences, -1);
                     if (subsequencesList.size() > 0) {
-                        Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences);
+                        Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences,
+                                stage1Consensus.barcodes);
                         if (stage2Consensus == null)
                             System.err.println("WARNING: consensus assembled from " + (data.size()
                                     - filteredOutReads.size()) + " reads discarded on stage 2 after quality trimming!");
@@ -335,30 +377,54 @@ public final class ConsensusIO {
             for (DataFromParsedRead dataFromParsedRead : data) {
                 NSequenceWithQuality[] sequences = dataFromParsedRead.sequences;
                 NSequenceWithQuality[] processedSequences = new NSequenceWithQuality[numberOfTargets];
-
+                TargetBarcodes[] barcodes = dataFromParsedRead.barcodes;
+                TargetBarcodes[] processedBarcodes = IntStream.range(0, numberOfTargets)
+                        .mapToObj(i -> new TargetBarcodes(new ArrayList<>())).toArray(TargetBarcodes[]::new);
                 boolean allSequencesAreGood = true;
                 for (int i = 0; i < numberOfTargets; i++) {
                     NSequenceWithQuality sequence = sequences[i];
+                    TargetBarcodes targetBarcodes = barcodes[i];
+                    int leftBarcodeBorder = -1;
+                    int rightBarcodeBorder = -1;
+                    for (Barcode barcode : targetBarcodes.targetBarcodes)
+                        if ((leftBarcodeBorder == -1) && (rightBarcodeBorder == -1)) {
+                            leftBarcodeBorder = barcode.from;
+                            rightBarcodeBorder = barcode.to;
+                        } else {
+                            leftBarcodeBorder = Math.min(leftBarcodeBorder, barcode.from);
+                            rightBarcodeBorder = Math.max(rightBarcodeBorder, barcode.to);
+                        }
                     int trimResultLeft = trim(sequence.getQuality(), 0, sequence.size(), 1,
                             true, avgQualityThreshold, windowSize);
+                    trimResultLeft = (leftBarcodeBorder == -1) ? trimResultLeft
+                            : Math.min(trimResultLeft, leftBarcodeBorder - 1);
                     if (trimResultLeft < -1) {
                         allSequencesAreGood = false;
                         break;
                     }
                     int trimResultRight = trim(sequence.getQuality(), 0, sequence.size(), -1,
                             true, avgQualityThreshold, windowSize);
+                    trimResultRight = (rightBarcodeBorder == -1) ? trimResultRight
+                            : Math.max(trimResultRight, rightBarcodeBorder);
                     if (trimResultRight < 0)
                         throw new IllegalStateException("Unexpected negative trimming result");
                     else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
                         allSequencesAreGood = false;
                         break;
-                    }
-                    else
+                    } else {
                         processedSequences[i] = getSubSequence(sequence, trimResultLeft + 1, trimResultRight);
+                        int barcodesMovement = -(trimResultLeft + 1);
+                        if (barcodesMovement == 0)
+                            processedBarcodes[i].targetBarcodes.addAll(targetBarcodes.targetBarcodes);
+                        else
+                            for (Barcode barcode : targetBarcodes.targetBarcodes)
+                                processedBarcodes[i].targetBarcodes.add(new Barcode(barcode.groupName,
+                                        barcode.from + barcodesMovement, barcode.to + barcodesMovement));
+                    }
                 }
 
                 if (allSequencesAreGood)
-                    processedData.add(new DataFromParsedRead(processedSequences));
+                    processedData.add(new DataFromParsedRead(processedSequences, processedBarcodes));
                 else
                     processedData.add(null);
             }
@@ -453,18 +519,34 @@ public final class ConsensusIO {
          *                          contains sequences from cluster splitted by coordinates that came from alignment
          *                          of sequences from this array to sequences from best array
          * @param bestSequences     best array of sequences: 1 sequence in array corresponding to 1 target
+         * @param barcodes          barcodes from best sequences
          * @return                  consensus: array of sequences (1 sequence for 1 target) and consensus score
          */
         private Consensus generateConsensus(ArrayList<AlignedSubsequences> subsequencesList,
-                                            NSequenceWithQuality[] bestSequences) {
+                                            NSequenceWithQuality[] bestSequences, TargetBarcodes[] barcodes) {
             int numSequences = subsequencesList.size();
             NSequenceWithQuality[] sequences = new NSequenceWithQuality[numberOfTargets];
             List<LettersWithPositions> lettersList = IntStream.range(0, numSequences)
                     .mapToObj(i -> new LettersWithPositions()).collect(Collectors.toList());
+            TargetBarcodes[] consensusBarcodes = IntStream.range(0, numberOfTargets)
+                    .mapToObj(i -> new TargetBarcodes(new ArrayList<>())).toArray(TargetBarcodes[]::new);
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                 List<ArrayList<NSequenceWithQuality>> lettersMatrixList = IntStream.range(0, numSequences)
                         .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());
+                ArrayList<Barcode> bestSequencesTargetBarcodes = barcodes[targetIndex].targetBarcodes;
+                // consensusTargetBarcodes will be filled when consensus barcodes coordinates are calculated
+                ArrayList<Barcode> consensusTargetBarcodes = consensusBarcodes[targetIndex].targetBarcodes;
+                ArrayList<BarcodePosition> barcodePositions = new ArrayList<>();
+                int currentCoordinateForBarcodes = 0;
                 for (int position = 0; position < bestSequences[targetIndex].size(); position++) {
+                    ArrayList<String> currentLeftBarcodeEdges = new ArrayList<>();
+                    ArrayList<String> currentRightBarcodeEdges = new ArrayList<>();
+                    for (Barcode barcode : bestSequencesTargetBarcodes) {
+                        if (barcode.from == position)
+                            currentLeftBarcodeEdges.add(barcode.groupName);
+                        if (barcode.to == position)
+                            currentRightBarcodeEdges.add(barcode.groupName);
+                    }
                     ArrayList<NSequenceWithQuality> currentPositionSequences = new ArrayList<>();
                     int bestQualityIndex = -1;
                     byte bestQuality = -1;
@@ -505,16 +587,33 @@ public final class ConsensusIO {
                         for (int letterIndex = 0; letterIndex < lettersMatrix.getRowLength(); letterIndex++)
                             currentLettersRow.add(lettersMatrix.getLetterByCoordinate(sequenceIndex, letterIndex));
                     }
+
+                    // calculating initial barcode positions, before deletions and trimming
+                    for (String groupName : currentLeftBarcodeEdges)
+                        barcodePositions.add(new BarcodePosition(groupName, true,
+                                currentCoordinateForBarcodes));
+                    currentCoordinateForBarcodes += lettersMatrix.getRowLength();
+                    for (String groupName : currentRightBarcodeEdges)
+                        barcodePositions.add(new BarcodePosition(groupName, false,
+                                currentCoordinateForBarcodes));
                 }
 
-                for (int i = 0; i < numSequences; i++) {
-                    ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(i);
-                    LettersWithPositions currentLettersWithPositions = lettersList.get(i);
+                // calculating position for barcodes at the end of sequence
+                int fullRowLength = lettersMatrixList.get(0).size();
+                for (Barcode barcode : bestSequencesTargetBarcodes)
+                    if (barcode.to == bestSequences[targetIndex].size())
+                        barcodePositions.add(new BarcodePosition(barcode.groupName, false, fullRowLength));
+
+                // moving letters from lists to LettersWithPositions objects
+                for (int sequenceIndex = 0; sequenceIndex < numSequences; sequenceIndex++) {
+                    ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(sequenceIndex);
+                    LettersWithPositions currentLettersWithPositions = lettersList.get(sequenceIndex);
                     currentLettersWithPositions.set(targetIndex, currentLettersRow);
                 }
 
                 ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
-                for (int position = 0; position < lettersList.get(0).getTargetRowLength(targetIndex); position++) {
+                for (int position = 0; position < fullRowLength; position++) {
+                    // calculating quality sums for letters and deletions
                     HashMap<NucleotideSequence, Long> currentPositionQualitySums = new HashMap<>();
                     for (LettersWithPositions currentLettersWithPositions : lettersList) {
                         NSequenceWithQuality currentLetter = currentLettersWithPositions.get(targetIndex, position);
@@ -548,6 +647,11 @@ public final class ConsensusIO {
                         long phredQuality = (p == 0) ? bestSum : Math.min((long)(-10 * Math.log10(p)), bestSum);
                         consensusLetters.add(new NSequenceWithQuality(consensusLetter,
                                 (byte)Math.min(SequenceQuality.MAX_QUALITY_VALUE, phredQuality)));
+                    } else {
+                        // deletion in consensus: move left all barcode positions on the right
+                        for (BarcodePosition barcodePosition : barcodePositions)
+                            if (barcodePosition.position > position)
+                                barcodePosition.position--;
                     }
                 }
 
@@ -556,21 +660,71 @@ public final class ConsensusIO {
                 for (NSequenceWithQuality letter : consensusLetters)
                     consensusSequence = consensusSequence.concatenate(letter);
 
+                int leftBarcodeBorder = -1;
+                int rightBarcodeBorder = -1;
+                for (BarcodePosition barcodePosition : barcodePositions)
+                    if (barcodePosition.isStart) {
+                        leftBarcodeBorder = (leftBarcodeBorder == -1) ? barcodePosition.position
+                                : Math.min(leftBarcodeBorder, barcodePosition.position);
+                    } else {
+                        rightBarcodeBorder = (rightBarcodeBorder == -1) ? barcodePosition.position
+                                : Math.max(rightBarcodeBorder, barcodePosition.position);
+                    }
+                if ((leftBarcodeBorder == -1) ^ (rightBarcodeBorder == -1))
+                    throw new IllegalStateException("Barcode position has no pair! Barcode positions: "
+                            + barcodePositions);
                 int trimResultLeft = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
                         1, true, avgQualityThreshold, windowSize);
+                trimResultLeft = (leftBarcodeBorder == -1) ? trimResultLeft
+                        : Math.min(trimResultLeft, leftBarcodeBorder - 1);
                 if (trimResultLeft < -1)
                     return null;
+                // move barcode positions when trimming consensus
+                int barcodesMovement = -(trimResultLeft + 1);
+                if (barcodesMovement > 0)
+                    for (BarcodePosition barcodePosition : barcodePositions)
+                        barcodePosition.position += barcodesMovement;
                 int trimResultRight = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
                         -1, true, avgQualityThreshold, windowSize);
+                trimResultRight = (rightBarcodeBorder == -1) ? trimResultRight
+                        : Math.max(trimResultRight, rightBarcodeBorder - 1);
                 if (trimResultRight < 0)
                     throw new IllegalStateException("Unexpected negative trimming result");
                 else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength)
                     return null;
                 consensusSequence = getSubSequence(consensusSequence, trimResultLeft + 1, trimResultRight);
                 sequences[targetIndex] = consensusSequence;
+
+                // assembling consensus target barcodes
+                for (String groupName : barcodePositions.stream().map(bp -> bp.groupName).collect(Collectors.toSet())) {
+                    int from = barcodePositions.stream().filter(bp -> (bp.isStart && bp.groupName.equals(groupName)))
+                            .findFirst().orElseThrow(IllegalStateException::new).position;
+                    int to = barcodePositions.stream().filter(bp -> (!bp.isStart && bp.groupName.equals(groupName)))
+                            .findFirst().orElseThrow(IllegalStateException::new).position;
+                    consensusTargetBarcodes.add(new Barcode(groupName, from, to));
+                }
             }
 
-            return new Consensus(sequences);
+            return new Consensus(sequences, consensusBarcodes);
+        }
+
+        private class BarcodePosition {
+            final String groupName;
+            final boolean isStart;
+            // positions are mutable: they will be recalculated on consensus deletions and consensus trimming
+            int position;
+
+            BarcodePosition(String groupName, boolean isStart, int position) {
+                this.groupName = groupName;
+                this.isStart = isStart;
+                this.position = position;
+            }
+
+            @Override
+            public String toString() {
+                return "BarcodePosition{" + "groupName='" + groupName + '\'' + ", isStart=" + isStart
+                        + ", position=" + position + '}';
+            }
         }
 
         private class AlignedSubsequences {
@@ -615,10 +769,6 @@ public final class ConsensusIO {
 
             NSequenceWithQuality get(int targetIndex, int position) {
                 return targetSequences.get(targetIndex).get(position);
-            }
-
-            int getTargetRowLength(int targetIndex) {
-                return targetSequences.get(targetIndex).size();
             }
 
             byte getDeletionQuality(int targetIndex, int position) {
