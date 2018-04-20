@@ -10,6 +10,7 @@ import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.SequenceQuality;
 import com.milaboratory.core.sequence.SequenceWithQuality;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
@@ -504,7 +505,7 @@ public final class ConsensusIO {
                     currentLettersWithPositions.set(targetIndex, currentLettersRow);
                 }
 
-                ArrayList<NucleotideSequence> consensusLetters = new ArrayList<>();
+                ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
                 for (int position = 0; position < lettersList.get(0).getTargetRowLength(targetIndex); position++) {
                     HashMap<NucleotideSequence, Long> currentPositionQualitySums = new HashMap<>();
                     for (LettersWithPositions currentLettersWithPositions : lettersList) {
@@ -522,21 +523,30 @@ public final class ConsensusIO {
                                             + currentLetter.getQuality().value(0));
                         }
                     }
+
+                    // choosing consensus letter and calculating consensus letter quality
                     long bestSum = 0;
+                    long totalSum = 0;
                     NucleotideSequence consensusLetter = NucleotideSequence.EMPTY;
-                    for (HashMap.Entry<NucleotideSequence, Long> entry : currentPositionQualitySums.entrySet())
+                    for (HashMap.Entry<NucleotideSequence, Long> entry : currentPositionQualitySums.entrySet()) {
+                        totalSum += entry.getValue();
                         if (entry.getValue() > bestSum) {
                             bestSum = entry.getValue();
                             consensusLetter = entry.getKey();
                         }
-                    if (consensusLetter != NucleotideSequence.EMPTY)
-                        consensusLetters.add(consensusLetter);
+                    }
+                    if (consensusLetter != NucleotideSequence.EMPTY) {
+                        float p = 1 - (float)bestSum / totalSum;
+                        long phredQuality = (p == 0) ? bestSum : Math.min((long)(-10 * Math.log10(p)), bestSum);
+                        consensusLetters.add(new NSequenceWithQuality(consensusLetter,
+                                (byte)Math.min(SequenceQuality.MAX_QUALITY_VALUE, phredQuality)));
+                    }
                 }
 
-                NucleotideSequence consensusSequence = NucleotideSequence.EMPTY;
-                for (NucleotideSequence letter : consensusLetters)
+                NSequenceWithQuality consensusSequence = NSequenceWithQuality.EMPTY;
+                for (NSequenceWithQuality letter : consensusLetters)
                     consensusSequence = consensusSequence.concatenate(letter);
-                sequences[targetIndex] = new NSequenceWithQuality(consensusSequence, DEFAULT_GOOD_QUALITY);
+                sequences[targetIndex] = consensusSequence;
             }
 
             return new Consensus(sequences);
