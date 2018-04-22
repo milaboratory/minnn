@@ -610,9 +610,12 @@ public final class ConsensusIO {
                         barcodePositions.add(new BarcodePosition(groupName, true,
                                 currentCoordinateForBarcodes));
                     currentCoordinateForBarcodes += lettersMatrix.getRowLength();
-                    for (String groupName : currentRightBarcodeEdges)
+                    for (String groupName : currentRightBarcodeEdges) {
+                        /* currentCoordinateForBarcodes - 1 because currentRightBarcodeEdges are inclusive
+                           and currentCoordinateForBarcodes is exclusive after adding row length */
                         barcodePositions.add(new BarcodePosition(groupName, false,
-                                currentCoordinateForBarcodes));
+                                currentCoordinateForBarcodes - 1));
+                    }
                 }
 
                 // calculating position for barcodes at the end of sequence
@@ -628,8 +631,10 @@ public final class ConsensusIO {
                     currentLettersWithPositions.set(targetIndex, currentLettersRow);
                 }
 
+                /* descending order is important for barcodes movements on deletions in consensus;
+                   consensusLetters list will be filled in reversed order */
                 ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
-                for (int position = 0; position < fullRowLength; position++) {
+                for (int position = fullRowLength - 1; position >= 0; position--) {
                     // calculating quality sums for letters and deletions
                     HashMap<NucleotideSequence, Long> currentPositionQualitySums = new HashMap<>();
                     for (LettersWithPositions currentLettersWithPositions : lettersList) {
@@ -661,7 +666,8 @@ public final class ConsensusIO {
                     }
                     if (consensusLetter != NucleotideSequence.EMPTY) {
                         float p = 1 - (float)bestSum / totalSum;
-                        long phredQuality = (p == 0) ? bestSum : Math.min((long)(-10 * Math.log10(p)), bestSum);
+                        long phredQuality = (bestSum == totalSum) ? bestSum
+                                : Math.min((long)(-10 * Math.log10(p)), bestSum);
                         consensusLetters.add(new NSequenceWithQuality(consensusLetter,
                                 (byte)Math.min(SequenceQuality.MAX_QUALITY_VALUE, phredQuality)));
                     } else {
@@ -674,8 +680,8 @@ public final class ConsensusIO {
 
                 // consensus sequence assembling and quality trimming
                 NSequenceWithQuality consensusSequence = NSequenceWithQuality.EMPTY;
-                for (NSequenceWithQuality letter : consensusLetters)
-                    consensusSequence = consensusSequence.concatenate(letter);
+                for (int i = consensusLetters.size() - 1; i >= 0; i--)
+                    consensusSequence = consensusSequence.concatenate(consensusLetters.get(i));
 
                 int leftBarcodeBorder = -1;
                 int rightBarcodeBorder = -1;
@@ -698,13 +704,13 @@ public final class ConsensusIO {
                     return null;
                 // move barcode positions when trimming consensus
                 int barcodesMovement = -(trimResultLeft + 1);
-                if (barcodesMovement > 0)
+                if (barcodesMovement != 0)
                     for (BarcodePosition barcodePosition : barcodePositions)
                         barcodePosition.position += barcodesMovement;
                 int trimResultRight = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
                         -1, true, avgQualityThreshold, windowSize);
                 trimResultRight = (rightBarcodeBorder == -1) ? trimResultRight
-                        : Math.max(trimResultRight, rightBarcodeBorder - 1);
+                        : Math.max(trimResultRight, rightBarcodeBorder);
                 if (trimResultRight < 0)
                     throw new IllegalStateException("Unexpected negative trimming result");
                 else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength)

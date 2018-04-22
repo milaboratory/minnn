@@ -32,7 +32,7 @@ public class ConsensusActionTest {
                 + " --threads 4 --score-threshold -1200 --width 30 --max-consensuses-per-cluster 5"
                 + " --skipped-fraction-to-repeat 0.75");
         exec("consensus --input " + consensusFile + " --output " + recalculatedConsensusFile
-                + " --groups G3 G4 G1 --threads 1 --score-threshold -1200 --width 30"
+                + " --groups G3 G4 G1 --threads 1 --score-threshold -1200 --width 30 --avg-quality-threshold 0"
                 + " --skipped-fraction-to-repeat 0.75");
         assertFileEquals(consensusFile, recalculatedConsensusFile);
         for (String fileName : new String[] { correctedFile, sortedFile, consensusFile, recalculatedConsensusFile })
