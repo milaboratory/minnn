@@ -27,7 +27,7 @@ public final class MifWriter implements AutoCloseable {
         output.writeInt(mifHeader.getGroupEdges().size());
         for (GroupEdge groupEdge : mifHeader.getGroupEdges()) {
             output.writeObject(groupEdge);
-            output.putKnownReference(groupEdge);
+            output.putKnownObject(groupEdge);
         }
     }
 

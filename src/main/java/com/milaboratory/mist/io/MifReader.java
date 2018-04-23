@@ -53,7 +53,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
         int groupEdgesNum = input.readInt();
         for (int i = 0; i < groupEdgesNum; i++) {
             GroupEdge groupEdge = input.readObject(GroupEdge.class);
-            input.putKnownReference(groupEdge);
+            input.putKnownObject(groupEdge);
             groupEdges.add(groupEdge);
         }
     }
