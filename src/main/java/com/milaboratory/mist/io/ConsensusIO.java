@@ -329,7 +329,8 @@ public final class ConsensusIO {
                     }
                 }
 
-                if ((float)filteredOutReads.size() / cluster.data.size() >= skippedFractionToRepeat) {
+                if ((filteredOutReads.size() < data.size())
+                        && (float)filteredOutReads.size() / cluster.data.size() >= skippedFractionToRepeat) {
                     if (calculatedConsensuses.consensuses.size() < maxConsensusesPerCluster) {
                         ArrayList<DataFromParsedRead> remainingData = new ArrayList<>();
                         for (int i = 0; i < data.size(); i++)
@@ -499,14 +500,10 @@ public final class ConsensusIO {
                                         else {
                                             if (previousSeqPosition == currentSequence.size() - 1)
                                                 currentSubsequences.set(targetIndex, position, null);
-                                            else if (position == alignedBestSequence.size() - 1)
-                                                currentSubsequences.set(targetIndex, position,
-                                                        getSubSequence(currentSequence, previousSeqPosition + 1,
-                                                                currentSequence.size()));
                                             else
                                                 currentSubsequences.set(targetIndex, position,
                                                         getSubSequence(currentSequence, previousSeqPosition + 1,
-                                                                seqPosition + 1));
+                                                                Math.min(currentSequence.size(), seqPosition + 1)));
                                             previousSeqPosition = seqPosition;
                                         }
                                     }
@@ -900,15 +897,9 @@ public final class ConsensusIO {
                             if (currentCoordinate == previousCoordinate)
                                 currentPartLength++;
                             else {
-                                if (currentPartLength > 1) {
-                                    if (currentCoordinate - previousCoordinate != 1)
-                                        throw new IllegalStateException("Something is wrong with alignment: seq1: "
-                                                + baseSequence + ", seq2: " + sequence + ", alignment: " + alignment
-                                                + ", currentCoordinate: " + currentCoordinate + ", previousCoordinate:"
-                                                + previousCoordinate + ", currentPartLength: " + currentPartLength);
+                                if (currentPartLength > 1)
                                     extend(currentCoordinate, currentPartLength);
-                                }
-                                currentPartLength = 1;
+                                currentPartLength = Math.max(1, currentCoordinate - previousCoordinate);
                             }
                         }
                     }
