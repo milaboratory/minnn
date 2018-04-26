@@ -172,7 +172,7 @@ public final class ParsedRead {
         return new ParsedRead(originalRead, reverseMatch, targetMatch);
     }
 
-    public SequenceRead toSequenceRead(boolean copyOldComments, ArrayList<GroupEdge> allGroupEdges,
+    public SequenceRead toSequenceRead(boolean copyOriginalHeaders, ArrayList<GroupEdge> allGroupEdges,
                                        String... groupNames) {
         if (groupNames.length == 0)
             throw new IllegalArgumentException("Basic groups for output sequence read are not specified!");
@@ -194,7 +194,7 @@ public final class ParsedRead {
                 throw new IllegalArgumentException("Group " + outputGroupName
                         + " not found in this ParsedRead; available groups: " + matchedGroups.keySet());
             singleReads.add(new SingleReadImpl(originalRead.getId(), getGroupValue(outputGroupName),
-                    generateReadDescription(copyOldComments, outputGroupName)));
+                    generateReadDescription(copyOriginalHeaders, outputGroupName)));
         }
 
         switch (singleReads.size()) {
@@ -215,7 +215,7 @@ public final class ParsedRead {
         return new ParsedRead(sequenceRead, parseReverseMatchFlag(mistComments.get(0)), targetMatch);
     }
 
-    private String generateReadDescription(boolean copyOldComments, String outputGroupName) {
+    private String generateReadDescription(boolean copyOriginalHeaders, String outputGroupName) {
         if (commentsCache.containsKey(outputGroupName))
             return commentsCache.get(outputGroupName);
 
@@ -241,7 +241,7 @@ public final class ParsedRead {
         }
 
         String comments = generateComments(commentGroups, reverseMatch,
-                copyOldComments ? originalRead.getRead(commentsTargetId - 1).getDescription() : "");
+                copyOriginalHeaders ? originalRead.getRead(commentsTargetId - 1).getDescription() : "");
         commentsCache.put(outputGroupName, comments);
         return comments;
     }

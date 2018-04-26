@@ -133,13 +133,13 @@ public final class ExtractAction implements Action {
                 names = {"--fair-sorting"})
         boolean fairSorting = false;
 
-        @Parameter(description = "Use \"simplified\" parser syntax with class names and their arguments in parentheses",
-                names = {"--devel-parser-syntax"})
-        boolean simplifiedSyntax = false;
-
         @Parameter(description = "Number of threads for parsing reads.",
                 names = {"--threads"})
         int threads = DEFAULT_THREADS;
+
+        @Parameter(description = "Use \"simplified\" parser syntax with class names and their arguments in parentheses",
+                names = {"--devel-parser-syntax"}, hidden = true)
+        boolean simplifiedSyntax = false;
 
         @Parameter(description = "Copy input files to output without processing; used for debug purpose only.",
                 names = {"--test-io-speed"}, hidden = true)

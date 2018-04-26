@@ -36,12 +36,12 @@ public final class StatGroupsAction implements Action {
     @Parameters(commandDescription =
             "Collect summary statistics: capture group sequence and quality table.")
     private static final class StatGroupsActionParameters extends ActionParameters {
-        @Parameter(description = "--group-list <group_names>")
+        @Parameter(description = "--groups <group_names>")
         private String description;
 
-        @Parameter(description = "List of groups to output, determines the keys by which the output table " +
-                "will be aggregated.",
-                names = {"--group-list"}, order = 0, required = true, variableArity = true)
+        @Parameter(description = "Space separated list of groups to output, determines the keys by which the output " +
+                "table will be aggregated.",
+                names = {"--groups"}, order = 0, required = true, variableArity = true)
         List<String> groupList = null;
 
         @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",

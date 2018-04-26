@@ -34,16 +34,16 @@ public final class StatPositionsAction implements Action {
     @Parameters(commandDescription =
             "Collect summary statistics: positions of group matches.")
     private static final class StatPositionsActionParameters extends ActionParameters {
-        @Parameter(description = "--group-list <group_names>")
+        @Parameter(description = "--groups <group_names>")
         private String description;
 
-        @Parameter(description = "List of groups to output, determines IDs allowed in group.id column.",
-                names = {"--group-list"}, order = 0, required = true, variableArity = true)
+        @Parameter(description = "Space separated list of groups to output, determines IDs allowed in group.id column.",
+                names = {"--groups"}, order = 0, required = true, variableArity = true)
         List<String> groupList = null;
 
-        @Parameter(description = "List of original read IDs to output (R1, R2 etc), determines IDs allowed " +
-                "in read column. If not specified, all reads are used.",
-                names = {"--read-id"}, order = 1, variableArity = true)
+        @Parameter(description = "Space separated list of original read IDs to output (R1, R2 etc), determines IDs " +
+                "allowed in read column. If not specified, all reads will be used.",
+                names = {"--reads"}, order = 1, variableArity = true)
         List<String> readIdList = null;
 
         @Parameter(description = "Also output matched sequences. If specified, key columns are group.id + read " +

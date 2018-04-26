@@ -13,7 +13,8 @@ public final class MifToFastqAction implements Action {
 
     @Override
     public void go(ActionHelper helper) {
-        MifToFastqIO mifToFastqIO = new MifToFastqIO(params.inputFileName, params.groups, params.copyOldComments);
+        MifToFastqIO mifToFastqIO = new MifToFastqIO(params.inputFileName, parseGroups(params.groupsQuery),
+                params.copyOriginalHeaders);
         mifToFastqIO.go();
     }
 
@@ -30,25 +31,34 @@ public final class MifToFastqAction implements Action {
     @Parameters(commandDescription =
             "Convert mif file to fastq format.")
     private static final class MifToFastqActionParameters extends ActionParameters {
-        @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",
-                names = {"--input"}, order = 0)
-        String inputFileName = null;
+        @Parameter(description = "group_options\n        Group Options:          Groups and their file names for " +
+                "output reads. At least 1 group must be specified. Built-in groups R1, R2, R3... used for input " +
+                "reads. Example: --group-R1 out_R1.fastq --group-R2 out_R2.fastq --group-UMI UMI.fastq",
+                order = 0, required = true, variableArity = true)
+        List<String> groupsQuery = new ArrayList<>();
 
-        @DynamicParameter(description = "Groups and their file names for output reads. At least 1 group must be " +
-                "specified. Built-in groups R1, R2, R3... used for input reads. Example: --groupR1=out_R1.fastq " +
-                "--groupR2=out_R2.fastq --groupUMI=UMI.fastq",
-                names = {"--group"})
-        LinkedHashMap<String, String> groups = new LinkedHashMap<>();
+        @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",
+                names = {"--input"}, order = 1)
+        String inputFileName = null;
 
         @Parameter(description = "Copy original comments from initial fastq files to comments of output " +
                 "fastq files.",
-                names = {"--copy-old-comments"})
-        boolean copyOldComments = false;
+                names = {"--copy-original-headers"})
+        boolean copyOriginalHeaders = false;
+    }
 
-        @Override
-        public void validate() {
-            if (groups.size() == 0)
-                throw new ParameterException("Groups for output reads are not specified!");
+    private static LinkedHashMap<String, String> parseGroups(List<String> groupsQuery) throws ParameterException {
+        if (groupsQuery.size() % 2 != 0)
+            throw new ParameterException("Group parameters not parsed, expected pairs of groups and their file names: "
+                    + groupsQuery);
+        LinkedHashMap<String, String> groups = new LinkedHashMap<>();
+        for (int i = 0; i < groupsQuery.size(); i += 2) {
+            String currentGroup = groupsQuery.get(i);
+            String currentFileName = groupsQuery.get(i + 1);
+            if ((currentGroup.length() < 9) || !currentGroup.substring(0, 8).equals("--group-"))
+                throw new ParameterException("Syntax error in group parameter: " + currentGroup);
+            groups.put(currentGroup.substring(8), currentFileName);
         }
+        return groups;
     }
 }

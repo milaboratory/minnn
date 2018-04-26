@@ -21,9 +21,9 @@ public final class MifToFastqIO {
     private final String inputFileName;
     private final String[] outputGroupNames;
     private final String[] outputFileNames;
-    private final boolean copyOldComments;
+    private final boolean copyOriginalHeaders;
 
-    public MifToFastqIO(String inputFileName, LinkedHashMap<String, String> outputGroups, boolean copyOldComments) {
+    public MifToFastqIO(String inputFileName, LinkedHashMap<String, String> outputGroups, boolean copyOriginalHeaders) {
         this.inputFileName = inputFileName;
         this.outputGroupNames = new String[outputGroups.size()];
         this.outputFileNames = new String[outputGroups.size()];
@@ -33,7 +33,7 @@ public final class MifToFastqIO {
             outputFileNames[index] = entry.getValue();
             index++;
         }
-        this.copyOldComments = copyOldComments;
+        this.copyOriginalHeaders = copyOriginalHeaders;
     }
 
     public void go() {
@@ -86,7 +86,7 @@ public final class MifToFastqIO {
             if (parsedRead == null)
                 return null;
             else
-                return parsedRead.toSequenceRead(copyOldComments, groupEdges, outputGroupNames);
+                return parsedRead.toSequenceRead(copyOriginalHeaders, groupEdges, outputGroupNames);
         }
 
         @Override
