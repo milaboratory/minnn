@@ -42,11 +42,14 @@ public final class ConsensusIO {
     private final int gapScore;
     private final long scoreThreshold;
     private final float skippedFractionToRepeat;
-    private final int minGoodSeqLength;
     private final int threads;
     private final int maxConsensusesPerCluster;
+    private final int readsMinGoodSeqLength;
+    private final float readsAvgQualityThreshold;
+    private final int readsTrimWindowSize;
+    private final int minGoodSeqLength;
     private final float avgQualityThreshold;
-    private final int windowSize;
+    private final int trimWindowSize;
     private final AtomicLong totalReads = new AtomicLong(0);
     private final AtomicLong consensusReads = new AtomicLong(0);
     private Set<String> groupSet;
@@ -54,8 +57,9 @@ public final class ConsensusIO {
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
                        int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
-                       float skippedFractionToRepeat, int minGoodSeqLength, int threads, int maxConsensusesPerCluster,
-                       float avgQualityThreshold, int windowSize) {
+                       float skippedFractionToRepeat, int threads, int maxConsensusesPerCluster,
+                       int readsMinGoodSeqLength, float readsAvgQualityThreshold, int readsTrimWindowSize,
+                       int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize) {
         this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -65,11 +69,14 @@ public final class ConsensusIO {
         this.gapScore = gapScore;
         this.scoreThreshold = scoreThreshold;
         this.skippedFractionToRepeat = skippedFractionToRepeat;
-        this.minGoodSeqLength = minGoodSeqLength;
         this.threads = threads;
         this.maxConsensusesPerCluster = maxConsensusesPerCluster;
+        this.readsMinGoodSeqLength = readsMinGoodSeqLength;
+        this.readsAvgQualityThreshold = readsAvgQualityThreshold;
+        this.readsTrimWindowSize = readsTrimWindowSize;
+        this.minGoodSeqLength = minGoodSeqLength;
         this.avgQualityThreshold = avgQualityThreshold;
-        this.windowSize = windowSize;
+        this.trimWindowSize = trimWindowSize;
     }
 
     public void go() {
@@ -412,7 +419,7 @@ public final class ConsensusIO {
                             rightBarcodeBorder = Math.max(rightBarcodeBorder, barcode.to);
                         }
                     int trimResultLeft = trim(sequence.getQuality(), 0, sequence.size(), 1,
-                            true, avgQualityThreshold, windowSize);
+                            true, readsAvgQualityThreshold, readsTrimWindowSize);
                     trimResultLeft = (leftBarcodeBorder == -1) ? trimResultLeft
                             : Math.min(trimResultLeft, leftBarcodeBorder - 1);
                     if (trimResultLeft < -1) {
@@ -420,12 +427,12 @@ public final class ConsensusIO {
                         break;
                     }
                     int trimResultRight = trim(sequence.getQuality(), 0, sequence.size(), -1,
-                            true, avgQualityThreshold, windowSize);
+                            true, readsAvgQualityThreshold, readsTrimWindowSize);
                     trimResultRight = (rightBarcodeBorder == -1) ? trimResultRight
                             : Math.max(trimResultRight, rightBarcodeBorder);
                     if (trimResultRight < 0)
                         throw new IllegalStateException("Unexpected negative trimming result");
-                    else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
+                    else if (trimResultRight - trimResultLeft - 1 < readsMinGoodSeqLength) {
                         allSequencesAreGood = false;
                         break;
                     } else {
@@ -694,7 +701,7 @@ public final class ConsensusIO {
                     throw new IllegalStateException("Barcode position has no pair! Barcode positions: "
                             + barcodePositions);
                 int trimResultLeft = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
-                        1, true, avgQualityThreshold, windowSize);
+                        1, true, avgQualityThreshold, trimWindowSize);
                 trimResultLeft = (leftBarcodeBorder == -1) ? trimResultLeft
                         : Math.min(trimResultLeft, leftBarcodeBorder - 1);
                 if (trimResultLeft < -1)
@@ -705,7 +712,7 @@ public final class ConsensusIO {
                     for (BarcodePosition barcodePosition : barcodePositions)
                         barcodePosition.position += barcodesMovement;
                 int trimResultRight = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
-                        -1, true, avgQualityThreshold, windowSize);
+                        -1, true, avgQualityThreshold, trimWindowSize);
                 trimResultRight = (rightBarcodeBorder == -1) ? trimResultRight
                         : Math.max(trimResultRight, rightBarcodeBorder);
                 if (trimResultRight < 0)

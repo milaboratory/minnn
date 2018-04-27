@@ -46,20 +46,25 @@ public class ConsensusActionTest {
             exec("consensus --input " + sortedFile + " --output " + outputFile1 + " --groups " + consensusGroups
                     + " --threads " + (rg.nextInt(10) + 1) + " --score-threshold " + (rg.nextInt(2000) - 1000)
                     + " --width " + width + " --max-consensuses-per-cluster " + (rg.nextInt(30) + 1)
-                    + " --skipped-fraction-to-repeat " + (rg.nextFloat() * 0.8f + 0.1f) + " --avg-quality-threshold "
-                    + rg.nextInt(DEFAULT_GOOD_QUALITY) + " --window-size " + (rg.nextInt(15) + 1)
-                    + " --min-good-sequence-length " + rg.nextInt(50) + " --aligner-match-score 0"
-                    + " --aligner-mismatch-score " + mismatchScore + " --aligner-gap-score " + gapScore);
+                    + " --skipped-fraction-to-repeat " + (rg.nextFloat() * 0.8f + 0.1f)
+                    + " --reads-avg-quality-threshold " + rg.nextInt(DEFAULT_GOOD_QUALITY)
+                    + " --reads-trim-window-size " + (rg.nextInt(15) + 1)
+                    + " --reads-min-good-sequence-length " + rg.nextInt(50)
+                    + " --avg-quality-threshold " + rg.nextInt(DEFAULT_GOOD_QUALITY)
+                    + " --trim-window-size " + (rg.nextInt(15) + 1)
+                    + " --min-good-sequence-length " + rg.nextInt(50)
+                    + " --aligner-match-score 0 --aligner-mismatch-score " + mismatchScore
+                    + " --aligner-gap-score " + gapScore);
             exec("consensus --input " + outputFile1 + " --output " + outputFile2 + " --groups "
                     + consensusGroups + " --threads " + (rg.nextInt(10) + 1) + " --score-threshold 0 --width "
                     + width + " --max-consensuses-per-cluster 100 --skipped-fraction-to-repeat 0.001"
-                    + " --avg-quality-threshold 0 --aligner-match-score 0 --aligner-mismatch-score "
-                    + mismatchScore + " --aligner-gap-score " + gapScore);
+                    + " --reads-avg-quality-threshold 0 --avg-quality-threshold 0 --aligner-match-score 0"
+                    + " --aligner-mismatch-score " + mismatchScore + " --aligner-gap-score " + gapScore);
             exec("consensus --input " + outputFile2 + " --output " + outputFile3 + " --groups "
                     + consensusGroups + " --threads " + (rg.nextInt(10) + 1) + " --score-threshold 0 --width "
                     + width + " --max-consensuses-per-cluster 100 --skipped-fraction-to-repeat 0.001"
-                    + " --avg-quality-threshold 0 --aligner-match-score 0 --aligner-mismatch-score "
-                    + mismatchScore + " --aligner-gap-score " + gapScore);
+                    + " --reads-avg-quality-threshold 0 --avg-quality-threshold 0 --aligner-match-score 0"
+                    + " --aligner-mismatch-score " + mismatchScore + " --aligner-gap-score " + gapScore);
             assertFileEquals(outputFile2, outputFile3);
         }
         for (String fileName : new String[] { startFile, inputFile, correctedFile, sortedFile,
@@ -80,8 +85,8 @@ public class ConsensusActionTest {
                 + " --threads 5 --score-threshold -1200 --width 30 --max-consensuses-per-cluster 5"
                 + " --skipped-fraction-to-repeat 0.75");
         exec("consensus --input " + consensusFile + " --output " + recalculatedConsensusFile
-                + " --groups G3 G4 G1 --threads 3 --score-threshold -1200 --width 30 --avg-quality-threshold 0"
-                + " --skipped-fraction-to-repeat 0.75");
+                + " --groups G3 G4 G1 --threads 3 --score-threshold -1200 --width 30 --reads-avg-quality-threshold 0"
+                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0");
         assertFileEquals(consensusFile, recalculatedConsensusFile);
         for (String fileName : new String[] { correctedFile, sortedFile, consensusFile, recalculatedConsensusFile })
             assertTrue(new File(fileName).delete());
@@ -92,7 +97,7 @@ public class ConsensusActionTest {
         String inputFile = EXAMPLES_PATH + "mif/consensusSpecialCase1.mif.gz";
         String outputFile = TEMP_DIR + "outputConsensusSCT1.mif";
         exec("consensus --input " + inputFile + " --output " + outputFile + " --score-threshold 4000"
-                + " --avg-quality-threshold 0");
+                + " --avg-quality-threshold 0 --reads-avg-quality-threshold 0");
         assertTrue(new File(outputFile).delete());
     }
 
@@ -103,12 +108,12 @@ public class ConsensusActionTest {
         String outputFile2 = TEMP_DIR + "outputConsensusSCT2-2.mif";
         exec("consensus --input " + inputFile + " --output " + outputFile1 + " --groups G2 G1"
                 + " --threads 1 --score-threshold 0 --width 49  --max-consensuses-per-cluster 95"
-                + " --skipped-fraction-to-repeat 0.1 --avg-quality-threshold 0 --aligner-match-score 0"
-                + " --aligner-mismatch-score -10 --aligner-gap-score -7");
+                + " --skipped-fraction-to-repeat 0.1 --reads-avg-quality-threshold 0 --aligner-match-score 0"
+                + " --aligner-mismatch-score -10 --aligner-gap-score -7 --avg-quality-threshold 0");
         exec("consensus --input " + outputFile1 + " --output " + outputFile2 + " --groups G2 G1"
                 + " --threads 1 --score-threshold 0 --width 49  --max-consensuses-per-cluster 95"
-                + " --skipped-fraction-to-repeat 0.1 --avg-quality-threshold 0 --aligner-match-score 0"
-                + " --aligner-mismatch-score -10 --aligner-gap-score -7");
+                + " --skipped-fraction-to-repeat 0.1 --reads-avg-quality-threshold 0 --aligner-match-score 0"
+                + " --aligner-mismatch-score -10 --aligner-gap-score -7 --avg-quality-threshold 0");
         assertFileEquals(outputFile1, outputFile2);
         for (String fileName : new String[] { outputFile1, outputFile2 })
             assertTrue(new File(fileName).delete());
