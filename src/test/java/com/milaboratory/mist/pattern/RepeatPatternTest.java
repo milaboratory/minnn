@@ -234,9 +234,9 @@ public class RepeatPatternTest {
         }
         assertEquals(-9, matchingResults[1][0].getBestMatch(true).getScore());
         assertEquals(-9, matchingResults[1][2].getBestMatch(true).getScore());
-        assertEquals(-6, matchingResults[2][0].getBestMatch(true).getScore());
-        assertEquals(-6, matchingResults[2][1].getBestMatch(true).getScore());
-        assertEquals(-6, matchingResults[2][2].getBestMatch(true).getScore());
+        assertEquals(0, matchingResults[2][0].getBestMatch(true).getScore());
+        assertEquals(0, matchingResults[2][1].getBestMatch(true).getScore());
+        assertEquals(0, matchingResults[2][2].getBestMatch(true).getScore());
     }
 
     @Test

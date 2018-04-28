@@ -1,8 +1,6 @@
 package com.milaboratory.mist.cli;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
-import com.beust.jcommander.Parameters;
+import com.beust.jcommander.*;
 import com.milaboratory.cli.Action;
 import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
@@ -29,8 +27,8 @@ public final class ExtractAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(params.matchScore,
-                params.mismatchScore, params.gapScore, (byte)(params.goodQuality), (byte)(params.badQuality),
-                params.maxQualityPenalty);
+                params.mismatchScore, params.gapScore, params.uppercaseMismatchScore,
+                (byte)(params.goodQuality), (byte)(params.badQuality), params.maxQualityPenalty);
         PatternAligner patternAligner = new BasePatternAligner(scoring, params.penaltyThreshold,
                 params.singleOverlapPenalty, params.bitapMaxErrors, params.maxOverlap);
         Parser patternParser = new Parser(patternAligner);
@@ -94,6 +92,10 @@ public final class ExtractAction implements Action {
         @Parameter(description = "Score for mismatched nucleotide.",
                 names = {"--mismatch-score"})
         int mismatchScore = DEFAULT_MISMATCH_SCORE;
+
+        @Parameter(description = "Score for mismatched uppercase nucleotide.",
+                names = {"--uppercase-mismatch-score"})
+        int uppercaseMismatchScore = DEFAULT_UPPERCASE_MISMATCH_SCORE;
 
         @Parameter(description = "Score for gap or insertion.",
                 names = {"--gap-score"})

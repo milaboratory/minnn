@@ -125,19 +125,20 @@ public class CommonTestUtils {
 
     public static PatternAndTargetAlignmentScoring getTestScoring() {
         return new PatternAndTargetAlignmentScoring(0, -9, -10,
-                DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
+                -9, DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
     }
 
     public static PatternAndTargetAlignmentScoring getRandomScoring() {
         int matchScore = rg.nextInt(20) - 10;
         int mismatchScore = Math.min(-1, matchScore - 1 - rg.nextInt(10));
         int gapPenalty = Math.min(-1, matchScore - 1 - rg.nextInt(10));
+        int uppercaseMismatchScore = mismatchScore - rg.nextInt(10);
         byte goodQuality = (byte)(rg.nextInt(10) + 24);
         byte badQuality = (byte)(rg.nextInt(10));
         int minMismatchDifference = Math.min(matchScore - mismatchScore, matchScore - gapPenalty);
         int maxQualityPenalty = (minMismatchDifference > 1) ? -rg.nextInt(minMismatchDifference) : 0;
-        return new PatternAndTargetAlignmentScoring(matchScore, mismatchScore, gapPenalty, goodQuality, badQuality,
-                maxQualityPenalty);
+        return new PatternAndTargetAlignmentScoring(matchScore, mismatchScore, gapPenalty, uppercaseMismatchScore,
+                goodQuality, badQuality, maxQualityPenalty);
     }
 
     public static PatternAligner getTestPatternAligner() {

@@ -9,6 +9,7 @@ public final class Defaults {
     public final static int DEFAULT_MAX_OVERLAP = 2;
     public final static int DEFAULT_MATCH_SCORE = 0;
     public final static int DEFAULT_MISMATCH_SCORE = -9;
+    public final static int DEFAULT_UPPERCASE_MISMATCH_SCORE = -1000000;
     public final static int DEFAULT_GAP_SCORE = -10;
     public final static byte DEFAULT_GOOD_QUALITY = GOOD_QUALITY_VALUE;
     public final static byte DEFAULT_BAD_QUALITY = BAD_QUALITY_VALUE;

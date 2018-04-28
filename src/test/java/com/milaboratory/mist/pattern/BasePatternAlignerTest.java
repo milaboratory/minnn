@@ -44,7 +44,8 @@ public class BasePatternAlignerTest {
     @Test
     public void alignmentTest() {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(0,
-                -9, -10, DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, -3);
+                -9, -10, -9,
+                DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, -3);
         BasePatternAligner patternAligner = new BasePatternAligner(scoring, -30, -10,
                 2, 1);
         NucleotideSequenceCaseSensitive pattern = new NucleotideSequenceCaseSensitive("aTTAgaca");

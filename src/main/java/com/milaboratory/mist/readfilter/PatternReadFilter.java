@@ -17,7 +17,8 @@ public class PatternReadFilter implements ReadFilter {
     public PatternReadFilter(String groupName, String patternQuery, boolean fairSorting) {
         this.groupName = groupName;
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(0,
-                -1, -1, DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
+                -1, -1, DEFAULT_UPPERCASE_MISMATCH_SCORE,
+                DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
         PatternAligner patternAligner = new BasePatternAligner(scoring, 0, -1,
                 0, 0);
         Parser patternParser = new Parser(patternAligner);

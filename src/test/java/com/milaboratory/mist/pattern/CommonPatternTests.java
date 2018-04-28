@@ -168,7 +168,7 @@ public class CommonPatternTests {
         SinglePattern[] patterns = new SinglePattern[3];
 
         scorings[0] = new PatternAndTargetAlignmentScoring(0, -2, -1,
-                (byte)25, (byte)6, -1);
+                -2, (byte)25, (byte)6, -1);
         patternAligners[0] = getTestPatternAligner();
         patternAligners[1] = getTestPatternAligner(-40, 1, 0,
                 -1, -1, -1, scorings[0]);
