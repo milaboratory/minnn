@@ -38,13 +38,16 @@ public final class SorterIO {
         long totalReads = 0;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
-            SmartProgressReporter.startProgressReport("Sorting", reader, System.err);
+            SmartProgressReporter.startProgressReport("Reading", reader, System.err);
+            SmartProgressReporter.startProgressReport("Writing", writer, System.err);
             if (!reader.isCorrected())
                 System.err.println("WARNING: sorting not corrected MIF file!");
             OutputPortCloseable<ParsedRead> sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
                     new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);
             for (ParsedRead parsedRead : CUtils.it(sorted)) {
                 totalReads++;
+                if (totalReads == 1)
+                    writer.setEstimatedNumberOfReads(reader.getEstimatedNumberOfReads());
                 writer.write(parsedRead);
             }
         } catch (IOException e) {

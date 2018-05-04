@@ -5,6 +5,7 @@ import com.milaboratory.core.io.CompressionType;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.primitivio.PrimitivI;
+import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.util.CanReportProgress;
 import com.milaboratory.util.CountingInputStream;
 
@@ -25,6 +26,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     private boolean correctedMif;
     private boolean sortedMif;
     private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
+    private long firstReadSerializedLength = -1;
 
     public MifReader(InputStream stream) {
         input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
@@ -93,6 +95,8 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
         if (parsedRead == null)
             finished = true;
         else {
+            if (firstReadSerializedLength == -1)
+                calculateFirstReadLength(parsedRead);
             parsedReadsTaken++;
             if ((parsedReadsLimit != -1) && (parsedReadsTaken > parsedReadsLimit))
                 throw new IllegalStateException("Specified parsed reads limit (" + parsedReadsLimit + ") was "
@@ -119,6 +123,24 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
 
     public MifHeader getHeader() {
         return new MifHeader(numberOfReads, correctedMif, sortedMif, groupEdges);
+    }
+
+    private void calculateFirstReadLength(ParsedRead parsedRead) {
+        ByteArrayOutputStream counterStream = new ByteArrayOutputStream();
+        PrimitivO outStream = new PrimitivO(counterStream);
+        outStream.writeObject(parsedRead);
+        outStream.close();
+        firstReadSerializedLength = counterStream.toByteArray().length;
+    }
+
+    public long getEstimatedNumberOfReads() {
+        if ((size == -1) || (firstReadSerializedLength == -1))
+            return -1;
+        else {
+            long estimatedNumberOfReads = size / Math.max(1, firstReadSerializedLength);
+            return (parsedReadsLimit == -1) ? estimatedNumberOfReads
+                    : Math.min(parsedReadsLimit, estimatedNumberOfReads);
+        }
     }
 
     /**
