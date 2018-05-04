@@ -99,6 +99,13 @@ public final class FilterAction implements Action {
         }
     }
 
+    private class MinConsensusReadsListener extends AntlrFilterListener {
+        @Override
+        public void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) {
+            filter = new ConsensusReadsReadFilter(Integer.parseInt(ctx.minConsensusReadsNum().getText()));
+        }
+    }
+
     private class PatternListener extends AntlrFilterListener {
         @Override
         public void enterPattern(FilterGrammarParser.PatternContext ctx) {
@@ -116,6 +123,7 @@ public final class FilterAction implements Action {
         @Override
         public void enterAndOperand(FilterGrammarParser.AndOperandContext ctx) {
             setIfNotNull(ctx.pattern(), new PatternListener());
+            setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
             setIfNotNull(ctx.len(), new LenListener());
             setIfNotNull(ctx.filterInParentheses(), new FilterInParenthesesListener());
             readFilters.add(filter);
@@ -137,6 +145,7 @@ public final class FilterAction implements Action {
         @Override
         public void enterOrOperand(FilterGrammarParser.OrOperandContext ctx) {
             setIfNotNull(ctx.pattern(), new PatternListener());
+            setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
             setIfNotNull(ctx.len(), new LenListener());
             setIfNotNull(ctx.and(), new AndListener());
             setIfNotNull(ctx.filterInParentheses(), new FilterInParenthesesListener());
@@ -157,6 +166,7 @@ public final class FilterAction implements Action {
         @Override
         public void enterAnySingleFilter(FilterGrammarParser.AnySingleFilterContext ctx) {
             setIfNotNull(ctx.pattern(), new PatternListener());
+            setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
             setIfNotNull(ctx.len(), new LenListener());
             setIfNotNull(ctx.and(), new AndListener());
             setIfNotNull(ctx.or(), new OrListener());

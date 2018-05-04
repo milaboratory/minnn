@@ -2,7 +2,7 @@ package com.milaboratory.mist.readfilter;
 
 import com.milaboratory.mist.outputconverter.ParsedRead;
 
-public class LenReadFilter implements ReadFilter {
+public final class LenReadFilter implements ReadFilter {
     private final String groupName;
     private final int valueLength;
 

@@ -2,19 +2,22 @@ grammar FilterGrammar;
 
 filter : filterInParentheses | anySingleFilter ;
 filterInParentheses : OPEN_PARENTHESIS anySingleFilter CLOSED_PARENTHESIS ;
-anySingleFilter : or | and | pattern | len ;
+anySingleFilter : or | and | pattern | minConsensusReads | len ;
 or : orOperand OR orOperand (OR orOperand)* ;
-orOperand : and | pattern | len | filterInParentheses ;
+orOperand : and | pattern | minConsensusReads | len | filterInParentheses ;
 and : andOperand AND andOperand (AND andOperand)* ;
-andOperand : pattern | len | filterInParentheses ;
+andOperand : pattern | minConsensusReads | len | filterInParentheses ;
 pattern : groupName TILDE patternString ;
+minConsensusReads : MIN_CONSENSUS_READS EQUALS minConsensusReadsNum ;
 len : LEN OPEN_PARENTHESIS groupName CLOSED_PARENTHESIS EQUALS groupLength ;
 patternString : STRING ;
 groupName : GROUP_NAME ;
+minConsensusReadsNum : NUMBER ;
 groupLength : NUMBER ;
 
 SINGLE_QUOTE : '\'' ;
 STRING : SINGLE_QUOTE .*? SINGLE_QUOTE ;
+MIN_CONSENSUS_READS : 'MinConsensusReads' ;
 LEN : 'Len' ;
 NUMBER : [0-9]+ ;
 GROUP_NAME : [0-9a-zA-Z]+ ;

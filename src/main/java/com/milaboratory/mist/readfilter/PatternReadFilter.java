@@ -9,7 +9,7 @@ import com.milaboratory.mist.pattern.*;
 import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
 
-public class PatternReadFilter implements ReadFilter {
+public final class PatternReadFilter implements ReadFilter {
     private final String groupName;
     private final SinglePattern pattern;
     private final boolean fairSorting;

@@ -112,6 +112,18 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterLen(FilterGrammarParser.LenContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -143,6 +155,18 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitGroupName(FilterGrammarParser.GroupNameContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMinConsensusReadsNum(FilterGrammarParser.MinConsensusReadsNumContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMinConsensusReadsNum(FilterGrammarParser.MinConsensusReadsNumContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
