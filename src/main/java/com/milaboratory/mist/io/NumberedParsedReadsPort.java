@@ -19,7 +19,7 @@ final class NumberedParsedReadsPort implements OutputPort<ParsedRead> {
         ParsedRead oldParsedRead = port.take();
         if (oldParsedRead != null)
             return new ParsedRead(SequenceReadUtil.setReadId(readId.getAndIncrement(), oldParsedRead.getOriginalRead()),
-                    oldParsedRead.isReverseMatch(), oldParsedRead.getBestMatch());
+                    oldParsedRead.isReverseMatch(), oldParsedRead.getBestMatch(), oldParsedRead.getConsensusReads());
         else
             return null;
     }

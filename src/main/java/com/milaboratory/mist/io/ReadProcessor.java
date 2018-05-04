@@ -217,14 +217,14 @@ public final class ReadProcessor {
 
             if (bestMatch != null)
                 bestMatch.assembleGroups();
-            return new ParsedRead(input, reverseMatch, bestMatch);
+            return new ParsedRead(input, reverseMatch, bestMatch, 0);
         }
     }
 
     private class TestIOSpeedProcessor implements Processor<SequenceRead, ParsedRead> {
         @Override
         public ParsedRead process(SequenceRead input) {
-            return new ParsedRead(input, false, null);
+            return new ParsedRead(input, false, null, 0);
         }
     }
 }

@@ -229,8 +229,9 @@ public final class ConsensusIO {
     private class Consensus {
         final NSequenceWithQuality[] sequences;
         final TargetBarcodes[] barcodes;
+        final int consensusReadsNum;
 
-        Consensus(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes) {
+        Consensus(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum) {
             this.sequences = sequences;
             this.barcodes = barcodes;
             for (int i = 0; i < numberOfTargets; i++) {
@@ -241,6 +242,7 @@ public final class ConsensusIO {
                     throw new IllegalStateException("Consensus barcode is out of bounds! Sequences: "
                             + Arrays.toString(sequences) + ", barcodes: " + Arrays.toString(barcodes));
             }
+            this.consensusReadsNum = consensusReadsNum;
         }
 
         ParsedRead toParsedRead(long readId) {
@@ -270,7 +272,7 @@ public final class ConsensusIO {
                 originalRead = new MultiRead(reads);
 
             Match bestMatch = new Match(numberOfTargets, 0, matchedGroupEdges);
-            return new ParsedRead(originalRead, false, bestMatch);
+            return new ParsedRead(originalRead, false, bestMatch, consensusReadsNum);
         }
     }
 
@@ -545,14 +547,14 @@ public final class ConsensusIO {
          */
         private Consensus generateConsensus(ArrayList<AlignedSubsequences> subsequencesList,
                                             NSequenceWithQuality[] bestSequences, TargetBarcodes[] barcodes) {
-            int numSequences = subsequencesList.size();
+            int consensusReadsNum = subsequencesList.size();
             NSequenceWithQuality[] sequences = new NSequenceWithQuality[numberOfTargets];
-            List<LettersWithPositions> lettersList = IntStream.range(0, numSequences)
+            List<LettersWithPositions> lettersList = IntStream.range(0, consensusReadsNum)
                     .mapToObj(i -> new LettersWithPositions()).collect(Collectors.toList());
             TargetBarcodes[] consensusBarcodes = IntStream.range(0, numberOfTargets)
                     .mapToObj(i -> new TargetBarcodes(new ArrayList<>())).toArray(TargetBarcodes[]::new);
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                List<ArrayList<NSequenceWithQuality>> lettersMatrixList = IntStream.range(0, numSequences)
+                List<ArrayList<NSequenceWithQuality>> lettersMatrixList = IntStream.range(0, consensusReadsNum)
                         .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());
                 ArrayList<Barcode> bestSequencesTargetBarcodes = barcodes[targetIndex].targetBarcodes;
                 // consensusTargetBarcodes will be filled when consensus barcodes coordinates are calculated
@@ -571,7 +573,7 @@ public final class ConsensusIO {
                     ArrayList<NSequenceWithQuality> currentPositionSequences = new ArrayList<>();
                     int bestQualityIndex = -1;
                     byte bestQuality = -1;
-                    for (int i = 0; i < numSequences; i++) {
+                    for (int i = 0; i < consensusReadsNum; i++) {
                         AlignedSubsequences currentSubsequences = subsequencesList.get(i);
                         NSequenceWithQuality currentSequence = currentSubsequences.get(targetIndex, position);
                         currentPositionSequences.add(currentSequence);
@@ -603,7 +605,7 @@ public final class ConsensusIO {
                             }
                         }
                     }
-                    for (int sequenceIndex = 0; sequenceIndex < numSequences; sequenceIndex++) {
+                    for (int sequenceIndex = 0; sequenceIndex < consensusReadsNum; sequenceIndex++) {
                         ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(sequenceIndex);
                         for (int letterIndex = 0; letterIndex < lettersMatrix.getRowLength(); letterIndex++)
                             currentLettersRow.add(lettersMatrix.getLetterByCoordinate(sequenceIndex, letterIndex));
@@ -629,7 +631,7 @@ public final class ConsensusIO {
                         barcodePositions.add(new BarcodePosition(barcode.groupName, false, fullRowLength));
 
                 // moving letters from lists to LettersWithPositions objects
-                for (int sequenceIndex = 0; sequenceIndex < numSequences; sequenceIndex++) {
+                for (int sequenceIndex = 0; sequenceIndex < consensusReadsNum; sequenceIndex++) {
                     ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(sequenceIndex);
                     LettersWithPositions currentLettersWithPositions = lettersList.get(sequenceIndex);
                     currentLettersWithPositions.set(targetIndex, currentLettersRow);
@@ -732,7 +734,7 @@ public final class ConsensusIO {
                 }
             }
 
-            return new Consensus(sequences, consensusBarcodes);
+            return new Consensus(sequences, consensusBarcodes, consensusReadsNum);
         }
 
         private class BarcodePosition {

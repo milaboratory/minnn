@@ -17,6 +17,7 @@ public class LenReadFilter implements ReadFilter {
                 .anyMatch(group -> group.getGroupName().equals(groupName) && group.getValue().size() == valueLength))
             return parsedRead;
         else
-            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null);
+            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
+                    parsedRead.getConsensusReads());
     }
 }

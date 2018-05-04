@@ -14,7 +14,8 @@ public final class OrReadFilter implements ReadFilter {
     @Override
     public ParsedRead filter(ParsedRead parsedRead) {
         if (operands.stream().map(o -> o.filter(parsedRead).getBestMatch()).allMatch(Objects::isNull))
-            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null);
+            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
+                    parsedRead.getConsensusReads());
         else
             return parsedRead;
     }

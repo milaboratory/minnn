@@ -232,7 +232,7 @@ public final class CorrectBarcodesIO {
                 throw new IllegalStateException("Missing default groups in new Match: expected " + defaultGroups
                         + ", got " + newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
                         .filter(defaultGroups::contains).collect(Collectors.toList()));
-            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), newMatch);
+            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), newMatch, 0);
         }
 
         private class TargetPatch implements Comparable<TargetPatch> {

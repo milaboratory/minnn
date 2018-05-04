@@ -43,6 +43,7 @@ public class PatternReadFilter implements ReadFilter {
                         && (pattern.match(group.getValue()).getBestMatch(fairSorting) != null)))
             return parsedRead;
         else
-            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null);
+            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
+                    parsedRead.getConsensusReads());
     }
 }

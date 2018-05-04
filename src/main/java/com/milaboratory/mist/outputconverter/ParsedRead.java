@@ -20,6 +20,8 @@ public final class ParsedRead {
     private final SequenceRead originalRead;
     private final boolean reverseMatch;
     private final Match bestMatch;
+    // number of reads used to calculate this consensus; used only for consensuses, and must be 0 for normal reads
+    private final int consensusReads;
     private Map<String, MatchedGroup> matchedGroups = null;
     private HashMap<String, ArrayList<GroupEdgePosition>> innerGroupEdgesCache = null;
     private HashMap<String, HashMap<String, Range>> innerRangesCache = null;
@@ -27,10 +29,11 @@ public final class ParsedRead {
     private static Set<String> defaultGroups = null;
     private static Set<String> groupsFromHeader = null;
 
-    public ParsedRead(SequenceRead originalRead, boolean reverseMatch, Match bestMatch) {
+    public ParsedRead(SequenceRead originalRead, boolean reverseMatch, Match bestMatch, int consensusReads) {
         this.originalRead = originalRead;
         this.reverseMatch = reverseMatch;
         this.bestMatch = bestMatch;
+        this.consensusReads = consensusReads;
     }
 
     public SequenceRead getOriginalRead() {
@@ -43,6 +46,10 @@ public final class ParsedRead {
 
     public Match getBestMatch() {
         return bestMatch;
+    }
+
+    public int getConsensusReads() {
+        return consensusReads;
     }
 
     public ArrayList<MatchedGroup> getGroups() {
@@ -169,7 +176,7 @@ public final class ParsedRead {
         }
 
         Match targetMatch = new Match(groupNames.length, getBestMatchScore(), matchedGroupEdges);
-        return new ParsedRead(originalRead, reverseMatch, targetMatch);
+        return new ParsedRead(originalRead, reverseMatch, targetMatch, consensusReads);
     }
 
     public SequenceRead toSequenceRead(boolean copyOriginalHeaders, ArrayList<GroupEdge> allGroupEdges,
@@ -212,7 +219,7 @@ public final class ParsedRead {
         sequenceRead.iterator()
                 .forEachRemaining(singleRead -> mistComments.add(extractMistComments(singleRead.getDescription())));
         Match targetMatch = new Match(sequenceRead.numberOfReads(), 0, parseGroupEdgesFromComments(mistComments));
-        return new ParsedRead(sequenceRead, parseReverseMatchFlag(mistComments.get(0)), targetMatch);
+        return new ParsedRead(sequenceRead, parseReverseMatchFlag(mistComments.get(0)), targetMatch, 0);
     }
 
     private String generateReadDescription(boolean copyOriginalHeaders, String outputGroupName) {
@@ -250,12 +257,14 @@ public final class ParsedRead {
         SequenceRead originalRead = input.readObject(SequenceRead.class);
         boolean reverseMatch = input.readBoolean();
         Match bestMatch = input.readObject(Match.class);
-        return new ParsedRead(originalRead, reverseMatch, bestMatch);
+        int consensusReads = input.readVarIntZigZag();
+        return new ParsedRead(originalRead, reverseMatch, bestMatch, consensusReads);
     }
 
     public static void write(PrimitivO output, ParsedRead object) {
         output.writeObject(object.getOriginalRead());
         output.writeBoolean(object.isReverseMatch());
         output.writeObject(object.getBestMatch());
+        output.writeVarIntZigZag(object.getConsensusReads());
     }
 }
