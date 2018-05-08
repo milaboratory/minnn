@@ -30,8 +30,8 @@ public class CorrectActionTest {
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
             exec("correct --threads " + (rg.nextInt(10) + 1) + " --max-mismatches " + rg.nextInt(4)
                     + " --max-deletions " + rg.nextInt(4) + " --max-total-errors " + rg.nextInt(5)
-                    + " --max-insertions " + rg.nextInt(4) + " --input " + inputFile
-                    + " --output " + outputFile);
+                    + " --max-insertions " + rg.nextInt(4) + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
+                    + " --input " + inputFile + " --output " + outputFile);
             assertFileNotEquals(inputFile, outputFile);
         }
         for (String fileName : new String[] { startFile, inputFile, outputFile })

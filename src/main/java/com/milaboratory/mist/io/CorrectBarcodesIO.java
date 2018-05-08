@@ -36,6 +36,7 @@ public final class CorrectBarcodesIO {
     private final int deletions;
     private final int insertions;
     private final int totalErrors;
+    private final float threshold;
     private final int threads;
     private Set<String> defaultGroups;
     private Map<String, SequenceTreeMap<NucleotideSequence, SequenceCounter>> sequenceTreeMaps;
@@ -44,13 +45,14 @@ public final class CorrectBarcodesIO {
     private AtomicLong overlaps = new AtomicLong(0);
 
     public CorrectBarcodesIO(String inputFileName, String outputFileName, int mismatches, int deletions, int insertions,
-                             int totalErrors, int threads) {
+                             int totalErrors, float threshold, int threads) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.mismatches = mismatches;
         this.deletions = deletions;
         this.insertions = insertions;
         this.totalErrors = totalErrors;
+        this.threshold = threshold;
         this.threads = threads;
     }
 
@@ -160,8 +162,10 @@ public final class CorrectBarcodesIO {
                         .getNeighborhoodIterator(oldValue, mismatches, deletions, insertions, totalErrors);
                 SequenceCounter correctedSequenceCounter = StreamSupport.stream(neighborhoodIterator.it()
                         .spliterator(), false).max(SequenceCounter::compareTo).orElse(null);
-                NucleotideSequence correctValue = (correctedSequenceCounter == null) ? oldValue
-                        : correctedSequenceCounter.getSequence();
+                NucleotideSequence correctValue = oldValue;
+                if ((correctedSequenceCounter != null) && ((float)sequenceTreeMap.get(oldValue).getCount()
+                        / correctedSequenceCounter.getCount() < threshold))
+                    correctValue = correctedSequenceCounter.getSequence();
                 isCorrection |= !correctValue.equals(oldValue);
                 targetPatches.computeIfAbsent(targetId, id -> new ArrayList<>());
                 targetPatches.get(targetId).add(new TargetPatch(groupName, correctValue, matchedGroup.getRange()));

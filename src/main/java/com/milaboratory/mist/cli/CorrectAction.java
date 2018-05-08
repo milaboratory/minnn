@@ -15,7 +15,8 @@ public final class CorrectAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(params.inputFileName, params.outputFileName,
-                params.mismatches, params.deletions, params.insertions, params.totalErrors, params.threads);
+                params.mismatches, params.deletions, params.insertions, params.totalErrors, params.threshold,
+                params.threads);
         correctBarcodesIO.go();
     }
 
@@ -58,6 +59,11 @@ public final class CorrectAction implements Action {
         @Parameter(description = "Maximum Levenshtein distance between barcodes for which they are considered " +
                 "identical.", names = {"--max-total-errors"}, order = 5)
         int totalErrors = DEFAULT_CORRECT_MAX_TOTAL_ERRORS;
+
+        @Parameter(description = "Threshold for UMI clustering: if smaller UMI count divided to larger UMI count " +
+                "is below this threshold, UMI will be merged to the cluster.",
+                names = {"--cluster-threshold"})
+        float threshold = DEFAULT_CORRECT_CLUSTER_THRESHOLD;
 
         @Parameter(description = "Number of threads for correcting barcodes.",
                 names = {"--threads"})
