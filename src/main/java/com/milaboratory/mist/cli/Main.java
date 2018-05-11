@@ -19,7 +19,8 @@ public final class Main {
                 new StatGroupsAction(),
                 new StatPositionsAction(),
                 new CorrectAction(),
-                new ConsensusAction());
+                new ConsensusAction(),
+                new DemultiplexAction());
 
         jCommanderBasedMain.setVersionInfoCallback(() -> {
             VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");

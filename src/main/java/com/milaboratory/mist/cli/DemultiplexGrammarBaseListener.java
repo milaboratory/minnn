@@ -28,169 +28,97 @@ public class DemultiplexGrammarBaseListener implements DemultiplexGrammarListene
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFilter(DemultiplexGrammarParser.FilterContext ctx) { }
+	@Override public void enterBySample(DemultiplexGrammarParser.BySampleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFilter(DemultiplexGrammarParser.FilterContext ctx) { }
+	@Override public void exitBySample(DemultiplexGrammarParser.BySampleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFilterInParentheses(DemultiplexGrammarParser.FilterInParenthesesContext ctx) { }
+	@Override public void enterByBarcode(DemultiplexGrammarParser.ByBarcodeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFilterInParentheses(DemultiplexGrammarParser.FilterInParenthesesContext ctx) { }
+	@Override public void exitByBarcode(DemultiplexGrammarParser.ByBarcodeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAnySingleFilter(DemultiplexGrammarParser.AnySingleFilterContext ctx) { }
+	@Override public void enterInputFileName(DemultiplexGrammarParser.InputFileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAnySingleFilter(DemultiplexGrammarParser.AnySingleFilterContext ctx) { }
+	@Override public void exitInputFileName(DemultiplexGrammarParser.InputFileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOr(DemultiplexGrammarParser.OrContext ctx) { }
+	@Override public void enterFileName(DemultiplexGrammarParser.FileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOr(DemultiplexGrammarParser.OrContext ctx) { }
+	@Override public void exitFileName(DemultiplexGrammarParser.FileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOrOperand(DemultiplexGrammarParser.OrOperandContext ctx) { }
+	@Override public void enterDoubleQuotedFileName(DemultiplexGrammarParser.DoubleQuotedFileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOrOperand(DemultiplexGrammarParser.OrOperandContext ctx) { }
+	@Override public void exitDoubleQuotedFileName(DemultiplexGrammarParser.DoubleQuotedFileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAnd(DemultiplexGrammarParser.AndContext ctx) { }
+	@Override public void enterSingleQuotedFileName(DemultiplexGrammarParser.SingleQuotedFileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAnd(DemultiplexGrammarParser.AndContext ctx) { }
+	@Override public void exitSingleQuotedFileName(DemultiplexGrammarParser.SingleQuotedFileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAndOperand(DemultiplexGrammarParser.AndOperandContext ctx) { }
+	@Override public void enterNotQuotedFileName(DemultiplexGrammarParser.NotQuotedFileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAndOperand(DemultiplexGrammarParser.AndOperandContext ctx) { }
+	@Override public void exitNotQuotedFileName(DemultiplexGrammarParser.NotQuotedFileNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPattern(DemultiplexGrammarParser.PatternContext ctx) { }
+	@Override public void enterBarcodeName(DemultiplexGrammarParser.BarcodeNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPattern(DemultiplexGrammarParser.PatternContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterMinConsensusReads(DemultiplexGrammarParser.MinConsensusReadsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitMinConsensusReads(DemultiplexGrammarParser.MinConsensusReadsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterLen(DemultiplexGrammarParser.LenContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLen(DemultiplexGrammarParser.LenContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterPatternString(DemultiplexGrammarParser.PatternStringContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitPatternString(DemultiplexGrammarParser.PatternStringContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterGroupName(DemultiplexGrammarParser.GroupNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitGroupName(DemultiplexGrammarParser.GroupNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterMinConsensusReadsNum(DemultiplexGrammarParser.MinConsensusReadsNumContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitMinConsensusReadsNum(DemultiplexGrammarParser.MinConsensusReadsNumContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterGroupLength(DemultiplexGrammarParser.GroupLengthContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitGroupLength(DemultiplexGrammarParser.GroupLengthContext ctx) { }
+	@Override public void exitBarcodeName(DemultiplexGrammarParser.BarcodeNameContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

@@ -18,143 +18,83 @@ public interface DemultiplexGrammarListener extends ParseTreeListener {
 	 */
 	void exitDemultiplexArguments(DemultiplexGrammarParser.DemultiplexArgumentsContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#filter}.
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#bySample}.
 	 * @param ctx the parse tree
 	 */
-	void enterFilter(DemultiplexGrammarParser.FilterContext ctx);
+	void enterBySample(DemultiplexGrammarParser.BySampleContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#filter}.
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#bySample}.
 	 * @param ctx the parse tree
 	 */
-	void exitFilter(DemultiplexGrammarParser.FilterContext ctx);
+	void exitBySample(DemultiplexGrammarParser.BySampleContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#filterInParentheses}.
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#byBarcode}.
 	 * @param ctx the parse tree
 	 */
-	void enterFilterInParentheses(DemultiplexGrammarParser.FilterInParenthesesContext ctx);
+	void enterByBarcode(DemultiplexGrammarParser.ByBarcodeContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#filterInParentheses}.
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#byBarcode}.
 	 * @param ctx the parse tree
 	 */
-	void exitFilterInParentheses(DemultiplexGrammarParser.FilterInParenthesesContext ctx);
+	void exitByBarcode(DemultiplexGrammarParser.ByBarcodeContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#anySingleFilter}.
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#inputFileName}.
 	 * @param ctx the parse tree
 	 */
-	void enterAnySingleFilter(DemultiplexGrammarParser.AnySingleFilterContext ctx);
+	void enterInputFileName(DemultiplexGrammarParser.InputFileNameContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#anySingleFilter}.
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#inputFileName}.
 	 * @param ctx the parse tree
 	 */
-	void exitAnySingleFilter(DemultiplexGrammarParser.AnySingleFilterContext ctx);
+	void exitInputFileName(DemultiplexGrammarParser.InputFileNameContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#or}.
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#fileName}.
 	 * @param ctx the parse tree
 	 */
-	void enterOr(DemultiplexGrammarParser.OrContext ctx);
+	void enterFileName(DemultiplexGrammarParser.FileNameContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#or}.
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#fileName}.
 	 * @param ctx the parse tree
 	 */
-	void exitOr(DemultiplexGrammarParser.OrContext ctx);
+	void exitFileName(DemultiplexGrammarParser.FileNameContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#orOperand}.
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#doubleQuotedFileName}.
 	 * @param ctx the parse tree
 	 */
-	void enterOrOperand(DemultiplexGrammarParser.OrOperandContext ctx);
+	void enterDoubleQuotedFileName(DemultiplexGrammarParser.DoubleQuotedFileNameContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#orOperand}.
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#doubleQuotedFileName}.
 	 * @param ctx the parse tree
 	 */
-	void exitOrOperand(DemultiplexGrammarParser.OrOperandContext ctx);
+	void exitDoubleQuotedFileName(DemultiplexGrammarParser.DoubleQuotedFileNameContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#and}.
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#singleQuotedFileName}.
 	 * @param ctx the parse tree
 	 */
-	void enterAnd(DemultiplexGrammarParser.AndContext ctx);
+	void enterSingleQuotedFileName(DemultiplexGrammarParser.SingleQuotedFileNameContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#and}.
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#singleQuotedFileName}.
 	 * @param ctx the parse tree
 	 */
-	void exitAnd(DemultiplexGrammarParser.AndContext ctx);
+	void exitSingleQuotedFileName(DemultiplexGrammarParser.SingleQuotedFileNameContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#andOperand}.
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#notQuotedFileName}.
 	 * @param ctx the parse tree
 	 */
-	void enterAndOperand(DemultiplexGrammarParser.AndOperandContext ctx);
+	void enterNotQuotedFileName(DemultiplexGrammarParser.NotQuotedFileNameContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#andOperand}.
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#notQuotedFileName}.
 	 * @param ctx the parse tree
 	 */
-	void exitAndOperand(DemultiplexGrammarParser.AndOperandContext ctx);
+	void exitNotQuotedFileName(DemultiplexGrammarParser.NotQuotedFileNameContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#pattern}.
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#barcodeName}.
 	 * @param ctx the parse tree
 	 */
-	void enterPattern(DemultiplexGrammarParser.PatternContext ctx);
+	void enterBarcodeName(DemultiplexGrammarParser.BarcodeNameContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#pattern}.
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#barcodeName}.
 	 * @param ctx the parse tree
 	 */
-	void exitPattern(DemultiplexGrammarParser.PatternContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#minConsensusReads}.
-	 * @param ctx the parse tree
-	 */
-	void enterMinConsensusReads(DemultiplexGrammarParser.MinConsensusReadsContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#minConsensusReads}.
-	 * @param ctx the parse tree
-	 */
-	void exitMinConsensusReads(DemultiplexGrammarParser.MinConsensusReadsContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#len}.
-	 * @param ctx the parse tree
-	 */
-	void enterLen(DemultiplexGrammarParser.LenContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#len}.
-	 * @param ctx the parse tree
-	 */
-	void exitLen(DemultiplexGrammarParser.LenContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#patternString}.
-	 * @param ctx the parse tree
-	 */
-	void enterPatternString(DemultiplexGrammarParser.PatternStringContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#patternString}.
-	 * @param ctx the parse tree
-	 */
-	void exitPatternString(DemultiplexGrammarParser.PatternStringContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#groupName}.
-	 * @param ctx the parse tree
-	 */
-	void enterGroupName(DemultiplexGrammarParser.GroupNameContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#groupName}.
-	 * @param ctx the parse tree
-	 */
-	void exitGroupName(DemultiplexGrammarParser.GroupNameContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#minConsensusReadsNum}.
-	 * @param ctx the parse tree
-	 */
-	void enterMinConsensusReadsNum(DemultiplexGrammarParser.MinConsensusReadsNumContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#minConsensusReadsNum}.
-	 * @param ctx the parse tree
-	 */
-	void exitMinConsensusReadsNum(DemultiplexGrammarParser.MinConsensusReadsNumContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#groupLength}.
-	 * @param ctx the parse tree
-	 */
-	void enterGroupLength(DemultiplexGrammarParser.GroupLengthContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#groupLength}.
-	 * @param ctx the parse tree
-	 */
-	void exitGroupLength(DemultiplexGrammarParser.GroupLengthContext ctx);
+	void exitBarcodeName(DemultiplexGrammarParser.BarcodeNameContext ctx);
 }

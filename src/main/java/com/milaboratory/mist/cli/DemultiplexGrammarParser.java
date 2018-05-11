@@ -17,29 +17,24 @@ public class DemultiplexGrammarParser extends Parser {
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		SINGLE_QUOTE=1, STRING=2, MIN_CONSENSUS_READS=3, LEN=4, NUMBER=5, GROUP_NAME=6, 
-		OPEN_PARENTHESIS=7, CLOSED_PARENTHESIS=8, EQUALS=9, TILDE=10, AND=11, 
-		OR=12, WS=13;
+		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, BY_SAMPLE=6, BY_BARCODE=7, DOUBLE_QUOTE=8, 
+		SINGLE_QUOTE=9, LETTER=10, NUMBER=11, SPACE=12, WS=13;
 	public static final int
-		RULE_demultiplexArguments = 0, RULE_filter = 1, RULE_filterInParentheses = 2, 
-		RULE_anySingleFilter = 3, RULE_or = 4, RULE_orOperand = 5, RULE_and = 6, 
-		RULE_andOperand = 7, RULE_pattern = 8, RULE_minConsensusReads = 9, RULE_len = 10, 
-		RULE_patternString = 11, RULE_groupName = 12, RULE_minConsensusReadsNum = 13, 
-		RULE_groupLength = 14;
+		RULE_demultiplexArguments = 0, RULE_bySample = 1, RULE_byBarcode = 2, 
+		RULE_inputFileName = 3, RULE_fileName = 4, RULE_doubleQuotedFileName = 5, 
+		RULE_singleQuotedFileName = 6, RULE_notQuotedFileName = 7, RULE_barcodeName = 8;
 	public static final String[] ruleNames = {
-		"demultiplexArguments", "filter", "filterInParentheses", "anySingleFilter", 
-		"or", "orOperand", "and", "andOperand", "pattern", "minConsensusReads", 
-		"len", "patternString", "groupName", "minConsensusReadsNum", "groupLength"
+		"demultiplexArguments", "bySample", "byBarcode", "inputFileName", "fileName", 
+		"doubleQuotedFileName", "singleQuotedFileName", "notQuotedFileName", "barcodeName"
 	};
 
 	private static final String[] _LITERAL_NAMES = {
-		null, "'''", null, "'MinConsensusReads'", "'Len'", null, null, "'('", 
-		"')'", "'='", "'~'", "'&'", "'|'"
+		null, "'-'", "'.'", "','", "'!'", "'_'", "'--by-sample'", "'--by-barcode'", 
+		"'\"'", "'''"
 	};
 	private static final String[] _SYMBOLIC_NAMES = {
-		null, "SINGLE_QUOTE", "STRING", "MIN_CONSENSUS_READS", "LEN", "NUMBER", 
-		"GROUP_NAME", "OPEN_PARENTHESIS", "CLOSED_PARENTHESIS", "EQUALS", "TILDE", 
-		"AND", "OR", "WS"
+		null, null, null, null, null, null, "BY_SAMPLE", "BY_BARCODE", "DOUBLE_QUOTE", 
+		"SINGLE_QUOTE", "LETTER", "NUMBER", "SPACE", "WS"
 	};
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
 
@@ -91,8 +86,23 @@ public class DemultiplexGrammarParser extends Parser {
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 	public static class DemultiplexArgumentsContext extends ParserRuleContext {
-		public FilterContext filter() {
-			return getRuleContext(FilterContext.class,0);
+		public List<BySampleContext> bySample() {
+			return getRuleContexts(BySampleContext.class);
+		}
+		public BySampleContext bySample(int i) {
+			return getRuleContext(BySampleContext.class,i);
+		}
+		public List<ByBarcodeContext> byBarcode() {
+			return getRuleContexts(ByBarcodeContext.class);
+		}
+		public ByBarcodeContext byBarcode(int i) {
+			return getRuleContext(ByBarcodeContext.class,i);
+		}
+		public List<InputFileNameContext> inputFileName() {
+			return getRuleContexts(InputFileNameContext.class);
+		}
+		public InputFileNameContext inputFileName(int i) {
+			return getRuleContext(InputFileNameContext.class,i);
 		}
 		public DemultiplexArgumentsContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -111,11 +121,134 @@ public class DemultiplexGrammarParser extends Parser {
 	public final DemultiplexArgumentsContext demultiplexArguments() throws RecognitionException {
 		DemultiplexArgumentsContext _localctx = new DemultiplexArgumentsContext(_ctx, getState());
 		enterRule(_localctx, 0, RULE_demultiplexArguments);
+		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
+			setState(21); 
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			do {
+				{
+				setState(21);
+				_errHandler.sync(this);
+				switch (_input.LA(1)) {
+				case BY_SAMPLE:
+					{
+					setState(18);
+					bySample();
+					}
+					break;
+				case BY_BARCODE:
+					{
+					setState(19);
+					byBarcode();
+					}
+					break;
+				case SPACE:
+					{
+					setState(20);
+					inputFileName();
+					}
+					break;
+				default:
+					throw new NoViableAltException(this);
+				}
+				}
+				setState(23); 
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << BY_SAMPLE) | (1L << BY_BARCODE) | (1L << SPACE))) != 0) );
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class BySampleContext extends ParserRuleContext {
+		public TerminalNode BY_SAMPLE() { return getToken(DemultiplexGrammarParser.BY_SAMPLE, 0); }
+		public TerminalNode SPACE() { return getToken(DemultiplexGrammarParser.SPACE, 0); }
+		public FileNameContext fileName() {
+			return getRuleContext(FileNameContext.class,0);
+		}
+		public BySampleContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_bySample; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterBySample(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitBySample(this);
+		}
+	}
+
+	public final BySampleContext bySample() throws RecognitionException {
+		BySampleContext _localctx = new BySampleContext(_ctx, getState());
+		enterRule(_localctx, 2, RULE_bySample);
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(25);
+			match(BY_SAMPLE);
+			setState(26);
+			match(SPACE);
+			setState(27);
+			fileName();
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class ByBarcodeContext extends ParserRuleContext {
+		public TerminalNode BY_BARCODE() { return getToken(DemultiplexGrammarParser.BY_BARCODE, 0); }
+		public TerminalNode SPACE() { return getToken(DemultiplexGrammarParser.SPACE, 0); }
+		public BarcodeNameContext barcodeName() {
+			return getRuleContext(BarcodeNameContext.class,0);
+		}
+		public ByBarcodeContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_byBarcode; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterByBarcode(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitByBarcode(this);
+		}
+	}
+
+	public final ByBarcodeContext byBarcode() throws RecognitionException {
+		ByBarcodeContext _localctx = new ByBarcodeContext(_ctx, getState());
+		enterRule(_localctx, 4, RULE_byBarcode);
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(29);
+			match(BY_BARCODE);
 			setState(30);
-			filter();
+			match(SPACE);
+			setState(31);
+			barcodeName();
 			}
 		}
 		catch (RecognitionException re) {
@@ -129,48 +262,35 @@ public class DemultiplexGrammarParser extends Parser {
 		return _localctx;
 	}
 
-	public static class FilterContext extends ParserRuleContext {
-		public FilterInParenthesesContext filterInParentheses() {
-			return getRuleContext(FilterInParenthesesContext.class,0);
+	public static class InputFileNameContext extends ParserRuleContext {
+		public TerminalNode SPACE() { return getToken(DemultiplexGrammarParser.SPACE, 0); }
+		public FileNameContext fileName() {
+			return getRuleContext(FileNameContext.class,0);
 		}
-		public AnySingleFilterContext anySingleFilter() {
-			return getRuleContext(AnySingleFilterContext.class,0);
-		}
-		public FilterContext(ParserRuleContext parent, int invokingState) {
+		public InputFileNameContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_filter; }
+		@Override public int getRuleIndex() { return RULE_inputFileName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterFilter(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterInputFileName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitFilter(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitInputFileName(this);
 		}
 	}
 
-	public final FilterContext filter() throws RecognitionException {
-		FilterContext _localctx = new FilterContext(_ctx, getState());
-		enterRule(_localctx, 2, RULE_filter);
+	public final InputFileNameContext inputFileName() throws RecognitionException {
+		InputFileNameContext _localctx = new InputFileNameContext(_ctx, getState());
+		enterRule(_localctx, 6, RULE_inputFileName);
 		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(33);
+			match(SPACE);
 			setState(34);
-			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,0,_ctx) ) {
-			case 1:
-				enterOuterAlt(_localctx, 1);
-				{
-				setState(32);
-				filterInParentheses();
-				}
-				break;
-			case 2:
-				enterOuterAlt(_localctx, 2);
-				{
-				setState(33);
-				anySingleFilter();
-				}
-				break;
+			fileName();
 			}
 		}
 		catch (RecognitionException re) {
@@ -184,415 +304,62 @@ public class DemultiplexGrammarParser extends Parser {
 		return _localctx;
 	}
 
-	public static class FilterInParenthesesContext extends ParserRuleContext {
-		public TerminalNode OPEN_PARENTHESIS() { return getToken(DemultiplexGrammarParser.OPEN_PARENTHESIS, 0); }
-		public AnySingleFilterContext anySingleFilter() {
-			return getRuleContext(AnySingleFilterContext.class,0);
+	public static class FileNameContext extends ParserRuleContext {
+		public DoubleQuotedFileNameContext doubleQuotedFileName() {
+			return getRuleContext(DoubleQuotedFileNameContext.class,0);
 		}
-		public TerminalNode CLOSED_PARENTHESIS() { return getToken(DemultiplexGrammarParser.CLOSED_PARENTHESIS, 0); }
-		public FilterInParenthesesContext(ParserRuleContext parent, int invokingState) {
+		public SingleQuotedFileNameContext singleQuotedFileName() {
+			return getRuleContext(SingleQuotedFileNameContext.class,0);
+		}
+		public NotQuotedFileNameContext notQuotedFileName() {
+			return getRuleContext(NotQuotedFileNameContext.class,0);
+		}
+		public FileNameContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_filterInParentheses; }
+		@Override public int getRuleIndex() { return RULE_fileName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterFilterInParentheses(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterFileName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitFilterInParentheses(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitFileName(this);
 		}
 	}
 
-	public final FilterInParenthesesContext filterInParentheses() throws RecognitionException {
-		FilterInParenthesesContext _localctx = new FilterInParenthesesContext(_ctx, getState());
-		enterRule(_localctx, 4, RULE_filterInParentheses);
+	public final FileNameContext fileName() throws RecognitionException {
+		FileNameContext _localctx = new FileNameContext(_ctx, getState());
+		enterRule(_localctx, 8, RULE_fileName);
 		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(36);
-			match(OPEN_PARENTHESIS);
-			setState(37);
-			anySingleFilter();
-			setState(38);
-			match(CLOSED_PARENTHESIS);
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class AnySingleFilterContext extends ParserRuleContext {
-		public OrContext or() {
-			return getRuleContext(OrContext.class,0);
-		}
-		public AndContext and() {
-			return getRuleContext(AndContext.class,0);
-		}
-		public PatternContext pattern() {
-			return getRuleContext(PatternContext.class,0);
-		}
-		public MinConsensusReadsContext minConsensusReads() {
-			return getRuleContext(MinConsensusReadsContext.class,0);
-		}
-		public LenContext len() {
-			return getRuleContext(LenContext.class,0);
-		}
-		public AnySingleFilterContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_anySingleFilter; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterAnySingleFilter(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitAnySingleFilter(this);
-		}
-	}
-
-	public final AnySingleFilterContext anySingleFilter() throws RecognitionException {
-		AnySingleFilterContext _localctx = new AnySingleFilterContext(_ctx, getState());
-		enterRule(_localctx, 6, RULE_anySingleFilter);
-		try {
-			setState(45);
-			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,1,_ctx) ) {
-			case 1:
-				enterOuterAlt(_localctx, 1);
-				{
-				setState(40);
-				or();
-				}
-				break;
-			case 2:
-				enterOuterAlt(_localctx, 2);
-				{
-				setState(41);
-				and();
-				}
-				break;
-			case 3:
-				enterOuterAlt(_localctx, 3);
-				{
-				setState(42);
-				pattern();
-				}
-				break;
-			case 4:
-				enterOuterAlt(_localctx, 4);
-				{
-				setState(43);
-				minConsensusReads();
-				}
-				break;
-			case 5:
-				enterOuterAlt(_localctx, 5);
-				{
-				setState(44);
-				len();
-				}
-				break;
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class OrContext extends ParserRuleContext {
-		public List<OrOperandContext> orOperand() {
-			return getRuleContexts(OrOperandContext.class);
-		}
-		public OrOperandContext orOperand(int i) {
-			return getRuleContext(OrOperandContext.class,i);
-		}
-		public List<TerminalNode> OR() { return getTokens(DemultiplexGrammarParser.OR); }
-		public TerminalNode OR(int i) {
-			return getToken(DemultiplexGrammarParser.OR, i);
-		}
-		public OrContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_or; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterOr(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitOr(this);
-		}
-	}
-
-	public final OrContext or() throws RecognitionException {
-		OrContext _localctx = new OrContext(_ctx, getState());
-		enterRule(_localctx, 8, RULE_or);
-		int _la;
-		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(47);
-			orOperand();
-			setState(48);
-			match(OR);
-			setState(49);
-			orOperand();
-			setState(54);
-			_errHandler.sync(this);
-			_la = _input.LA(1);
-			while (_la==OR) {
-				{
-				{
-				setState(50);
-				match(OR);
-				setState(51);
-				orOperand();
-				}
-				}
-				setState(56);
-				_errHandler.sync(this);
-				_la = _input.LA(1);
-			}
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class OrOperandContext extends ParserRuleContext {
-		public AndContext and() {
-			return getRuleContext(AndContext.class,0);
-		}
-		public PatternContext pattern() {
-			return getRuleContext(PatternContext.class,0);
-		}
-		public MinConsensusReadsContext minConsensusReads() {
-			return getRuleContext(MinConsensusReadsContext.class,0);
-		}
-		public LenContext len() {
-			return getRuleContext(LenContext.class,0);
-		}
-		public FilterInParenthesesContext filterInParentheses() {
-			return getRuleContext(FilterInParenthesesContext.class,0);
-		}
-		public OrOperandContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_orOperand; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterOrOperand(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitOrOperand(this);
-		}
-	}
-
-	public final OrOperandContext orOperand() throws RecognitionException {
-		OrOperandContext _localctx = new OrOperandContext(_ctx, getState());
-		enterRule(_localctx, 10, RULE_orOperand);
-		try {
-			setState(62);
-			_errHandler.sync(this);
-			switch ( getInterpreter().adaptivePredict(_input,3,_ctx) ) {
-			case 1:
-				enterOuterAlt(_localctx, 1);
-				{
-				setState(57);
-				and();
-				}
-				break;
-			case 2:
-				enterOuterAlt(_localctx, 2);
-				{
-				setState(58);
-				pattern();
-				}
-				break;
-			case 3:
-				enterOuterAlt(_localctx, 3);
-				{
-				setState(59);
-				minConsensusReads();
-				}
-				break;
-			case 4:
-				enterOuterAlt(_localctx, 4);
-				{
-				setState(60);
-				len();
-				}
-				break;
-			case 5:
-				enterOuterAlt(_localctx, 5);
-				{
-				setState(61);
-				filterInParentheses();
-				}
-				break;
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class AndContext extends ParserRuleContext {
-		public List<AndOperandContext> andOperand() {
-			return getRuleContexts(AndOperandContext.class);
-		}
-		public AndOperandContext andOperand(int i) {
-			return getRuleContext(AndOperandContext.class,i);
-		}
-		public List<TerminalNode> AND() { return getTokens(DemultiplexGrammarParser.AND); }
-		public TerminalNode AND(int i) {
-			return getToken(DemultiplexGrammarParser.AND, i);
-		}
-		public AndContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_and; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterAnd(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitAnd(this);
-		}
-	}
-
-	public final AndContext and() throws RecognitionException {
-		AndContext _localctx = new AndContext(_ctx, getState());
-		enterRule(_localctx, 12, RULE_and);
-		int _la;
-		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(64);
-			andOperand();
-			setState(65);
-			match(AND);
-			setState(66);
-			andOperand();
-			setState(71);
-			_errHandler.sync(this);
-			_la = _input.LA(1);
-			while (_la==AND) {
-				{
-				{
-				setState(67);
-				match(AND);
-				setState(68);
-				andOperand();
-				}
-				}
-				setState(73);
-				_errHandler.sync(this);
-				_la = _input.LA(1);
-			}
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class AndOperandContext extends ParserRuleContext {
-		public PatternContext pattern() {
-			return getRuleContext(PatternContext.class,0);
-		}
-		public MinConsensusReadsContext minConsensusReads() {
-			return getRuleContext(MinConsensusReadsContext.class,0);
-		}
-		public LenContext len() {
-			return getRuleContext(LenContext.class,0);
-		}
-		public FilterInParenthesesContext filterInParentheses() {
-			return getRuleContext(FilterInParenthesesContext.class,0);
-		}
-		public AndOperandContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_andOperand; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterAndOperand(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitAndOperand(this);
-		}
-	}
-
-	public final AndOperandContext andOperand() throws RecognitionException {
-		AndOperandContext _localctx = new AndOperandContext(_ctx, getState());
-		enterRule(_localctx, 14, RULE_andOperand);
-		try {
-			setState(78);
+			setState(39);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
-			case GROUP_NAME:
+			case DOUBLE_QUOTE:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(74);
-				pattern();
+				setState(36);
+				doubleQuotedFileName();
 				}
 				break;
-			case MIN_CONSENSUS_READS:
+			case SINGLE_QUOTE:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(75);
-				minConsensusReads();
+				setState(37);
+				singleQuotedFileName();
 				}
 				break;
-			case LEN:
+			case T__0:
+			case T__1:
+			case T__2:
+			case T__3:
+			case T__4:
+			case LETTER:
+			case NUMBER:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(76);
-				len();
-				}
-				break;
-			case OPEN_PARENTHESIS:
-				enterOuterAlt(_localctx, 4);
-				{
-				setState(77);
-				filterInParentheses();
+				setState(38);
+				notQuotedFileName();
 				}
 				break;
 			default:
@@ -610,40 +377,70 @@ public class DemultiplexGrammarParser extends Parser {
 		return _localctx;
 	}
 
-	public static class PatternContext extends ParserRuleContext {
-		public GroupNameContext groupName() {
-			return getRuleContext(GroupNameContext.class,0);
+	public static class DoubleQuotedFileNameContext extends ParserRuleContext {
+		public List<TerminalNode> DOUBLE_QUOTE() { return getTokens(DemultiplexGrammarParser.DOUBLE_QUOTE); }
+		public TerminalNode DOUBLE_QUOTE(int i) {
+			return getToken(DemultiplexGrammarParser.DOUBLE_QUOTE, i);
 		}
-		public TerminalNode TILDE() { return getToken(DemultiplexGrammarParser.TILDE, 0); }
-		public PatternStringContext patternString() {
-			return getRuleContext(PatternStringContext.class,0);
+		public List<TerminalNode> LETTER() { return getTokens(DemultiplexGrammarParser.LETTER); }
+		public TerminalNode LETTER(int i) {
+			return getToken(DemultiplexGrammarParser.LETTER, i);
 		}
-		public PatternContext(ParserRuleContext parent, int invokingState) {
+		public List<TerminalNode> NUMBER() { return getTokens(DemultiplexGrammarParser.NUMBER); }
+		public TerminalNode NUMBER(int i) {
+			return getToken(DemultiplexGrammarParser.NUMBER, i);
+		}
+		public List<TerminalNode> SPACE() { return getTokens(DemultiplexGrammarParser.SPACE); }
+		public TerminalNode SPACE(int i) {
+			return getToken(DemultiplexGrammarParser.SPACE, i);
+		}
+		public DoubleQuotedFileNameContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_pattern; }
+		@Override public int getRuleIndex() { return RULE_doubleQuotedFileName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterPattern(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterDoubleQuotedFileName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitPattern(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitDoubleQuotedFileName(this);
 		}
 	}
 
-	public final PatternContext pattern() throws RecognitionException {
-		PatternContext _localctx = new PatternContext(_ctx, getState());
-		enterRule(_localctx, 16, RULE_pattern);
+	public final DoubleQuotedFileNameContext doubleQuotedFileName() throws RecognitionException {
+		DoubleQuotedFileNameContext _localctx = new DoubleQuotedFileNameContext(_ctx, getState());
+		enterRule(_localctx, 10, RULE_doubleQuotedFileName);
+		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(80);
-			groupName();
-			setState(81);
-			match(TILDE);
-			setState(82);
-			patternString();
+			setState(41);
+			match(DOUBLE_QUOTE);
+			setState(43); 
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			do {
+				{
+				{
+				setState(42);
+				_la = _input.LA(1);
+				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << LETTER) | (1L << NUMBER) | (1L << SPACE))) != 0)) ) {
+				_errHandler.recoverInline(this);
+				}
+				else {
+					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+					_errHandler.reportMatch(this);
+					consume();
+				}
+				}
+				}
+				setState(45); 
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << LETTER) | (1L << NUMBER) | (1L << SPACE))) != 0) );
+			setState(47);
+			match(DOUBLE_QUOTE);
 			}
 		}
 		catch (RecognitionException re) {
@@ -657,38 +454,70 @@ public class DemultiplexGrammarParser extends Parser {
 		return _localctx;
 	}
 
-	public static class MinConsensusReadsContext extends ParserRuleContext {
-		public TerminalNode MIN_CONSENSUS_READS() { return getToken(DemultiplexGrammarParser.MIN_CONSENSUS_READS, 0); }
-		public TerminalNode EQUALS() { return getToken(DemultiplexGrammarParser.EQUALS, 0); }
-		public MinConsensusReadsNumContext minConsensusReadsNum() {
-			return getRuleContext(MinConsensusReadsNumContext.class,0);
+	public static class SingleQuotedFileNameContext extends ParserRuleContext {
+		public List<TerminalNode> SINGLE_QUOTE() { return getTokens(DemultiplexGrammarParser.SINGLE_QUOTE); }
+		public TerminalNode SINGLE_QUOTE(int i) {
+			return getToken(DemultiplexGrammarParser.SINGLE_QUOTE, i);
 		}
-		public MinConsensusReadsContext(ParserRuleContext parent, int invokingState) {
+		public List<TerminalNode> LETTER() { return getTokens(DemultiplexGrammarParser.LETTER); }
+		public TerminalNode LETTER(int i) {
+			return getToken(DemultiplexGrammarParser.LETTER, i);
+		}
+		public List<TerminalNode> NUMBER() { return getTokens(DemultiplexGrammarParser.NUMBER); }
+		public TerminalNode NUMBER(int i) {
+			return getToken(DemultiplexGrammarParser.NUMBER, i);
+		}
+		public List<TerminalNode> SPACE() { return getTokens(DemultiplexGrammarParser.SPACE); }
+		public TerminalNode SPACE(int i) {
+			return getToken(DemultiplexGrammarParser.SPACE, i);
+		}
+		public SingleQuotedFileNameContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_minConsensusReads; }
+		@Override public int getRuleIndex() { return RULE_singleQuotedFileName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterMinConsensusReads(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterSingleQuotedFileName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitMinConsensusReads(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitSingleQuotedFileName(this);
 		}
 	}
 
-	public final MinConsensusReadsContext minConsensusReads() throws RecognitionException {
-		MinConsensusReadsContext _localctx = new MinConsensusReadsContext(_ctx, getState());
-		enterRule(_localctx, 18, RULE_minConsensusReads);
+	public final SingleQuotedFileNameContext singleQuotedFileName() throws RecognitionException {
+		SingleQuotedFileNameContext _localctx = new SingleQuotedFileNameContext(_ctx, getState());
+		enterRule(_localctx, 12, RULE_singleQuotedFileName);
+		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(84);
-			match(MIN_CONSENSUS_READS);
-			setState(85);
-			match(EQUALS);
-			setState(86);
-			minConsensusReadsNum();
+			setState(49);
+			match(SINGLE_QUOTE);
+			setState(51); 
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			do {
+				{
+				{
+				setState(50);
+				_la = _input.LA(1);
+				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << LETTER) | (1L << NUMBER) | (1L << SPACE))) != 0)) ) {
+				_errHandler.recoverInline(this);
+				}
+				else {
+					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+					_errHandler.reportMatch(this);
+					consume();
+				}
+				}
+				}
+				setState(53); 
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << LETTER) | (1L << NUMBER) | (1L << SPACE))) != 0) );
+			setState(55);
+			match(SINGLE_QUOTE);
 			}
 		}
 		catch (RecognitionException re) {
@@ -702,49 +531,58 @@ public class DemultiplexGrammarParser extends Parser {
 		return _localctx;
 	}
 
-	public static class LenContext extends ParserRuleContext {
-		public TerminalNode LEN() { return getToken(DemultiplexGrammarParser.LEN, 0); }
-		public TerminalNode OPEN_PARENTHESIS() { return getToken(DemultiplexGrammarParser.OPEN_PARENTHESIS, 0); }
-		public GroupNameContext groupName() {
-			return getRuleContext(GroupNameContext.class,0);
+	public static class NotQuotedFileNameContext extends ParserRuleContext {
+		public List<TerminalNode> LETTER() { return getTokens(DemultiplexGrammarParser.LETTER); }
+		public TerminalNode LETTER(int i) {
+			return getToken(DemultiplexGrammarParser.LETTER, i);
 		}
-		public TerminalNode CLOSED_PARENTHESIS() { return getToken(DemultiplexGrammarParser.CLOSED_PARENTHESIS, 0); }
-		public TerminalNode EQUALS() { return getToken(DemultiplexGrammarParser.EQUALS, 0); }
-		public GroupLengthContext groupLength() {
-			return getRuleContext(GroupLengthContext.class,0);
+		public List<TerminalNode> NUMBER() { return getTokens(DemultiplexGrammarParser.NUMBER); }
+		public TerminalNode NUMBER(int i) {
+			return getToken(DemultiplexGrammarParser.NUMBER, i);
 		}
-		public LenContext(ParserRuleContext parent, int invokingState) {
+		public NotQuotedFileNameContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_len; }
+		@Override public int getRuleIndex() { return RULE_notQuotedFileName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterLen(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterNotQuotedFileName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitLen(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitNotQuotedFileName(this);
 		}
 	}
 
-	public final LenContext len() throws RecognitionException {
-		LenContext _localctx = new LenContext(_ctx, getState());
-		enterRule(_localctx, 20, RULE_len);
+	public final NotQuotedFileNameContext notQuotedFileName() throws RecognitionException {
+		NotQuotedFileNameContext _localctx = new NotQuotedFileNameContext(_ctx, getState());
+		enterRule(_localctx, 14, RULE_notQuotedFileName);
+		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(88);
-			match(LEN);
-			setState(89);
-			match(OPEN_PARENTHESIS);
-			setState(90);
-			groupName();
-			setState(91);
-			match(CLOSED_PARENTHESIS);
-			setState(92);
-			match(EQUALS);
-			setState(93);
-			groupLength();
+			setState(58); 
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			do {
+				{
+				{
+				setState(57);
+				_la = _input.LA(1);
+				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << LETTER) | (1L << NUMBER))) != 0)) ) {
+				_errHandler.recoverInline(this);
+				}
+				else {
+					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+					_errHandler.reportMatch(this);
+					consume();
+				}
+				}
+				}
+				setState(60); 
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__0) | (1L << T__1) | (1L << T__2) | (1L << T__3) | (1L << T__4) | (1L << LETTER) | (1L << NUMBER))) != 0) );
 			}
 		}
 		catch (RecognitionException re) {
@@ -758,141 +596,58 @@ public class DemultiplexGrammarParser extends Parser {
 		return _localctx;
 	}
 
-	public static class PatternStringContext extends ParserRuleContext {
-		public TerminalNode STRING() { return getToken(DemultiplexGrammarParser.STRING, 0); }
-		public PatternStringContext(ParserRuleContext parent, int invokingState) {
+	public static class BarcodeNameContext extends ParserRuleContext {
+		public List<TerminalNode> LETTER() { return getTokens(DemultiplexGrammarParser.LETTER); }
+		public TerminalNode LETTER(int i) {
+			return getToken(DemultiplexGrammarParser.LETTER, i);
+		}
+		public List<TerminalNode> NUMBER() { return getTokens(DemultiplexGrammarParser.NUMBER); }
+		public TerminalNode NUMBER(int i) {
+			return getToken(DemultiplexGrammarParser.NUMBER, i);
+		}
+		public BarcodeNameContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_patternString; }
+		@Override public int getRuleIndex() { return RULE_barcodeName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterPatternString(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterBarcodeName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitPatternString(this);
+			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitBarcodeName(this);
 		}
 	}
 
-	public final PatternStringContext patternString() throws RecognitionException {
-		PatternStringContext _localctx = new PatternStringContext(_ctx, getState());
-		enterRule(_localctx, 22, RULE_patternString);
+	public final BarcodeNameContext barcodeName() throws RecognitionException {
+		BarcodeNameContext _localctx = new BarcodeNameContext(_ctx, getState());
+		enterRule(_localctx, 16, RULE_barcodeName);
+		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(95);
-			match(STRING);
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class GroupNameContext extends ParserRuleContext {
-		public TerminalNode GROUP_NAME() { return getToken(DemultiplexGrammarParser.GROUP_NAME, 0); }
-		public GroupNameContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_groupName; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterGroupName(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitGroupName(this);
-		}
-	}
-
-	public final GroupNameContext groupName() throws RecognitionException {
-		GroupNameContext _localctx = new GroupNameContext(_ctx, getState());
-		enterRule(_localctx, 24, RULE_groupName);
-		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(97);
-			match(GROUP_NAME);
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class MinConsensusReadsNumContext extends ParserRuleContext {
-		public TerminalNode NUMBER() { return getToken(DemultiplexGrammarParser.NUMBER, 0); }
-		public MinConsensusReadsNumContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_minConsensusReadsNum; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterMinConsensusReadsNum(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitMinConsensusReadsNum(this);
-		}
-	}
-
-	public final MinConsensusReadsNumContext minConsensusReadsNum() throws RecognitionException {
-		MinConsensusReadsNumContext _localctx = new MinConsensusReadsNumContext(_ctx, getState());
-		enterRule(_localctx, 26, RULE_minConsensusReadsNum);
-		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(99);
-			match(NUMBER);
-			}
-		}
-		catch (RecognitionException re) {
-			_localctx.exception = re;
-			_errHandler.reportError(this, re);
-			_errHandler.recover(this, re);
-		}
-		finally {
-			exitRule();
-		}
-		return _localctx;
-	}
-
-	public static class GroupLengthContext extends ParserRuleContext {
-		public TerminalNode NUMBER() { return getToken(DemultiplexGrammarParser.NUMBER, 0); }
-		public GroupLengthContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_groupLength; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).enterGroupLength(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof DemultiplexGrammarListener ) ((DemultiplexGrammarListener)listener).exitGroupLength(this);
-		}
-	}
-
-	public final GroupLengthContext groupLength() throws RecognitionException {
-		GroupLengthContext _localctx = new GroupLengthContext(_ctx, getState());
-		enterRule(_localctx, 28, RULE_groupLength);
-		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(101);
-			match(NUMBER);
+			setState(63); 
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			do {
+				{
+				{
+				setState(62);
+				_la = _input.LA(1);
+				if ( !(_la==LETTER || _la==NUMBER) ) {
+				_errHandler.recoverInline(this);
+				}
+				else {
+					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+					_errHandler.reportMatch(this);
+					consume();
+				}
+				}
+				}
+				setState(65); 
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			} while ( _la==LETTER || _la==NUMBER );
 			}
 		}
 		catch (RecognitionException re) {
@@ -907,31 +662,24 @@ public class DemultiplexGrammarParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\17j\4\2\t\2\4\3\t"+
-		"\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4"+
-		"\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\3\2\3\2\3\3\3\3\5\3%\n\3"+
-		"\3\4\3\4\3\4\3\4\3\5\3\5\3\5\3\5\3\5\5\5\60\n\5\3\6\3\6\3\6\3\6\3\6\7"+
-		"\6\67\n\6\f\6\16\6:\13\6\3\7\3\7\3\7\3\7\3\7\5\7A\n\7\3\b\3\b\3\b\3\b"+
-		"\3\b\7\bH\n\b\f\b\16\bK\13\b\3\t\3\t\3\t\3\t\5\tQ\n\t\3\n\3\n\3\n\3\n"+
-		"\3\13\3\13\3\13\3\13\3\f\3\f\3\f\3\f\3\f\3\f\3\f\3\r\3\r\3\16\3\16\3\17"+
-		"\3\17\3\20\3\20\3\20\2\2\21\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36\2\2"+
-		"\2h\2 \3\2\2\2\4$\3\2\2\2\6&\3\2\2\2\b/\3\2\2\2\n\61\3\2\2\2\f@\3\2\2"+
-		"\2\16B\3\2\2\2\20P\3\2\2\2\22R\3\2\2\2\24V\3\2\2\2\26Z\3\2\2\2\30a\3\2"+
-		"\2\2\32c\3\2\2\2\34e\3\2\2\2\36g\3\2\2\2 !\5\4\3\2!\3\3\2\2\2\"%\5\6\4"+
-		"\2#%\5\b\5\2$\"\3\2\2\2$#\3\2\2\2%\5\3\2\2\2&\'\7\t\2\2\'(\5\b\5\2()\7"+
-		"\n\2\2)\7\3\2\2\2*\60\5\n\6\2+\60\5\16\b\2,\60\5\22\n\2-\60\5\24\13\2"+
-		".\60\5\26\f\2/*\3\2\2\2/+\3\2\2\2/,\3\2\2\2/-\3\2\2\2/.\3\2\2\2\60\t\3"+
-		"\2\2\2\61\62\5\f\7\2\62\63\7\16\2\2\638\5\f\7\2\64\65\7\16\2\2\65\67\5"+
-		"\f\7\2\66\64\3\2\2\2\67:\3\2\2\28\66\3\2\2\289\3\2\2\29\13\3\2\2\2:8\3"+
-		"\2\2\2;A\5\16\b\2<A\5\22\n\2=A\5\24\13\2>A\5\26\f\2?A\5\6\4\2@;\3\2\2"+
-		"\2@<\3\2\2\2@=\3\2\2\2@>\3\2\2\2@?\3\2\2\2A\r\3\2\2\2BC\5\20\t\2CD\7\r"+
-		"\2\2DI\5\20\t\2EF\7\r\2\2FH\5\20\t\2GE\3\2\2\2HK\3\2\2\2IG\3\2\2\2IJ\3"+
-		"\2\2\2J\17\3\2\2\2KI\3\2\2\2LQ\5\22\n\2MQ\5\24\13\2NQ\5\26\f\2OQ\5\6\4"+
-		"\2PL\3\2\2\2PM\3\2\2\2PN\3\2\2\2PO\3\2\2\2Q\21\3\2\2\2RS\5\32\16\2ST\7"+
-		"\f\2\2TU\5\30\r\2U\23\3\2\2\2VW\7\5\2\2WX\7\13\2\2XY\5\34\17\2Y\25\3\2"+
-		"\2\2Z[\7\6\2\2[\\\7\t\2\2\\]\5\32\16\2]^\7\n\2\2^_\7\13\2\2_`\5\36\20"+
-		"\2`\27\3\2\2\2ab\7\4\2\2b\31\3\2\2\2cd\7\b\2\2d\33\3\2\2\2ef\7\7\2\2f"+
-		"\35\3\2\2\2gh\7\7\2\2h\37\3\2\2\2\b$/8@IP";
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\17F\4\2\t\2\4\3\t"+
+		"\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\3\2\3\2\3\2"+
+		"\6\2\30\n\2\r\2\16\2\31\3\3\3\3\3\3\3\3\3\4\3\4\3\4\3\4\3\5\3\5\3\5\3"+
+		"\6\3\6\3\6\5\6*\n\6\3\7\3\7\6\7.\n\7\r\7\16\7/\3\7\3\7\3\b\3\b\6\b\66"+
+		"\n\b\r\b\16\b\67\3\b\3\b\3\t\6\t=\n\t\r\t\16\t>\3\n\6\nB\n\n\r\n\16\n"+
+		"C\3\n\2\2\13\2\4\6\b\n\f\16\20\22\2\5\4\2\3\7\f\16\4\2\3\7\f\r\3\2\f\r"+
+		"\2E\2\27\3\2\2\2\4\33\3\2\2\2\6\37\3\2\2\2\b#\3\2\2\2\n)\3\2\2\2\f+\3"+
+		"\2\2\2\16\63\3\2\2\2\20<\3\2\2\2\22A\3\2\2\2\24\30\5\4\3\2\25\30\5\6\4"+
+		"\2\26\30\5\b\5\2\27\24\3\2\2\2\27\25\3\2\2\2\27\26\3\2\2\2\30\31\3\2\2"+
+		"\2\31\27\3\2\2\2\31\32\3\2\2\2\32\3\3\2\2\2\33\34\7\b\2\2\34\35\7\16\2"+
+		"\2\35\36\5\n\6\2\36\5\3\2\2\2\37 \7\t\2\2 !\7\16\2\2!\"\5\22\n\2\"\7\3"+
+		"\2\2\2#$\7\16\2\2$%\5\n\6\2%\t\3\2\2\2&*\5\f\7\2\'*\5\16\b\2(*\5\20\t"+
+		"\2)&\3\2\2\2)\'\3\2\2\2)(\3\2\2\2*\13\3\2\2\2+-\7\n\2\2,.\t\2\2\2-,\3"+
+		"\2\2\2./\3\2\2\2/-\3\2\2\2/\60\3\2\2\2\60\61\3\2\2\2\61\62\7\n\2\2\62"+
+		"\r\3\2\2\2\63\65\7\13\2\2\64\66\t\2\2\2\65\64\3\2\2\2\66\67\3\2\2\2\67"+
+		"\65\3\2\2\2\678\3\2\2\289\3\2\2\29:\7\13\2\2:\17\3\2\2\2;=\t\3\2\2<;\3"+
+		"\2\2\2=>\3\2\2\2><\3\2\2\2>?\3\2\2\2?\21\3\2\2\2@B\t\4\2\2A@\3\2\2\2B"+
+		"C\3\2\2\2CA\3\2\2\2CD\3\2\2\2D\23\3\2\2\2\t\27\31)/\67>C";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {
