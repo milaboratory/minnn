@@ -21,8 +21,7 @@ public final class DemultiplexAction implements Action {
 
     @Override
     public void go(ActionHelper helper) {
-        String argumentsQuery = " " + String.join(" ", params.argumentsQuery);
-        System.out.println(argumentsQuery);
+        String argumentsQuery = "#" + String.join("#", params.argumentsQuery);
         ParsedDemultiplexArguments parsedDemultiplexArguments = parseArgumentsQuery(argumentsQuery);
         if (parsedDemultiplexArguments == null)
             throw exitWithError("Arguments not parsed: " + argumentsQuery);
@@ -74,7 +73,6 @@ public final class DemultiplexAction implements Action {
         private String fileName = null;
 
         String getFileName() {
-            System.out.println("getFileName: " + fileName);
             return fileName;
         }
 
@@ -92,7 +90,6 @@ public final class DemultiplexAction implements Action {
         private String inputFileName = null;
 
         String getInputFileName() {
-            System.out.println("getInputFileName: " + inputFileName);
             return inputFileName;
         }
 
@@ -108,7 +105,6 @@ public final class DemultiplexAction implements Action {
         private String barcodeName = null;
 
         String getBarcodeName() {
-            System.out.println("getBarcodeName: " + barcodeName);
             return barcodeName;
         }
 
@@ -122,7 +118,6 @@ public final class DemultiplexAction implements Action {
         private String sampleFileName = null;
 
         String getSampleFileName() {
-            System.out.println("getSampleFileName: " + sampleFileName);
             return sampleFileName;
         }
 
@@ -159,7 +154,6 @@ public final class DemultiplexAction implements Action {
         }
 
         ParsedDemultiplexArguments getParsedArguments() throws ParameterException {
-            System.out.println(inputFileNames + " " + barcodes + " " + sampleFileNames);
             if (inputFileNames.size() > 1)
                 throw new ParameterException("Expected 1 input file name, found multiple: " + inputFileNames);
             else if (inputFileNames.size() == 0)

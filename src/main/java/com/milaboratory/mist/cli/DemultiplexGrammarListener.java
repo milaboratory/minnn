@@ -58,36 +58,6 @@ public interface DemultiplexGrammarListener extends ParseTreeListener {
 	 */
 	void exitFileName(DemultiplexGrammarParser.FileNameContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#doubleQuotedFileName}.
-	 * @param ctx the parse tree
-	 */
-	void enterDoubleQuotedFileName(DemultiplexGrammarParser.DoubleQuotedFileNameContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#doubleQuotedFileName}.
-	 * @param ctx the parse tree
-	 */
-	void exitDoubleQuotedFileName(DemultiplexGrammarParser.DoubleQuotedFileNameContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#singleQuotedFileName}.
-	 * @param ctx the parse tree
-	 */
-	void enterSingleQuotedFileName(DemultiplexGrammarParser.SingleQuotedFileNameContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#singleQuotedFileName}.
-	 * @param ctx the parse tree
-	 */
-	void exitSingleQuotedFileName(DemultiplexGrammarParser.SingleQuotedFileNameContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#notQuotedFileName}.
-	 * @param ctx the parse tree
-	 */
-	void enterNotQuotedFileName(DemultiplexGrammarParser.NotQuotedFileNameContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#notQuotedFileName}.
-	 * @param ctx the parse tree
-	 */
-	void exitNotQuotedFileName(DemultiplexGrammarParser.NotQuotedFileNameContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#barcodeName}.
 	 * @param ctx the parse tree
 	 */

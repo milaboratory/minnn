@@ -76,42 +76,6 @@ public class DemultiplexGrammarBaseListener implements DemultiplexGrammarListene
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDoubleQuotedFileName(DemultiplexGrammarParser.DoubleQuotedFileNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitDoubleQuotedFileName(DemultiplexGrammarParser.DoubleQuotedFileNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterSingleQuotedFileName(DemultiplexGrammarParser.SingleQuotedFileNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSingleQuotedFileName(DemultiplexGrammarParser.SingleQuotedFileNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterNotQuotedFileName(DemultiplexGrammarParser.NotQuotedFileNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitNotQuotedFileName(DemultiplexGrammarParser.NotQuotedFileNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterBarcodeName(DemultiplexGrammarParser.BarcodeNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
