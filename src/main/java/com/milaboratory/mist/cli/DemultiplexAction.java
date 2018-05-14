@@ -26,7 +26,7 @@ public final class DemultiplexAction implements Action {
         if (parsedDemultiplexArguments == null)
             throw exitWithError("Arguments not parsed: " + argumentsQuery);
         DemultiplexIO demultiplexIO = new DemultiplexIO(parsedDemultiplexArguments.inputFileName,
-                parsedDemultiplexArguments.barcodes, parsedDemultiplexArguments.sampleFileNames);
+                parsedDemultiplexArguments.demultiplexArguments);
         demultiplexIO.go();
     }
 
@@ -48,13 +48,11 @@ public final class DemultiplexAction implements Action {
 
     private static final class ParsedDemultiplexArguments {
         final String inputFileName;
-        final List<String> barcodes;
-        final List<String> sampleFileNames;
+        final List<DemultiplexArgument> demultiplexArguments;
 
-        public ParsedDemultiplexArguments(String inputFileName, List<String> barcodes, List<String> sampleFileNames) {
+        public ParsedDemultiplexArguments(String inputFileName, List<DemultiplexArgument> demultiplexArguments) {
             this.inputFileName = inputFileName;
-            this.barcodes = barcodes;
-            this.sampleFileNames = sampleFileNames;
+            this.demultiplexArguments = demultiplexArguments;
         }
     }
 
@@ -130,8 +128,7 @@ public final class DemultiplexAction implements Action {
     }
 
     private class DemultiplexArgumentsListener extends DemultiplexGrammarBaseListener {
-        private List<String> barcodes = new ArrayList<>();
-        private List<String> sampleFileNames = new ArrayList<>();
+        private List<DemultiplexArgument> demultiplexArguments = new ArrayList<>();
         private List<String> inputFileNames = new ArrayList<>();
 
         @Override
@@ -139,12 +136,14 @@ public final class DemultiplexAction implements Action {
             ctx.bySample().forEach(currentBySampleCtx -> {
                 BySampleListener bySampleListener = new BySampleListener();
                 currentBySampleCtx.enterRule(bySampleListener);
-                sampleFileNames.add(bySampleListener.getSampleFileName());
+                demultiplexArguments.add(new DemultiplexArgument(false,
+                        bySampleListener.getSampleFileName()));
             });
             ctx.byBarcode().forEach(currentByBarcodeCtx -> {
                 ByBarcodeListener byBarcodeListener = new ByBarcodeListener();
                 currentByBarcodeCtx.enterRule(byBarcodeListener);
-                barcodes.add(byBarcodeListener.getBarcodeName());
+                demultiplexArguments.add(new DemultiplexArgument(true,
+                        byBarcodeListener.getBarcodeName()));
             });
             ctx.inputFileName().forEach(currentInputFileNameCtx -> {
                 InputFileNameListener inputFileNameListener = new InputFileNameListener();
@@ -158,9 +157,9 @@ public final class DemultiplexAction implements Action {
                 throw new ParameterException("Expected 1 input file name, found multiple: " + inputFileNames);
             else if (inputFileNames.size() == 0)
                 throw new ParameterException("Missing input file name!");
-            if ((barcodes.size() == 0) && (sampleFileNames.size() == 0))
+            if (demultiplexArguments.size() == 0)
                 throw new ParameterException("Expected at least 1 barcode or sample configuration file!");
-            return new ParsedDemultiplexArguments(inputFileNames.get(0), barcodes, sampleFileNames);
+            return new ParsedDemultiplexArguments(inputFileNames.get(0), demultiplexArguments);
         }
     }
 }
