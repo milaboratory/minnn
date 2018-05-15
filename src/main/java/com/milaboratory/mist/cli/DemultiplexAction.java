@@ -14,6 +14,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import java.util.*;
 
+import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
 
 public final class DemultiplexAction implements Action {
@@ -26,7 +27,7 @@ public final class DemultiplexAction implements Action {
         if (parsedDemultiplexArguments == null)
             throw exitWithError("Arguments not parsed: " + argumentsQuery);
         DemultiplexIO demultiplexIO = new DemultiplexIO(parsedDemultiplexArguments.inputFileName,
-                parsedDemultiplexArguments.demultiplexArguments);
+                parsedDemultiplexArguments.demultiplexArguments, params.threads);
         demultiplexIO.go();
     }
 
@@ -44,6 +45,10 @@ public final class DemultiplexAction implements Action {
     private static final class DemultiplexActionParameters extends ActionParameters {
         @Parameter(description = "\"<configuration_files_and_filters>\"", order = 0, required = true)
         List<String> argumentsQuery = new ArrayList<>();
+
+        @Parameter(description = "Number of threads for parsing reads.",
+                names = {"--threads"})
+        int threads = DEFAULT_THREADS;
     }
 
     private static final class ParsedDemultiplexArguments {
