@@ -12,15 +12,15 @@ public final class Main {
 
         JCommanderBasedMain jCommanderBasedMain = new JCommanderBasedMain("mist",
                 new ExtractAction(),
-                new FilterAction(),
                 new ReportAction(),
-                new SortAction(),
-                new MifToFastqAction(),
+                new FilterAction(),
+                new DemultiplexAction(),
                 new StatGroupsAction(),
                 new StatPositionsAction(),
+                new SortAction(),
                 new CorrectAction(),
                 new ConsensusAction(),
-                new DemultiplexAction());
+                new MifToFastqAction());
 
         jCommanderBasedMain.setVersionInfoCallback(() -> {
             VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");
