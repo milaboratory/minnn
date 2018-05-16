@@ -18,6 +18,16 @@ public interface DemultiplexGrammarListener extends ParseTreeListener {
 	 */
 	void exitDemultiplexArguments(DemultiplexGrammarParser.DemultiplexArgumentsContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#demultiplexArgument}.
+	 * @param ctx the parse tree
+	 */
+	void enterDemultiplexArgument(DemultiplexGrammarParser.DemultiplexArgumentContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DemultiplexGrammarParser#demultiplexArgument}.
+	 * @param ctx the parse tree
+	 */
+	void exitDemultiplexArgument(DemultiplexGrammarParser.DemultiplexArgumentContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link DemultiplexGrammarParser#bySample}.
 	 * @param ctx the parse tree
 	 */

@@ -26,14 +26,17 @@ public final class DemultiplexIO {
     private final String inputFileName;
     private final List<DemultiplexFilter> demultiplexFilters;
     private final int threads;
+    private final int outputBufferSize;
     private final String prefix;
     private final TIntObjectHashMap<OutputFileIdentifier> outputFileIdentifiers = new TIntObjectHashMap<>();
     private MifHeader header;
 
-    public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int threads) {
+    public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int threads,
+                         int outputBufferSize) {
         this.inputFileName = inputFileName;
         this.demultiplexFilters = demultiplexArguments.stream().map(this::parseFilter).collect(Collectors.toList());
         this.threads = threads;
+        this.outputBufferSize = outputBufferSize;
         this.prefix = ((inputFileName.length() > 4)
                 && inputFileName.substring(inputFileName.length() - 4).equals(".mif"))
                 ? inputFileName.substring(0, inputFileName.length() - 4) : inputFileName;
@@ -248,7 +251,7 @@ public final class DemultiplexIO {
         MifWriter getWriter() {
             if (writer == null) {
                 try {
-                    writer = new MifWriter(toString(), header);
+                    writer = new MifWriter(toString(), header, outputBufferSize);
                 } catch (IOException e) {
                     throw exitWithError(e.getMessage());
                 }

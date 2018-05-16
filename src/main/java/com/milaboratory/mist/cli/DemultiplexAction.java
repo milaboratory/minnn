@@ -27,7 +27,7 @@ public final class DemultiplexAction implements Action {
         if (parsedDemultiplexArguments == null)
             throw exitWithError("Arguments not parsed: " + argumentsQuery);
         DemultiplexIO demultiplexIO = new DemultiplexIO(parsedDemultiplexArguments.inputFileName,
-                parsedDemultiplexArguments.demultiplexArguments, params.threads);
+                parsedDemultiplexArguments.demultiplexArguments, params.threads, params.outputBufferSize);
         demultiplexIO.go();
     }
 
@@ -52,6 +52,10 @@ public final class DemultiplexAction implements Action {
         @Parameter(description = "Number of threads for parsing reads.",
                 names = {"--threads"})
         int threads = DEFAULT_THREADS;
+
+        @Parameter(description = "Write buffer size for each output file.",
+                names = {"--output-buffer-size"})
+        int outputBufferSize = DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE;
     }
 
     private static final class ParsedDemultiplexArguments {
@@ -141,22 +145,22 @@ public final class DemultiplexAction implements Action {
 
         @Override
         public void enterDemultiplexArguments(DemultiplexGrammarParser.DemultiplexArgumentsContext ctx) {
-            ctx.bySample().forEach(currentBySampleCtx -> {
-                BySampleListener bySampleListener = new BySampleListener();
-                currentBySampleCtx.enterRule(bySampleListener);
-                demultiplexArguments.add(new DemultiplexArgument(false,
-                        bySampleListener.getSampleFileName()));
-            });
-            ctx.byBarcode().forEach(currentByBarcodeCtx -> {
-                ByBarcodeListener byBarcodeListener = new ByBarcodeListener();
-                currentByBarcodeCtx.enterRule(byBarcodeListener);
-                demultiplexArguments.add(new DemultiplexArgument(true,
-                        byBarcodeListener.getBarcodeName()));
-            });
-            ctx.inputFileName().forEach(currentInputFileNameCtx -> {
-                InputFileNameListener inputFileNameListener = new InputFileNameListener();
-                currentInputFileNameCtx.enterRule(inputFileNameListener);
-                inputFileNames.add(inputFileNameListener.getInputFileName());
+            ctx.demultiplexArgument().forEach(currentArgument -> {
+                if (currentArgument.bySample() != null) {
+                    BySampleListener bySampleListener = new BySampleListener();
+                    currentArgument.bySample().enterRule(bySampleListener);
+                    demultiplexArguments.add(new DemultiplexArgument(false,
+                            bySampleListener.getSampleFileName()));
+                } else if (currentArgument.byBarcode() != null) {
+                    ByBarcodeListener byBarcodeListener = new ByBarcodeListener();
+                    currentArgument.byBarcode().enterRule(byBarcodeListener);
+                    demultiplexArguments.add(new DemultiplexArgument(true,
+                            byBarcodeListener.getBarcodeName()));
+                } else if (currentArgument.inputFileName() != null) {
+                    InputFileNameListener inputFileNameListener = new InputFileNameListener();
+                    currentArgument.inputFileName().enterRule(inputFileNameListener);
+                    inputFileNames.add(inputFileNameListener.getInputFileName());
+                }
             });
         }
 

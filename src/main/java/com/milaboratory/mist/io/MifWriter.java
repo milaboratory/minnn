@@ -26,6 +26,11 @@ public final class MifWriter implements AutoCloseable, CanReportProgress {
         writeHeader(mifHeader);
     }
 
+    public MifWriter(String file, MifHeader mifHeader, int bufferSize) throws IOException {
+        output = new PrimitivO(new BufferedOutputStream(new FileOutputStream(file), bufferSize));
+        writeHeader(mifHeader);
+    }
+
     private void writeHeader(MifHeader mifHeader) {
         output.writeInt(mifHeader.getNumberOfReads());
         output.writeBoolean(mifHeader.isCorrected());

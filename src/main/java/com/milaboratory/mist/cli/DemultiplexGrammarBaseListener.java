@@ -28,6 +28,18 @@ public class DemultiplexGrammarBaseListener implements DemultiplexGrammarListene
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterDemultiplexArgument(DemultiplexGrammarParser.DemultiplexArgumentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDemultiplexArgument(DemultiplexGrammarParser.DemultiplexArgumentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterBySample(DemultiplexGrammarParser.BySampleContext ctx) { }
 	/**
 	 * {@inheritDoc}
