@@ -12,7 +12,6 @@ import com.milaboratory.mist.cli.DemultiplexArgument;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.util.SmartProgressReporter;
-import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +27,7 @@ public final class DemultiplexIO {
     private final int threads;
     private final int outputBufferSize;
     private final String prefix;
-    private final TIntObjectHashMap<OutputFileIdentifier> outputFileIdentifiers = new TIntObjectHashMap<>();
+    private final LinkedHashMap<OutputFileIdentifier, OutputFileIdentifier> outputFileIdentifiers;
     private MifHeader header;
 
     public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int threads,
@@ -40,6 +39,7 @@ public final class DemultiplexIO {
         this.prefix = ((inputFileName.length() > 4)
                 && inputFileName.substring(inputFileName.length() - 4).equals(".mif"))
                 ? inputFileName.substring(0, inputFileName.length() - 4) : inputFileName;
+        this.outputFileIdentifiers = new LinkedHashMap<>();
     }
 
     public void go() {
@@ -62,7 +62,7 @@ public final class DemultiplexIO {
                     matchedReads++;
                 }
             }
-            outputFileIdentifiers.valueCollection().forEach(OutputFileIdentifier::closeWriter);
+            outputFileIdentifiers.keySet().forEach(OutputFileIdentifier::closeWriter);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -314,15 +314,14 @@ public final class DemultiplexIO {
 
             return new ProcessorOutput(parsedRead, getMifWriter(new OutputFileIdentifier(parameterValues)));
         }
+    }
 
-        private synchronized MifWriter getMifWriter(OutputFileIdentifier outputFileIdentifier) {
-            int hashCode = outputFileIdentifier.hashCode();
-            if (outputFileIdentifiers.containsKey(hashCode))
-                return outputFileIdentifiers.get(hashCode).getWriter();
-            else {
-                outputFileIdentifiers.put(hashCode, outputFileIdentifier);
-                return outputFileIdentifier.getWriter();
-            }
+    private synchronized MifWriter getMifWriter(OutputFileIdentifier outputFileIdentifier) {
+        if (outputFileIdentifiers.containsKey(outputFileIdentifier))
+            return outputFileIdentifiers.get(outputFileIdentifier).getWriter();
+        else {
+            outputFileIdentifiers.put(outputFileIdentifier, outputFileIdentifier);
+            return outputFileIdentifier.getWriter();
         }
     }
 }
