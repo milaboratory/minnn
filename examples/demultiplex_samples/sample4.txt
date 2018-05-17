@@ -1,0 +1,9 @@
+Sample G2
+test_sample_4_1 ACAC
+test_sample_4_2 CCCC
+test_sample_4_3 GCGC
+test_sample_4_4 TCTC
+test_sample_4_5 ACCC
+test_sample_4_6 CCGC
+test_sample_4_7 GCCC
+test_sample_4_8 TCCC

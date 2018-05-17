@@ -1,0 +1,5 @@
+Sample G2 G3
+test_sample_1_1 AAAA CTT
+test_sample_1_2 AATA TTT
+test_sample_1_3 AACA CTT
+test_sample_1_4 AAAA GTT
