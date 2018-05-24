@@ -107,25 +107,27 @@ public final class ParsedRead {
             List<MatchedGroup> sameTargetGroups = getGroups().stream()
                     .filter(mg -> mg.getTargetId() == currentTargetId).collect(Collectors.toList());
             Range outerRange = outerGroupEntry.getValue().getRange();
-            ArrayList<GroupEdgePosition> groupEdgePositions = new ArrayList<>();
-            HashMap<String, Range> innerRanges = new HashMap<>();
-            for (MatchedGroup innerGroup : sameTargetGroups) {
-                Range innerRange = innerGroup.getRange();
-                if (outerRange.contains(innerRange)) {
-                    if (fillGroupEdges) {
-                        groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
-                                true), innerRange.getLower() - outerRange.getLower()));
-                        groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
-                                false), innerRange.getUpper() - outerRange.getLower()));
+            if (outerRange != null) {
+                ArrayList<GroupEdgePosition> groupEdgePositions = new ArrayList<>();
+                HashMap<String, Range> innerRanges = new HashMap<>();
+                for (MatchedGroup innerGroup : sameTargetGroups) {
+                    Range innerRange = innerGroup.getRange();
+                    if ((innerRange != null) && outerRange.contains(innerRange)) {
+                        if (fillGroupEdges) {
+                            groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
+                                    true), innerRange.getLower() - outerRange.getLower()));
+                            groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
+                                    false), innerRange.getUpper() - outerRange.getLower()));
+                        }
+                        if (fillRanges)
+                            innerRanges.put(innerGroup.getGroupName(), innerRange.move(-outerRange.getLower()));
                     }
-                    if (fillRanges)
-                        innerRanges.put(innerGroup.getGroupName(), innerRange.move(-outerRange.getLower()));
                 }
+                if (fillGroupEdges)
+                    innerGroupEdgesCache.put(outerGroupEntry.getKey(), groupEdgePositions);
+                if (fillRanges)
+                    innerRangesCache.put(outerGroupEntry.getKey(), innerRanges);
             }
-            if (fillGroupEdges)
-                innerGroupEdgesCache.put(outerGroupEntry.getKey(), groupEdgePositions);
-            if (fillRanges)
-                innerRangesCache.put(outerGroupEntry.getKey(), innerRanges);
         }
     }
 
@@ -173,6 +175,17 @@ public final class ParsedRead {
             for (GroupEdgePosition groupEdgePosition : innerGroupEdgesCache.get(outputGroupName))
                 matchedGroupEdges.add(new MatchedGroupEdge(target, i, groupEdgePosition.getGroupEdge(),
                         groupEdgePosition.getPosition()));
+            List<String> otherGroupNames = matchedGroups.keySet().stream()
+                    .filter(name -> !innerGroupEdgesCache.get(outputGroupName).stream()
+                            .map(groupEdgePosition -> groupEdgePosition.getGroupEdge().getGroupName())
+                            .collect(Collectors.toSet()).contains(name))
+                    .collect(Collectors.toList());
+            for (String groupName : otherGroupNames) {
+                matchedGroupEdges.add(new MatchedGroupEdge(target, i, new GroupEdge(groupName, true),
+                        getGroupValue(groupName)));
+                matchedGroupEdges.add(new MatchedGroupEdge(null, i, new GroupEdge(groupName, false),
+                        null));
+            }
         }
 
         Match targetMatch = new Match(groupNames.length, getBestMatchScore(), matchedGroupEdges);

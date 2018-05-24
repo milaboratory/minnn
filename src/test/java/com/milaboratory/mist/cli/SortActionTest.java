@@ -5,9 +5,9 @@ import org.junit.*;
 import java.io.File;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
+import static com.milaboratory.mist.cli.TestResources.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
-import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class SortActionTest {
@@ -43,7 +43,7 @@ public class SortActionTest {
 
     @Test
     public void preparedMifTest() throws Exception {
-        String inputFile = EXAMPLES_PATH + "mif/twosided.mif.gz";
+        String inputFile = getExampleMif("twosided");
         String outputFile1 = TEMP_DIR + "sortOutput1.mif";
         String outputFile2 = TEMP_DIR + "sortOutput2.mif";
         String outputFile3 = TEMP_DIR + "sortOutput3.mif";
@@ -51,7 +51,7 @@ public class SortActionTest {
         exec("sort --input " + outputFile1 + " --output " + outputFile2 + " --groups R2 G2 R1");
         exec("sort --input " + outputFile2 + " --output " + outputFile3 + " --groups G3 G4 G1 G2 R1 R2");
         assertFileEquals(outputFile1, outputFile3);
-        for (String fileName : new String[] { outputFile1, outputFile2, outputFile3 })
+        for (String fileName : new String[] { inputFile, outputFile1, outputFile2, outputFile3 })
             assertTrue(new File(fileName).delete());
     }
 }

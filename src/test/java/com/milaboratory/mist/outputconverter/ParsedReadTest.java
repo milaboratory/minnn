@@ -50,6 +50,7 @@ public class ParsedReadTest {
         }
     }};
 
+    @Ignore
     @Test
     public void retargetTest() {
         ParsedRead newParsedRead = testParsedRead.retarget("R1", "R2", "R3", "G3-1", "G1-2", "G1-1");

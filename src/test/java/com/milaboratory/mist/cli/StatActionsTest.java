@@ -7,9 +7,9 @@ import java.util.*;
 
 import static com.milaboratory.core.sequence.SequenceQuality.*;
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
+import static com.milaboratory.mist.cli.TestResources.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
-import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class StatActionsTest {
@@ -96,7 +96,7 @@ public class StatActionsTest {
 
     @Test
     public void preparedMifTest() throws Exception {
-        String inputFile = EXAMPLES_PATH + "mif/twosided.mif.gz";
+        String inputFile = getExampleMif("twosided");
         String outputG1 = TEMP_DIR + "statGroups1.txt";
         String outputG2 = TEMP_DIR + "statGroups2.txt";
         String outputP1 = TEMP_DIR + "statPositions1.txt";
@@ -155,7 +155,7 @@ public class StatActionsTest {
                 + " --output-with-seq");
         assertTrue(countLinesInFile(outputP1) < countLinesInFile(outputP2));
 
-        for (String fileName : new String[] { outputG1, outputG2, outputP1, outputP2 })
+        for (String fileName : new String[] { inputFile, outputG1, outputG2, outputP1, outputP2 })
             assertTrue(new File(fileName).delete());
     }
 

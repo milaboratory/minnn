@@ -6,9 +6,9 @@ import java.io.File;
 import java.util.*;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
+import static com.milaboratory.mist.cli.TestResources.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
-import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class FastqActionsTest {
@@ -22,7 +22,7 @@ public class FastqActionsTest {
 
     @Test
     public void simpleTest() throws Exception {
-        String inputFile = EXAMPLES_PATH + "mif/singleReadWithG1-G3.mif.gz";
+        String inputFile = getExampleMif("singleReadWithG1-G3");
         StringBuilder outputArgs = new StringBuilder();
         Arrays.stream(new String[] {"R1", "G1", "G2", "G3"}).forEach(groupName -> outputArgs.append(" --group-")
                 .append(groupName).append(' ').append(TEMP_DIR).append("out_").append(groupName).append(".fastq"));
@@ -33,5 +33,6 @@ public class FastqActionsTest {
             assertEquals(400, countLinesInFile(fileName));
             assertTrue(new File(fileName).delete());
         }
+        assertTrue(new File(inputFile).delete());
     }
 }

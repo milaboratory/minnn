@@ -5,9 +5,9 @@ import org.junit.*;
 import java.io.File;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
+import static com.milaboratory.mist.cli.TestResources.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
-import static com.milaboratory.mist.util.TestSettings.*;
 import static com.milaboratory.mist.cli.Main.main;
 import static org.junit.Assert.*;
 
@@ -77,7 +77,7 @@ public class ExtractActionTest {
         String outTwo = TEMP_DIR + "outputTwo.mif";
         String twosidedArgs = "extract --input-format fastq --input " + twoR1 + " " + twoR2 + " --output " + outTwo;
 
-        String twoMif = EXAMPLES_PATH + "mif/twosided.mif.gz";
+        String twoMif = getExampleMif("twosided-raw");
         String outTwoMif = TEMP_DIR + "outputTwoMif.mif";
         String twosidedMifArgs = "extract --input-format mif --input " + twoMif + " --output " + outTwoMif;
 
@@ -99,6 +99,9 @@ public class ExtractActionTest {
         exec(twosidedMifArgs + configuration + penaltyTwo + " --pattern " + inQuotes(patternTwo));
 
         assertFileEquals(outTwo, outTwoMif);
+
+        for (String fileName : new String[] { outPos, outOne, outTwo, twoMif, outTwoMif })
+            assertTrue(new File(fileName).delete());
     }
 
     @Test
@@ -110,16 +113,19 @@ public class ExtractActionTest {
         String query = argsIO + " --pattern \"NN(G1:N{12})N{22}TCAG\\NN(G2:N{12})N{22}TCAG\" --threads 3 "
                 + "--bitap-max-errors 1 --mismatch-score -1 --penalty-threshold -73";
         exec(query);
+        assertTrue(new File(out).delete());
     }
 
     @Test
     public void specialCaseTest2() throws Exception {
-        String inputFile = EXAMPLES_PATH + "mif/extractSpecialCase2.mif.gz";
+        String inputFile = getExampleMif("100reads");
         String outputFile = TEMP_DIR + "outputSCT2.mif";
         String argsIO = "extract --input-format mif --input " + inputFile + " --output " + outputFile;
         String query = argsIO + " --pattern \"(G1:accnt) & (G2:nctn) & (G3:atta)\" --bitap-max-errors 2 " +
                 "--penalty-threshold -80";
         exec(query);
+        for (String fileName : new String[] { inputFile, outputFile })
+            assertTrue(new File(fileName).delete());
     }
 
     @Test

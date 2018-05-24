@@ -5,9 +5,9 @@ import org.junit.*;
 import java.io.File;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
+import static com.milaboratory.mist.cli.TestResources.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
-import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class FilterActionTest {
@@ -57,21 +57,21 @@ public class FilterActionTest {
 
     @Test
     public void preparedMifTest() throws Exception {
-        String inputFile = EXAMPLES_PATH + "mif/twosided.mif.gz";
+        String inputFile = getExampleMif("twosided");
         String outputFile1 = TEMP_DIR + "filterOutput1.mif";
         String outputFile2 = TEMP_DIR + "filterOutput2.mif";
         String outputFile3 = TEMP_DIR + "filterOutput3.mif";
         String filter = " \"G1~'AT'|G2~'GGC'&R2~'AANC&TA'|Len(G4)=5\"";
         exec("filter --fair-sorting --input " + inputFile + " --output " + outputFile1 + filter);
         for (String fairSorting : new String[] { "", " --fair-sorting" })
-            assertOutputContains(true, "4632", () -> callableExec("filter" + fairSorting
+            assertOutputContains(true, "95", () -> callableExec("filter" + fairSorting
                     + " --input " + inputFile + " --output " + outputFile1 + filter));
         exec("filter --fair-sorting --input " + outputFile1 + " --output " + outputFile2 + filter);
         exec("filter --fair-sorting --input " + outputFile2 + " --output " + outputFile3 + filter);
         assertFileEquals(outputFile2, outputFile3);
         assertException(RuntimeException.class, () -> callableExec("filter --input " + inputFile
                 + " G1~'A\\A'"));
-        for (String fileName : new String[] { outputFile1, outputFile2, outputFile3 })
+        for (String fileName : new String[] { inputFile, outputFile1, outputFile2, outputFile3 })
             assertTrue(new File(fileName).delete());
     }
 }

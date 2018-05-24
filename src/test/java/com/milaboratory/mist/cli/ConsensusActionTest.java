@@ -7,9 +7,9 @@ import java.util.Arrays;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
 import static com.milaboratory.mist.cli.Defaults.DEFAULT_GOOD_QUALITY;
+import static com.milaboratory.mist.cli.TestResources.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
-import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class ConsensusActionTest {
@@ -74,7 +74,7 @@ public class ConsensusActionTest {
 
     @Test
     public void preparedMifTest() throws Exception {
-        String inputFile = EXAMPLES_PATH + "mif/twosided.mif.gz";
+        String inputFile = getExampleMif("twosided");
         String correctedFile = TEMP_DIR + "corrected.mif";
         String sortedFile = TEMP_DIR + "sorted.mif";
         String consensusFile = TEMP_DIR + "consensus.mif";
@@ -93,34 +93,7 @@ public class ConsensusActionTest {
                 + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0");
         assertFileEquals(consensusFile2, consensusFile3);
         for (String fileName : new String[] {
-                correctedFile, sortedFile, consensusFile, consensusFile2, consensusFile3 })
-            assertTrue(new File(fileName).delete());
-    }
-
-    @Test
-    public void specialCaseTest1() throws Exception {
-        String inputFile = EXAMPLES_PATH + "mif/consensusSpecialCase1.mif.gz";
-        String outputFile = TEMP_DIR + "outputConsensusSCT1.mif";
-        exec("consensus --input " + inputFile + " --output " + outputFile + " --score-threshold 4000"
-                + " --avg-quality-threshold 0 --reads-avg-quality-threshold 0");
-        assertTrue(new File(outputFile).delete());
-    }
-
-    @Test
-    public void specialCaseTest2() throws Exception {
-        String inputFile = EXAMPLES_PATH + "mif/consensusSpecialCase2.mif.gz";
-        String outputFile1 = TEMP_DIR + "outputConsensusSCT2-1.mif";
-        String outputFile2 = TEMP_DIR + "outputConsensusSCT2-2.mif";
-        exec("consensus --input " + inputFile + " --output " + outputFile1 + " --groups G2 G1"
-                + " --threads 1 --score-threshold 0 --width 49  --max-consensuses-per-cluster 95"
-                + " --skipped-fraction-to-repeat 0.1 --reads-avg-quality-threshold 0 --aligner-match-score 0"
-                + " --aligner-mismatch-score -10 --aligner-gap-score -7 --avg-quality-threshold 0");
-        exec("consensus --input " + outputFile1 + " --output " + outputFile2 + " --groups G2 G1"
-                + " --threads 1 --score-threshold 0 --width 49  --max-consensuses-per-cluster 95"
-                + " --skipped-fraction-to-repeat 0.1 --reads-avg-quality-threshold 0 --aligner-match-score 0"
-                + " --aligner-mismatch-score -10 --aligner-gap-score -7 --avg-quality-threshold 0");
-        assertFileEquals(outputFile1, outputFile2);
-        for (String fileName : new String[] { outputFile1, outputFile2 })
+                inputFile, correctedFile, sortedFile, consensusFile, consensusFile2, consensusFile3 })
             assertTrue(new File(fileName).delete());
     }
 }

@@ -6,9 +6,9 @@ import java.io.File;
 import java.util.*;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
+import static com.milaboratory.mist.cli.TestResources.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
-import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class DemultiplexActionTest {
@@ -56,7 +56,7 @@ public class DemultiplexActionTest {
 
     @Test
     public void preparedMifTest() throws Exception {
-        String startFile = EXAMPLES_PATH + "mif/twosided.mif.gz";
+        String startFile = getExampleMif("twosided");
         String inputFile = TEMP_DIR + TEST_FILENAME_PREFIX + ".mif";
         String sampleFile1 = EXAMPLES_PATH + "demultiplex_samples/sample1.txt";
         String sampleFile2 = EXAMPLES_PATH + "demultiplex_samples/sample2.txt";
@@ -69,7 +69,7 @@ public class DemultiplexActionTest {
 
         exec("demultiplex " + inputFile + " --by-barcode G1 --by-sample " + sampleFile1 + " --by-barcode G4");
         File[] outputFiles = getOutputFiles();
-        assertEquals(4707, outputFiles.length);
+        assertEquals(4663, outputFiles.length);
         Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
 
         exec("demultiplex " + inputFile + " --by-sample " + sampleFile2 + " --by-sample " + sampleFile3);
@@ -79,7 +79,8 @@ public class DemultiplexActionTest {
 
         assertException(RuntimeException.class, () -> callableExec("demultiplex " + inputFile + " --by-sample "
                 + sampleFileBad));
-        assertTrue(new File(inputFile).delete());
+        for (String fileName : new String[] { startFile, inputFile })
+            assertTrue(new File(fileName).delete());
     }
 
     private static File[] getOutputFiles() {

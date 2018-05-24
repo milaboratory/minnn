@@ -5,9 +5,9 @@ import org.junit.*;
 import java.io.File;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
+import static com.milaboratory.mist.cli.TestResources.*;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
-import static com.milaboratory.mist.util.TestSettings.*;
 import static org.junit.Assert.*;
 
 public class CorrectActionTest {
@@ -40,15 +40,13 @@ public class CorrectActionTest {
 
     @Test
     public void preparedMifTest() throws Exception {
-        String startFile = EXAMPLES_PATH + "mif/twosided.mif.gz";
-        String inputFile = TEMP_DIR + "correct0.mif";
-        gunzip(startFile, inputFile);
+        String inputFile = getExampleMif("twosided");
         assertOutputContains(true, "Error", () -> callableExec("correct --output " + inputFile));
         for (int i = 0; i < 4; i++) {
-            String currentInput = TEMP_DIR + "correct" + i + ".mif";
+            String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
-            exec("correct --input " + currentInput + " --output " + currentOutput);
-            if (i < 3)
+            exec("correct --input " + currentInput + " --output " + currentOutput + " --threads 1");
+            if (i < 2)
                 assertFileNotEquals(currentInput, currentOutput);
             else
                 assertFileEquals(currentInput, currentOutput);
@@ -58,7 +56,8 @@ public class CorrectActionTest {
         exec("correct --input " + inputFile + " --output " + TEMP_DIR + "correct5.mif --max-mismatches 0" +
                 " --max-insertions 0 --max-deletions 0");
         assertFileEquals(TEMP_DIR + "correct4.mif", TEMP_DIR + "correct5.mif");
-        for (int i = 0; i <= 5; i++)
+        assertTrue(new File(inputFile).delete());
+        for (int i = 1; i <= 5; i++)
             assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
     }
 }

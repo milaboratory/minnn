@@ -88,7 +88,7 @@ public final class FullReadPattern extends SinglePattern {
                 ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>(match.getMatchedGroupEdges());
                 matchedGroupEdges.add(new MatchedGroupEdge(target, targetId, patternIndex,
                         new GroupEdge(mainGroupName, true), 0));
-                matchedGroupEdges.add(new MatchedGroupEdge(target, targetId, patternIndex,
+                matchedGroupEdges.add(new MatchedGroupEdge(null, targetId, patternIndex,
                         new GroupEdge(mainGroupName, false), target.size()));
                 return new MatchIntermediate(1, match.getScore(),
                         -1, -1, matchedGroupEdges, match.getMatchedRanges());

@@ -7,6 +7,8 @@ import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
 import com.milaboratory.mist.io.CorrectBarcodesIO;
 
+import java.util.*;
+
 import static com.milaboratory.mist.cli.Defaults.*;
 
 public final class CorrectAction implements Action {
@@ -16,7 +18,7 @@ public final class CorrectAction implements Action {
     public void go(ActionHelper helper) {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(params.inputFileName, params.outputFileName,
                 params.mismatches, params.deletions, params.insertions, params.totalErrors, params.threshold,
-                params.threads);
+                params.groupNames, params.threads);
         correctBarcodesIO.go();
     }
 
@@ -64,6 +66,10 @@ public final class CorrectAction implements Action {
                 "is below this threshold, UMI will be merged to the cluster.",
                 names = {"--cluster-threshold"})
         float threshold = DEFAULT_CORRECT_CLUSTER_THRESHOLD;
+
+        @Parameter(description = "Group names for correction. If not specified, all capture groups will be used.",
+                names = {"--groups"}, variableArity = true)
+        List<String> groupNames = null;
 
         @Parameter(description = "Number of threads for correcting barcodes.",
                 names = {"--threads"})

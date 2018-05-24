@@ -170,16 +170,19 @@ public final class ConsensusIO {
         final String groupName;
         final int from;
         final int to;
+        final NSequenceWithQuality valueOverride;
 
-        Barcode(String groupName, int from, int to) {
+        Barcode(String groupName, int from, int to, NSequenceWithQuality valueOverride) {
             this.groupName = groupName;
             this.from = from;
             this.to = to;
+            this.valueOverride = valueOverride;
         }
 
         @Override
         public String toString() {
-            return "Barcode{" + "groupName='" + groupName + '\'' + ", from=" + from + ", to=" + to + '}';
+            return "Barcode{" + "groupName='" + groupName + '\'' + ", from=" + from + ", to=" + to
+                    + ", valueOverride=" + valueOverride + '}';
         }
     }
 
@@ -216,7 +219,10 @@ public final class ConsensusIO {
                 Range groupRange = group.getRange();
                 int targetIndex = group.getTargetId() - 1;
                 ArrayList<Barcode> currentTargetList = barcodes[targetIndex].targetBarcodes;
-                currentTargetList.add(new Barcode(group.getGroupName(), groupRange.getFrom(), groupRange.getTo()));
+                currentTargetList.add(new Barcode(group.getGroupName(),
+                        (groupRange == null) ? -1 : groupRange.getFrom(),
+                        (groupRange == null) ? -1 : groupRange.getTo(),
+                        (groupRange == null) ? group.getValue() : null));
             });
         }
 
@@ -255,14 +261,20 @@ public final class ConsensusIO {
                 reads[targetId - 1] = new SingleReadImpl(readId, currentSequence, "Consensus");
                 matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
                         new GroupEdge("R" + targetId, true), 0));
-                matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
+                matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
                         new GroupEdge("R" + targetId, false), currentSequence.size()));
-                for (Barcode barcode : targetBarcodes.targetBarcodes) {
-                    matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
-                            new GroupEdge(barcode.groupName, true), barcode.from));
-                    matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
-                            new GroupEdge(barcode.groupName, false), barcode.to));
-                }
+                for (Barcode barcode : targetBarcodes.targetBarcodes)
+                    if (barcode.valueOverride == null) {
+                        matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
+                                new GroupEdge(barcode.groupName, true), barcode.from));
+                        matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
+                                new GroupEdge(barcode.groupName, false), barcode.to));
+                    } else {
+                        matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
+                                new GroupEdge(barcode.groupName, true), barcode.valueOverride));
+                        matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
+                                new GroupEdge(barcode.groupName, false), null));
+                    }
             }
             if (numberOfTargets == 1)
                 originalRead = reads[0];
@@ -444,8 +456,12 @@ public final class ConsensusIO {
                             processedBarcodes[i].targetBarcodes.addAll(targetBarcodes.targetBarcodes);
                         else
                             for (Barcode barcode : targetBarcodes.targetBarcodes)
-                                processedBarcodes[i].targetBarcodes.add(new Barcode(barcode.groupName,
-                                        barcode.from + barcodesMovement, barcode.to + barcodesMovement));
+                                if (barcode.valueOverride != null)
+                                    processedBarcodes[i].targetBarcodes.add(barcode);
+                                else
+                                    processedBarcodes[i].targetBarcodes.add(new Barcode(barcode.groupName,
+                                            barcode.from + barcodesMovement, barcode.to + barcodesMovement,
+                                            null));
                     }
                 }
 
@@ -564,6 +580,7 @@ public final class ConsensusIO {
                 for (int position = 0; position < bestSequences[targetIndex].size(); position++) {
                     ArrayList<String> currentLeftBarcodeEdges = new ArrayList<>();
                     ArrayList<String> currentRightBarcodeEdges = new ArrayList<>();
+                    // barcodes with value override will not be included in barcodeEdges and barcodePositions
                     for (Barcode barcode : bestSequencesTargetBarcodes) {
                         if (barcode.from == position)
                             currentLeftBarcodeEdges.add(barcode.groupName);
@@ -730,8 +747,10 @@ public final class ConsensusIO {
                             .findFirst().orElseThrow(IllegalStateException::new).position;
                     int to = barcodePositions.stream().filter(bp -> (!bp.isStart && bp.groupName.equals(groupName)))
                             .findFirst().orElseThrow(IllegalStateException::new).position;
-                    consensusTargetBarcodes.add(new Barcode(groupName, from, to));
+                    consensusTargetBarcodes.add(new Barcode(groupName, from, to, null));
                 }
+                bestSequencesTargetBarcodes.stream().filter(b -> b.valueOverride != null)
+                        .forEach(consensusTargetBarcodes::add);
             }
 
             return new Consensus(sequences, consensusBarcodes, consensusReadsNum);

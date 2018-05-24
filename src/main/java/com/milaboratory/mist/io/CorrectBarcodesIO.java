@@ -7,7 +7,6 @@ import cc.redberry.pipe.blocks.Merger;
 import cc.redberry.pipe.blocks.ParallelProcessor;
 import cc.redberry.pipe.util.Chunk;
 import cc.redberry.pipe.util.OrderedOutputPort;
-import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.tree.NeighborhoodIterator;
@@ -17,6 +16,7 @@ import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.mist.pattern.Match;
 import com.milaboratory.mist.pattern.MatchedGroupEdge;
+import com.milaboratory.mist.pattern.MatchedItem;
 import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
@@ -37,15 +37,16 @@ public final class CorrectBarcodesIO {
     private final int insertions;
     private final int totalErrors;
     private final float threshold;
+    private final List<String> groupNames;
     private final int threads;
     private Set<String> defaultGroups;
+    private Set<String> keyGroups;
     private Map<String, SequenceTreeMap<NucleotideSequence, SequenceCounter>> sequenceTreeMaps;
     private int numberOfReads;
     private AtomicLong corrected = new AtomicLong(0);
-    private AtomicLong overlaps = new AtomicLong(0);
 
     public CorrectBarcodesIO(String inputFileName, String outputFileName, int mismatches, int deletions, int insertions,
-                             int totalErrors, float threshold, int threads) {
+                             int totalErrors, float threshold, List<String> groupNames, int threads) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.mismatches = mismatches;
@@ -53,6 +54,7 @@ public final class CorrectBarcodesIO {
         this.insertions = insertions;
         this.totalErrors = totalErrors;
         this.threshold = threshold;
+        this.groupNames = groupNames;
         this.threads = threads;
     }
 
@@ -69,9 +71,15 @@ public final class CorrectBarcodesIO {
                 System.err.println("WARNING: correcting already corrected MIF file!");
             defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfReads())
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
-            Set<String> keyGroups = pass1Reader.getGroupEdges().stream().filter(GroupEdge::isStart)
-                    .map(GroupEdge::getGroupName).filter(groupName -> !defaultGroups.contains(groupName))
-                    .collect(Collectors.toSet());
+            if (groupNames == null)
+                keyGroups = pass1Reader.getGroupEdges().stream().filter(GroupEdge::isStart)
+                        .map(GroupEdge::getGroupName).filter(groupName -> !defaultGroups.contains(groupName))
+                        .collect(Collectors.toSet());
+            else {
+                if (groupNames.stream().anyMatch(defaultGroups::contains))
+                    throw exitWithError("Default groups R1, R2, etc should not be specified for correction!");
+                keyGroups = new LinkedHashSet<>(groupNames);
+            }
             sequenceTreeMaps = keyGroups.stream().collect(Collectors.toMap(groupName -> groupName,
                     groupName -> new SequenceTreeMap<>(NucleotideSequence.ALPHABET)));
             numberOfReads = pass1Reader.getNumberOfReads();
@@ -104,8 +112,7 @@ public final class CorrectBarcodesIO {
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         System.err.println("Processed " + totalReads + " reads");
-        System.err.println("Reads with corrected barcodes: " + corrected);
-        System.err.println("Reads with barcode overlaps: " + overlaps + "\n");
+        System.err.println("Reads with corrected barcodes: " + corrected + "\n");
     }
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
@@ -146,11 +153,9 @@ public final class CorrectBarcodesIO {
         @Override
         public ParsedRead process(ParsedRead parsedRead) {
             Map<String, MatchedGroup> matchedGroups = parsedRead.getGroups().stream()
-                    .filter(group -> !defaultGroups.contains(group.getGroupName()))
+                    .filter(group -> keyGroups.contains(group.getGroupName()))
                     .collect(Collectors.toMap(MatchedGroup::getGroupName, group -> group));
-            HashMap<Byte, NSequenceWithQuality> oldTargets = new HashMap<>();
-            parsedRead.getGroups().forEach(g -> oldTargets.putIfAbsent(g.getTargetId(), g.getTarget()));
-            HashMap<Byte, ArrayList<TargetPatch>> targetPatches = new HashMap<>();
+            HashMap<Byte, ArrayList<CorrectedGroup>> correctedGroups = new HashMap<>();
             boolean isCorrection = false;
             for (Map.Entry<String, MatchedGroup> entry : matchedGroups.entrySet()) {
                 String groupName = entry.getKey();
@@ -167,66 +172,38 @@ public final class CorrectBarcodesIO {
                         / correctedSequenceCounter.getCount() < threshold))
                     correctValue = correctedSequenceCounter.getSequence();
                 isCorrection |= !correctValue.equals(oldValue);
-                targetPatches.computeIfAbsent(targetId, id -> new ArrayList<>());
-                targetPatches.get(targetId).add(new TargetPatch(groupName, correctValue, matchedGroup.getRange()));
+                correctedGroups.computeIfAbsent(targetId, id -> new ArrayList<>());
+                correctedGroups.get(targetId).add(new CorrectedGroup(groupName, correctValue));
             }
 
             ArrayList<MatchedGroupEdge> newGroupEdges;
             if (!isCorrection)
                 newGroupEdges = parsedRead.getMatchedGroupEdges();
             else {
-                boolean isOverlap = false;
                 newGroupEdges = new ArrayList<>();
-                for (byte targetId : oldTargets.keySet()) {
-                    NSequenceWithQuality newTarget = NSequenceWithQuality.EMPTY;
-                    ArrayList<TargetPatch> currentTargetPatches = targetPatches.get(targetId);
-                    if (currentTargetPatches == null)
+                for (byte targetId : parsedRead.getGroups().stream().map(MatchedItem::getTargetId)
+                        .collect(Collectors.toCollection(LinkedHashSet::new))) {
+                    ArrayList<CorrectedGroup> currentCorrectedGroups = correctedGroups.get(targetId);
+                    if (currentCorrectedGroups == null)
                         parsedRead.getMatchedGroupEdges().stream()
                                 .filter(mge -> mge.getTargetId() == targetId).forEach(newGroupEdges::add);
                     else {
-                        Collections.sort(currentTargetPatches);
-                        NSequenceWithQuality currentOldTarget = oldTargets.get(targetId);
-                        for (int i = 0; i < currentTargetPatches.size(); i++) {
-                            TargetPatch currentPatch = currentTargetPatches.get(i);
-                            if (i > 0)
-                                isOverlap |= currentPatch.trimRange(currentTargetPatches.get(i - 1));
-                            else if (currentPatch.range.getLower() > 0)
-                                newTarget = currentOldTarget.getRange(0, currentPatch.range.getLower());
-                            currentPatch.newLower = newTarget.size();
-                            newTarget = newTarget.concatenate(new NSequenceWithQuality(currentPatch.correctValue));
-                            currentPatch.newUpper = newTarget.size();
-                            int oldTargetPartLower = currentPatch.range.getUpper();
-                            int oldTargetPartUpper = (i < currentTargetPatches.size() - 1)
-                                    ? currentTargetPatches.get(i + 1).range.getLower() : currentOldTarget.size();
-                            if (oldTargetPartLower < oldTargetPartUpper)
-                                newTarget = newTarget.concatenate(currentOldTarget
-                                        .getRange(oldTargetPartLower, oldTargetPartUpper));
-                        }
-
-                        Map<String, TargetPatch> currentTargetPatchesMap = currentTargetPatches.stream()
-                                .collect(Collectors.toMap(tp -> tp.groupName, tp -> tp));
+                        Map<String, CorrectedGroup> currentCorrectedGroupsMap = currentCorrectedGroups.stream()
+                                .collect(Collectors.toMap(cg -> cg.groupName, cg -> cg));
                         for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges().stream()
                                 .filter(mge -> mge.getTargetId() == targetId).collect(Collectors.toList())) {
-                            int matchedGroupEdgePosition;
-                            GroupEdge groupEdge = matchedGroupEdge.getGroupEdge();
-                            TargetPatch currentTargetPatch = currentTargetPatchesMap.get(groupEdge.getGroupName());
-                            if (currentTargetPatch != null) {
-                                matchedGroupEdgePosition = groupEdge.isStart() ? currentTargetPatch.newLower
-                                        : currentTargetPatch.newUpper;
-                                if (matchedGroupEdgePosition == -1)
-                                    throw new IllegalStateException("New group edge position was not calculated!");
-                            } else if (defaultGroups.contains(groupEdge.getGroupName()))
-                                matchedGroupEdgePosition = groupEdge.isStart() ? 0 : newTarget.size();
-                            else
-                                throw new IllegalStateException("Group " + groupEdge.getGroupName() + " with target id "
-                                        + targetId + " is not default and not in target patches!");
-                            newGroupEdges.add(new MatchedGroupEdge(newTarget, matchedGroupEdge.getTargetId(),
-                                    matchedGroupEdge.getGroupEdge(), matchedGroupEdgePosition));
+                            String currentGroupName = matchedGroupEdge.getGroupEdge().getGroupName();
+                            if (!keyGroups.contains(currentGroupName))
+                                newGroupEdges.add(matchedGroupEdge);
+                            else {
+                                CorrectedGroup currentCorrectedGroup = currentCorrectedGroupsMap.get(currentGroupName);
+                                newGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
+                                        matchedGroupEdge.getTargetId(), matchedGroupEdge.getGroupEdge(),
+                                        new NSequenceWithQuality(currentCorrectedGroup.correctedValue)));
+                            }
                         }
                     }
                 }
-                if (isOverlap)
-                    overlaps.getAndIncrement();
                 corrected.getAndIncrement();
             }
 
@@ -239,30 +216,13 @@ public final class CorrectBarcodesIO {
             return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), newMatch, 0);
         }
 
-        private class TargetPatch implements Comparable<TargetPatch> {
+        private class CorrectedGroup {
             final String groupName;
-            final NucleotideSequence correctValue;
-            Range range;
-            int newLower = -1;
-            int newUpper = -1;
+            final NucleotideSequence correctedValue;
 
-            TargetPatch(String groupName, NucleotideSequence correctValue, Range range) {
+            CorrectedGroup(String groupName, NucleotideSequence correctedValue) {
                 this.groupName = groupName;
-                this.correctValue = correctValue;
-                this.range = range;
-            }
-
-            boolean trimRange(TargetPatch other) {
-                if (range.getLower() < other.range.getUpper()) {
-                    range = new Range(other.range.getUpper(), Math.max(range.getUpper(), other.range.getUpper()));
-                    return true;
-                } else
-                    return false;
-            }
-
-            @Override
-            public int compareTo(TargetPatch other) {
-                return Integer.compare(range.getLower(), other.range.getLower());
+                this.correctedValue = correctedValue;
             }
         }
     }

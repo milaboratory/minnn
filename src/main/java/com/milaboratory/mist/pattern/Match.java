@@ -89,17 +89,26 @@ public class Match {
             for (String groupName : groupNames) {
                 start = getMatchedGroupEdge(groupName, true);
                 end = getMatchedGroupEdge(groupName, false);
-                if (start.getPosition() >= end.getPosition())
+                if ((start.getPosition() == -1) ^ (end.getPosition() == -1))
+                    throw new IllegalStateException("Group start and group end can be -1 only simultaneously. Start: "
+                            + start.getPosition() + ", end: " + end.getPosition());
+                else if ((start.getPosition() != -1) && (start.getPosition() >= end.getPosition()))
                     throw new IllegalStateException("Group start must be lower than the end. Start: "
                             + start.getPosition() + ", end: " + end.getPosition());
+                if ((start.getValueOverride() != null) ^ (start.getPosition() == -1))
+                    throw new IllegalStateException("Value override must be set if position is -1 and not set if "
+                            + "position is not -1. Value override: " + start.getValueOverride() + ", position: "
+                            + start.getPosition());
                 if (start.getTargetId() != end.getTargetId())
                     throw new IllegalStateException("Group start has targetId " + start.getTargetId()
                             + ", end has targetId " + end.getTargetId());
-                if (!start.getTarget().equals(end.getTarget()))
-                    throw new IllegalStateException("Group start has target " + start.getTarget()
-                            + ", end has target " + end.getTarget());
-                range = new Range(start.getPosition(), end.getPosition());
-                groups.add(new MatchedGroup(groupName, start.getTarget(), start.getTargetId(), range));
+                if (start.getValueOverride() != null)
+                    groups.add(new MatchedGroup(groupName, start.getTarget(), start.getTargetId(),
+                            start.getValueOverride()));
+                else {
+                    range = new Range(start.getPosition(), end.getPosition());
+                    groups.add(new MatchedGroup(groupName, start.getTarget(), start.getTargetId(), range));
+                }
             }
         }
     }
