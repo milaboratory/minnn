@@ -20,7 +20,8 @@ public final class Main {
                 new SortAction(),
                 new CorrectAction(),
                 new ConsensusAction(),
-                new MifToFastqAction());
+                new MifToFastqAction(),
+                new GenerateDocsAction());
 
         jCommanderBasedMain.setVersionInfoCallback(() -> {
             VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");
