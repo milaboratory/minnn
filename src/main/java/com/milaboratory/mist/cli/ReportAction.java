@@ -19,7 +19,7 @@ import static com.milaboratory.mist.parser.ParserUtils.parseMultiTargetString;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 
 public final class ReportAction implements Action {
-    private final ParseActionParameters params = new ParseActionParameters();
+    private final ReportActionParameters params = new ReportActionParameters();
 
     @Override
     public void go(ActionHelper helper) {
@@ -92,7 +92,7 @@ public final class ReportAction implements Action {
 
     @Parameters(commandDescription =
             "Find match and groups in query and display report on the screen.")
-    private static final class ParseActionParameters extends ActionParameters {
+    private static final class ReportActionParameters extends ActionParameters {
         @Parameter(description = "--pattern <pattern_query> --target <sequence>", order = 0)
         private String description;
 
@@ -137,6 +137,10 @@ public final class ReportAction implements Action {
         @Parameter(description = "Maximal score penalty for bad quality nucleotide in target.",
                 names = {"--max-quality-penalty"}, order = 10)
         int maxQualityPenalty = DEFAULT_MAX_QUALITY_PENALTY;
+
+        @Parameter(description = "Score threshold, matches with score lower than this will not go to output.",
+                names = {"--penalty-threshold"})
+        long penaltyThreshold = DEFAULT_PENALTY_THRESHOLD;
 
         @Parameter(description = "Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value.",
                 names = {"--single-overlap-penalty"}, order = 11)
