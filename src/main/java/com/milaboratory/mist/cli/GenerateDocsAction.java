@@ -12,6 +12,7 @@ public final class GenerateDocsAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         GenerateDocsIO generateDocsIO = new GenerateDocsIO(params.outputFileName);
+        generateDocsIO.go();
     }
 
     @Override
