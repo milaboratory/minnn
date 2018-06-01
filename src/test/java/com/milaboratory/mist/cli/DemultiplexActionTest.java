@@ -39,13 +39,13 @@ public class DemultiplexActionTest {
             createRandomMifFile(startFile);
             exec("extract --input-format mif --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:tnncn)(G2:ncnc)\" --bitap-max-errors 0");
-            exec("demultiplex " + filterOptions + " --threads " + (rg.nextInt(5) + 1)
-                    + " --output-buffer-size " + (rg.nextInt(1 << 17) + 100) + " " + inputFile);
+            exec("demultiplex " + filterOptions + " --output-buffer-size " + (rg.nextInt(1 << 17) + 100)
+                    + " " + inputFile);
             File[] outputFiles = getOutputFiles();
             int previousNumberOfFiles = outputFiles.length;
             Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
-            exec("demultiplex " + filterOptions + " --threads " + (rg.nextInt(5) + 1)
-                    + " --output-buffer-size " + (rg.nextInt(1 << 17) + 100) + " " + inputFile);
+            exec("demultiplex " + filterOptions + " --output-buffer-size " + (rg.nextInt(1 << 17) + 100)
+                    + " " + inputFile);
             outputFiles = getOutputFiles();
             assertEquals(previousNumberOfFiles, outputFiles.length);
             Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);

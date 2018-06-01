@@ -1,12 +1,6 @@
 package com.milaboratory.mist.io;
 
 import cc.redberry.pipe.CUtils;
-import cc.redberry.pipe.OutputPort;
-import cc.redberry.pipe.Processor;
-import cc.redberry.pipe.blocks.Merger;
-import cc.redberry.pipe.blocks.ParallelProcessor;
-import cc.redberry.pipe.util.Chunk;
-import cc.redberry.pipe.util.OrderedOutputPort;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.mist.cli.DemultiplexArgument;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
@@ -24,17 +18,14 @@ import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 public final class DemultiplexIO {
     private final String inputFileName;
     private final List<DemultiplexFilter> demultiplexFilters;
-    private final int threads;
     private final int outputBufferSize;
     private final String prefix;
     private final LinkedHashMap<OutputFileIdentifier, OutputFileIdentifier> outputFileIdentifiers;
     private MifHeader header;
 
-    public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int threads,
-                         int outputBufferSize) {
+    public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int outputBufferSize) {
         this.inputFileName = inputFileName;
         this.demultiplexFilters = demultiplexArguments.stream().map(this::parseFilter).collect(Collectors.toList());
-        this.threads = threads;
         this.outputBufferSize = outputBufferSize;
         this.prefix = ((inputFileName.length() > 4)
                 && inputFileName.substring(inputFileName.length() - 4).equals(".mif"))
@@ -49,16 +40,11 @@ public final class DemultiplexIO {
         try (MifReader reader = new MifReader(inputFileName)) {
             header = reader.getHeader();
             SmartProgressReporter.startProgressReport("Demultiplexing reads", reader, System.err);
-            Merger<Chunk<ParsedRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(
-                    new NumberedParsedReadsPort(reader), 4 * 64), 4 * 16);
-            OutputPort<Chunk<ProcessorOutput>> processorOutputPort = new ParallelProcessor<>(bufferedReaderPort,
-                    CUtils.chunked(new DemultiplexProcessor()), threads);
-            OrderedOutputPort<ProcessorOutput> orderedPort = new OrderedOutputPort<>(
-                    CUtils.unchunked(processorOutputPort), output -> output.parsedRead.getOriginalRead().getId());
-            for (ProcessorOutput processorOutput : CUtils.it(orderedPort)) {
+            for (ParsedRead parsedRead : CUtils.it(reader)) {
+                DemultiplexResult demultiplexResult = demultiplex(parsedRead);
                 totalReads++;
-                if (processorOutput.mifWriter != null) {
-                    processorOutput.mifWriter.write(processorOutput.parsedRead);
+                if (demultiplexResult.mifWriter != null) {
+                    demultiplexResult.mifWriter.write(demultiplexResult.parsedRead);
                     matchedReads++;
                 }
             }
@@ -77,6 +63,27 @@ public final class DemultiplexIO {
             return new BarcodeFilter(demultiplexArgument);
         else
             return new SampleFilter(demultiplexArgument);
+    }
+
+    private MifWriter getMifWriter(OutputFileIdentifier outputFileIdentifier) {
+        if (outputFileIdentifiers.containsKey(outputFileIdentifier))
+            return outputFileIdentifiers.get(outputFileIdentifier).getWriter();
+        else {
+            outputFileIdentifiers.put(outputFileIdentifier, outputFileIdentifier);
+            return outputFileIdentifier.getWriter();
+        }
+    }
+
+    private DemultiplexResult demultiplex(ParsedRead parsedRead) {
+        List<DemultiplexParameterValue> parameterValues = new ArrayList<>();
+        for (DemultiplexFilter demultiplexFilter : demultiplexFilters) {
+            DemultiplexParameterValue parameterValue = demultiplexFilter.filter(parsedRead);
+            if (parameterValue == null)
+                return new DemultiplexResult(parsedRead, null);
+            else
+                parameterValues.add(parameterValue);
+        }
+        return new DemultiplexResult(parsedRead, getMifWriter(new OutputFileIdentifier(parameterValues)));
     }
 
     private interface DemultiplexFilter {
@@ -290,38 +297,13 @@ public final class DemultiplexIO {
         }
     }
 
-    private class ProcessorOutput {
+    private class DemultiplexResult {
         final ParsedRead parsedRead;
         final MifWriter mifWriter;
 
-        ProcessorOutput(ParsedRead parsedRead, MifWriter mifWriter) {
+        DemultiplexResult(ParsedRead parsedRead, MifWriter mifWriter) {
             this.parsedRead = parsedRead;
             this.mifWriter = mifWriter;
-        }
-    }
-
-    private class DemultiplexProcessor implements Processor<ParsedRead, ProcessorOutput> {
-        @Override
-        public ProcessorOutput process(ParsedRead parsedRead) {
-            List<DemultiplexParameterValue> parameterValues = new ArrayList<>();
-            for (DemultiplexFilter demultiplexFilter : demultiplexFilters) {
-                DemultiplexParameterValue parameterValue = demultiplexFilter.filter(parsedRead);
-                if (parameterValue == null)
-                    return new ProcessorOutput(parsedRead, null);
-                else
-                    parameterValues.add(parameterValue);
-            }
-
-            return new ProcessorOutput(parsedRead, getMifWriter(new OutputFileIdentifier(parameterValues)));
-        }
-    }
-
-    private synchronized MifWriter getMifWriter(OutputFileIdentifier outputFileIdentifier) {
-        if (outputFileIdentifiers.containsKey(outputFileIdentifier))
-            return outputFileIdentifiers.get(outputFileIdentifier).getWriter();
-        else {
-            outputFileIdentifiers.put(outputFileIdentifier, outputFileIdentifier);
-            return outputFileIdentifier.getWriter();
         }
     }
 }
