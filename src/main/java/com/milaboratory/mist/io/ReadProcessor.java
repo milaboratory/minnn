@@ -132,7 +132,7 @@ public final class ReadProcessor {
     }
 
     private MifWriter createWriter() throws IOException {
-        MifHeader mifHeader = new MifHeader(numberOfReads, false, false, pattern.getGroupEdges());
+        MifHeader mifHeader = new MifHeader(numberOfReads, new ArrayList<>(), false, pattern.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
                 : new MifWriter(outputFileName, mifHeader);
     }

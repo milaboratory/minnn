@@ -99,8 +99,16 @@ public final class ConsensusIO {
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
             SmartProgressReporter.startProgressReport("Calculating consensuses", reader, System.err);
-            if (!reader.isCorrected())
-                System.err.println("WARNING: calculating consensus for not corrected MIF file!");
+            if (groupSet == null) {
+                if (reader.getCorrectedGroups().size() == 0)
+                    System.err.println("WARNING: calculating consensus for not corrected MIF file!");
+            } else {
+                List<String> notCorrectedGroups = groupSet.stream().filter(gn -> reader.getCorrectedGroups().stream()
+                        .noneMatch(gn::equals)).collect(Collectors.toList());
+                if (notCorrectedGroups.size() != 0)
+                    System.err.println("WARNING: group(s) " + notCorrectedGroups + " not corrected, but used in " +
+                            "consensus calculation!");
+            }
             if (!reader.isSorted())
                 System.err.println("WARNING: calculating consensus for not sorted MIF file; result will be wrong!");
             numberOfTargets = reader.getNumberOfReads();

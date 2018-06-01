@@ -13,7 +13,6 @@ import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.SequenceTreeMap;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
-import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.mist.pattern.Match;
 import com.milaboratory.mist.pattern.MatchedGroupEdge;
 import com.milaboratory.mist.pattern.MatchedItem;
@@ -63,21 +62,18 @@ public final class CorrectBarcodesIO {
              MifReader pass2Reader = new MifReader(inputFileName);
              MifWriter writer = createWriter(pass1Reader.getHeader())) {
             SmartProgressReporter.startProgressReport("Counting sequences", pass1Reader, System.err);
-            if (pass1Reader.isSorted())
-                System.err.println("WARNING: correcting sorted MIF file; output file will be unsorted!");
-            if (pass1Reader.isCorrected())
-                System.err.println("WARNING: correcting already corrected MIF file!");
             defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfReads())
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
-            if (groupNames == null)
-                keyGroups = pass1Reader.getGroupEdges().stream().filter(GroupEdge::isStart)
-                        .map(GroupEdge::getGroupName).filter(groupName -> !defaultGroups.contains(groupName))
-                        .collect(Collectors.toSet());
-            else {
-                if (groupNames.stream().anyMatch(defaultGroups::contains))
-                    throw exitWithError("Default groups R1, R2, etc should not be specified for correction!");
-                keyGroups = new LinkedHashSet<>(groupNames);
-            }
+            if (groupNames.stream().anyMatch(defaultGroups::contains))
+                throw exitWithError("Default groups R1, R2, etc should not be specified for correction!");
+            keyGroups = new LinkedHashSet<>(groupNames);
+            if (pass1Reader.isSorted())
+                System.err.println("WARNING: correcting sorted MIF file; output file will be unsorted!");
+            List<String> correctedAgainGroups = keyGroups.stream().filter(gn -> pass1Reader.getCorrectedGroups()
+                    .stream().anyMatch(gn::equals)).collect(Collectors.toList());
+            if (correctedAgainGroups.size() != 0)
+                System.err.println("WARNING: group(s) " + correctedAgainGroups + " already corrected and will be " +
+                        "corrected again!");
             sequenceTreeMaps = keyGroups.stream().collect(Collectors.toMap(groupName -> groupName,
                     groupName -> new SequenceTreeMap<>(NucleotideSequence.ALPHABET)));
             numberOfReads = pass1Reader.getNumberOfReads();
@@ -114,8 +110,10 @@ public final class CorrectBarcodesIO {
     }
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
-        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfReads(), true, false,
-                inputHeader.getGroupEdges());
+        LinkedHashSet<String> allCorrectedGroups = new LinkedHashSet<>(inputHeader.getCorrectedGroups());
+        allCorrectedGroups.addAll(groupNames);
+        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfReads(), new ArrayList<>(allCorrectedGroups),
+                false, inputHeader.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
                 : new MifWriter(outputFileName, outputHeader);
     }

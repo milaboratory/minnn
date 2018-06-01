@@ -33,7 +33,9 @@ public final class MifWriter implements AutoCloseable, CanReportProgress {
 
     private void writeHeader(MifHeader mifHeader) {
         output.writeInt(mifHeader.getNumberOfReads());
-        output.writeBoolean(mifHeader.isCorrected());
+        output.writeInt(mifHeader.getCorrectedGroups().size());
+        for (String correctedGroup : mifHeader.getCorrectedGroups())
+            output.writeObject(correctedGroup);
         output.writeBoolean(mifHeader.isSorted());
         output.writeInt(mifHeader.getGroupEdges().size());
         for (GroupEdge groupEdge : mifHeader.getGroupEdges()) {

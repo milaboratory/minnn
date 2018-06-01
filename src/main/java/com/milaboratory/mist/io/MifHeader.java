@@ -6,13 +6,14 @@ import java.util.ArrayList;
 
 public class MifHeader {
     private final int numberOfReads;
-    private final boolean corrected;
+    private final ArrayList<String> correctedGroups;
     private final boolean sorted;
     private final ArrayList<GroupEdge> groupEdges;
 
-    public MifHeader(int numberOfReads, boolean corrected, boolean sorted, ArrayList<GroupEdge> groupEdges) {
+    public MifHeader(int numberOfReads, ArrayList<String> correctedGroups, boolean sorted,
+                     ArrayList<GroupEdge> groupEdges) {
         this.numberOfReads = numberOfReads;
-        this.corrected = corrected;
+        this.correctedGroups = correctedGroups;
         this.sorted = sorted;
         this.groupEdges = groupEdges;
     }
@@ -21,8 +22,8 @@ public class MifHeader {
         return numberOfReads;
     }
 
-    public boolean isCorrected() {
-        return corrected;
+    public ArrayList<String> getCorrectedGroups() {
+        return correctedGroups;
     }
 
     public boolean isSorted() {

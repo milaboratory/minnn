@@ -40,7 +40,7 @@ public class ConsensusActionTest {
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
             exec("correct --threads " + (rg.nextInt(10) + 1) + " --max-mismatches " + rg.nextInt(4)
                     + " --max-indels " + rg.nextInt(4) + " --max-total-errors " + rg.nextInt(5)
-                    + " --input " + inputFile + " --output " + correctedFile);
+                    + " --input " + inputFile + " --output " + correctedFile + " --groups " + consensusGroups);
             exec("sort --input " + correctedFile + " --output " + sortedFile + " --groups " + consensusGroups);
             exec("consensus --input " + sortedFile + " --output " + outputFile1 + " --groups " + consensusGroups
                     + " --threads " + (rg.nextInt(10) + 1) + " --score-threshold " + (rg.nextInt(2000) - 1000)
@@ -79,7 +79,7 @@ public class ConsensusActionTest {
         String consensusFile = TEMP_DIR + "consensus.mif";
         String consensusFile2 = TEMP_DIR + "consensus2.mif";
         String consensusFile3 = TEMP_DIR + "consensus3.mif";
-        exec("correct --input " + inputFile + " --output " + correctedFile);
+        exec("correct --input " + inputFile + " --output " + correctedFile + " --groups G3 G4 G1 G2");
         exec("sort --input " + correctedFile + " --output " + sortedFile + " --groups G3 G4 G1 G2 R1 R2");
         exec("consensus --input " + sortedFile + " --output " + consensusFile + " --groups G3 G4 G1"
                 + " --threads 5 --score-threshold -1200 --width 30 --max-consensuses-per-cluster 5"

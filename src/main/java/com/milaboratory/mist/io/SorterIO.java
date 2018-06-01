@@ -13,6 +13,7 @@ import com.milaboratory.util.TempFileManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.milaboratory.mist.cli.Defaults.DEFAULT_SORT_CHUNK_SIZE;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
@@ -39,8 +40,10 @@ public final class SorterIO {
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
             SmartProgressReporter.startProgressReport("Reading", reader, System.err);
-            if (!reader.isCorrected())
-                System.err.println("WARNING: sorting not corrected MIF file!");
+            List<String> notCorrectedGroups = sortGroupNames.stream().filter(gn -> reader.getCorrectedGroups().stream()
+                    .noneMatch(gn::equals)).collect(Collectors.toList());
+            if (notCorrectedGroups.size() != 0)
+                System.err.println("WARNING: group(s) " + notCorrectedGroups + " not corrected before sorting!");
             OutputPortCloseable<ParsedRead> sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
                     new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);
             SmartProgressReporter.startProgressReport("Writing", writer, System.err);
@@ -64,8 +67,8 @@ public final class SorterIO {
     }
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
-        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfReads(), inputHeader.isCorrected(), true,
-                inputHeader.getGroupEdges());
+        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfReads(), inputHeader.getCorrectedGroups(),
+                true, inputHeader.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
                 : new MifWriter(outputFileName, outputHeader);
     }

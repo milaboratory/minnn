@@ -1,7 +1,6 @@
 package com.milaboratory.mist.cli;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
+import com.beust.jcommander.*;
 import com.milaboratory.cli.Action;
 import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
@@ -38,12 +37,16 @@ public final class CorrectAction implements Action {
         @Parameter(description = "--input <input_mif_file>")
         private String description;
 
+        @Parameter(description = "Group names for correction.",
+                names = {"--groups"}, order = 0, required = true, variableArity = true)
+        List<String> groupNames = null;
+
         @Parameter(description = "Input file in \"mif\" format. This argument is required; stdin is not supported.",
-                names = {"--input"}, order = 0, required = true)
+                names = {"--input"}, order = 1, required = true)
         String inputFileName = null;
 
         @Parameter(description = "Output file in \"mif\" format. If not specified, stdout will be used.",
-                names = {"--output"}, order = 1)
+                names = {"--output"}, order = 2)
         String outputFileName = null;
 
         @Parameter(description = "Maximum number of mismatches between barcodes for which they are considered " +
@@ -62,10 +65,6 @@ public final class CorrectAction implements Action {
                 "is below this threshold, UMI will be merged to the cluster.",
                 names = {"--cluster-threshold"})
         float threshold = DEFAULT_CORRECT_CLUSTER_THRESHOLD;
-
-        @Parameter(description = "Group names for correction. If not specified, all capture groups will be used.",
-                names = {"--groups"}, variableArity = true)
-        List<String> groupNames = null;
 
         @Parameter(description = "Number of threads for correcting barcodes.",
                 names = {"--threads"})
