@@ -651,7 +651,7 @@ public final class ConsensusIO {
                     for (String groupName : currentLeftBarcodeEdges)
                         barcodePositions.add(new BarcodePosition(groupName, true,
                                 currentCoordinateForBarcodes));
-                    currentCoordinateForBarcodes += lettersMatrix.getRowLength();
+                    currentCoordinateForBarcodes += Math.max(1, lettersMatrix.getRowLength());
                     for (String groupName : currentRightBarcodeEdges) {
                         /* currentCoordinateForBarcodes - 1 because currentRightBarcodeEdges are inclusive
                            and currentCoordinateForBarcodes is exclusive after adding row length */
