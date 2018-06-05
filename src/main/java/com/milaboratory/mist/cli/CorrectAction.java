@@ -66,6 +66,11 @@ public final class CorrectAction implements Action {
                 names = {"--cluster-threshold"})
         float threshold = DEFAULT_CORRECT_CLUSTER_THRESHOLD;
 
+        @Parameter(description = "Threshold for UMI clustering: if smaller UMI count divided to larger UMI count " +
+                "is below this threshold, UMI will be merged to the cluster.",
+                names = {"--cluster-threshold"})
+        int clusterDepth = DEFAULT_CORRECT_CLUSTER_DEPTH;
+
         @Parameter(description = "Number of threads for correcting barcodes.",
                 names = {"--threads"})
         int threads = DEFAULT_THREADS;

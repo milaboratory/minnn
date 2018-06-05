@@ -5,7 +5,6 @@ import cc.redberry.pipe.OutputPort;
 import cc.redberry.pipe.Processor;
 import cc.redberry.pipe.blocks.ParallelProcessor;
 import cc.redberry.pipe.util.OrderedOutputPort;
-import com.milaboratory.core.Range;
 import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
 import com.milaboratory.core.io.sequence.*;
@@ -191,21 +190,16 @@ public final class ConsensusIO {
 
     private class Barcode {
         final String groupName;
-        final int from;
-        final int to;
-        final NSequenceWithQuality valueOverride;
+        final NSequenceWithQuality value;
 
-        Barcode(String groupName, int from, int to, NSequenceWithQuality valueOverride) {
+        Barcode(String groupName, NSequenceWithQuality value) {
             this.groupName = groupName;
-            this.from = from;
-            this.to = to;
-            this.valueOverride = valueOverride;
+            this.value = value;
         }
 
         @Override
         public String toString() {
-            return "Barcode{" + "groupName='" + groupName + '\'' + ", from=" + from + ", to=" + to
-                    + ", valueOverride=" + valueOverride + '}';
+            return "Barcode{" + "groupName='" + groupName + '\'' + ", value=" + value + '}';
         }
     }
 
@@ -239,13 +233,9 @@ public final class ConsensusIO {
             barcodes = IntStream.range(0, numberOfTargets).mapToObj(i -> new TargetBarcodes(new ArrayList<>()))
                     .toArray(TargetBarcodes[]::new);
             parsedReadGroups.stream().filter(g -> groupSet.contains(g.getGroupName())).forEachOrdered(group -> {
-                Range groupRange = group.getRange();
                 int targetIndex = group.getTargetId() - 1;
                 ArrayList<Barcode> currentTargetList = barcodes[targetIndex].targetBarcodes;
-                currentTargetList.add(new Barcode(group.getGroupName(),
-                        (groupRange == null) ? -1 : groupRange.getFrom(),
-                        (groupRange == null) ? -1 : groupRange.getTo(),
-                        (groupRange == null) ? group.getValue() : null));
+                currentTargetList.add(new Barcode(group.getGroupName(), group.getValue()));
             });
         }
 
@@ -263,14 +253,6 @@ public final class ConsensusIO {
         Consensus(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum) {
             this.sequences = sequences;
             this.barcodes = barcodes;
-            for (int i = 0; i < numberOfTargets; i++) {
-                NSequenceWithQuality sequence = sequences[i];
-                ArrayList<Barcode> targetBarcodes = barcodes[i].targetBarcodes;
-                if (targetBarcodes.stream()
-                        .anyMatch(barcode -> (barcode.from >= sequence.size()) || (barcode.to > sequence.size())))
-                    throw new IllegalStateException("Consensus barcode is out of bounds! Sequences: "
-                            + Arrays.toString(sequences) + ", barcodes: " + Arrays.toString(barcodes));
-            }
             this.consensusReadsNum = consensusReadsNum;
         }
 
@@ -286,18 +268,12 @@ public final class ConsensusIO {
                         new GroupEdge("R" + targetId, true), 0));
                 matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
                         new GroupEdge("R" + targetId, false), currentSequence.size()));
-                for (Barcode barcode : targetBarcodes.targetBarcodes)
-                    if (barcode.valueOverride == null) {
-                        matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
-                                new GroupEdge(barcode.groupName, true), barcode.from));
-                        matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
-                                new GroupEdge(barcode.groupName, false), barcode.to));
-                    } else {
-                        matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
-                                new GroupEdge(barcode.groupName, true), barcode.valueOverride));
-                        matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
-                                new GroupEdge(barcode.groupName, false), null));
-                    }
+                for (Barcode barcode : targetBarcodes.targetBarcodes) {
+                    matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
+                            new GroupEdge(barcode.groupName, true), barcode.value));
+                    matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
+                            new GroupEdge(barcode.groupName, false), null));
+                }
             }
             if (numberOfTargets == 1)
                 originalRead = reads[0];
@@ -449,28 +425,14 @@ public final class ConsensusIO {
                 for (int i = 0; i < numberOfTargets; i++) {
                     NSequenceWithQuality sequence = sequences[i];
                     TargetBarcodes targetBarcodes = barcodes[i];
-                    int leftBarcodeBorder = -1;
-                    int rightBarcodeBorder = -1;
-                    for (Barcode barcode : targetBarcodes.targetBarcodes)
-                        if ((leftBarcodeBorder == -1) && (rightBarcodeBorder == -1)) {
-                            leftBarcodeBorder = barcode.from;
-                            rightBarcodeBorder = barcode.to;
-                        } else {
-                            leftBarcodeBorder = Math.min(leftBarcodeBorder, barcode.from);
-                            rightBarcodeBorder = Math.max(rightBarcodeBorder, barcode.to);
-                        }
                     int trimResultLeft = trim(sequence.getQuality(), 0, sequence.size(), 1,
                             true, readsAvgQualityThreshold, readsTrimWindowSize);
-                    trimResultLeft = (leftBarcodeBorder == -1) ? trimResultLeft
-                            : Math.min(trimResultLeft, leftBarcodeBorder - 1);
                     if (trimResultLeft < -1) {
                         allSequencesAreGood = false;
                         break;
                     }
                     int trimResultRight = trim(sequence.getQuality(), 0, sequence.size(), -1,
                             true, readsAvgQualityThreshold, readsTrimWindowSize);
-                    trimResultRight = (rightBarcodeBorder == -1) ? trimResultRight
-                            : Math.max(trimResultRight, rightBarcodeBorder);
                     if (trimResultRight < 0)
                         throw new IllegalStateException("Unexpected negative trimming result");
                     else if (trimResultRight - trimResultLeft - 1 < readsMinGoodSeqLength) {
@@ -478,17 +440,7 @@ public final class ConsensusIO {
                         break;
                     } else {
                         processedSequences[i] = getSubSequence(sequence, trimResultLeft + 1, trimResultRight);
-                        int barcodesMovement = -(trimResultLeft + 1);
-                        if (barcodesMovement == 0)
-                            processedBarcodes[i].targetBarcodes.addAll(targetBarcodes.targetBarcodes);
-                        else
-                            for (Barcode barcode : targetBarcodes.targetBarcodes)
-                                if (barcode.valueOverride != null)
-                                    processedBarcodes[i].targetBarcodes.add(barcode);
-                                else
-                                    processedBarcodes[i].targetBarcodes.add(new Barcode(barcode.groupName,
-                                            barcode.from + barcodesMovement, barcode.to + barcodesMovement,
-                                            null));
+                        processedBarcodes[i].targetBarcodes.addAll(targetBarcodes.targetBarcodes);
                     }
                 }
 
@@ -597,23 +549,10 @@ public final class ConsensusIO {
             TargetBarcodes[] consensusBarcodes = IntStream.range(0, numberOfTargets)
                     .mapToObj(i -> new TargetBarcodes(new ArrayList<>())).toArray(TargetBarcodes[]::new);
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
+                consensusBarcodes[targetIndex].targetBarcodes.addAll(barcodes[targetIndex].targetBarcodes);
                 List<ArrayList<NSequenceWithQuality>> lettersMatrixList = IntStream.range(0, consensusReadsNum)
                         .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());
-                ArrayList<Barcode> bestSequencesTargetBarcodes = barcodes[targetIndex].targetBarcodes;
-                // consensusTargetBarcodes will be filled when consensus barcodes coordinates are calculated
-                ArrayList<Barcode> consensusTargetBarcodes = consensusBarcodes[targetIndex].targetBarcodes;
-                ArrayList<BarcodePosition> barcodePositions = new ArrayList<>();
-                int currentCoordinateForBarcodes = 0;
                 for (int position = 0; position < bestSequences[targetIndex].size(); position++) {
-                    ArrayList<String> currentLeftBarcodeEdges = new ArrayList<>();
-                    ArrayList<String> currentRightBarcodeEdges = new ArrayList<>();
-                    // barcodes with value override will not be included in barcodeEdges and barcodePositions
-                    for (Barcode barcode : bestSequencesTargetBarcodes) {
-                        if (barcode.from == position)
-                            currentLeftBarcodeEdges.add(barcode.groupName);
-                        if (barcode.to == position)
-                            currentRightBarcodeEdges.add(barcode.groupName);
-                    }
                     ArrayList<NSequenceWithQuality> currentPositionSequences = new ArrayList<>();
                     int bestQualityIndex = -1;
                     byte bestQuality = -1;
@@ -654,25 +593,7 @@ public final class ConsensusIO {
                         for (int letterIndex = 0; letterIndex < lettersMatrix.getRowLength(); letterIndex++)
                             currentLettersRow.add(lettersMatrix.getLetterByCoordinate(sequenceIndex, letterIndex));
                     }
-
-                    // calculating initial barcode positions, before deletions and trimming
-                    for (String groupName : currentLeftBarcodeEdges)
-                        barcodePositions.add(new BarcodePosition(groupName, true,
-                                currentCoordinateForBarcodes));
-                    currentCoordinateForBarcodes += Math.max(1, lettersMatrix.getRowLength());
-                    for (String groupName : currentRightBarcodeEdges) {
-                        /* currentCoordinateForBarcodes - 1 because currentRightBarcodeEdges are inclusive
-                           and currentCoordinateForBarcodes is exclusive after adding row length */
-                        barcodePositions.add(new BarcodePosition(groupName, false,
-                                currentCoordinateForBarcodes - 1));
-                    }
                 }
-
-                // calculating position for barcodes at the end of sequence
-                int fullRowLength = lettersMatrixList.get(0).size();
-                for (Barcode barcode : bestSequencesTargetBarcodes)
-                    if (barcode.to == bestSequences[targetIndex].size())
-                        barcodePositions.add(new BarcodePosition(barcode.groupName, false, fullRowLength));
 
                 // moving letters from lists to LettersWithPositions objects
                 for (int sequenceIndex = 0; sequenceIndex < consensusReadsNum; sequenceIndex++) {
@@ -681,10 +602,9 @@ public final class ConsensusIO {
                     currentLettersWithPositions.set(targetIndex, currentLettersRow);
                 }
 
-                /* descending order is important for barcodes movements on deletions in consensus;
-                   consensusLetters list will be filled in reversed order */
                 ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
-                for (int position = fullRowLength - 1; position >= 0; position--) {
+                int fullRowLength = lettersMatrixList.get(0).size();
+                for (int position = 0; position < fullRowLength; position++) {
                     // calculating quality sums for letters and deletions
                     HashMap<NucleotideSequence, Long> currentPositionQualitySums = new HashMap<>();
                     for (LettersWithPositions currentLettersWithPositions : lettersList) {
@@ -720,86 +640,29 @@ public final class ConsensusIO {
                                 : Math.min((long)(-10 * Math.log10(p)), bestSum);
                         consensusLetters.add(new NSequenceWithQuality(consensusLetter,
                                 qualityCache.get((byte)Math.min(MAX_QUALITY_VALUE, phredQuality))));
-                    } else {
-                        // deletion in consensus: move left all barcode positions on the right
-                        for (BarcodePosition barcodePosition : barcodePositions)
-                            if (barcodePosition.position > position)
-                                barcodePosition.position--;
                     }
                 }
 
                 // consensus sequence assembling and quality trimming
                 NSequenceWithQuality consensusSequence = NSequenceWithQuality.EMPTY;
-                for (int i = consensusLetters.size() - 1; i >= 0; i--)
-                    consensusSequence = consensusSequence.concatenate(consensusLetters.get(i));
+                for (NSequenceWithQuality consensusLetter : consensusLetters)
+                    consensusSequence = consensusSequence.concatenate(consensusLetter);
 
-                int leftBarcodeBorder = -1;
-                int rightBarcodeBorder = -1;
-                for (BarcodePosition barcodePosition : barcodePositions)
-                    if (barcodePosition.isStart) {
-                        leftBarcodeBorder = (leftBarcodeBorder == -1) ? barcodePosition.position
-                                : Math.min(leftBarcodeBorder, barcodePosition.position);
-                    } else {
-                        rightBarcodeBorder = (rightBarcodeBorder == -1) ? barcodePosition.position
-                                : Math.max(rightBarcodeBorder, barcodePosition.position);
-                    }
-                if ((leftBarcodeBorder == -1) ^ (rightBarcodeBorder == -1))
-                    throw new IllegalStateException("Barcode position has no pair! Barcode positions: "
-                            + barcodePositions);
                 int trimResultLeft = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
                         1, true, avgQualityThreshold, trimWindowSize);
-                trimResultLeft = (leftBarcodeBorder == -1) ? trimResultLeft
-                        : Math.min(trimResultLeft, leftBarcodeBorder - 1);
                 if (trimResultLeft < -1)
                     return null;
-                // move barcode positions when trimming consensus
-                int barcodesMovement = -(trimResultLeft + 1);
-                if (barcodesMovement != 0)
-                    for (BarcodePosition barcodePosition : barcodePositions)
-                        barcodePosition.position += barcodesMovement;
                 int trimResultRight = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
                         -1, true, avgQualityThreshold, trimWindowSize);
-                trimResultRight = (rightBarcodeBorder == -1) ? trimResultRight
-                        : Math.max(trimResultRight, rightBarcodeBorder);
                 if (trimResultRight < 0)
                     throw new IllegalStateException("Unexpected negative trimming result");
                 else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength)
                     return null;
                 consensusSequence = getSubSequence(consensusSequence, trimResultLeft + 1, trimResultRight);
                 sequences[targetIndex] = consensusSequence;
-
-                // assembling consensus target barcodes
-                for (String groupName : barcodePositions.stream().map(bp -> bp.groupName).collect(Collectors.toSet())) {
-                    int from = barcodePositions.stream().filter(bp -> (bp.isStart && bp.groupName.equals(groupName)))
-                            .findFirst().orElseThrow(IllegalStateException::new).position;
-                    int to = barcodePositions.stream().filter(bp -> (!bp.isStart && bp.groupName.equals(groupName)))
-                            .findFirst().orElseThrow(IllegalStateException::new).position;
-                    consensusTargetBarcodes.add(new Barcode(groupName, from, to, null));
-                }
-                bestSequencesTargetBarcodes.stream().filter(b -> b.valueOverride != null)
-                        .forEach(consensusTargetBarcodes::add);
             }
 
             return new Consensus(sequences, consensusBarcodes, consensusReadsNum);
-        }
-
-        private class BarcodePosition {
-            final String groupName;
-            final boolean isStart;
-            // positions are mutable: they will be recalculated on consensus deletions and consensus trimming
-            int position;
-
-            BarcodePosition(String groupName, boolean isStart, int position) {
-                this.groupName = groupName;
-                this.isStart = isStart;
-                this.position = position;
-            }
-
-            @Override
-            public String toString() {
-                return "BarcodePosition{" + "groupName='" + groupName + '\'' + ", isStart=" + isStart
-                        + ", position=" + position + '}';
-            }
         }
 
         private class AlignedSubsequences {

@@ -7,10 +7,13 @@ import cc.redberry.pipe.blocks.Merger;
 import cc.redberry.pipe.blocks.ParallelProcessor;
 import cc.redberry.pipe.util.Chunk;
 import cc.redberry.pipe.util.OrderedOutputPort;
+import com.milaboratory.core.clustering.Cluster;
+import com.milaboratory.core.clustering.ClusteringStrategy;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.SequenceTreeMap;
+import com.milaboratory.core.tree.TreeSearchParameters;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.Match;
@@ -38,8 +41,8 @@ public final class CorrectBarcodesIO {
     private final List<String> groupNames;
     private final int threads;
     private Set<String> defaultGroups;
-    private Set<String> keyGroups;
-    private Map<String, SequenceTreeMap<NucleotideSequence, SequenceCounter>> sequenceTreeMaps;
+    private LinkedHashSet<String> keyGroups;
+    private Map<String, TreeMap<NucleotideSequence, SequenceCounter>> sortedSequenceMaps;
     private int numberOfReads;
     private AtomicLong corrected = new AtomicLong(0);
 
@@ -74,19 +77,29 @@ public final class CorrectBarcodesIO {
             if (correctedAgainGroups.size() != 0)
                 System.err.println("WARNING: group(s) " + correctedAgainGroups + " already corrected and will be " +
                         "corrected again!");
-            sequenceTreeMaps = keyGroups.stream().collect(Collectors.toMap(groupName -> groupName,
-                    groupName -> new SequenceTreeMap<>(NucleotideSequence.ALPHABET)));
+            Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()
+                    .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
             numberOfReads = pass1Reader.getNumberOfReads();
             for (ParsedRead parsedRead : CUtils.it(pass1Reader))
-                for (Map.Entry<String, SequenceTreeMap<NucleotideSequence, SequenceCounter>> entry
-                        : sequenceTreeMaps.entrySet()) {
+                for (Map.Entry<String, HashMap<NucleotideSequence, SequenceCounter>> entry : sequenceMaps.entrySet()) {
                     NucleotideSequence groupValue = parsedRead.getGroupValue(entry.getKey()).getSequence();
                     SequenceCounter counter = entry.getValue().get(groupValue);
                     if (counter == null)
-                        entry.getValue().put(groupValue, new SequenceCounter(groupValue));
+                        entry.getValue().put(groupValue, new SequenceCounter());
                     else
-                        counter.increaseCount();
+                        counter.count++;
                 }
+
+            // sorting nucleotide sequences by count in each group
+            sortedSequenceMaps = new HashMap<>();
+            for (Map.Entry<String, HashMap<NucleotideSequence, SequenceCounter>> entry : sequenceMaps.entrySet()) {
+                SequenceCountComparator comparator = new SequenceCountComparator(entry.getValue());
+                TreeMap<NucleotideSequence, SequenceCounter> sortedMap = new TreeMap<>(comparator);
+                sortedMap.putAll(entry.getValue());
+                sortedSequenceMaps.put(entry.getKey(), sortedMap);
+            }
+
+
 
             SmartProgressReporter.startProgressReport("Correcting barcodes", pass2Reader, System.err);
             Merger<Chunk<ParsedRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(
@@ -118,30 +131,48 @@ public final class CorrectBarcodesIO {
                 : new MifWriter(outputFileName, outputHeader);
     }
 
-    private static class SequenceCounter implements Comparable<SequenceCounter> {
-        private final NucleotideSequence sequence;
-        private long count;
+    private static class SequenceCounter {
+        long count;
 
-        SequenceCounter(NucleotideSequence sequence) {
-            this.sequence = sequence;
+        SequenceCounter() {
             count = 1;
         }
+    }
 
-        NucleotideSequence getSequence() {
-            return sequence;
+    private class SequenceCountComparator implements Comparator<NucleotideSequence> {
+        private final Map<NucleotideSequence, SequenceCounter> unsortedSequenceMap;
+
+        SequenceCountComparator(Map<NucleotideSequence, SequenceCounter> unsortedSequenceMap) {
+            this.unsortedSequenceMap = unsortedSequenceMap;
         }
 
-        long getCount() {
-            return count;
+        // long comparator is reversed to start from bigger counts
+        @Override
+        public int compare(NucleotideSequence seq1, NucleotideSequence seq2) {
+            return -Long.compare(unsortedSequenceMap.get(seq1).count, unsortedSequenceMap.get(seq2).count);
         }
+    }
 
-        void increaseCount() {
-            count++;
+    private class BarcodeClusteringStrategy implements ClusteringStrategy<SequenceCounter, NucleotideSequence> {
+        @Override
+        public boolean canAddToCluster(Cluster<SequenceCounter> cluster, SequenceCounter minorObject,
+                                       NeighborhoodIterator<NucleotideSequence, SequenceCounter[]> iterator) {
+            return false;
         }
 
         @Override
-        public int compareTo(SequenceCounter other) {
-            return Long.compare(count, other.getCount());
+        public TreeSearchParameters getSearchParameters() {
+            return null;
+        }
+
+        @Override
+        public int getMaxClusterDepth() {
+            return 0;
+        }
+
+        @Override
+        public int compare(SequenceCounter c1, SequenceCounter c2) {
+            return -Long.compare(c1.count, c2.count);
         }
     }
 

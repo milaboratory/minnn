@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import static java.lang.Double.NaN;
 
 public final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgress {
-    private static final int DEFAULT_BUFFER_SIZE = 1048576;
+    private static final int DEFAULT_BUFFER_SIZE = 1 << 20;
     private final PrimitivI input;
     private final CountingInputStream countingInputStream;
     private final long size;

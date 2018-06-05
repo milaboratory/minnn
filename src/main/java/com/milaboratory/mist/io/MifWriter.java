@@ -10,7 +10,7 @@ import java.io.*;
 import static java.lang.Double.NaN;
 
 public final class MifWriter implements AutoCloseable, CanReportProgress {
-    private static final int DEFAULT_BUFFER_SIZE = 1 << 22;
+    private static final int DEFAULT_BUFFER_SIZE = 1 << 20;
     private final PrimitivO output;
     private boolean finished = false;
     private long estimatedNumberOfReads = -1;
