@@ -17,7 +17,7 @@ public final class CorrectAction implements Action {
     public void go(ActionHelper helper) {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(params.inputFileName, params.outputFileName,
                 params.mismatches, params.indels, params.totalErrors, params.threshold, params.groupNames,
-                params.threads);
+                params.maxClusterDepth, params.singleMutationProbability, params.threads);
         correctBarcodesIO.go();
     }
 
@@ -63,16 +63,19 @@ public final class CorrectAction implements Action {
 
         @Parameter(description = "Threshold for UMI clustering: if smaller UMI count divided to larger UMI count " +
                 "is below this threshold, UMI will be merged to the cluster.",
-                names = {"--cluster-threshold"})
+                names = {"--cluster-threshold"}, order = 5)
         float threshold = DEFAULT_CORRECT_CLUSTER_THRESHOLD;
 
-        @Parameter(description = "Threshold for UMI clustering: if smaller UMI count divided to larger UMI count " +
-                "is below this threshold, UMI will be merged to the cluster.",
-                names = {"--cluster-threshold"})
-        int clusterDepth = DEFAULT_CORRECT_CLUSTER_DEPTH;
+        @Parameter(description = "Maximum cluster depth for algorithm of similar barcodes clustering.",
+                names = {"--max-cluster-depth"}, order = 6)
+        int maxClusterDepth = DEFAULT_CORRECT_MAX_CLUSTER_DEPTH;
+
+        @Parameter(description = "Single mutation probability for clustering algorithm.",
+                names = {"--single-mutation-probability"}, order = 7)
+        float singleMutationProbability = DEFAULT_CORRECT_SINGLE_MUTATION_PROBABILITY;
 
         @Parameter(description = "Number of threads for correcting barcodes.",
-                names = {"--threads"})
+                names = {"--threads"}, order = 8)
         int threads = DEFAULT_THREADS;
     }
 }

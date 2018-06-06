@@ -22,7 +22,8 @@ public final class Defaults {
     public final static int DEFAULT_CORRECT_MAX_INDELS = 2;
     public final static int DEFAULT_CORRECT_MAX_TOTAL_ERRORS = 3;
     public final static float DEFAULT_CORRECT_CLUSTER_THRESHOLD = 0.03f;
-    public final static int DEFAULT_CORRECT_CLUSTER_DEPTH = 2;
+    public final static int DEFAULT_CORRECT_MAX_CLUSTER_DEPTH = 2;
+    public final static float DEFAULT_CORRECT_SINGLE_MUTATION_PROBABILITY = 0.1f;
     public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 20;
     public final static int DEFAULT_CONSENSUS_SCORE_THRESHOLD = -500;
     public final static float DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT = 0.5f;

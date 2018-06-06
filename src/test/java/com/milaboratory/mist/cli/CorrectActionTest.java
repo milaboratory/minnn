@@ -49,8 +49,8 @@ public class CorrectActionTest {
             String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
             exec("correct --groups G1 G2 G3 G4 --input " + currentInput + " --output " + currentOutput
-                    + " --threads 1");
-            if (i < 2)
+                    + " --threads 1 --cluster-threshold 0.4 --single-mutation-probability 0.001");
+            if (i < 3)
                 assertFileNotEquals(currentInput, currentOutput);
             else
                 assertFileEquals(currentInput, currentOutput);
