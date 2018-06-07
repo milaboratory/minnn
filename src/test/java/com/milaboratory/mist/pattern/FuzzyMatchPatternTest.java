@@ -3,6 +3,7 @@ package com.milaboratory.mist.pattern;
 import cc.redberry.pipe.CUtils;
 import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.Range;
+import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
 import com.milaboratory.core.motif.BitapMatcher;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.test.TestUtil;
@@ -508,5 +509,19 @@ public class FuzzyMatchPatternTest {
         assertEquals(5, patterns[3].estimateMaxOverlap());
         assertEquals(6, patterns[4].estimateMaxOverlap());
         assertEquals(6, patterns[5].estimateMaxOverlap());
+    }
+
+    @Test
+    public void matchLengthTest() throws Exception {
+        PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(1,
+                -4, -5, -10000, (byte)0, (byte)30, 0);
+        PatternAligner patternAligner = getTestPatternAligner(-10, 2, 0,
+                -1, 0, -1, scoring);
+        NSequenceWithQuality nseq = new NSequenceWithQuality("TTTACCATTTTTACTGATTTT");
+        FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(patternAligner,
+                new NucleotideSequenceCaseSensitive("acga"));
+        MatchIntermediate bestMatch = fuzzyMatchPattern.match(nseq).getBestMatch(true);
+        assertEquals(-1, bestMatch.getScore());
+        assertEquals(new NSequenceWithQuality("ACTGA"), bestMatch.getValue());
     }
 }

@@ -330,7 +330,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
             private MatchIntermediate takeFair() {
                 if (!sortingPerformed) {
                     fillAllMatchesForFairSorting();
-                    Arrays.sort(allMatches, Comparator.comparingLong(MatchIntermediate::getScore).reversed());
+                    sortAllMatches();
                     sortingPerformed = true;
                 }
                 if (takenValues == allMatches.length) return null;
@@ -349,11 +349,17 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                         fillAllMatchesForFixedLeftBorder();
                     else throw new IllegalArgumentException("Wrong call of takeFromFixedPosition: fixedLeftBorder="
                                 + fixedLeftBorder + ", fixedRightBorder=" + fixedRightBorder);
-                    Arrays.sort(allMatches, Comparator.comparingLong(MatchIntermediate::getScore).reversed());
+                    sortAllMatches();
                     sortingPerformed = true;
                 }
                 if (takenValues == allMatches.length) return null;
                 return allMatches[takenValues++];
+            }
+
+            private void sortAllMatches() {
+                Arrays.sort(allMatches, Comparator.comparing(MatchIntermediate::getScore,
+                        (s1, s2) -> Long.compare(s2, s1)).thenComparing(MatchIntermediate::getRange,
+                        (r1, r2) -> Integer.compare(r2.length(), r1.length())));
             }
 
             /**
