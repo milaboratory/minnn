@@ -19,14 +19,17 @@ public final class DemultiplexIO {
     private final String inputFileName;
     private final List<DemultiplexFilter> demultiplexFilters;
     private final int outputBufferSize;
+    private final long inputReadsLimit;
     private final String prefix;
     private final LinkedHashMap<OutputFileIdentifier, OutputFileIdentifier> outputFileIdentifiers;
     private MifHeader header;
 
-    public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int outputBufferSize) {
+    public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int outputBufferSize,
+                         long inputReadsLimit) {
         this.inputFileName = inputFileName;
         this.demultiplexFilters = demultiplexArguments.stream().map(this::parseFilter).collect(Collectors.toList());
         this.outputBufferSize = outputBufferSize;
+        this.inputReadsLimit = inputReadsLimit;
         this.prefix = ((inputFileName.length() > 4)
                 && inputFileName.substring(inputFileName.length() - 4).equals(".mif"))
                 ? inputFileName.substring(0, inputFileName.length() - 4) : inputFileName;
@@ -39,14 +42,17 @@ public final class DemultiplexIO {
         long matchedReads = 0;
         try (MifReader reader = new MifReader(inputFileName)) {
             header = reader.getHeader();
+            if (inputReadsLimit > 0)
+                reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Demultiplexing reads", reader, System.err);
             for (ParsedRead parsedRead : CUtils.it(reader)) {
                 DemultiplexResult demultiplexResult = demultiplex(parsedRead);
-                totalReads++;
                 if (demultiplexResult.mifWriter != null) {
                     demultiplexResult.mifWriter.write(demultiplexResult.parsedRead);
                     matchedReads++;
                 }
+                if (++totalReads == inputReadsLimit)
+                    break;
             }
             outputFileIdentifiers.keySet().forEach(OutputFileIdentifier::closeWriter);
         } catch (IOException e) {

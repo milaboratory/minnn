@@ -26,7 +26,7 @@ public final class ReportAction implements Action {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(params.matchScore,
                 params.mismatchScore, params.gapScore, params.uppercaseMismatchScore,
                 (byte)(params.goodQuality), (byte)(params.badQuality), params.maxQualityPenalty);
-        PatternAligner patternAligner = new BasePatternAligner(scoring, params.penaltyThreshold,
+        PatternAligner patternAligner = new BasePatternAligner(scoring, params.scoreThreshold,
                 params.singleOverlapPenalty, params.bitapMaxErrors, params.maxOverlap);
         Parser patternParser = new Parser(patternAligner);
         Pattern pattern;
@@ -93,66 +93,66 @@ public final class ReportAction implements Action {
     @Parameters(commandDescription =
             "Find match and groups in query and display report on the screen.")
     private static final class ParseActionParameters extends ActionParameters {
-        @Parameter(description = "--pattern <pattern_query> --target <sequence>")
+        @Parameter(description = "--pattern <pattern_query> --target <sequence>", order = 0)
         private String description;
 
         @Parameter(description = "Query, pattern specified in MiST format.",
-                names = {"--pattern"}, order = 0, required = true)
+                names = {"--pattern"}, order = 1, required = true)
         String query = null;
 
         @Parameter(description = "Target nucleotide sequence, where to search.",
-                names = {"--target"}, order = 1, required = true)
+                names = {"--target"}, order = 2, required = true)
         String target = null;
 
-        @Parameter(description = "Use fair sorting and fair best match by score for all patterns.",
-                names = {"--fair-sorting"})
-        boolean fairSorting = true;
-
         @Parameter(description = "Score for perfectly matched nucleotide.",
-                names = {"--match-score"})
+                names = {"--match-score"}, order = 3)
         int matchScore = DEFAULT_MATCH_SCORE;
 
         @Parameter(description = "Score for mismatched nucleotide.",
-                names = {"--mismatch-score"})
+                names = {"--mismatch-score"}, order = 4)
         int mismatchScore = DEFAULT_MISMATCH_SCORE;
 
         @Parameter(description = "Score for mismatched uppercase nucleotide.",
-                names = {"--uppercase-mismatch-score"})
+                names = {"--uppercase-mismatch-score"}, order = 5)
         int uppercaseMismatchScore = DEFAULT_UPPERCASE_MISMATCH_SCORE;
 
         @Parameter(description = "Score for gap or insertion.",
-                names = {"--gap-score"})
+                names = {"--gap-score"}, order = 6)
         int gapScore = DEFAULT_GAP_SCORE;
+
+        @Parameter(description = "Score threshold, matches with score lower than this will not go to output.",
+                names = {"--score-threshold"}, order = 7)
+        long scoreThreshold = DEFAULT_SCORE_THRESHOLD;
 
         @Parameter(description = "This or better quality value will be considered good quality, " +
                 "without score penalties.",
-                names = {"--good-quality-value"})
+                names = {"--good-quality-value"}, order = 8)
         int goodQuality = DEFAULT_GOOD_QUALITY;
 
         @Parameter(description = "This or worse quality value will be considered bad quality, " +
                 "with maximal score penalty.",
-                names = {"--bad-quality-value"})
+                names = {"--bad-quality-value"}, order = 9)
         int badQuality = DEFAULT_BAD_QUALITY;
 
         @Parameter(description = "Maximal score penalty for bad quality nucleotide in target.",
-                names = {"--max-quality-penalty"})
+                names = {"--max-quality-penalty"}, order = 10)
         int maxQualityPenalty = DEFAULT_MAX_QUALITY_PENALTY;
 
-        @Parameter(description = "Score threshold, matches with score lower than this will not go to output.",
-                names = {"--penalty-threshold"})
-        long penaltyThreshold = DEFAULT_PENALTY_THRESHOLD;
-
         @Parameter(description = "Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value.",
-                names = {"--single-overlap-penalty"})
+                names = {"--single-overlap-penalty"}, order = 11)
         long singleOverlapPenalty = DEFAULT_SINGLE_OVERLAP_PENALTY;
 
+        @Parameter(description = "Max allowed overlap for 2 intersecting operands in +, & and pattern sequences.",
+                names = {"--max-overlap"}, order = 12)
+        int maxOverlap = DEFAULT_MAX_OVERLAP;
+
         @Parameter(description = "Maximum allowed number of errors for bitap matcher.",
-                names = {"--bitap-max-errors"})
+                names = {"--bitap-max-errors"}, order = 13)
         int bitapMaxErrors = DEFAULT_BITAP_MAX_ERRORS;
 
-        @Parameter(description = "Max allowed overlap for 2 intersecting operands in +, & and pattern sequences.",
-                names = {"--max-overlap"})
-        int maxOverlap = DEFAULT_MAX_OVERLAP;
+        @Parameter(description = "Use fair sorting and fair best match by score for all patterns.",
+                names = {"--fair-sorting"}, order = 14)
+        boolean fairSorting = true;
 
         @Override
         public void validate() {

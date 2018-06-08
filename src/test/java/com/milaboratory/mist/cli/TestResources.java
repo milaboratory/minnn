@@ -24,7 +24,7 @@ public class TestResources {
                 + " --mismatch-score -9 --gap-score -10 --single-overlap-penalty -10 --pattern ";
         switch (example) {
             case "twosided":
-                exec(common + "\"(G1:tctcag)&(G2:ana)(G3:ggnnc)(G4:NN)\\*\" --penalty-threshold -20");
+                exec(common + "\"(G1:tctcag)&(G2:ana)(G3:ggnnc)(G4:NN)\\*\" --score-threshold -20");
                 break;
             case "twosided-raw":
                 exec(common + "\"*\\*\"");

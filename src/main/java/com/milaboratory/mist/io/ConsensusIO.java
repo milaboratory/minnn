@@ -56,7 +56,6 @@ public final class ConsensusIO {
     private final int gapScore;
     private final long scoreThreshold;
     private final float skippedFractionToRepeat;
-    private final int threads;
     private final int maxConsensusesPerCluster;
     private final int readsMinGoodSeqLength;
     private final float readsAvgQualityThreshold;
@@ -64,6 +63,8 @@ public final class ConsensusIO {
     private final int minGoodSeqLength;
     private final float avgQualityThreshold;
     private final int trimWindowSize;
+    private final long inputReadsLimit;
+    private final int threads;
     private final AtomicLong totalReads = new AtomicLong(0);
     private final AtomicLong consensusReads = new AtomicLong(0);
     private Set<String> groupSet;
@@ -71,9 +72,9 @@ public final class ConsensusIO {
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
                        int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
-                       float skippedFractionToRepeat, int threads, int maxConsensusesPerCluster,
-                       int readsMinGoodSeqLength, float readsAvgQualityThreshold, int readsTrimWindowSize,
-                       int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize) {
+                       float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
+                       float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
+                       float avgQualityThreshold, int trimWindowSize, long inputReadsLimit, int threads) {
         this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -83,7 +84,6 @@ public final class ConsensusIO {
         this.gapScore = gapScore;
         this.scoreThreshold = scoreThreshold;
         this.skippedFractionToRepeat = skippedFractionToRepeat;
-        this.threads = threads;
         this.maxConsensusesPerCluster = maxConsensusesPerCluster;
         this.readsMinGoodSeqLength = readsMinGoodSeqLength;
         this.readsAvgQualityThreshold = readsAvgQualityThreshold;
@@ -91,12 +91,16 @@ public final class ConsensusIO {
         this.minGoodSeqLength = minGoodSeqLength;
         this.avgQualityThreshold = avgQualityThreshold;
         this.trimWindowSize = trimWindowSize;
+        this.inputReadsLimit = inputReadsLimit;
+        this.threads = threads;
     }
 
     public void go() {
         long startTime = System.currentTimeMillis();
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
+            if (inputReadsLimit > 0)
+                reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Calculating consensuses", reader, System.err);
             if (groupSet == null) {
                 if (reader.getCorrectedGroups().size() == 0)
@@ -127,7 +131,7 @@ public final class ConsensusIO {
                     Cluster preparedCluster = null;
                     while (preparedCluster == null) {
                         ParsedRead parsedRead = reader.take();
-                        if (parsedRead != null) {
+                        if ((parsedRead != null) && ((inputReadsLimit == 0) || (totalReads.get() < inputReadsLimit))) {
                             Set<String> allGroups = parsedRead.getGroups().stream().map(MatchedGroup::getGroupName)
                                     .filter(groupName -> !defaultGroups.contains(groupName))
                                     .collect(Collectors.toSet());

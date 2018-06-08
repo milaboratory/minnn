@@ -1,7 +1,6 @@
 package com.milaboratory.mist.cli;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
+import com.beust.jcommander.*;
 import com.milaboratory.cli.Action;
 import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
@@ -27,7 +26,8 @@ public final class FilterAction implements Action {
         ReadFilter parsedReadFilter = parseFilterQuery(filterQuery);
         if (parsedReadFilter == null)
             throw exitWithError("Filter query not parsed: " + filterQuery);
-        FilterIO filterIO = new FilterIO(parsedReadFilter, params.inputFileName, params.outputFileName, params.threads);
+        FilterIO filterIO = new FilterIO(parsedReadFilter, params.inputFileName, params.outputFileName,
+                params.inputReadsLimit, params.threads);
         filterIO.go();
     }
 
@@ -55,13 +55,17 @@ public final class FilterAction implements Action {
                 names = {"--output"}, order = 2)
         String outputFileName = null;
 
-        @Parameter(description = "Number of threads for parsing reads.",
-                names = {"--threads"})
-        int threads = DEFAULT_THREADS;
-
         @Parameter(description = "Use fair sorting and fair best match by score for all patterns.",
-                names = {"--fair-sorting"})
+                names = {"--fair-sorting"}, order = 3)
         boolean fairSorting = false;
+
+        @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
+                names = {"-n", "--number-of-reads"}, order = 4)
+        long inputReadsLimit = 0;
+
+        @Parameter(description = "Number of threads for parsing reads.",
+                names = {"--threads"}, order = 5)
+        int threads = DEFAULT_THREADS;
     }
 
     private ReadFilter parseFilterQuery(String filterQuery) {

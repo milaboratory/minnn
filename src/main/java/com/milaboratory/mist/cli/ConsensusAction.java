@@ -17,9 +17,9 @@ public final class ConsensusAction implements Action {
     public void go(ActionHelper helper) {
         ConsensusIO consensusIO = new ConsensusIO(params.groupList, params.inputFileName, params.outputFileName,
                 params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore, params.scoreThreshold,
-                params.skippedFractionToRepeat, params.threads, params.maxConsensusesPerCluster,
-                params.readsMinGoodSeqLength, params.readsAvgQualityThreshold, params.readsTrimWindowSize,
-                params.minGoodSeqLength, params.avgQualityThreshold, params.trimWindowSize);
+                params.skippedFractionToRepeat, params.maxConsensusesPerCluster, params.readsMinGoodSeqLength,
+                params.readsAvgQualityThreshold, params.readsTrimWindowSize, params.minGoodSeqLength,
+                params.avgQualityThreshold, params.trimWindowSize, params.inputReadsLimit, params.threads);
         consensusIO.go();
     }
 
@@ -47,70 +47,74 @@ public final class ConsensusAction implements Action {
                 names = {"--groups"}, order = 2, variableArity = true)
         List<String> groupList = null;
 
-        @Parameter(description = "Number of threads for calculating consensus sequences.",
-                names = {"--threads"}, order = 3)
-        int threads = DEFAULT_THREADS;
-
         @Parameter(description = "Window width (maximum allowed number of indels) for banded aligner.",
-                names = {"--width"}, order = 4)
+                names = {"--width"}, order = 3)
         int alignerWidth = DEFAULT_CONSENSUS_ALIGNER_WIDTH;
 
         @Parameter(description = "Score for perfectly matched nucleotide, used in sequences alignment.",
-                names = {"--aligner-match-score"}, order = 5)
+                names = {"--aligner-match-score"}, order = 4)
         int matchScore = DEFAULT_MATCH_SCORE;
 
         @Parameter(description = "Score for mismatched nucleotide, used in sequences alignment.",
-                names = {"--aligner-mismatch-score"}, order = 6)
+                names = {"--aligner-mismatch-score"}, order = 5)
         int mismatchScore = DEFAULT_MISMATCH_SCORE;
 
         @Parameter(description = "Score for gap or insertion, used in sequences alignment.",
-                names = {"--aligner-gap-score"}, order = 7)
+                names = {"--aligner-gap-score"}, order = 6)
         int gapScore = DEFAULT_GAP_SCORE;
 
         @Parameter(description = "Score threshold that used to filter reads for calculating consensus.",
-                names = {"--score-threshold"}, order = 8)
+                names = {"--score-threshold"}, order = 7)
         long scoreThreshold = DEFAULT_CONSENSUS_SCORE_THRESHOLD;
 
         @Parameter(description = "Fraction of reads skipped by score threshold that must start the search for " +
                 "another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of " +
                 "reads with identical barcodes.",
-                names = {"--skipped-fraction-to-repeat"}, order = 9)
+                names = {"--skipped-fraction-to-repeat"}, order = 8)
         float skippedFractionToRepeat = DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT;
 
         @Parameter(description = "Maximal number of consensuses generated from 1 cluster. Every time this threshold " +
                 "is applied to stop searching for new consensuses, warning will be displayed. Too many consensuses " +
                 "per cluster indicate that score threshold, aligner width or skipped fraction to repeat is too low.",
-                names = {"--max-consensuses-per-cluster"}, order = 10)
+                names = {"--max-consensuses-per-cluster"}, order = 9)
         int maxConsensusesPerCluster = DEFAULT_CONSENSUS_MAX_PER_CLUSTER;
 
         @Parameter(description = "Minimal length of good sequence that will be still considered good after trimming " +
                 "bad quality tails. This parameter is for trimming input reads.",
-                names = {"--reads-min-good-sequence-length"}, order = 11)
+                names = {"--reads-min-good-sequence-length"}, order = 10)
         int readsMinGoodSeqLength = DEFAULT_CONSENSUS_READS_MIN_GOOD_SEQ_LENGTH;
 
         @Parameter(description = "Minimal average quality for bad quality tails trimmer. This parameter is for " +
                 "trimming input reads.",
-                names = {"--reads-avg-quality-threshold"}, order = 12)
+                names = {"--reads-avg-quality-threshold"}, order = 11)
         float readsAvgQualityThreshold = DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD;
 
         @Parameter(description = "Window size for bad quality tails trimmer. This parameter is for trimming input " +
                 "reads.",
-                names = {"--reads-trim-window-size"}, order = 13)
+                names = {"--reads-trim-window-size"}, order = 12)
         int readsTrimWindowSize = DEFAULT_CONSENSUS_READS_TRIM_WINDOW_SIZE;
 
         @Parameter(description = "Minimal length of good sequence that will be still considered good after trimming " +
                 "bad quality tails. This parameter is for trimming output consensuses.",
-                names = {"--min-good-sequence-length"}, order = 14)
+                names = {"--min-good-sequence-length"}, order = 13)
         int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
         @Parameter(description = "Minimal average quality for bad quality tails trimmer. This parameter is for " +
                 "trimming output consensuses.",
-                names = {"--avg-quality-threshold"}, order = 15)
+                names = {"--avg-quality-threshold"}, order = 14)
         float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
 
         @Parameter(description = "Window size for bad quality tails trimmer. This parameter is for trimming output " +
                 "consensuses.",
-                names = {"--trim-window-size"}, order = 16)
+                names = {"--trim-window-size"}, order = 15)
         int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
+
+        @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
+                names = {"-n", "--number-of-reads"}, order = 16)
+        long inputReadsLimit = 0;
+
+        @Parameter(description = "Number of threads for calculating consensus sequences.",
+                names = {"--threads"}, order = 17)
+        int threads = DEFAULT_THREADS;
     }
 }

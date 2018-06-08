@@ -20,7 +20,7 @@ public final class StatGroupsIO {
     private final LinkedHashSet<String> groupList;
     private final String inputFileName;
     private final String outputFileName;
-    private final long numberOfReads;
+    private final long inputReadsLimit;
     private final byte readQualityFilter;
     private final byte minQualityFilter;
     private final byte avgQualityFilter;
@@ -28,13 +28,13 @@ public final class StatGroupsIO {
     private final float minFracFilter;
     private final HashMap<StatGroupsKey, StatGroupsValue> statGroups = new HashMap<>();
 
-    public StatGroupsIO(List<String> groupList, String inputFileName, String outputFileName, long numberOfReads,
+    public StatGroupsIO(List<String> groupList, String inputFileName, String outputFileName, long inputReadsLimit,
                         byte readQualityFilter, byte minQualityFilter, byte avgQualityFilter, int minCountFilter,
                         float minFracFilter) {
         this.groupList = new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
-        this.numberOfReads = numberOfReads;
+        this.inputReadsLimit = inputReadsLimit;
         this.readQualityFilter = readQualityFilter;
         this.minQualityFilter = minQualityFilter;
         this.avgQualityFilter = avgQualityFilter;
@@ -51,8 +51,8 @@ public final class StatGroupsIO {
         try (MifReader reader = createReader()) {
             correctedGroups = reader.getCorrectedGroups();
             sorted = reader.isSorted();
-            if (numberOfReads > 0)
-                reader.setParsedReadsLimit(numberOfReads);
+            if (inputReadsLimit > 0)
+                reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
             for (ParsedRead parsedRead : CUtils.it(reader)) {
                 Map<String, MatchedGroup> matchedGroups = parsedRead.getGroups().stream()
@@ -69,7 +69,7 @@ public final class StatGroupsIO {
                             currentValue.countNewValue(groupValues);
                     }
                 }
-                if (++totalReads == numberOfReads)
+                if (++totalReads == inputReadsLimit)
                     break;
             }
         } catch (IOException e) {

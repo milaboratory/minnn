@@ -26,12 +26,13 @@ public final class SorterIO {
     private final int chunkSize;
     private final File tmpFile;
 
-    public SorterIO(String inputFileName, String outputFileName, List<String> sortGroupNames, int chunkSize) {
+    public SorterIO(String inputFileName, String outputFileName, List<String> sortGroupNames, int chunkSize,
+                    String tmpFile) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.sortGroupNames = sortGroupNames;
         this.chunkSize = (chunkSize == -1) ? estimateChunkSize() : chunkSize;
-        this.tmpFile = TempFileManager.getTempFile();
+        this.tmpFile = (tmpFile == null) ? TempFileManager.getTempFile() : new File(tmpFile);
     }
 
     public void go() {

@@ -36,19 +36,19 @@ public class ExtractActionTest {
                             "GroupEdgePosition(GroupEdge('UMI', false), 4)])), " +
                             "FullReadPattern(false, FuzzyMatchPattern(AA, 0, 0, -1, -1))])"),
                     "--input", testInputR1, testInputR2, "--output", testOutput1Double,
-                    "--devel-parser-syntax", "--penalty-threshold", "0"};
+                    "--devel-parser-syntax", "--score-threshold", "0"};
             main(args1);
 
-            String[] args2 = {"extract", "--penalty-threshold", "0", "--devel-parser-syntax", "--match-score", "0",
+            String[] args2 = {"extract", "--score-threshold", "0", "--devel-parser-syntax", "--match-score", "0",
                     "--oriented", "--pattern", inQuotes("FullReadPattern(false, FuzzyMatchPattern(ATTAGACA, " +
                     "0, 0, -1, -1))"), "--input", testInputR1, "--output", testOutput1Single};
             main(args2);
 
             String[] args3 = {"extract", "--pattern", "<GA(UMI:AG)CA \\ AA",
-                    "--input", testInputR1, testInputR2, "--output", testOutput2Double, "--penalty-threshold", "0"};
+                    "--input", testInputR1, testInputR2, "--output", testOutput2Double, "--score-threshold", "0"};
             main(args3);
 
-            String[] args4 = {"extract", "--penalty-threshold", "0", "--match-score", "0", "--oriented",
+            String[] args4 = {"extract", "--score-threshold", "0", "--match-score", "0", "--oriented",
                     "--pattern", "ATTAGACA", "--input", testInputR1, "--output", testOutput2Single};
             main(args4);
 
@@ -85,13 +85,13 @@ public class ExtractActionTest {
                 + "--bitap-max-errors 3 --threads 4";
 
         String patternPos = "^(UMI:N{14})n{22}(SB:N{4}) \\ *";
-        String penaltyPos = " --penalty-threshold -200";
+        String penaltyPos = " --score-threshold -200";
 
         String patternOne = "(SB:N{5})[aagc || c]agtggtatcaacgcagagt(UMI:N{14}) \\ *";
-        String penaltyOne = " --penalty-threshold -100";
+        String penaltyOne = " --score-threshold -100";
 
         String patternTwo = "(SB1:N{5})[aagc || c]agtggtatcaacgcagagt(UMI:N{14}) \\ (SB2:N{5})gtcacatttctcagatcct";
-        String penaltyTwo = " --penalty-threshold -130";
+        String penaltyTwo = " --score-threshold -130";
 
         exec(positionalArgs + configuration + penaltyPos + " --pattern " + inQuotes(patternPos));
         exec(onesidedArgs + configuration + penaltyOne + " --pattern " + inQuotes(patternOne));
@@ -111,7 +111,7 @@ public class ExtractActionTest {
         String out = TEMP_DIR + "outputSCT1.mif";
         String argsIO = "extract --input " + R1 + " " + R2 + " --output " + out;
         String query = argsIO + " --pattern \"NN(G1:N{12})N{22}TCAG\\NN(G2:N{12})N{22}TCAG\" --threads 3 "
-                + "--bitap-max-errors 1 --mismatch-score -1 --penalty-threshold -73";
+                + "--bitap-max-errors 1 --mismatch-score -1 --score-threshold -73";
         exec(query);
         assertTrue(new File(out).delete());
     }
@@ -122,7 +122,7 @@ public class ExtractActionTest {
         String outputFile = TEMP_DIR + "outputSCT2.mif";
         String argsIO = "extract --input-format mif --input " + inputFile + " --output " + outputFile;
         String query = argsIO + " --pattern \"(G1:accnt) & (G2:nctn) & (G3:atta)\" --bitap-max-errors 2 " +
-                "--penalty-threshold -80";
+                "--score-threshold -80";
         exec(query);
         for (String fileName : new String[] { inputFile, outputFile })
             assertTrue(new File(fileName).delete());

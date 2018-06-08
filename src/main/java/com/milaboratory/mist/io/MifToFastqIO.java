@@ -22,8 +22,10 @@ public final class MifToFastqIO {
     private final String[] outputGroupNames;
     private final String[] outputFileNames;
     private final boolean copyOriginalHeaders;
+    private final long inputReadsLimit;
 
-    public MifToFastqIO(String inputFileName, LinkedHashMap<String, String> outputGroups, boolean copyOriginalHeaders) {
+    public MifToFastqIO(String inputFileName, LinkedHashMap<String, String> outputGroups, boolean copyOriginalHeaders,
+                        long inputReadsLimit) {
         this.inputFileName = inputFileName;
         this.outputGroupNames = new String[outputGroups.size()];
         this.outputFileNames = new String[outputGroups.size()];
@@ -34,6 +36,7 @@ public final class MifToFastqIO {
             index++;
         }
         this.copyOriginalHeaders = copyOriginalHeaders;
+        this.inputReadsLimit = inputReadsLimit;
     }
 
     public void go() {
@@ -41,11 +44,14 @@ public final class MifToFastqIO {
         long totalReads = 0;
         try (MifReader reader = createReader();
              SequenceWriter writer = createWriter()) {
+            if (inputReadsLimit > 0)
+                reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
             OutputPortCloseable<SequenceRead> sequenceReads = new SequenceReadOutputPort(reader);
             for (SequenceRead sequenceRead : CUtils.it(sequenceReads)) {
-                totalReads++;
                 writer.write(sequenceRead);
+                if (++totalReads == inputReadsLimit)
+                    break;
             }
         } catch (IOException e) {
             throw exitWithError(e.getMessage());

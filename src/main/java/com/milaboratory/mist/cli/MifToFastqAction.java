@@ -14,7 +14,7 @@ public final class MifToFastqAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         MifToFastqIO mifToFastqIO = new MifToFastqIO(params.inputFileName, parseGroups(params.groupsQuery),
-                params.copyOriginalHeaders);
+                params.copyOriginalHeaders, params.inputReadsLimit);
         mifToFastqIO.go();
     }
 
@@ -43,8 +43,12 @@ public final class MifToFastqAction implements Action {
 
         @Parameter(description = "Copy original comments from initial fastq files to comments of output " +
                 "fastq files.",
-                names = {"--copy-original-headers"})
+                names = {"--copy-original-headers"}, order = 2)
         boolean copyOriginalHeaders = false;
+
+        @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
+                names = {"-n", "--number-of-reads"}, order = 3)
+        long inputReadsLimit = 0;
     }
 
     private static LinkedHashMap<String, String> parseGroups(List<String> groupsQuery) throws ParameterException {

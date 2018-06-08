@@ -1,8 +1,6 @@
 package com.milaboratory.mist.cli;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
-import com.beust.jcommander.Parameters;
+import com.beust.jcommander.*;
 import com.milaboratory.cli.Action;
 import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
@@ -16,7 +14,7 @@ public final class SortAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         SorterIO sorterIO = new SorterIO(params.inputFileName, params.outputFileName, params.sortGroupNames,
-                params.chunkSize);
+                params.chunkSize, params.tmpFile);
         sorterIO.go();
     }
 
@@ -33,24 +31,28 @@ public final class SortAction implements Action {
     @Parameters(commandDescription =
             "Sort reads by contents (nucleotide sequences) of specified groups.")
     private static final class SortActionParameters extends ActionParameters {
-        @Parameter(description = "--groups <group_names>")
+        @Parameter(description = "--groups <group_names>", order = 0)
         private String description;
 
         @Parameter(description = "Group names to use for sorting. Priority is in descending order.",
-                names = {"--groups"}, order = 0, required = true, variableArity = true)
+                names = {"--groups"}, order = 1, required = true, variableArity = true)
         List<String> sortGroupNames = null;
 
         @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",
-                names = {"--input"}, order = 1)
+                names = {"--input"}, order = 2)
         String inputFileName = null;
 
         @Parameter(description = "Output file in \"mif\" format. If not specified, stdout will be used.",
-                names = {"--output"}, order = 2)
+                names = {"--output"}, order = 3)
         String outputFileName = null;
 
         @Parameter(description = "Chunk size for sorter.",
-                names = {"--chunk-size"})
+                names = {"--chunk-size"}, order = 4)
         int chunkSize = -1;
+
+        @Parameter(description = "Custom temp file, used for debugging purposes.",
+                names = {"--temp-file"}, hidden = true)
+        String tmpFile = null;
 
         @Override
         public void validate() {

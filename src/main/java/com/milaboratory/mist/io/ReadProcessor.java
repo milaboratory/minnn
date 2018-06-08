@@ -30,13 +30,14 @@ public final class ReadProcessor {
     private final Pattern pattern;
     private final boolean orientedReads;
     private final boolean fairSorting;
+    private final long inputReadsLimit;
     private final int threads;
     private final MistDataFormat inputFormat;
-    private final boolean testIOSpeed;
     private int numberOfReads;
 
     public ReadProcessor(List<String> inputFileNames, String outputFileName, Pattern pattern,
-            boolean orientedReads, boolean fairSorting, int threads, MistDataFormat inputFormat, boolean testIOSpeed) {
+                         boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
+                         MistDataFormat inputFormat) {
         if ((inputFormat == MIF) && (inputFileNames.size() > 1))
             throw exitWithError("Mif data format uses single file; specified " + inputFileNames.size()
                     + " input files!");
@@ -45,9 +46,9 @@ public final class ReadProcessor {
         this.pattern = pattern;
         this.orientedReads = orientedReads;
         this.fairSorting = fairSorting;
+        this.inputReadsLimit = inputReadsLimit;
         this.threads = threads;
         this.inputFormat = inputFormat;
-        this.testIOSpeed = testIOSpeed;
     }
 
     public void processReadsParallel() {
@@ -61,16 +62,16 @@ public final class ReadProcessor {
             Merger<Chunk<SequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader,
                     4 * 64), 4 * 16);
             OutputPort<Chunk<ParsedRead>> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
-                    testIOSpeed ? CUtils.chunked(new TestIOSpeedProcessor())
-                            : CUtils.chunked(new ReadParserProcessor(orientedReads)), threads);
+                    CUtils.chunked(new ReadParserProcessor(orientedReads)), threads);
             OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(CUtils.unchunked(parsedReadsPort),
                     read -> read.getOriginalRead().getId());
             for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
-                totalReads++;
                 if (parsedRead.getBestMatch() != null) {
                     writer.write(parsedRead);
                     matchedReads++;
                 }
+                if (++totalReads == inputReadsLimit)
+                    break;
             }
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
@@ -117,6 +118,8 @@ public final class ReadProcessor {
             case MIF:
                 MifReader mifReader = (inputFileNames.size() == 0) ? new MifReader(System.in)
                         : new MifReader(inputFileNames.get(0));
+                if (inputReadsLimit > 0)
+                    mifReader.setParsedReadsLimit(inputReadsLimit);
                 numberOfReads = mifReader.getNumberOfReads();
                 reader = new MifSequenceReader(mifReader);
                 break;
@@ -218,13 +221,6 @@ public final class ReadProcessor {
             if (bestMatch != null)
                 bestMatch.assembleGroups();
             return new ParsedRead(input, reverseMatch, bestMatch, 0);
-        }
-    }
-
-    private class TestIOSpeedProcessor implements Processor<SequenceRead, ParsedRead> {
-        @Override
-        public ParsedRead process(SequenceRead input) {
-            return new ParsedRead(input, false, null, 0);
         }
     }
 }

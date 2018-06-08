@@ -42,6 +42,7 @@ public final class CorrectBarcodesIO {
     private final List<String> groupNames;
     private final int maxClusterDepth;
     private final float singleMutationProbability;
+    private final long inputReadsLimit;
     private final int threads;
     private Set<String> defaultGroups;
     private LinkedHashSet<String> keyGroups;
@@ -51,7 +52,7 @@ public final class CorrectBarcodesIO {
 
     public CorrectBarcodesIO(String inputFileName, String outputFileName, int mismatches, int indels,
                              int totalErrors, float threshold, List<String> groupNames, int maxClusterDepth,
-                             float singleMutationProbability, int threads) {
+                             float singleMutationProbability, long inputReadsLimit, int threads) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.mismatches = mismatches;
@@ -61,6 +62,7 @@ public final class CorrectBarcodesIO {
         this.groupNames = groupNames;
         this.maxClusterDepth = maxClusterDepth;
         this.singleMutationProbability = singleMutationProbability;
+        this.inputReadsLimit = inputReadsLimit;
         this.threads = threads;
     }
 
@@ -70,6 +72,10 @@ public final class CorrectBarcodesIO {
         try (MifReader pass1Reader = new MifReader(inputFileName);
              MifReader pass2Reader = new MifReader(inputFileName);
              MifWriter writer = createWriter(pass1Reader.getHeader())) {
+            if (inputReadsLimit > 0) {
+                pass1Reader.setParsedReadsLimit(inputReadsLimit);
+                pass2Reader.setParsedReadsLimit(inputReadsLimit);
+            }
             SmartProgressReporter.startProgressReport("Counting sequences", pass1Reader, System.err);
             defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfReads())
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
@@ -86,7 +92,7 @@ public final class CorrectBarcodesIO {
             Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()
                     .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
             numberOfReads = pass1Reader.getNumberOfReads();
-            for (ParsedRead parsedRead : CUtils.it(pass1Reader))
+            for (ParsedRead parsedRead : CUtils.it(pass1Reader)) {
                 for (Map.Entry<String, HashMap<NucleotideSequence, SequenceCounter>> entry : sequenceMaps.entrySet()) {
                     NucleotideSequence groupValue = parsedRead.getGroupValue(entry.getKey()).getSequence();
                     SequenceCounter counter = entry.getValue().get(groupValue);
@@ -95,6 +101,10 @@ public final class CorrectBarcodesIO {
                     else
                         counter.count++;
                 }
+                if (++totalReads == inputReadsLimit)
+                    break;
+            }
+            totalReads = 0;
 
             // sorting nucleotide sequences by count in each group and performing clustering
             SequenceCounterExtractor sequenceCounterExtractor = new SequenceCounterExtractor();
@@ -127,7 +137,8 @@ public final class CorrectBarcodesIO {
                     CUtils.unchunked(correctedReadsPort), read -> read.getOriginalRead().getId());
             for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
                 writer.write(parsedRead);
-                totalReads++;
+                if (++totalReads == inputReadsLimit)
+                    break;
             }
         } catch (IOException e) {
             throw exitWithError(e.getMessage());

@@ -19,20 +19,20 @@ public final class StatPositionsIO {
     private final boolean outputWithSeq;
     private final String inputFileName;
     private final String outputFileName;
-    private final int numberOfReads;
+    private final long inputReadsLimit;
     private final int minCountFilter;
     private final float minFracFilter;
     private final HashMap<StatGroupsKey, Long> statGroups = new HashMap<>();
 
     public StatPositionsIO(List<String> groupList, List<String> readIdList, boolean outputWithSeq,
-                           String inputFileName, String outputFileName, int numberOfReads, int minCountFilter,
+                           String inputFileName, String outputFileName, long inputReadsLimit, int minCountFilter,
                            float minFracFilter) {
         this.groupList = new LinkedHashSet<>(groupList);
         this.readIdList = (readIdList == null) ? null : new LinkedHashSet<>(readIdList);
         this.outputWithSeq = outputWithSeq;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
-        this.numberOfReads = numberOfReads;
+        this.inputReadsLimit = inputReadsLimit;
         this.minCountFilter = minCountFilter;
         this.minFracFilter = minFracFilter;
     }
@@ -47,8 +47,8 @@ public final class StatPositionsIO {
         try (MifReader reader = createReader()) {
             correctedGroups = reader.getCorrectedGroups();
             sorted = reader.isSorted();
-            if (numberOfReads > 0)
-                reader.setParsedReadsLimit(numberOfReads);
+            if (inputReadsLimit > 0)
+                reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
             for (ParsedRead parsedRead : CUtils.it(reader)) {
                 boolean readCounted = false;
@@ -71,7 +71,7 @@ public final class StatPositionsIO {
                     }
                 if (readCounted)
                     countedReads++;
-                if (++totalReads == numberOfReads)
+                if (++totalReads == inputReadsLimit)
                     break;
             }
         } catch (IOException e) {

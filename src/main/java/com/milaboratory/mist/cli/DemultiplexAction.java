@@ -1,8 +1,6 @@
 package com.milaboratory.mist.cli;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
-import com.beust.jcommander.Parameters;
+import com.beust.jcommander.*;
 import com.milaboratory.cli.Action;
 import com.milaboratory.cli.ActionHelper;
 import com.milaboratory.cli.ActionParameters;
@@ -27,7 +25,7 @@ public final class DemultiplexAction implements Action {
         if (parsedDemultiplexArguments == null)
             throw exitWithError("Arguments not parsed: " + argumentsQuery);
         DemultiplexIO demultiplexIO = new DemultiplexIO(parsedDemultiplexArguments.inputFileName,
-                parsedDemultiplexArguments.demultiplexArguments, params.outputBufferSize);
+                parsedDemultiplexArguments.demultiplexArguments, params.outputBufferSize, params.inputReadsLimit);
         demultiplexIO.go();
     }
 
@@ -50,8 +48,12 @@ public final class DemultiplexAction implements Action {
         List<String> argumentsQuery = new ArrayList<>();
 
         @Parameter(description = "Write buffer size for each output file.",
-                names = {"--output-buffer-size"})
+                names = {"--output-buffer-size"}, order = 1)
         int outputBufferSize = DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE;
+
+        @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
+                names = {"-n", "--number-of-reads"}, order = 2)
+        long inputReadsLimit = 0;
     }
 
     private static final class ParsedDemultiplexArguments {

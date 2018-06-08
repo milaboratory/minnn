@@ -20,12 +20,15 @@ public final class FilterIO {
     private final ReadFilter readFilter;
     private final String inputFileName;
     private final String outputFileName;
+    private final long inputReadsLimit;
     private final int threads;
 
-    public FilterIO(ReadFilter readFilter, String inputFileName, String outputFileName, int threads) {
+    public FilterIO(ReadFilter readFilter, String inputFileName, String outputFileName, long inputReadsLimit,
+                    int threads) {
         this.readFilter = readFilter;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
+        this.inputReadsLimit = inputReadsLimit;
         this.threads = threads;
     }
 
@@ -35,6 +38,8 @@ public final class FilterIO {
         long matchedReads = 0;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
+            if (inputReadsLimit > 0)
+                reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Filtering reads", reader, System.err);
             Merger<Chunk<ParsedRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(
                     new NumberedParsedReadsPort(reader), 4 * 64), 4 * 16);
@@ -43,11 +48,12 @@ public final class FilterIO {
             OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(
                     CUtils.unchunked(filteredReadsPort), read -> read.getOriginalRead().getId());
             for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
-                totalReads++;
                 if (parsedRead.getBestMatch() != null) {
                     writer.write(parsedRead);
                     matchedReads++;
                 }
+                if (++totalReads == inputReadsLimit)
+                    break;
             }
         } catch (IOException e) {
             throw exitWithError(e.getMessage());

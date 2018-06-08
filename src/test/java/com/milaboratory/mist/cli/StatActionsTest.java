@@ -32,7 +32,7 @@ public class StatActionsTest {
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(startFile);
             exec("extract --input-format mif --input " + startFile + " --output " + inputFile
-                    + " --pattern \"(G1:accnt) & (G2:nctn) & (G3:atta)\" --bitap-max-errors 2 --penalty-threshold -80");
+                    + " --pattern \"(G1:accnt) & (G2:nctn) & (G3:atta)\" --bitap-max-errors 2 --score-threshold -80");
 
             int qualityFilter1 = rg.nextInt(MAX_QUALITY_VALUE);
             int qualityFilter2 = rg.nextInt(MAX_QUALITY_VALUE);
