@@ -138,10 +138,6 @@ public final class ReportAction implements Action {
                 names = {"--max-quality-penalty"}, order = 10)
         int maxQualityPenalty = DEFAULT_MAX_QUALITY_PENALTY;
 
-        @Parameter(description = "Score threshold, matches with score lower than this will not go to output.",
-                names = {"--penalty-threshold"})
-        long penaltyThreshold = DEFAULT_PENALTY_THRESHOLD;
-
         @Parameter(description = "Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value.",
                 names = {"--single-overlap-penalty"}, order = 11)
         long singleOverlapPenalty = DEFAULT_SINGLE_OVERLAP_PENALTY;
