@@ -7,6 +7,7 @@ import com.milaboratory.cli.ActionParameters;
 import com.milaboratory.mist.io.GenerateDocsIO;
 
 public final class GenerateDocsAction implements Action {
+    public static final String commandName = "docs";
     private final GenerateDocsActionParameters params = new GenerateDocsActionParameters();
 
     @Override
@@ -17,7 +18,7 @@ public final class GenerateDocsAction implements Action {
 
     @Override
     public String command() {
-        return "docs";
+        return commandName;
     }
 
     @Override

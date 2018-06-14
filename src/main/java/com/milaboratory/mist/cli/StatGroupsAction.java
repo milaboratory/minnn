@@ -11,6 +11,7 @@ import java.util.*;
 import static com.milaboratory.mist.cli.CliUtils.*;
 
 public final class StatGroupsAction implements Action {
+    public static final String commandName = "stat-groups";
     private final StatGroupsActionParameters params = new StatGroupsActionParameters();
 
     @Override
@@ -23,7 +24,7 @@ public final class StatGroupsAction implements Action {
 
     @Override
     public String command() {
-        return "stat-groups";
+        return commandName;
     }
 
     @Override

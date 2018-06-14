@@ -9,6 +9,7 @@ import com.milaboratory.mist.io.StatPositionsIO;
 import java.util.*;
 
 public final class StatPositionsAction implements Action {
+    public static final String commandName = "stat-positions";
     private final StatPositionsActionParameters params = new StatPositionsActionParameters();
 
     @Override
@@ -21,7 +22,7 @@ public final class StatPositionsAction implements Action {
 
     @Override
     public String command() {
-        return "stat-positions";
+        return commandName;
     }
 
     @Override

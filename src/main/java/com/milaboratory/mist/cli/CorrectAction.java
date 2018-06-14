@@ -11,6 +11,7 @@ import java.util.*;
 import static com.milaboratory.mist.cli.Defaults.*;
 
 public final class CorrectAction implements Action {
+    public static final String commandName = "correct";
     private final CorrectActionParameters params = new CorrectActionParameters();
 
     @Override
@@ -24,7 +25,7 @@ public final class CorrectAction implements Action {
 
     @Override
     public String command() {
-        return "correct";
+        return commandName;
     }
 
     @Override

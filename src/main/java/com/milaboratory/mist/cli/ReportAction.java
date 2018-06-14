@@ -19,6 +19,7 @@ import static com.milaboratory.mist.parser.ParserUtils.parseMultiTargetString;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 
 public final class ReportAction implements Action {
+    public static final String commandName = "report";
     private final ReportActionParameters params = new ReportActionParameters();
 
     @Override
@@ -82,7 +83,7 @@ public final class ReportAction implements Action {
 
     @Override
     public String command() {
-        return "report";
+        return commandName;
     }
 
     @Override

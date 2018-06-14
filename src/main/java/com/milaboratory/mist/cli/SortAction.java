@@ -9,6 +9,7 @@ import com.milaboratory.mist.io.SorterIO;
 import java.util.*;
 
 public final class SortAction implements Action {
+    public static final String commandName = "sort";
     private final SortActionParameters params = new SortActionParameters();
 
     @Override
@@ -20,7 +21,7 @@ public final class SortAction implements Action {
 
     @Override
     public String command() {
-        return "sort";
+        return commandName;
     }
 
     @Override

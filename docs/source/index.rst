@@ -18,3 +18,4 @@ Indices and tables
 
 Mist is toolset to process genetic data from sequencing machines and assemble sequenced molecules by raw FASTQ data.
 
+.. include:: commands.rst

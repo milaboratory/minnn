@@ -16,6 +16,7 @@ import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
 
 public final class DemultiplexAction implements Action {
+    public static final String commandName = "demultiplex";
     private final DemultiplexActionParameters params = new DemultiplexActionParameters();
 
     @Override
@@ -31,7 +32,7 @@ public final class DemultiplexAction implements Action {
 
     @Override
     public String command() {
-        return "demultiplex";
+        return commandName;
     }
 
     @Override

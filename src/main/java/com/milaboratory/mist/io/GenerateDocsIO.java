@@ -31,17 +31,23 @@ public final class GenerateDocsIO {
     public void go() {
         try (PrintStream writer = new PrintStream(new FileOutputStream(outputFileName))) {
             for (Class parameterClass : parameterClasses) {
-                writer.println(parameterClass.getName());
+                writer.println(getCommandName(parameterClass));
                 writer.println(getAnnotationValue(parameterClass.getAnnotation(Parameters.class),
                         "commandDescription") + "\n");
                 for (Field field : parameterClass.getDeclaredFields()) {
-                    writer.println(getAnnotationValue(field.getAnnotation(Parameter.class), "names"));
-                    writer.println(getAnnotationValue(field.getAnnotation(Parameter.class),
-                            "description") + "\n");
+                    String names = getAnnotationValue(field.getAnnotation(Parameter.class), "names");
+                    String description = stripQuotes(getAnnotationValue(field.getAnnotation(Parameter.class),
+                            "description"));
+                    if (names.length() > 2) {
+                        names = names.substring(1, names.length() - 1);
+                        writer.println(names + ": " + description);
+                    } else {
+                        writer.println(description);
+                    }
                 }
             }
         } catch (IOException e) {
-            throw exitWithError(e.getMessage());
+            throw exitWithError(e.toString());
         }
     }
 
@@ -56,5 +62,23 @@ public final class GenerateDocsIO {
             throw exitWithError(e.toString());
         }
         throw exitWithError("Parameter " + parameterName + " not found in annotation " + annotation);
+    }
+
+    private String getCommandName(Class parameterClass) {
+        Field nameField;
+        try {
+            nameField = parameterClass.getEnclosingClass().getField("commandName");
+        } catch (NoSuchFieldException e) {
+            throw exitWithError(e.toString());
+        }
+        try {
+            return (String)nameField.get(null);
+        } catch (IllegalAccessException e) {
+            throw exitWithError(e.toString());
+        }
+    }
+
+    private String stripQuotes(String str) {
+        return str.replace("/(^\"|\')|(\"|\'$)/g", "");
     }
 }

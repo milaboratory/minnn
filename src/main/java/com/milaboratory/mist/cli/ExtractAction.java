@@ -24,6 +24,7 @@ import static com.milaboratory.mist.parser.ParserFormat.*;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 
 public final class ExtractAction implements Action {
+    public static final String commandName = "extract";
     private final ExtractActionParameters params = new ExtractActionParameters();
 
     @Override
@@ -57,7 +58,7 @@ public final class ExtractAction implements Action {
 
     @Override
     public String command() {
-        return "extract";
+        return commandName;
     }
 
     @Override

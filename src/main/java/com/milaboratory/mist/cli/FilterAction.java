@@ -18,6 +18,7 @@ import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
 
 public final class FilterAction implements Action {
+    public static final String commandName = "filter";
     private final FilterActionParameters params = new FilterActionParameters();
 
     @Override
@@ -33,7 +34,7 @@ public final class FilterAction implements Action {
 
     @Override
     public String command() {
-        return "filter";
+        return commandName;
     }
 
     @Override
