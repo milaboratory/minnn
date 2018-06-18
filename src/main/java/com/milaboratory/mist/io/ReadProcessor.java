@@ -9,6 +9,7 @@ import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.io.sequence.fasta.*;
 import com.milaboratory.core.io.sequence.fastq.*;
 import com.milaboratory.core.sequence.*;
+import com.milaboratory.mist.cli.DescriptionGroups;
 import com.milaboratory.mist.outputconverter.*;
 import com.milaboratory.mist.pattern.*;
 import com.milaboratory.util.CanReportProgress;
@@ -33,11 +34,12 @@ public final class ReadProcessor {
     private final long inputReadsLimit;
     private final int threads;
     private final MistDataFormat inputFormat;
+    private final DescriptionGroups descriptionGroups;
     private int numberOfReads;
 
     public ReadProcessor(List<String> inputFileNames, String outputFileName, Pattern pattern,
                          boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
-                         MistDataFormat inputFormat) {
+                         MistDataFormat inputFormat, DescriptionGroups descriptionGroups) {
         if ((inputFormat == MIF) && (inputFileNames.size() > 1))
             throw exitWithError("Mif data format uses single file; specified " + inputFileNames.size()
                     + " input files!");
@@ -49,6 +51,7 @@ public final class ReadProcessor {
         this.inputReadsLimit = inputReadsLimit;
         this.threads = threads;
         this.inputFormat = inputFormat;
+        this.descriptionGroups = descriptionGroups;
     }
 
     public void processReadsParallel() {
@@ -218,9 +221,8 @@ public final class ReadProcessor {
                 }
             }
 
-            if (bestMatch != null)
-                bestMatch.assembleGroups();
-            return new ParsedRead(input, reverseMatch, bestMatch, 0);
+            return new ParsedRead(input, reverseMatch, (bestMatch == null) ? null
+                    : descriptionGroups.addDescriptionGroups(bestMatch, input), 0);
         }
     }
 }

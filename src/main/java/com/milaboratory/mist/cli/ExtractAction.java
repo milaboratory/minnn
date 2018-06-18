@@ -10,10 +10,12 @@ import com.milaboratory.mist.io.ReadProcessor;
 import com.milaboratory.mist.parser.Parser;
 import com.milaboratory.mist.parser.ParserException;
 import com.milaboratory.mist.pattern.BasePatternAligner;
+import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.mist.pattern.Pattern;
 import com.milaboratory.mist.pattern.PatternAligner;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.milaboratory.mist.cli.CliUtils.*;
 import static com.milaboratory.mist.cli.Defaults.*;
@@ -40,9 +42,16 @@ public final class ExtractAction implements Action {
             System.err.println("Error while parsing the pattern!");
             throw exitWithError(e.getMessage());
         }
+        HashSet<String> patternGroups = pattern.getGroupEdges().stream().map(GroupEdge::getGroupName)
+                .collect(Collectors.toCollection(HashSet::new));
+        DescriptionGroups descriptionGroups = new DescriptionGroups(params.descriptionGroups);
+        patternGroups.retainAll(descriptionGroups.getGroupNames());
+        if (patternGroups.size() > 0)
+            throw exitWithError("Error: groups " + patternGroups + " are both in pattern and in description groups!");
         MistDataFormat inputFormat = parameterNames.get(params.inputFormat);
         ReadProcessor readProcessor = new ReadProcessor(params.inputFileNames, params.outputFileName, pattern,
-                params.oriented, params.fairSorting, params.inputReadsLimit, params.threads, inputFormat);
+                params.oriented, params.fairSorting, params.inputReadsLimit, params.threads, inputFormat,
+                descriptionGroups);
         readProcessor.processReadsParallel();
     }
 
@@ -147,6 +156,11 @@ public final class ExtractAction implements Action {
                 "parentheses",
                 names = {"--devel-parser-syntax"}, hidden = true)
         boolean simplifiedSyntax = false;
+
+        @DynamicParameter(description = "Description group names and regular expressions to parse expected " +
+                "nucleotide sequences for that groups from read description. Example: --description-group-CELLID1=" +
+                "'ATTA.{2-5}GACA' --description-group-CELLID2='.{11}$'", names = {"--description-group-"})
+        LinkedHashMap<String, String> descriptionGroups = new LinkedHashMap<>();
 
         @Override
         public void validate() {
