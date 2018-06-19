@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.milaboratory.mist.util.SystemUtils.*;
@@ -33,19 +34,21 @@ public final class GenerateDocsIO {
 
     public void go() {
         try (PrintStream writer = new PrintStream(new FileOutputStream(outputFileName))) {
+            writer.println(title("Command line syntax"));
             for (Class parameterClass : parameterClasses) {
-                writer.println(getCommandName(parameterClass));
-                writer.println(getAnnotationValue(parameterClass, "commandDescription") + "\n");
+                writer.println(subtitle(getCommandName(parameterClass)));
+                writer.println(getAnnotationValue(parameterClass, "commandDescription") + "\n\n::\n");
                 for (Field field : parameterClass.getDeclaredFields()) {
                     String names = getAnnotationValue(field, "names");
                     String description = stripQuotes(getAnnotationValue(field, "description"));
                     if (names.length() > 2) {
                         names = names.substring(1, names.length() - 1);
-                        writer.println(names + ": " + description);
+                        writer.println(" " + names + ": " + description);
                     } else {
-                        writer.println(description);
+                        writer.println(" " + description);
                     }
                 }
+                writer.println();
             }
         } catch (IOException e) {
             throw exitWithError(e.toString());
@@ -86,5 +89,14 @@ public final class GenerateDocsIO {
 
     private String stripQuotes(String str) {
         return str.replace("/(^\"|\')|(\"|\'$)/g", "");
+    }
+
+    private String title(String str) {
+        String line = Stream.generate(() -> "=").limit(str.length()).collect(Collectors.joining());
+        return line + "\n" + str + "\n" + line;
+    }
+
+    private String subtitle(String str) {
+        return str + "\n" + Stream.generate(() -> "-").limit(str.length()).collect(Collectors.joining());
     }
 }

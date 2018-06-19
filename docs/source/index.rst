@@ -4,8 +4,9 @@ Welcome to Mist's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
+    commands
 
 
 Indices and tables
@@ -17,5 +18,3 @@ Indices and tables
 
 
 Mist is toolset to process genetic data from sequencing machines and assemble sequenced molecules by raw FASTQ data.
-
-.. include:: commands.rst
