@@ -4,10 +4,13 @@ import com.beust.jcommander.*;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.milaboratory.mist.util.SystemUtils.*;
 
@@ -32,12 +35,10 @@ public final class GenerateDocsIO {
         try (PrintStream writer = new PrintStream(new FileOutputStream(outputFileName))) {
             for (Class parameterClass : parameterClasses) {
                 writer.println(getCommandName(parameterClass));
-                writer.println(getAnnotationValue(parameterClass.getAnnotation(Parameters.class),
-                        "commandDescription") + "\n");
+                writer.println(getAnnotationValue(parameterClass, "commandDescription") + "\n");
                 for (Field field : parameterClass.getDeclaredFields()) {
-                    String names = getAnnotationValue(field.getAnnotation(Parameter.class), "names");
-                    String description = stripQuotes(getAnnotationValue(field.getAnnotation(Parameter.class),
-                            "description"));
+                    String names = getAnnotationValue(field, "names");
+                    String description = stripQuotes(getAnnotationValue(field, "description"));
                     if (names.length() > 2) {
                         names = names.substring(1, names.length() - 1);
                         writer.println(names + ": " + description);
@@ -51,7 +52,12 @@ public final class GenerateDocsIO {
         }
     }
 
-    private String getAnnotationValue(Annotation annotation, String parameterName) {
+    private String getAnnotationValue(AnnotatedElement annotatedElement, String parameterName) {
+        Annotation annotation = Stream.of(Parameters.class, Parameter.class, DynamicParameter.class)
+                .map((Function<Class<? extends Annotation>, Annotation>)annotatedElement::getAnnotation)
+                .filter(Objects::nonNull).findFirst().orElse(null);
+        if (annotation == null)
+            throw exitWithError("Annotation for " + annotatedElement + " not found!");
         try {
             for (Method method : annotation.annotationType().getDeclaredMethods())
                 if (method.getName().equals(parameterName)) {
