@@ -10,6 +10,7 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -23,6 +24,7 @@ public final class StatPositionsIO {
     private final int minCountFilter;
     private final float minFracFilter;
     private final HashMap<StatGroupsKey, Long> statGroups = new HashMap<>();
+    private long totalReads = 0;
 
     public StatPositionsIO(List<String> groupList, List<String> readIdList, boolean outputWithSeq,
                            String inputFileName, String outputFileName, long inputReadsLimit, int minCountFilter,
@@ -39,8 +41,6 @@ public final class StatPositionsIO {
 
     public void go() {
         long startTime = System.currentTimeMillis();
-        long totalReads = 0;
-        long countedReads = 0;
         ArrayList<String> correctedGroups;
         boolean sorted;
 
@@ -51,7 +51,6 @@ public final class StatPositionsIO {
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
             for (ParsedRead parsedRead : CUtils.it(reader)) {
-                boolean readCounted = false;
                 Map<String, MatchedGroupEdge> startGroupEdges = parsedRead.getBestMatch().getMatchedGroupEdges()
                         .stream().filter(MatchedGroupEdge::isStart)
                         .collect(Collectors.toMap(MatchedGroupEdge::getGroupName, mge -> mge));
@@ -62,15 +61,12 @@ public final class StatPositionsIO {
                     if (groupList.contains(entry.getKey())) {
                         String readId = getReadId(entry.getValue(), parsedRead.isReverseMatch());
                         if ((readIdList == null) || readIdList.contains(readId)) {
-                            readCounted = true;
                             StatGroupsKey currentKey = new StatGroupsKey(entry.getValue(), readId,
                                     outputWithSeq ? groupValues.get(entry.getKey()) : null);
                             Long count = statGroups.get(currentKey);
                             statGroups.put(currentKey, count == null ? 1 : count + 1);
                         }
                     }
-                if (readCounted)
-                    countedReads++;
                 if (++totalReads == inputReadsLimit)
                     break;
             }
@@ -102,10 +98,11 @@ public final class StatPositionsIO {
         else
             System.err.println("Groups " + correctedGroups + " in input MIF file are corrected, and MIF file is "
                     + (sorted ? "" : "not ") + "sorted");
-        System.err.println("Checked " + totalReads + " reads");
+        System.err.println("Checked " + totalReads + " reads, " + (totalReads * groupList.size()) + " groups");
         if (totalReads > 0) {
-            long countedReadsPercent = (countedReads * 100) / totalReads;
-            System.err.println("Counted reads: " + countedReadsPercent + "% of checked reads\n");
+            float percent = (float)table.stream().mapToLong(line -> line.count).sum() / totalReads
+                    / groupList.size() * 100;
+            System.err.println("Counted groups: " + floatFormat.format(percent) + "% of checked groups\n");
         }
     }
 
@@ -131,9 +128,9 @@ public final class StatPositionsIO {
 
     private String getHeader() {
         if (outputWithSeq)
-            return "group.id read pos count seq";
+            return "group.id read pos count percent seq";
         else
-            return "group.id read pos count";
+            return "group.id read pos count percent";
     }
 
     private class StatGroupsKey {
@@ -193,7 +190,9 @@ public final class StatPositionsIO {
             line.append(groupId).append(' ');
             line.append(readId).append(' ');
             line.append(position).append(' ');
-            line.append(count);
+            line.append(count).append(' ');
+            float percent = (totalReads == 0) ? 0 : (float)count / totalReads / groupList.size() * 100;
+            line.append(floatFormat.format(percent)).append('%');
             if (outputWithSeq)
                 line.append(' ').append(seq);
             return line.toString();

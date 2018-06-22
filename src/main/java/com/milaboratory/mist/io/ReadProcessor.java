@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.StreamSupport;
 
 import static com.milaboratory.core.io.sequence.SequenceReadUtil.setReadId;
+import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.io.MistDataFormat.*;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
@@ -82,8 +83,8 @@ public final class ReadProcessor {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.err.println(String.format("Matched reads: %.1f%%\n",
-                totalReads == 0 ? 0.0 : matchedReads * 100.0 / totalReads));
+        float percent = (totalReads == 0) ? 0 : (float)matchedReads / totalReads * 100;
+        System.err.println("Matched reads: " + floatFormat.format(percent) + "%\n");
     }
 
     private OutputPortCloseable<? extends SequenceRead> createReader() throws IOException {

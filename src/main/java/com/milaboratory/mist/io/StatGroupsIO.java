@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -27,6 +28,7 @@ public final class StatGroupsIO {
     private final int minCountFilter;
     private final float minFracFilter;
     private final HashMap<StatGroupsKey, StatGroupsValue> statGroups = new HashMap<>();
+    private long totalReads = 0;
 
     public StatGroupsIO(List<String> groupList, String inputFileName, String outputFileName, long inputReadsLimit,
                         byte readQualityFilter, byte minQualityFilter, byte avgQualityFilter, int minCountFilter,
@@ -44,7 +46,6 @@ public final class StatGroupsIO {
 
     public void go() {
         long startTime = System.currentTimeMillis();
-        long totalReads = 0;
         ArrayList<String> correctedGroups;
         boolean sorted;
 
@@ -105,9 +106,8 @@ public final class StatGroupsIO {
                     + (sorted ? "" : "not ") + "sorted");
         System.err.println("Checked " + totalReads + " reads");
         if (totalReads > 0) {
-            int countedReadsPercent = (int)((float)table.stream()
-                    .mapToLong(line -> line.count).sum() / totalReads * 100);
-            System.err.println("Counted reads: " + countedReadsPercent + "% of checked reads\n");
+            float countedReadsPercent = (float)table.stream().mapToLong(line -> line.count).sum() / totalReads * 100;
+            System.err.println("Counted reads: " + floatFormat.format(countedReadsPercent) + "% of checked reads\n");
         }
     }
 
@@ -131,7 +131,7 @@ public final class StatGroupsIO {
             header.append(groupName).append(".qual.min ");
             header.append(groupName).append(".qual.avg ");
         }
-        header.append("count");
+        header.append("count percent");
         return header.toString();
     }
 
@@ -254,7 +254,9 @@ public final class StatGroupsIO {
                 line.append(minQualities[groupIndex]).append(' ');
                 line.append(avgQualities[groupIndex]).append(' ');
             }
-            line.append(count);
+            line.append(count).append(' ');
+            float percent = (totalReads == 0) ? 0 : (float)count / totalReads * 100;
+            line.append(floatFormat.format(percent)).append('%');
             return line.toString();
         }
     }

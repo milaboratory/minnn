@@ -29,6 +29,7 @@ import java.util.stream.IntStream;
 import static com.milaboratory.core.alignment.BandedLinearAligner.alignLocalGlobal;
 import static com.milaboratory.core.sequence.SequenceQuality.MAX_QUALITY_VALUE;
 import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
+import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.pattern.PatternUtils.invertCoordinate;
 import static com.milaboratory.mist.util.SystemUtils.*;
@@ -181,6 +182,9 @@ public final class ConsensusIO {
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         System.err.println("Processed " + totalReads + " reads\n");
         System.err.println("Calculated " + consensusReads + " consensuses\n");
+        if (consensusReads.get() > 0)
+            System.err.println("Average reads per consensus: " + floatFormat.format((float)totalReads.get()
+                    / consensusReads.get()) + "\n");
     }
 
     private MifReader createReader() throws IOException {

@@ -13,6 +13,7 @@ import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
 
+import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -61,7 +62,9 @@ public final class FilterIO {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.err.println("Processed " + totalReads + " reads, matched " + matchedReads + " reads\n");
+        float percent = (totalReads == 0) ? 0 : (float)matchedReads / totalReads * 100;
+        System.err.println("Processed " + totalReads + " reads, matched " + matchedReads + " reads ("
+                + floatFormat.format(percent) + "%)\n");
     }
 
     private MifReader createReader() throws IOException {

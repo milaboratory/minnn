@@ -161,7 +161,7 @@ public class StatActionsTest {
 
     private int parseCount(String line) {
         String[] tokens = line.split(" ");
-        return Integer.parseInt(tokens[tokens.length - 1]);
+        return Integer.parseInt(tokens[tokens.length - 2]);
     }
 
     private void assertRestrictionsAndSizes(int restrictionComparison, int sizeComparison) {

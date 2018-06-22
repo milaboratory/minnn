@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -147,7 +148,8 @@ public final class CorrectBarcodesIO {
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         System.err.println("Processed " + totalReads + " reads");
-        System.err.println("Reads with corrected barcodes: " + corrected + "\n");
+        float percent = (totalReads == 0) ? 0 : (float)corrected.get() / totalReads * 100;
+        System.err.println("Reads with corrected barcodes: " + corrected + " (" + floatFormat.format(percent) + "%)\n");
     }
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
