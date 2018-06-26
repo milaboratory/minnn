@@ -482,8 +482,7 @@ public final class ConsensusIO {
                         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                             NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
                             Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
-                                    bestSequences[targetIndex].getSequence(), currentSequence.getSequence(),
-                                    alignerWidth);
+                                    bestSequences[targetIndex], currentSequence, alignerWidth);
                             alignments.add(alignment);
                             sumScore += alignment.getScore();
                         }
@@ -589,8 +588,8 @@ public final class ConsensusIO {
                                 NSequenceWithQuality currentSeq = currentPositionSequences.get(i);
                                 if (currentSeq != null)
                                     lettersMatrix.add(currentSeq, alignLocalGlobal(scoring,
-                                            currentPositionSequences.get(bestQualityIndex).getSequence(),
-                                            currentPositionSequences.get(i).getSequence(), alignerWidth));
+                                            currentPositionSequences.get(bestQualityIndex),
+                                            currentPositionSequences.get(i), alignerWidth));
                                 else
                                     lettersMatrix.addNull();
                             }
