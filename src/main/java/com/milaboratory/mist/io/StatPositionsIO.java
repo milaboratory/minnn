@@ -82,11 +82,11 @@ public final class StatPositionsIO {
                     && ((minFracFilter < PRECISION) || ((float)count / totalReads >= minFracFilter)))
                 table.add(new StatGroupsTableLine(statGroup));
         }
-        Collections.sort(table);
 
+        System.err.println("Sorting and writing...");
         try (PrintStream writer = createWriter()) {
             writer.println(getHeader());
-            table.forEach(line -> writer.println(line.getTableLine()));
+            table.parallelStream().sorted().forEachOrdered(line -> writer.println(line.getTableLine()));
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
