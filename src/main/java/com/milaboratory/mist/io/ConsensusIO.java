@@ -8,10 +8,7 @@ import cc.redberry.pipe.util.OrderedOutputPort;
 import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
 import com.milaboratory.core.io.sequence.*;
-import com.milaboratory.core.sequence.NSequenceWithQuality;
-import com.milaboratory.core.sequence.NucleotideSequence;
-import com.milaboratory.core.sequence.SequenceQuality;
-import com.milaboratory.core.sequence.SequenceWithQuality;
+import com.milaboratory.core.sequence.*;
 import com.milaboratory.mist.outputconverter.MatchedGroup;
 import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.GroupEdge;
@@ -38,15 +35,28 @@ import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 public final class ConsensusIO {
     private static final HashMap<NucleotideSequence, NucleotideSequence> sequenceCache = new HashMap<>();
     private static final TByteObjectHashMap<SequenceQuality> qualityCache = new TByteObjectHashMap<>();
+    private static final HashMap<NucleotideSequence, Wildcard> wildcards = new HashMap<>();
+    private static final TByteObjectHashMap<NucleotideSequence> wildcardCodeToSequence = new TByteObjectHashMap<>();
     static {
-        String[] nucleotides = new String[] { "A", "T", "G", "C" };
-        Arrays.stream(nucleotides).map(NucleotideSequence::new).forEach(seq -> sequenceCache.put(seq, seq));
-        Arrays.stream(nucleotides).forEach(firstNucleotide -> Arrays.stream(nucleotides).forEach(secondNucleotide -> {
-            NucleotideSequence currentSequence = new NucleotideSequence(firstNucleotide + secondNucleotide);
+        String[] basicLetters = new String[] { "A", "T", "G", "C" };
+        String[] wildcardLetters = new String[] { "N", "R", "Y", "S", "W", "K", "M", "B", "D", "H", "V" };
+        Arrays.stream(basicLetters).map(NucleotideSequence::new).forEach(seq -> sequenceCache.put(seq, seq));
+        Arrays.stream(basicLetters).forEach(first -> Arrays.stream(basicLetters).forEach(second -> {
+            NucleotideSequence currentSequence = new NucleotideSequence(first + second);
             sequenceCache.put(currentSequence, currentSequence);
         }));
         for (byte quality = 0; quality <= MAX_QUALITY_VALUE; quality++)
             qualityCache.put(quality, new SequenceQuality(new byte[] { quality }));
+        NucleotideSequence.ALPHABET.getAllWildcards().forEach(wildcard -> {
+            Arrays.stream(wildcardLetters).forEach(letter -> {
+                if (letter.charAt(0) == wildcard.getSymbol())
+                    wildcards.put(new NucleotideSequence(letter), wildcard);
+            });
+            Arrays.stream(basicLetters).forEach(letter -> {
+                if (letter.charAt(0) == wildcard.getSymbol())
+                    wildcardCodeToSequence.put(wildcard.getCode(), sequenceCache.get(new NucleotideSequence(letter)));
+            });
+        });
     }
 
     private final String inputFileName;
@@ -623,10 +633,23 @@ public final class ConsensusIO {
                                             + currentLettersWithPositions.getDeletionQuality(targetIndex, position));
                         } else if (currentLetter != null) {
                             NucleotideSequence letterWithoutQuality = currentLetter.getSequence();
-                            currentPositionQualitySums.putIfAbsent(letterWithoutQuality, 0L);
-                            currentPositionQualitySums.put(letterWithoutQuality,
-                                    currentPositionQualitySums.get(letterWithoutQuality)
-                                            + currentLetter.getQuality().value(0));
+                            if (letterWithoutQuality.containsWildcards()) {
+                                Wildcard wildcard = wildcards.get(letterWithoutQuality);
+                                for (int i = 0; i < wildcard.basicSize(); i++) {
+                                    NucleotideSequence currentBasicLetter = wildcardCodeToSequence
+                                            .get(wildcard.getMatchingCode(i));
+                                    currentPositionQualitySums.putIfAbsent(currentBasicLetter, 0L);
+                                    currentPositionQualitySums.put(currentBasicLetter,
+                                            currentPositionQualitySums.get(currentBasicLetter)
+                                                    + currentLetter.getQuality().value(0)
+                                                    / wildcard.basicSize());
+                                }
+                            } else {
+                                currentPositionQualitySums.putIfAbsent(letterWithoutQuality, 0L);
+                                currentPositionQualitySums.put(letterWithoutQuality,
+                                        currentPositionQualitySums.get(letterWithoutQuality)
+                                                + currentLetter.getQuality().value(0));
+                            }
                         }
                     }
 
