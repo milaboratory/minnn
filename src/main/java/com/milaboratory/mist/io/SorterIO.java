@@ -12,6 +12,7 @@ import com.milaboratory.util.TempFileManager;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,8 @@ public final class SorterIO {
         this.outputFileName = outputFileName;
         this.sortGroupNames = sortGroupNames;
         this.chunkSize = (chunkSize == -1) ? estimateChunkSize() : chunkSize;
-        this.tmpFile = (tmpFile == null) ? TempFileManager.getTempFile() : new File(tmpFile);
+        this.tmpFile = (tmpFile != null) ? new File(tmpFile) : TempFileManager.getTempFile((outputFileName == null)
+                ? null : Paths.get(new File(outputFileName).getAbsolutePath()).getParent());
     }
 
     public void go() {
