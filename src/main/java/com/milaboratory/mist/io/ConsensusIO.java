@@ -75,9 +75,11 @@ public final class ConsensusIO {
     private final float avgQualityThreshold;
     private final int trimWindowSize;
     private final long inputReadsLimit;
+    private final int maxWarnings;
     private final int threads;
     private final AtomicLong totalReads = new AtomicLong(0);
     private final AtomicLong consensusReads = new AtomicLong(0);
+    private int warningsDisplayed = 0;
     private Set<String> groupSet;
     private int numberOfTargets;
 
@@ -85,7 +87,8 @@ public final class ConsensusIO {
                        int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
                        float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
                        float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
-                       float avgQualityThreshold, int trimWindowSize, long inputReadsLimit, int threads) {
+                       float avgQualityThreshold, int trimWindowSize, long inputReadsLimit, int maxWarnings,
+                       int threads) {
         this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -103,6 +106,7 @@ public final class ConsensusIO {
         this.avgQualityThreshold = avgQualityThreshold;
         this.trimWindowSize = trimWindowSize;
         this.inputReadsLimit = inputReadsLimit;
+        this.maxWarnings = maxWarnings;
         this.threads = threads;
     }
 
@@ -115,16 +119,16 @@ public final class ConsensusIO {
             SmartProgressReporter.startProgressReport("Calculating consensuses", reader, System.err);
             if (groupSet == null) {
                 if (reader.getCorrectedGroups().size() == 0)
-                    System.err.println("WARNING: calculating consensus for not corrected MIF file!");
+                    displayWarning("WARNING: calculating consensus for not corrected MIF file!");
             } else {
                 List<String> notCorrectedGroups = groupSet.stream().filter(gn -> reader.getCorrectedGroups().stream()
                         .noneMatch(gn::equals)).collect(Collectors.toList());
                 if (notCorrectedGroups.size() != 0)
-                    System.err.println("WARNING: group(s) " + notCorrectedGroups + " not corrected, but used in " +
+                    displayWarning("WARNING: group(s) " + notCorrectedGroups + " not corrected, but used in " +
                             "consensus calculation!");
             }
             if (!reader.isSorted())
-                System.err.println("WARNING: calculating consensus for not sorted MIF file; result will be wrong!");
+                displayWarning("WARNING: calculating consensus for not sorted MIF file; result will be wrong!");
             numberOfTargets = reader.getNumberOfReads();
             Set<String> defaultGroups = IntStream.rangeClosed(1, numberOfTargets)
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
@@ -204,6 +208,17 @@ public final class ConsensusIO {
     private MifWriter createWriter(MifHeader mifHeader) throws IOException {
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
                 : new MifWriter(outputFileName, mifHeader);
+    }
+
+    private synchronized void displayWarning(String text) {
+        if (maxWarnings == -1)
+            System.err.println(text);
+        else if ((maxWarnings > 0) && (warningsDisplayed < maxWarnings)) {
+            System.err.println(text);
+            warningsDisplayed++;
+            if (warningsDisplayed == maxWarnings)
+                System.err.println("Warnings limit reached!");
+        }
     }
 
     private class Barcode {
@@ -350,7 +365,7 @@ public final class ConsensusIO {
                 Consensus stage1Consensus = generateConsensus(subsequencesList, bestData.sequences, bestData.barcodes);
 
                 if (stage1Consensus == null)
-                    System.err.println("WARNING: consensus assembled from " + (data.size() - filteredOutReads.size())
+                    displayWarning("WARNING: consensus assembled from " + (data.size() - filteredOutReads.size())
                             + " reads discarded on stage 1 after quality trimming!");
                 else {
                     // stage 2: align to consensus from stage 1
@@ -360,7 +375,7 @@ public final class ConsensusIO {
                         Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences,
                                 stage1Consensus.barcodes);
                         if (stage2Consensus == null)
-                            System.err.println("WARNING: consensus assembled from " + (data.size()
+                            displayWarning("WARNING: consensus assembled from " + (data.size()
                                     - filteredOutReads.size()) + " reads discarded on stage 2 after quality trimming!");
                         else
                             calculatedConsensuses.consensuses.add(stage2Consensus);
@@ -376,7 +391,7 @@ public final class ConsensusIO {
                                 remainingData.add(data.get(i));
                         data = remainingData;
                     } else {
-                        System.err.println("WARNING: max consensuses per cluster exceeded; not processed "
+                        displayWarning("WARNING: max consensuses per cluster exceeded; not processed "
                                 + filteredOutReads.size() + " reads from cluster of " + cluster.data.size()
                                 + " reads!");
                         data = new ArrayList<>();

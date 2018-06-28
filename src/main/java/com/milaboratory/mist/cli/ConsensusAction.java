@@ -19,7 +19,8 @@ public final class ConsensusAction implements Action {
                 params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore, params.scoreThreshold,
                 params.skippedFractionToRepeat, params.maxConsensusesPerCluster, params.readsMinGoodSeqLength,
                 params.readsAvgQualityThreshold, params.readsTrimWindowSize, params.minGoodSeqLength,
-                params.avgQualityThreshold, params.trimWindowSize, params.inputReadsLimit, params.threads);
+                params.avgQualityThreshold, params.trimWindowSize, params.inputReadsLimit, params.maxWarnings,
+                params.threads);
         consensusIO.go();
     }
 
@@ -113,8 +114,12 @@ public final class ConsensusAction implements Action {
                 names = {"-n", "--number-of-reads"}, order = 16)
         long inputReadsLimit = 0;
 
+        @Parameter(description = "Maximum allowed number of warnings; -1 means no limit.",
+                names = {"--max-warnings"}, order = 17)
+        int maxWarnings = -1;
+
         @Parameter(description = "Number of threads for calculating consensus sequences.",
-                names = {"--threads"}, order = 17)
+                names = {"--threads"}, order = 18)
         int threads = DEFAULT_THREADS;
     }
 }

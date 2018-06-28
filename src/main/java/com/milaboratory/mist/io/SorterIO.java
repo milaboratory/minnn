@@ -25,14 +25,16 @@ public final class SorterIO {
     private final String outputFileName;
     private final List<String> sortGroupNames;
     private final int chunkSize;
+    private final boolean suppressWarnings;
     private final File tmpFile;
 
     public SorterIO(String inputFileName, String outputFileName, List<String> sortGroupNames, int chunkSize,
-                    String tmpFile) {
+                    boolean suppressWarnings, String tmpFile) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.sortGroupNames = sortGroupNames;
         this.chunkSize = (chunkSize == -1) ? estimateChunkSize() : chunkSize;
+        this.suppressWarnings = suppressWarnings;
         this.tmpFile = (tmpFile != null) ? new File(tmpFile) : TempFileManager.getTempFile((outputFileName == null)
                 ? null : Paths.get(new File(outputFileName).getAbsolutePath()).getParent());
     }
@@ -45,7 +47,7 @@ public final class SorterIO {
             SmartProgressReporter.startProgressReport("Reading", reader, System.err);
             List<String> notCorrectedGroups = sortGroupNames.stream().filter(gn -> reader.getCorrectedGroups().stream()
                     .noneMatch(gn::equals)).collect(Collectors.toList());
-            if (notCorrectedGroups.size() != 0)
+            if (!suppressWarnings && (notCorrectedGroups.size() != 0))
                 System.err.println("WARNING: group(s) " + notCorrectedGroups + " not corrected before sorting!");
             OutputPortCloseable<ParsedRead> sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
                     new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);

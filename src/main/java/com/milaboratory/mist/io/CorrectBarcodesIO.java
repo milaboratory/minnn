@@ -44,6 +44,7 @@ public final class CorrectBarcodesIO {
     private final int maxClusterDepth;
     private final float singleMutationProbability;
     private final long inputReadsLimit;
+    private final boolean suppressWarnings;
     private final int threads;
     private Set<String> defaultGroups;
     private LinkedHashSet<String> keyGroups;
@@ -53,7 +54,8 @@ public final class CorrectBarcodesIO {
 
     public CorrectBarcodesIO(String inputFileName, String outputFileName, int mismatches, int indels,
                              int totalErrors, float threshold, List<String> groupNames, int maxClusterDepth,
-                             float singleMutationProbability, long inputReadsLimit, int threads) {
+                             float singleMutationProbability, long inputReadsLimit, boolean suppressWarnings,
+                             int threads) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.mismatches = mismatches;
@@ -64,6 +66,7 @@ public final class CorrectBarcodesIO {
         this.maxClusterDepth = maxClusterDepth;
         this.singleMutationProbability = singleMutationProbability;
         this.inputReadsLimit = inputReadsLimit;
+        this.suppressWarnings = suppressWarnings;
         this.threads = threads;
     }
 
@@ -83,11 +86,11 @@ public final class CorrectBarcodesIO {
             if (groupNames.stream().anyMatch(defaultGroups::contains))
                 throw exitWithError("Default groups R1, R2, etc should not be specified for correction!");
             keyGroups = new LinkedHashSet<>(groupNames);
-            if (pass1Reader.isSorted())
+            if (!suppressWarnings && pass1Reader.isSorted())
                 System.err.println("WARNING: correcting sorted MIF file; output file will be unsorted!");
             List<String> correctedAgainGroups = keyGroups.stream().filter(gn -> pass1Reader.getCorrectedGroups()
                     .stream().anyMatch(gn::equals)).collect(Collectors.toList());
-            if (correctedAgainGroups.size() != 0)
+            if (!suppressWarnings && (correctedAgainGroups.size() != 0))
                 System.err.println("WARNING: group(s) " + correctedAgainGroups + " already corrected and will be " +
                         "corrected again!");
             Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()

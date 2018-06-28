@@ -14,7 +14,7 @@ public final class SortAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         SorterIO sorterIO = new SorterIO(params.inputFileName, params.outputFileName, params.sortGroupNames,
-                params.chunkSize, params.tmpFile);
+                params.chunkSize, params.suppressWarnings, params.tmpFile);
         sorterIO.go();
     }
 
@@ -49,6 +49,10 @@ public final class SortAction implements Action {
         @Parameter(description = "Chunk size for sorter.",
                 names = {"--chunk-size"}, order = 4)
         int chunkSize = -1;
+
+        @Parameter(description = "Don't display any warnings.",
+                names = {"--suppress-warnings"}, order = 5)
+        boolean suppressWarnings = false;
 
         @Parameter(description = "Custom temp file, used for debugging purposes.",
                 names = {"--temp-file"}, hidden = true)
