@@ -21,6 +21,8 @@ import com.milaboratory.mist.outputconverter.ParsedRead;
 import com.milaboratory.mist.pattern.Match;
 import com.milaboratory.mist.pattern.MatchedGroupEdge;
 import com.milaboratory.mist.pattern.MatchedItem;
+import com.milaboratory.mist.stat.MutationProbability;
+import com.milaboratory.mist.stat.SimpleMutationProbability;
 import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
@@ -42,7 +44,7 @@ public final class CorrectBarcodesIO {
     private final float threshold;
     private final List<String> groupNames;
     private final int maxClusterDepth;
-    private final float singleMutationProbability;
+    private final MutationProbability mutationProbability;
     private final long inputReadsLimit;
     private final boolean suppressWarnings;
     private final int threads;
@@ -54,8 +56,8 @@ public final class CorrectBarcodesIO {
 
     public CorrectBarcodesIO(String inputFileName, String outputFileName, int mismatches, int indels,
                              int totalErrors, float threshold, List<String> groupNames, int maxClusterDepth,
-                             float singleMutationProbability, long inputReadsLimit, boolean suppressWarnings,
-                             int threads) {
+                             float singleSubstitutionProbability, float singleIndelProbability, long inputReadsLimit,
+                             boolean suppressWarnings, int threads) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.mismatches = mismatches;
@@ -64,7 +66,7 @@ public final class CorrectBarcodesIO {
         this.threshold = threshold;
         this.groupNames = groupNames;
         this.maxClusterDepth = maxClusterDepth;
-        this.singleMutationProbability = singleMutationProbability;
+        this.mutationProbability = new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability);
         this.inputReadsLimit = inputReadsLimit;
         this.suppressWarnings = suppressWarnings;
         this.threads = threads;
@@ -210,7 +212,9 @@ public final class CorrectBarcodesIO {
             Mutations<NucleotideSequence> currentMutations = iterator.getCurrentMutations();
             long majorClusterCount = cluster.getHead().count;
             long minorClusterCount = minorSequenceCounter.count;
-            double expected = majorClusterCount * Math.pow(singleMutationProbability, currentMutations.size());
+            float expected = majorClusterCount;
+            for (int mutationCode : currentMutations.getRAWMutations())
+                expected *= mutationProbability.mutationProbability(mutationCode);
             return (minorClusterCount <= expected) && ((float)minorClusterCount / majorClusterCount < threshold);
         }
 

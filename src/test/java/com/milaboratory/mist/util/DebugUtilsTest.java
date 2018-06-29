@@ -2,10 +2,8 @@ package com.milaboratory.mist.util;
 
 import org.junit.*;
 
-import java.io.File;
 import java.util.concurrent.Callable;
 
-import static com.milaboratory.mist.cli.CommandLineTestUtils.exec;
 import static com.milaboratory.mist.util.CommonTestUtils.*;
 import static com.milaboratory.mist.util.DebugUtils.*;
 import static org.junit.Assert.*;

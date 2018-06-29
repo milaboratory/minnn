@@ -15,7 +15,6 @@ import com.milaboratory.mist.pattern.GroupEdge;
 import com.milaboratory.mist.pattern.Match;
 import com.milaboratory.mist.pattern.MatchedGroupEdge;
 import com.milaboratory.util.SmartProgressReporter;
-import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.io.IOException;
 import java.util.*;
@@ -29,36 +28,11 @@ import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.cli.Defaults.*;
 import static com.milaboratory.mist.pattern.PatternUtils.invertCoordinate;
+import static com.milaboratory.mist.util.SequencesCache.*;
 import static com.milaboratory.mist.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class ConsensusIO {
-    private static final HashMap<NucleotideSequence, NucleotideSequence> sequenceCache = new HashMap<>();
-    private static final TByteObjectHashMap<SequenceQuality> qualityCache = new TByteObjectHashMap<>();
-    private static final HashMap<NucleotideSequence, Wildcard> wildcards = new HashMap<>();
-    private static final TByteObjectHashMap<NucleotideSequence> wildcardCodeToSequence = new TByteObjectHashMap<>();
-    static {
-        String[] basicLetters = new String[] { "A", "T", "G", "C" };
-        String[] wildcardLetters = new String[] { "N", "R", "Y", "S", "W", "K", "M", "B", "D", "H", "V" };
-        Arrays.stream(basicLetters).map(NucleotideSequence::new).forEach(seq -> sequenceCache.put(seq, seq));
-        Arrays.stream(basicLetters).forEach(first -> Arrays.stream(basicLetters).forEach(second -> {
-            NucleotideSequence currentSequence = new NucleotideSequence(first + second);
-            sequenceCache.put(currentSequence, currentSequence);
-        }));
-        for (byte quality = 0; quality <= MAX_QUALITY_VALUE; quality++)
-            qualityCache.put(quality, new SequenceQuality(new byte[] { quality }));
-        NucleotideSequence.ALPHABET.getAllWildcards().forEach(wildcard -> {
-            Arrays.stream(wildcardLetters).forEach(letter -> {
-                if (letter.charAt(0) == wildcard.getSymbol())
-                    wildcards.put(new NucleotideSequence(letter), wildcard);
-            });
-            Arrays.stream(basicLetters).forEach(letter -> {
-                if (letter.charAt(0) == wildcard.getSymbol())
-                    wildcardCodeToSequence.put(wildcard.getCode(), sequenceCache.get(new NucleotideSequence(letter)));
-            });
-        });
-    }
-
     private final String inputFileName;
     private final String outputFileName;
     private final int alignerWidth;
@@ -423,7 +397,7 @@ public final class ConsensusIO {
         }
 
         private NSequenceWithQuality getCachedValues(SequenceWithQuality<NucleotideSequence> input) {
-            NucleotideSequence sequence = sequenceCache.get(input.getSequence());
+            NucleotideSequence sequence = sequencesCache.get(input.getSequence());
             return new NSequenceWithQuality((sequence == null) ? input.getSequence() : sequence,
                     (input.size() == 1) ? qualityCache.get(input.getQuality().value(0)) : input.getQuality());
         }

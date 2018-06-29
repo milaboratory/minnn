@@ -17,8 +17,8 @@ public final class CorrectAction implements Action {
     public void go(ActionHelper helper) {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(params.inputFileName, params.outputFileName,
                 params.mismatches, params.indels, params.totalErrors, params.threshold, params.groupNames,
-                params.maxClusterDepth, params.singleMutationProbability, params.inputReadsLimit,
-                params.suppressWarnings, params.threads);
+                params.maxClusterDepth, params.singleSubstitutionProbability, params.singleIndelProbability,
+                params.inputReadsLimit, params.suppressWarnings, params.threads);
         correctBarcodesIO.go();
     }
 
@@ -71,20 +71,24 @@ public final class CorrectAction implements Action {
                 names = {"--max-cluster-depth"}, order = 8)
         int maxClusterDepth = DEFAULT_CORRECT_MAX_CLUSTER_DEPTH;
 
-        @Parameter(description = "Single mutation probability for clustering algorithm.",
-                names = {"--single-mutation-probability"}, order = 9)
-        float singleMutationProbability = DEFAULT_CORRECT_SINGLE_MUTATION_PROBABILITY;
+        @Parameter(description = "Single substitution probability for clustering algorithm.",
+                names = {"--single-substitution-probability"}, order = 9)
+        float singleSubstitutionProbability = DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY;
+
+        @Parameter(description = "Single insertion/deletion probability for clustering algorithm.",
+                names = {"--single-indel-probability"}, order = 10)
+        float singleIndelProbability = DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY;
 
         @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 10)
+                names = {"-n", "--number-of-reads"}, order = 11)
         long inputReadsLimit = 0;
 
         @Parameter(description = "Don't display any warnings.",
-                names = {"--suppress-warnings"}, order = 11)
+                names = {"--suppress-warnings"}, order = 12)
         boolean suppressWarnings = false;
 
         @Parameter(description = "Number of threads for correcting barcodes.",
-                names = {"--threads"}, order = 12)
+                names = {"--threads"}, order = 13)
         int threads = DEFAULT_THREADS;
     }
 }
