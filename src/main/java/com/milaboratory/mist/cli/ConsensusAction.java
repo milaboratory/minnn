@@ -20,7 +20,7 @@ public final class ConsensusAction implements Action {
                 params.skippedFractionToRepeat, params.maxConsensusesPerCluster, params.readsMinGoodSeqLength,
                 params.readsAvgQualityThreshold, params.readsTrimWindowSize, params.minGoodSeqLength,
                 params.avgQualityThreshold, params.trimWindowSize, params.inputReadsLimit, params.maxWarnings,
-                params.threads);
+                params.threads, params.debugOutputFileName, params.debugQualityThreshold);
         consensusIO.go();
     }
 
@@ -121,5 +121,13 @@ public final class ConsensusAction implements Action {
         @Parameter(description = "Number of threads for calculating consensus sequences.",
                 names = {"--threads"}, order = 18)
         int threads = DEFAULT_THREADS;
+
+        @Parameter(description = "Output text file for consensus algorithm debug information.",
+                names = {"--debug-output"}, hidden = true)
+        String debugOutputFileName = null;
+
+        @Parameter(description = "Quality threshold to write capital letter in debug output file.",
+                names = {"--debug-quality-threshold"}, hidden = true)
+        byte debugQualityThreshold = (byte)(DEFAULT_GOOD_QUALITY / 2);
     }
 }
