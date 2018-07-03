@@ -671,7 +671,8 @@ public final class ConsensusIO {
                     for (int sequenceIndex = 0; sequenceIndex < consensusReadsNum; sequenceIndex++) {
                         ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(sequenceIndex);
                         for (int letterIndex = 0; letterIndex < lettersMatrix.getRowLength(); letterIndex++)
-                            currentLettersRow.add(lettersMatrix.getLetterByCoordinate(sequenceIndex, letterIndex));
+                            addLetterToRow(currentLettersRow,
+                                    lettersMatrix.getLetterByCoordinate(sequenceIndex, letterIndex));
                     }
                 }
 
@@ -758,6 +759,30 @@ public final class ConsensusIO {
             }
 
             return new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData);
+        }
+
+        /**
+         * Add new letter to the end of letters row with properly handling of trailing nulls: replace them with
+         * deletions because there must be no nulls in the middle of sequence.
+         *
+         * @param currentLettersRow     current row of letters that will be modified
+         * @param newLetter             new letter (can be null or deletion) that is inserted to the end of row
+         */
+        private void addLetterToRow(ArrayList<NSequenceWithQuality> currentLettersRow, NSequenceWithQuality newLetter) {
+            if (newLetter != null) {
+                int firstNullPosition = -1;
+                for (int currentPosition = currentLettersRow.size() - 1; currentPosition >= 0; currentPosition--) {
+                    if (currentLettersRow.get(currentPosition) == null)
+                        firstNullPosition = currentPosition;
+                    else
+                        break;
+                }
+                if (firstNullPosition > 0)
+                    for (int currentPosition = firstNullPosition; currentPosition < currentLettersRow.size();
+                         currentPosition++)
+                        currentLettersRow.set(currentPosition, NSequenceWithQuality.EMPTY);
+            }
+            currentLettersRow.add(newLetter);
         }
 
         private class AlignedSubsequences {
@@ -1004,7 +1029,7 @@ public final class ConsensusIO {
                         if (wantedSeqPosition >= seqPosition) {
                             /* if nucleotide not found and this is not last position in sequence, this is a deletion,
                                otherwise we are on the right from all sequence and return null */
-                            if (seqPosition < sequence.size() - 1)
+                            if (seqPosition < sequence.size())
                                 return NSequenceWithQuality.EMPTY;
                             else
                                 return null;
