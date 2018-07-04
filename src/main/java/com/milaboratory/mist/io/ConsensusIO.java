@@ -402,7 +402,8 @@ public final class ConsensusIO {
 
                 if (!stage1Consensus.isConsensus) {
                     displayWarning("WARNING: consensus assembled from " + (data.size() - filteredOutReads.size())
-                            + " reads discarded on stage 1 after quality trimming!");
+                            + " reads discarded on stage 1 after quality trimming! Barcode values: "
+                            + formatBarcodeValues(bestData.barcodes));
                     if (debugOutputStream != null)
                         calculatedConsensuses.consensuses.add(stage1Consensus);
                 } else {
@@ -414,7 +415,8 @@ public final class ConsensusIO {
                                 stage1Consensus.barcodes);
                         if (!stage2Consensus.isConsensus) {
                             displayWarning("WARNING: consensus assembled from " + (data.size()
-                                    - filteredOutReads.size()) + " reads discarded on stage 2 after quality trimming!");
+                                    - filteredOutReads.size()) + " reads discarded on stage 2 after "
+                                    + "quality trimming! Barcode values: " + formatBarcodeValues(bestData.barcodes));
                             if (debugOutputStream != null)
                                 calculatedConsensuses.consensuses.add(stage2Consensus);
                         } else
@@ -433,7 +435,7 @@ public final class ConsensusIO {
                     } else {
                         displayWarning("WARNING: max consensuses per cluster exceeded; not processed "
                                 + filteredOutReads.size() + " reads from cluster of " + cluster.data.size()
-                                + " reads!");
+                                + " reads! Barcode values: " + formatBarcodeValues(bestData.barcodes));
                         data = new ArrayList<>();
                     }
                 } else
@@ -441,6 +443,20 @@ public final class ConsensusIO {
             }
 
             return calculatedConsensuses;
+        }
+
+        private String formatBarcodeValues(TargetBarcodes[] targetBarcodes) {
+            ArrayList<Barcode> barcodes = new ArrayList<>();
+            Arrays.stream(targetBarcodes).forEach(tb -> barcodes.addAll(tb.targetBarcodes));
+            barcodes.sort(Comparator.comparing(b -> b.groupName));
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < barcodes.size(); i++) {
+                Barcode barcode = barcodes.get(i);
+                if (i > 0)
+                    builder.append(", ");
+                builder.append(barcode.groupName).append('=').append(barcode.value.getSequence().toString());
+            }
+            return builder.toString();
         }
 
         private long calculateSumQuality(NSequenceWithQuality seq) {
