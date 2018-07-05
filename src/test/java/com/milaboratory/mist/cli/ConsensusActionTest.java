@@ -4,6 +4,7 @@ import org.junit.*;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 import static com.milaboratory.mist.cli.CommandLineTestUtils.*;
 import static com.milaboratory.mist.cli.Defaults.DEFAULT_GOOD_QUALITY;
@@ -30,6 +31,7 @@ public class ConsensusActionTest {
         String outputFile1 = TEMP_DIR + "consensusOutput1.mif";
         String outputFile2 = TEMP_DIR + "consensusOutput2.mif";
         String outputFile3 = TEMP_DIR + "consensusOutput3.mif";
+        String outputFile4 = TEMP_DIR + "consensusOutput4.mif";
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(startFile);
             String consensusGroups = Arrays.asList(new String[] {"G1", "G2", "G1 G2", "G2 G1"}).get(rg.nextInt(4));
@@ -54,23 +56,21 @@ public class ConsensusActionTest {
                     + " --min-good-sequence-length " + rg.nextInt(50)
                     + " --aligner-match-score 0 --aligner-mismatch-score " + mismatchScore
                     + " --aligner-gap-score " + gapScore);
-            exec("consensus --input " + outputFile1 + " --output " + outputFile2 + " --groups "
-                    + consensusGroups + " --threads " + (rg.nextInt(10) + 1) + " --score-threshold 0 --width "
-                    + width + " --max-consensuses-per-cluster 100 --skipped-fraction-to-repeat 0.001"
-                    + " --reads-avg-quality-threshold 0 --avg-quality-threshold 0 --aligner-match-score 0"
-                    + " --aligner-mismatch-score " + mismatchScore + " --aligner-gap-score " + gapScore);
-            exec("consensus --input " + outputFile2 + " --output " + outputFile3 + " --groups "
-                    + consensusGroups + " --threads " + (rg.nextInt(10) + 1) + " --score-threshold 0 --width "
-                    + width + " --max-consensuses-per-cluster 100 --skipped-fraction-to-repeat 0.001"
-                    + " --reads-avg-quality-threshold 0 --avg-quality-threshold 0 --aligner-match-score 0"
-                    + " --aligner-mismatch-score " + mismatchScore + " --aligner-gap-score " + gapScore);
+            Stream.of(new String[] { outputFile1, outputFile2 }, new String[] { outputFile2, outputFile3 },
+                    new String[] { outputFile3, outputFile4 })
+                    .forEach(files -> exec("consensus --input " + files[0] + " --output " + files[1]
+                            + " --groups " + consensusGroups + " --threads " + (rg.nextInt(10) + 1)
+                            + " --score-threshold 0 --width " + width
+                            + " --max-consensuses-per-cluster 100 --skipped-fraction-to-repeat 0.001"
+                            + " --reads-avg-quality-threshold 0 --avg-quality-threshold 0 --aligner-match-score 0"
+                            + " --aligner-mismatch-score " + mismatchScore + " --aligner-gap-score " + gapScore));
             String parameterValuesMessage = "consensusGroups: " + consensusGroups + ", width: " + width
                     + ", mismatchScore: " + mismatchScore + ", gapScore: " + gapScore;
             assertFileEquals("Files are different with parameter values: " + parameterValuesMessage,
-                    outputFile2, outputFile3);
+                    outputFile3, outputFile4);
         }
         for (String fileName : new String[] { startFile, inputFile, correctedFile, sortedFile,
-                outputFile1, outputFile2, outputFile3 })
+                outputFile1, outputFile2, outputFile3, outputFile4 })
             assertTrue(new File(fileName).delete());
     }
 

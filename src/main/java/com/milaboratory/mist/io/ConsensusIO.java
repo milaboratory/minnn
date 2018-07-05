@@ -567,7 +567,6 @@ public final class ConsensusIO {
                             alignments.add(alignment);
                             sumScore += alignment.getScore();
                         }
-                        if (bestSeqIndex == -1)
                         if (sumScore < scoreThreshold)
                             filteredOutReads.add(i);
                         else {
