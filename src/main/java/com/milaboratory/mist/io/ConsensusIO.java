@@ -48,6 +48,7 @@ public final class ConsensusIO {
     private final int minGoodSeqLength;
     private final float avgQualityThreshold;
     private final int trimWindowSize;
+    private final boolean toSeparateGroups;
     private final long inputReadsLimit;
     private final int maxWarnings;
     private final int threads;
@@ -63,8 +64,8 @@ public final class ConsensusIO {
                        int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
                        float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
                        float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
-                       float avgQualityThreshold, int trimWindowSize, long inputReadsLimit, int maxWarnings,
-                       int threads, String debugOutputFileName, byte debugQualityThreshold) {
+                       float avgQualityThreshold, int trimWindowSize, boolean toSeparateGroups, long inputReadsLimit,
+                       int maxWarnings, int threads, String debugOutputFileName, byte debugQualityThreshold) {
         this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -78,6 +79,7 @@ public final class ConsensusIO {
         this.readsMinGoodSeqLength = readsMinGoodSeqLength;
         this.readsAvgQualityThreshold = readsAvgQualityThreshold;
         this.readsTrimWindowSize = readsTrimWindowSize;
+        this.toSeparateGroups = toSeparateGroups;
         this.minGoodSeqLength = minGoodSeqLength;
         this.avgQualityThreshold = avgQualityThreshold;
         this.trimWindowSize = trimWindowSize;
@@ -115,6 +117,15 @@ public final class ConsensusIO {
             numberOfTargets = reader.getNumberOfReads();
             Set<String> defaultGroups = IntStream.rangeClosed(1, numberOfTargets)
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
+            Set<String> defaultSeparateGroups = IntStream.rangeClosed(1, numberOfTargets)
+                    .mapToObj(i -> "CR" + i).collect(Collectors.toSet());
+            if (toSeparateGroups) {
+                if (((groupSet != null) && (groupSet.stream().anyMatch(defaultSeparateGroups::contains)))
+                        || (reader.getGroupEdges().stream()
+                        .map(GroupEdge::getGroupName).anyMatch(defaultSeparateGroups::contains)))
+                    throw exitWithError("Groups CR1, CR2 etc must not be used in --groups flag and input file if "
+                            + "--consensuses-to-separate-groups flag is specified!");
+            }
 
             OutputPort<Cluster> clusterOutputPort = new OutputPort<Cluster>() {
                 LinkedHashMap<String, NucleotideSequence> previousGroups = null;
@@ -169,11 +180,19 @@ public final class ConsensusIO {
             OrderedOutputPort<CalculatedConsensuses> orderedConsensusesPort = new OrderedOutputPort<>(
                     calculatedConsensusesPort, cc -> cc.orderedPortIndex);
             int clusterIndex = 0;
+            long startingReadId = 0;
             for (CalculatedConsensuses calculatedConsensuses : CUtils.it(orderedConsensusesPort)) {
                 for (int i = 0; i < calculatedConsensuses.consensuses.size(); i++) {
                     Consensus consensus = calculatedConsensuses.consensuses.get(i);
-                    if (consensus.isConsensus)
-                        writer.write(consensus.toParsedRead(consensusReads++));
+                    if (consensus.isConsensus) {
+                        if (toSeparateGroups) {
+                            List<ParsedRead> outputReads = consensus.getReadsWithConsensuses(startingReadId);
+                            startingReadId += outputReads.size();
+                            consensusReads++;
+                            outputReads.forEach(writer::write);
+                        } else
+                            writer.write(consensus.toParsedRead(consensusReads++));
+                    }
                     if (debugOutputStream != null)
                         consensus.debugData.writeDebugData(clusterIndex++, i);
                 }
@@ -284,6 +303,7 @@ public final class ConsensusIO {
         final NSequenceWithQuality[] sequences;
         final TargetBarcodes[] barcodes;
         final int consensusReadsNum;
+        final ArrayList<DataFromParsedRead> savedOriginalSequences = toSeparateGroups ? new ArrayList<>() : null;
         final ConsensusDebugData debugData;
         final boolean isConsensus;
 
@@ -314,16 +334,9 @@ public final class ConsensusIO {
                 NSequenceWithQuality currentSequence = sequences[targetId - 1];
                 TargetBarcodes targetBarcodes = barcodes[targetId - 1];
                 reads[targetId - 1] = new SingleReadImpl(readId, currentSequence, "Consensus");
-                matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
-                        new GroupEdge("R" + targetId, true), 0));
-                matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
-                        new GroupEdge("R" + targetId, false), currentSequence.size()));
-                for (Barcode barcode : targetBarcodes.targetBarcodes) {
-                    matchedGroupEdges.add(new MatchedGroupEdge(currentSequence, targetId,
-                            new GroupEdge(barcode.groupName, true), barcode.value));
-                    matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
-                            new GroupEdge(barcode.groupName, false), null));
-                }
+                addReadGroupEdges(matchedGroupEdges, targetId, currentSequence);
+                for (Barcode barcode : targetBarcodes.targetBarcodes)
+                    addGroupEdges(matchedGroupEdges, targetId, barcode.groupName, currentSequence, barcode.value);
             }
             if (numberOfTargets == 1)
                 originalRead = reads[0];
@@ -334,6 +347,61 @@ public final class ConsensusIO {
 
             Match bestMatch = new Match(numberOfTargets, 0, matchedGroupEdges);
             return new ParsedRead(originalRead, false, bestMatch, consensusReadsNum);
+        }
+
+        List<ParsedRead> getReadsWithConsensuses(long startingReadId) {
+            if (!isConsensus || (sequences == null) || (barcodes == null))
+                throw exitWithError("getReadsWithConsensuses() called for null consensus!");
+            if (!toSeparateGroups || (savedOriginalSequences == null))
+                throw exitWithError("getReadsWithConsensuses() called when toSeparateGroups flag is not set!");
+            else {
+                List<ParsedRead> generatedReads = new ArrayList<>();
+                for (int i = 0; i < savedOriginalSequences.size(); i++) {
+                    long currentReadId = startingReadId + i;
+                    DataFromParsedRead currentOriginalData = savedOriginalSequences.get(i);
+                    SequenceRead originalRead;
+
+                    ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
+                    SingleRead[] reads = new SingleRead[numberOfTargets];
+                    for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
+                        NSequenceWithQuality currentOriginalSequence = currentOriginalData.sequences[targetId - 1];
+                        NSequenceWithQuality currentConsensusSequence = sequences[targetId - 1];
+                        TargetBarcodes targetBarcodes = barcodes[targetId - 1];
+                        reads[targetId - 1] = new SingleReadImpl(currentReadId, currentOriginalSequence, "");
+                        addReadGroupEdges(matchedGroupEdges, targetId, currentOriginalSequence);
+                        addGroupEdges(matchedGroupEdges, targetId, "CR" + targetId, currentOriginalSequence,
+                                currentConsensusSequence);
+                        for (Barcode barcode : targetBarcodes.targetBarcodes)
+                            addGroupEdges(matchedGroupEdges, targetId, barcode.groupName, currentOriginalSequence,
+                                    barcode.value);
+                    }
+                    if (numberOfTargets == 1)
+                        originalRead = reads[0];
+                    else if (numberOfTargets == 2)
+                        originalRead = new PairedRead(reads);
+                    else
+                        originalRead = new MultiRead(reads);
+
+                    Match bestMatch = new Match(numberOfTargets, 0, matchedGroupEdges);
+                    generatedReads.add(new ParsedRead(originalRead, false, bestMatch, 0));
+                }
+                return generatedReads;
+            }
+        }
+
+        private void addReadGroupEdges(ArrayList<MatchedGroupEdge> matchedGroupEdges, byte targetId,
+                                       NSequenceWithQuality seq) {
+            matchedGroupEdges.add(new MatchedGroupEdge(seq, targetId,
+                    new GroupEdge("R" + targetId, true), 0));
+            matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
+                    new GroupEdge("R" + targetId, false), seq.size()));
+        }
+
+        private void addGroupEdges(ArrayList<MatchedGroupEdge> matchedGroupEdges, byte targetId, String groupName,
+                                   NSequenceWithQuality target, NSequenceWithQuality value) {
+            matchedGroupEdges.add(new MatchedGroupEdge(target, targetId, new GroupEdge(groupName, true), value));
+            matchedGroupEdges.add(new MatchedGroupEdge(null, targetId,
+                    new GroupEdge(groupName, false), null));
         }
     }
 
@@ -435,8 +503,14 @@ public final class ConsensusIO {
                                     + "quality trimming! Barcode values: " + formatBarcodeValues(bestData.barcodes));
                             if (debugOutputStream != null)
                                 calculatedConsensuses.consensuses.add(stage2Consensus);
-                        } else
+                        } else {
+                            if (toSeparateGroups)
+                                for (int i = 0; i < data.size(); i++) {
+                                    if (!filteredOutReads.contains(i))
+                                        stage2Consensus.savedOriginalSequences.add(data.get(i));
+                                }
                             calculatedConsensuses.consensuses.add(stage2Consensus);
+                        }
                     }
                 }
 
