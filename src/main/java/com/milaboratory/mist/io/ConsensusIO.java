@@ -353,6 +353,10 @@ public final class ConsensusIO {
         CalculatedConsensuses(long orderedPortIndex) {
             this.orderedPortIndex = orderedPortIndex;
         }
+
+        long size() {
+            return consensuses.stream().filter(c -> c.isConsensus).count();
+        }
     }
 
     private class ConsensusDebugData {
@@ -438,7 +442,7 @@ public final class ConsensusIO {
 
                 if ((filteredOutReads.size() < data.size())
                         && (float)filteredOutReads.size() / cluster.data.size() >= skippedFractionToRepeat) {
-                    if (calculatedConsensuses.consensuses.size() < maxConsensusesPerCluster) {
+                    if (calculatedConsensuses.size() < maxConsensusesPerCluster) {
                         ArrayList<DataFromParsedRead> remainingData = new ArrayList<>();
                         for (int i = 0; i < data.size(); i++)
                             if (filteredOutReads.contains(i))
