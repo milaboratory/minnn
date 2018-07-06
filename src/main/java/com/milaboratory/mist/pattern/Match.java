@@ -121,7 +121,7 @@ public class Match {
     public NSequenceWithQuality getGroupValue(String groupName) {
         if (groupValues == null)
             groupValues = getGroups().stream()
-                    .collect(Collectors.toMap(MatchedGroup::getGroupName, MatchedRange::getValue));
+                    .collect(Collectors.toMap(MatchedGroup::getGroupName, MatchedGroup::getValue));
         return groupValues.get(groupName);
     }
 

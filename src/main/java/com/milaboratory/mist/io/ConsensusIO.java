@@ -57,6 +57,7 @@ public final class ConsensusIO {
     private final AtomicLong totalReads = new AtomicLong(0);
     private long consensusReads = 0;
     private int warningsDisplayed = 0;
+    private Set<String> defaultGroups;
     private Set<String> groupSet;
     private int numberOfTargets;
 
@@ -114,18 +115,6 @@ public final class ConsensusIO {
             }
             if (!reader.isSorted())
                 displayWarning("WARNING: calculating consensus for not sorted MIF file; result will be wrong!");
-            numberOfTargets = reader.getNumberOfReads();
-            Set<String> defaultGroups = IntStream.rangeClosed(1, numberOfTargets)
-                    .mapToObj(i -> "R" + i).collect(Collectors.toSet());
-            Set<String> defaultSeparateGroups = IntStream.rangeClosed(1, numberOfTargets)
-                    .mapToObj(i -> "CR" + i).collect(Collectors.toSet());
-            if (toSeparateGroups) {
-                if (((groupSet != null) && (groupSet.stream().anyMatch(defaultSeparateGroups::contains)))
-                        || (reader.getGroupEdges().stream()
-                        .map(GroupEdge::getGroupName).anyMatch(defaultSeparateGroups::contains)))
-                    throw exitWithError("Groups CR1, CR2 etc must not be used in --groups flag and input file if "
-                            + "--consensuses-to-separate-groups flag is specified!");
-            }
 
             OutputPort<Cluster> clusterOutputPort = new OutputPort<Cluster>() {
                 LinkedHashMap<String, NucleotideSequence> previousGroups = null;
@@ -161,7 +150,7 @@ public final class ConsensusIO {
                                 }
                                 previousGroups = currentGroups;
                             }
-                            currentCluster.data.add(new DataFromParsedRead(parsedRead, defaultGroups));
+                            currentCluster.data.add(new DataFromParsedRead(parsedRead));
                             totalReads.getAndIncrement();
                         } else {
                             finished = true;
@@ -215,8 +204,25 @@ public final class ConsensusIO {
     }
 
     private MifWriter createWriter(MifHeader mifHeader) throws IOException {
-        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
-                : new MifWriter(outputFileName, mifHeader);
+        ArrayList<GroupEdge> groupEdges = mifHeader.getGroupEdges();
+        numberOfTargets = mifHeader.getNumberOfReads();
+        defaultGroups = IntStream.rangeClosed(1, numberOfTargets).mapToObj(i -> "R" + i).collect(Collectors.toSet());
+        MifHeader newHeader;
+        if (toSeparateGroups) {
+            Set<String> defaultSeparateGroups = IntStream.rangeClosed(1, numberOfTargets)
+                    .mapToObj(i -> "CR" + i).collect(Collectors.toSet());
+            if (((groupSet != null) && (groupSet.stream().anyMatch(defaultSeparateGroups::contains)))
+                    || (groupEdges.stream().map(GroupEdge::getGroupName).anyMatch(defaultSeparateGroups::contains)))
+                throw exitWithError("Groups CR1, CR2 etc must not be used in --groups flag and input file if "
+                        + "--consensuses-to-separate-groups flag is specified!");
+            defaultSeparateGroups.stream().sorted().forEachOrdered(name -> {
+                groupEdges.add(new GroupEdge(name, true));
+                groupEdges.add(new GroupEdge(name, false));
+            });
+        }
+        newHeader = new MifHeader(numberOfTargets, mifHeader.getCorrectedGroups(), false, groupEdges);
+        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), newHeader)
+                : new MifWriter(outputFileName, newHeader);
     }
 
     private synchronized void displayWarning(String text) {
@@ -261,8 +267,9 @@ public final class ConsensusIO {
     private class DataFromParsedRead {
         final NSequenceWithQuality[] sequences;
         final TargetBarcodes[] barcodes;
+        final LinkedHashMap<String, NSequenceWithQuality> otherGroups = toSeparateGroups ? new LinkedHashMap<>() : null;
 
-        DataFromParsedRead(ParsedRead parsedRead, Set<String> defaultGroups) {
+        DataFromParsedRead(ParsedRead parsedRead) {
             List<MatchedGroup> parsedReadGroups = parsedRead.getGroups();
             List<MatchedGroup> extractedGroups = parsedReadGroups.stream()
                     .filter(g -> defaultGroups.contains(g.getGroupName())).collect(Collectors.toList());
@@ -275,10 +282,13 @@ public final class ConsensusIO {
                     sequences[getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch())] = group.getValue());
             barcodes = IntStream.range(0, numberOfTargets).mapToObj(i -> new TargetBarcodes(new ArrayList<>()))
                     .toArray(TargetBarcodes[]::new);
-            parsedReadGroups.stream().filter(g -> groupSet.contains(g.getGroupName())).forEachOrdered(group -> {
-                int targetIndex = getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch());
-                ArrayList<Barcode> currentTargetList = barcodes[targetIndex].targetBarcodes;
-                currentTargetList.add(new Barcode(group.getGroupName(), group.getValue()));
+            parsedReadGroups.forEach(group -> {
+                if (groupSet.contains(group.getGroupName())) {
+                    int targetIndex = getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch());
+                    ArrayList<Barcode> currentTargetList = barcodes[targetIndex].targetBarcodes;
+                    currentTargetList.add(new Barcode(group.getGroupName(), group.getValue()));
+                } else if (toSeparateGroups)
+                    otherGroups.put(group.getGroupName(), group.getValue());
             });
         }
 
@@ -374,6 +384,10 @@ public final class ConsensusIO {
                         for (Barcode barcode : targetBarcodes.targetBarcodes)
                             addGroupEdges(matchedGroupEdges, targetId, barcode.groupName, currentOriginalSequence,
                                     barcode.value);
+                        for (HashMap.Entry<String, NSequenceWithQuality> entry
+                                : currentOriginalData.otherGroups.entrySet())
+                            addGroupEdges(matchedGroupEdges, targetId, entry.getKey(), currentOriginalSequence,
+                                    entry.getValue());
                     }
                     if (numberOfTargets == 1)
                         originalRead = reads[0];
@@ -429,7 +443,8 @@ public final class ConsensusIO {
 
     private class ConsensusDebugData {
         // outer list - targetIndex, second - sequenceIndex, inner - positionIndex
-        ArrayList<ArrayList<ArrayList<NSequenceWithQuality>>> data = new ArrayList<>();
+        List<ArrayList<ArrayList<NSequenceWithQuality>>> data = IntStream.range(0, numberOfTargets)
+                .mapToObj(i -> new ArrayList<ArrayList<NSequenceWithQuality>>()).collect(Collectors.toList());
 
         void writeDebugData(int clusterIndex, int consensusIndex) {
             debugOutputStream.println("\nclusterIndex: " + clusterIndex + ", consensusIndex: " + consensusIndex);
@@ -727,13 +742,8 @@ public final class ConsensusIO {
             TargetBarcodes[] consensusBarcodes = IntStream.range(0, numberOfTargets)
                     .mapToObj(i -> new TargetBarcodes(new ArrayList<>())).toArray(TargetBarcodes[]::new);
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                ArrayList<ArrayList<NSequenceWithQuality>> debugDataForThisTarget;
-                if (debugData == null)
-                    debugDataForThisTarget = null;
-                else {
-                    debugDataForThisTarget = new ArrayList<>();
-                    debugData.data.add(debugDataForThisTarget);
-                }
+                ArrayList<ArrayList<NSequenceWithQuality>> debugDataForThisTarget = (debugData == null) ? null
+                        : debugData.data.get(targetIndex);
                 consensusBarcodes[targetIndex].targetBarcodes.addAll(barcodes[targetIndex].targetBarcodes);
                 List<ArrayList<NSequenceWithQuality>> lettersMatrixList = IntStream.range(0, consensusReadsNum)
                         .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());

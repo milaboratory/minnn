@@ -248,8 +248,11 @@ public final class ParsedRead {
                             getGroupValue(groupName), innerRanges.get(groupName)));
                 else
                     commentGroups.add(new FastqCommentGroup(groupName, getGroupValue(groupName)));
-            } else
-                commentGroups.add(new FastqCommentGroup(groupName));
+            } else {
+                NSequenceWithQuality groupValue = getGroupValue(groupName);
+                commentGroups.add((groupValue == null) ? new FastqCommentGroup(groupName)
+                        : new FastqCommentGroup(groupName, groupValue));
+            }
         }
 
         byte commentsTargetId = matchedGroups.get(outputGroupName).getTargetId();
