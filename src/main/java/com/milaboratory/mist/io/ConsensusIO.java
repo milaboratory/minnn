@@ -252,11 +252,12 @@ public final class ConsensusIO {
                         + numberOfTargets + ", target groups in ParsedRead: " + parsedRead.getGroups().stream()
                         .map(MatchedGroup::getGroupName).filter(defaultGroups::contains).collect(Collectors.toList()));
             sequences = new NSequenceWithQuality[numberOfTargets];
-            extractedGroups.forEach(g -> sequences[g.getTargetId() - 1] = g.getValue());
+            extractedGroups.forEach(group ->
+                    sequences[getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch())] = group.getValue());
             barcodes = IntStream.range(0, numberOfTargets).mapToObj(i -> new TargetBarcodes(new ArrayList<>()))
                     .toArray(TargetBarcodes[]::new);
             parsedReadGroups.stream().filter(g -> groupSet.contains(g.getGroupName())).forEachOrdered(group -> {
-                int targetIndex = group.getTargetId() - 1;
+                int targetIndex = getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch());
                 ArrayList<Barcode> currentTargetList = barcodes[targetIndex].targetBarcodes;
                 currentTargetList.add(new Barcode(group.getGroupName(), group.getValue()));
             });
@@ -265,6 +266,17 @@ public final class ConsensusIO {
         DataFromParsedRead(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes) {
             this.sequences = sequences;
             this.barcodes = barcodes;
+        }
+
+        private int getTargetIndex(byte targetId, boolean isReverseMatch) {
+            int index = targetId - 1;
+            if (isReverseMatch) {
+                if (index == 0)
+                    index = 1;
+                else if (index == 1)
+                    index = 0;
+            }
+            return index;
         }
     }
 
