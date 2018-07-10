@@ -25,8 +25,7 @@ define generate_command_docs
 endef
 
 define generate_chart
-	soffice --headless --convert-to svg $(BUILDDIR)/../source/usage-chart.odg
-	mv -f usage-chart.svg $(BUILDDIR)/../source/_static/
+	soffice --headless --convert-to svg $(BUILDDIR)/../source/usage-chart.odg --outdir $(BUILDDIR)/../source/_static
 endef
 
 define generate_intermediate_files
