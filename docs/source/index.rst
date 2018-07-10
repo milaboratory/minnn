@@ -1,25 +1,12 @@
-Welcome to Mist's documentation!
-================================
+Overview
+========
 
 Contents:
 
 .. toctree::
     :maxdepth: 2
 
+    description
     commands
 
-Overview
-========
-
-Mist is toolset to process genetic data from sequencing machines and assemble sequenced molecules by raw FASTQ data.
-
-.. image:: _static/usage-chart.svg
-    :width: 100%
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. include:: description.rst
