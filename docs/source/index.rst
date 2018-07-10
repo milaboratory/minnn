@@ -8,6 +8,7 @@ Contents:
 
     description
     installation
+    quickstart
     commands
 
 .. include:: description.rst
