@@ -16,6 +16,11 @@ import java.util.stream.Stream;
 import static com.milaboratory.mist.util.SystemUtils.*;
 
 public final class GenerateDocsIO {
+    private static final HashMap<String, String> replaceTable = new HashMap<>();
+    static {
+        replaceTable.put("filter_options\n        Filter Options:      ", " Filter Options: ");
+        replaceTable.put("group_options\n        Group Options:          ", " Group Options: ");
+    }
     private final List<Class> parameterClasses = new ArrayList<>();
     private final String outputFileName;
 
@@ -41,13 +46,13 @@ public final class GenerateDocsIO {
                 writer.println(getAnnotationValue(parameterClass, "commandDescription") + "\n\n::\n");
                 for (Field field : parameterClass.getDeclaredFields()) {
                     String names = getAnnotationValue(field, "names");
-                    String description = stripQuotes(getAnnotationValue(field, "description"));
+                    String description = getAnnotationValue(field, "description");
                     if (names.length() > 2) {
                         names = names.substring(1, names.length() - 1);
                         writer.println(" " + names + ": " + description);
-                    } else {
-                        writer.println(" " + description);
-                    }
+                    } else
+                        replaceTable.keySet().stream().filter(description::contains).findFirst()
+                                .ifPresent(s -> writer.println(description.replace(s, replaceTable.get(s)) + "\n"));
                 }
                 writer.println();
             }
@@ -86,10 +91,6 @@ public final class GenerateDocsIO {
         } catch (IllegalAccessException e) {
             throw exitWithError(e.toString());
         }
-    }
-
-    private String stripQuotes(String str) {
-        return str.replace("/(^\"|\')|(\"|\'$)/g", "");
     }
 
     private String title(String str, boolean topLevel) {
