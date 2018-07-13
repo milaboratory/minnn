@@ -34,7 +34,8 @@ public final class GenerateDocsIO {
 
     public void go() {
         try (PrintStream writer = new PrintStream(new FileOutputStream(outputFileName))) {
-            writer.println(title("Command line syntax"));
+            writer.println(title("Reference", true));
+            writer.println(title("Command Line Syntax", false));
             for (Class parameterClass : parameterClasses) {
                 writer.println(subtitle(getCommandName(parameterClass)));
                 writer.println(getAnnotationValue(parameterClass, "commandDescription") + "\n\n::\n");
@@ -91,9 +92,9 @@ public final class GenerateDocsIO {
         return str.replace("/(^\"|\')|(\"|\'$)/g", "");
     }
 
-    private String title(String str) {
+    private String title(String str, boolean topLevel) {
         String line = Stream.generate(() -> "=").limit(str.length()).collect(Collectors.joining());
-        return line + "\n" + str + "\n" + line;
+        return (topLevel ? "" : line + "\n") + str + "\n" + line;
     }
 
     private String subtitle(String str) {

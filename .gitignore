@@ -1,7 +1,7 @@
 target
 *.iml
 .idea
-docs/source/commands.rst
+docs/source/reference.rst
 docs/source/_static
 docs/source/_templates
 docs/build

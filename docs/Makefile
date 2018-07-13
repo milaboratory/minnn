@@ -21,7 +21,7 @@ endef
 
 define generate_command_docs
 	$(eval MIST=$(shell readlink -f `ls -1 $(BUILDDIR)/../../target/*distribution.jar`))
-	java -jar ${MIST} docs --output $(BUILDDIR)/../source/commands.rst
+	java -jar ${MIST} docs --output $(BUILDDIR)/../source/reference.rst
 endef
 
 define generate_chart

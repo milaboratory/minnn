@@ -9,6 +9,10 @@ Contents:
     description
     installation
     quickstart
-    commands
+    routines
+    usecases
+    reference
+    pattern_syntax
+    appendix
 
 .. include:: description.rst

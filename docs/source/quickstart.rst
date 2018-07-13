@@ -1,5 +1,5 @@
 ===========
-Quick start
+Quick Start
 ===========
 
 Example: we have a pair of FASTQ files R1.fastq and R2.fastq from experiment where we attached 2 sample barcodes
