@@ -44,16 +44,23 @@ public final class GenerateDocsIO {
             for (Class parameterClass : parameterClasses) {
                 writer.println(subtitle(getCommandName(parameterClass)));
                 writer.println(getAnnotationValue(parameterClass, "commandDescription") + "\n\n::\n");
+                TreeSet<OrderedParameter> parameters = new TreeSet<>();
+                int i = 0;
                 for (Field field : parameterClass.getDeclaredFields()) {
+                    final int secondaryOrder = i++;
                     String names = getAnnotationValue(field, "names");
                     String description = getAnnotationValue(field, "description");
+                    int primaryOrder = getOrder(field);
                     if (names.length() > 2) {
                         names = names.substring(1, names.length() - 1);
-                        writer.println(" " + names + ": " + description);
+                        parameters.add(new OrderedParameter(" " + names + ": " + description,
+                                primaryOrder, secondaryOrder));
                     } else
                         replaceTable.keySet().stream().filter(description::contains).findFirst()
-                                .ifPresent(s -> writer.println(description.replace(s, replaceTable.get(s)) + "\n"));
+                                .ifPresent(s -> parameters.add(new OrderedParameter(description
+                                        .replace(s, replaceTable.get(s)) + "\n", primaryOrder, secondaryOrder)));
                 }
+                parameters.forEach(p -> writer.println(p.text));
                 writer.println();
             }
         } catch (IOException e) {
@@ -79,6 +86,25 @@ public final class GenerateDocsIO {
         throw exitWithError("Parameter " + parameterName + " not found in annotation " + annotation);
     }
 
+    private int getOrder(AnnotatedElement annotatedElement) {
+        Annotation annotation = annotatedElement.getAnnotation(Parameter.class);
+        if (annotation == null)
+            return Integer.MAX_VALUE;
+        else {
+            try {
+                for (Method method : annotation.annotationType().getDeclaredMethods())
+                    if (method.getName().equals("order")) {
+                        Object value = method.invoke(annotation, (Object[])null);
+                        int order = Integer.parseInt(value.toString());
+                        return (order == -1) ? Integer.MAX_VALUE - 1 : order;
+                    }
+                return Integer.MAX_VALUE;
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                throw exitWithError(e.toString());
+            }
+        }
+    }
+
     private String getCommandName(Class parameterClass) {
         Field nameField;
         try {
@@ -100,5 +126,41 @@ public final class GenerateDocsIO {
 
     private String subtitle(String str) {
         return str + "\n" + Stream.generate(() -> "-").limit(str.length()).collect(Collectors.joining());
+    }
+
+    private class OrderedParameter implements Comparable<OrderedParameter> {
+        final String text;
+        final int primaryOrder;
+        final int secondaryOrder;
+
+        OrderedParameter(String text, int primaryOrder, int secondaryOrder) {
+            this.text = text;
+            this.primaryOrder = primaryOrder;
+            this.secondaryOrder = secondaryOrder;
+        }
+
+        @Override
+        public int compareTo(OrderedParameter other) {
+            int firstCompare = Integer.compare(primaryOrder, other.primaryOrder);
+            return (firstCompare != 0) ? firstCompare : Integer.compare(secondaryOrder, other.secondaryOrder);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            OrderedParameter that = (OrderedParameter)o;
+            if (primaryOrder != that.primaryOrder) return false;
+            if (secondaryOrder != that.secondaryOrder) return false;
+            return text.equals(that.text);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = text.hashCode();
+            result = 31 * result + primaryOrder;
+            result = 31 * result + secondaryOrder;
+            return result;
+        }
     }
 }
