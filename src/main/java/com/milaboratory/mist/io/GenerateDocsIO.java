@@ -42,8 +42,9 @@ public final class GenerateDocsIO {
             writer.println(title("Reference", true));
             writer.println(title("Command Line Syntax", false));
             for (Class parameterClass : parameterClasses) {
-                writer.println(subtitle(getCommandName(parameterClass)));
-                writer.println(getAnnotationValue(parameterClass, "commandDescription") + "\n\n::\n");
+                String actionName = getActionName(parameterClass);
+                writer.println(subtitle(actionName));
+                writer.println(".. include:: reference_descriptions/" + actionName + ".rst\n\n::\n");
                 TreeSet<OrderedParameter> parameters = new TreeSet<>();
                 int i = 0;
                 for (Field field : parameterClass.getDeclaredFields()) {
@@ -69,7 +70,7 @@ public final class GenerateDocsIO {
     }
 
     private String getAnnotationValue(AnnotatedElement annotatedElement, String parameterName) {
-        Annotation annotation = Stream.of(Parameters.class, Parameter.class, DynamicParameter.class)
+        Annotation annotation = Stream.of(Parameter.class, DynamicParameter.class)
                 .map((Function<Class<? extends Annotation>, Annotation>)annotatedElement::getAnnotation)
                 .filter(Objects::nonNull).findFirst().orElse(null);
         if (annotation == null)
@@ -105,7 +106,7 @@ public final class GenerateDocsIO {
         }
     }
 
-    private String getCommandName(Class parameterClass) {
+    private String getActionName(Class parameterClass) {
         Field nameField;
         try {
             nameField = parameterClass.getEnclosingClass().getField("commandName");
