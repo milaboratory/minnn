@@ -29,6 +29,7 @@ define generate_chart
 endef
 
 define generate_intermediate_files
+	$(MAKE) clean
 	$(call build_mist)
 	$(call generate_command_docs)
 	$(call generate_chart)

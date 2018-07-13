@@ -15,7 +15,8 @@ first sample barcode is TTTTT for which we know that this is garbage. Then we do
 
    Note that extract command will search R1, R2 combination and then try the same search with swapped reads R2, R1.
    Then it will choose the match with better score. This is the default behavior; if you want to check only R1, R2
-   combination without checking reversed order, use :code:`--oriented` flag.
+   combination without checking reversed order, use :code:`--oriented` flag. Details for pattern syntax can be found
+   in :ref:`pattern_syntax` section.
 #. Correct mismatches and indels in barcodes.
 
    .. code-block:: console
@@ -28,6 +29,7 @@ first sample barcode is TTTTT for which we know that this is garbage. Then we do
 
       mist filter --input corrected.mif --output filtered.mif "SB1~'~TTTTT'"
 
+   Details for filter syntax can be found in :ref:`filter_syntax` section.
 #. (Optionally) check statistics for collected barcodes.
 
    .. code-block:: console

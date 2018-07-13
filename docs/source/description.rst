@@ -20,7 +20,7 @@ Also mist has some other functions:
 * Collect statistics from data by barcode values and by barcode positions in sequences.
 
 ===========
-Usage chart
+Usage Chart
 ===========
 
 .. image:: _static/usage-chart.svg
