@@ -41,6 +41,7 @@ public final class GenerateDocsIO {
         try (PrintStream writer = new PrintStream(new FileOutputStream(outputFileName))) {
             writer.println(title("Reference", true));
             writer.println(title("Command Line Syntax", false));
+            writer.println();
             for (Class parameterClass : parameterClasses) {
                 String actionName = getActionName(parameterClass);
                 writer.println(subtitle(actionName));
@@ -126,7 +127,8 @@ public final class GenerateDocsIO {
     }
 
     private String subtitle(String str) {
-        return str + "\n" + Stream.generate(() -> "-").limit(str.length()).collect(Collectors.joining());
+        return ".. _" + str + ":\n\n" + str + "\n"
+                + Stream.generate(() -> "-").limit(str.length()).collect(Collectors.joining());
     }
 
     private class OrderedParameter implements Comparable<OrderedParameter> {
