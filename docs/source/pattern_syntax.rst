@@ -11,8 +11,8 @@ be specified after :code:`--pattern` option and must always be in double quotes.
 .. code-block:: console
 
    mist extract --pattern "ATTAGACA"
-   mist extract --pattern "*\*"
-   mist extract --pattern "^(UMI:N{3:5})attwwAAA\*"
+   mist extract --pattern "*\*" --input R1.fastq R2.fastq
+   mist extract --pattern "^(UMI:N{3:5})attwwAAA\*" --input-format mif
 
 Basic Syntax Elements
 ---------------------
@@ -37,8 +37,8 @@ swapped and not affected by :code:`--oriented` flag.
 Another important syntax element is capture group. It looks like :code:`(group_name:query)` where :code:`group_name`
 is any sequence of letters and digits (like :code:`UMI` or :code:`SB1`) that you use as group name. Group names are
 case sensitive, so :code:`UMI` and :code:`umi` are different group names. :code:`query` is part of query that will be
-saved as this capture group. It can contain nested groups and any other syntax elements that are allowed inside
-single read.
+saved as this capture group. It can contain nested groups and some other syntax elements that are allowed inside
+single read (see below).
 
 :code:`R1`, :code:`R2`, :code:`R3` etc are built-in group names that contain full matched reads.
 You can override them by specifying manually in the query, and overridden values will go to output instead of full
@@ -103,3 +103,97 @@ end of the read. Examples:
 
 Advanced Syntax Elements
 ------------------------
+
+There are operators :code:`&`, :code:`+` and :code:`||` that can be used inside the read query.
+
+:code:`&` operator is logical AND, it means that 2 sequences must match in any order and gap between them.
+Examples:
+
+.. code-block:: console
+
+   mist extract --pattern "ATTA & GACA"
+   mist extract --input R1.fastq R2.fastq --pattern "AAAA & TTTT & CCCC \ *"
+   mist extract --input R1.fastq R2.fastq --pattern "(G1:AAAA) & TTTT & CCCC \ ATTA & (G2:GACA)"
+
+Note that :code:`AAAA`, :code:`TTTT` and :code:`CCCC` sequences can be in any order in the target to consider that the
+entire query is matching. :code:`&` operator is not allowed within groups, so this example is **invalid**:
+
+.. code-block:: console
+
+   mist extract --pattern "(G1:ATTA & GACA)"
+
+:code:`+` operator is also logical AND but with order restriction. Nucleotide sequences can be matched only in
+the specified order. Also, :code:`+` operator can be used within groups. Note that in this case the matched group will
+also include all nucleotides between matched operands. Examples:
+
+.. code-block:: console
+
+   mist extract --pattern "(G1:ATTA + GACA)"
+   mist extract --input R1.fastq R2.fastq --pattern "(G1:AAAA + TTTT) + CCCC \ ATTA + (G2:GACA)"
+
+:code:`||` operator is logical OR. It is not allowed within groups, but groups with the same name are allowed
+inside operands of :code:`||` operator. Note that if a group is present in one operand of :code:`||` operator and
+missing in another operand, this group may appear not matched in the output while the entire query is matched.
+Examples:
+
+.. code-block:: console
+
+   mist extract --pattern "^AAANNN(G1:ATTA) || ^TTTNNN(G1:GACA)"
+   mist extract --input R1.fastq R2.fastq --pattern "(G1:AAAA) || TTTT || (G1:CCCC) \ ATTA || (G2:GACA)"
+
+:code:`+`, :code:`&` and :code:`||` operators can be combined in single query. :code:`+` operator has the highest
+priority, then :code:`&`, and :code:`||` has the lowest. Read separator (``\``) has lower priority than all these
+3 operators. To change the priority, square brackets :code:`[]` can be used. Examples:
+
+.. code-block:: console
+
+   mist extract --pattern "[AAA & TTT] + [GGG || CCC]"
+   mist extract --input R1.fastq R2.fastq --pattern "[(G1:ATTA+GACA)&TTT]+CCC\(G2:AT+AC)"
+
+Square brackets can be used to create sequences of patterns. Sequence is special pattern that works like :code:`+`
+but with penalty for gaps between patterns. Examples of sequence pattern:
+
+.. code-block:: console
+
+   mist extract --pattern "[AAA & TTT]CCC"
+   mist extract --input R1.fastq R2.fastq --pattern "[(G1:ATTA+GACA)][(G2:TTT)&ATT]\*"
+
+Also square brackets allow to set separate score threshold for the query inside brackets. This can be done by writing
+score threshold value followed by :code:`:` after opening bracket. Examples:
+
+.. code-block:: console
+
+   mist extract --pattern "[-14:AAA & TTT]CCC"
+   mist extract --input R1.fastq R2.fastq --pattern "[0:(G1:ATTA+GACA)][(G2:TTT)&ATT]\[-25:c{*}]"
+
+Matched operands of :code:`&`, :code:`+` and sequence patterns can overlap, but overlaps add penalty to match score.
+You can control maximum overlap size and overlapping letter penalty by :code:`--max-overlap` and
+:code:`--single-overlap-penalty` parameters.
+
+**Important:** parentheses that used for groups are not treated as square brackets; instead, they treated as group
+edges attached to nucleotide sequences. So, the following examples are different: first example creates sequence
+pattern and second example adds end of :code:`G1` and start of :code:`G2` to the middle of sequence :code:`TTTCCC`.
+
+.. code-block:: console
+
+   mist extract --pattern "[(G1:AAA+TTT)][(G2:CCC+GGG)]"
+   mist extract --pattern "(G1:AAA+TTT)(G2:CCC+GGG)"
+
+If some of nucleotides on the edge of nucleotide sequence can be cut without gap penalty, tail cut pattern can be used.
+It looks like repeated :code:`<` characters in the beginning of the sequence, or repeated :code:`>` characters in
+the end of the read, or single :code:`<` or :code:`>` character followed by curly braces with number of
+repeats. It is often used with :code:`^`/:code:`$` marks. Examples:
+
+.. code-block:: console
+
+   mist extract --input R1.fastq R2.fastq --pattern "^<<<ATTAGACA>>$\[^<TTTT || ^<<CCCC]"
+   mist extract --input R1.fastq R2.fastq --pattern "<{6}ACTCACTCGC + GGCTCGC>{2}$\<<AATCC>"
+
+**Important:** :code:`<` and :code:`>` marks belong to nucleotide sequences and not to complex patterns, so square
+brackets between :code:`<` / :code:`>` and nucleotide sequences are **not** allowed. Also, the following examples are
+different: in first example edge cut applied only to the first operand, and in second example - to both operands.
+
+.. code-block:: console
+
+   mist extract --pattern "<{3}ATTA & GACA"
+   mist extract --pattern "<{3}ATTA & <{3}GACA"
