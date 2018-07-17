@@ -147,7 +147,7 @@ priority, then :code:`&`, and :code:`||` has the lowest. Read separator (``\``) 
 
 .. code-block:: console
 
-   mist extract --pattern "[AAA & TTT] + [GGG || CCC]"
+   mist extract --pattern "^[AAA & TTT] + [GGG || CCC]$"
    mist extract --input R1.fastq R2.fastq --pattern "[(G1:ATTA+GACA)&TTT]+CCC\(G2:AT+AC)"
 
 Square brackets can be used to create sequences of patterns. Sequence is special pattern that works like :code:`+`
@@ -197,3 +197,67 @@ different: in first example edge cut applied only to the first operand, and in s
 
    mist extract --pattern "<{3}ATTA & GACA"
    mist extract --pattern "<{3}ATTA & <{3}GACA"
+
+High Level Logical Operators
+----------------------------
+
+There are operators :code:`~`, :code:`&&` and :code:`||` that can be used with full multi-read queries. Note that
+:code:`||` operator have the same symbol as read-level OR operator, so square brackets must be used to use
+high level :code:`||`.
+
+:code:`||` operator is high-level OR. Groups with the same name are allowed in different operands of this operator,
+and if a group is present in one operand of :code:`||` operator and missing in another operand, this group may appear
+not matched in the output while the entire query is matched. Examples:
+
+.. code-block:: console
+
+   mist extract --pattern "[AA\*\TT] || [*\GG\CG]" --oriented --input R1.fastq R2.fastq R3.fastq
+   mist extract --pattern "[^(G1:AA) + [ATTA || GACA]$ \ *] || [AT(G1:N{:8})\(G2:AATGC)]" --input R1.fastq R2.fastq
+
+:code:`&&` operator is high-level AND. For AND operator it is not necessary to enclose multi-read query in square
+brackets because there is no ambiguity. Groups with the same name are **not** allowed in different operands of
+:code:`&&` operator. Examples:
+
+.. code-block:: console
+
+   mist extract --pattern "AA\*\TT && *\GG\CG" --oriented --input R1.fastq R2.fastq R3.fastq
+   mist extract --pattern "^(G1:AA) + [ATTA || GACA]$ \ * && AT(G2:N{:8})\(G3:AATGC)" --input R1.fastq R2.fastq
+
+:code:`~` is high-level NOT operator with single operand. It can sometimes be useful with single-read queries to
+filter out wrong data. Groups are **not** allowed in operand of :code:`~` operator.
+
+.. code-block:: console
+
+   mist extract --pattern "~ATTAGACA"
+   mist extract --pattern "~[TT \ GC]" --input R1.fastq R2.fastq
+
+**Important:** :code:`~` operator always belongs to multi-read query that includes all input reads, so this example
+is **invalid**:
+
+.. code-block:: console
+
+   mist extract --pattern "[~ATTAGACA] \ TTC" --input R1.fastq R2.fastq
+
+Instead, this query can be used:
+
+.. code-block:: console
+
+   mist extract --pattern "~[ATTAGACA \ *] && * \ TTC" --input R1.fastq R2.fastq
+
+Note that if R1 and R2 are swapped, they will be swapped synchronously for all multi-read queries that appear as
+operands in the entire query, so this query will never match:
+
+.. code-block:: console
+
+   mist extract --pattern "~[ATTA \ *] && ATTA \ *" --input R1.fastq R2.fastq
+
+Square brackets are not required for :code:`~` operator, but recommended for clarity if input contains more than
+1 read. :code:`~` operator have lower priority than ``\``; :code:`&&` has lower priority than :code:`~`, and
+high-level :code:`||` has lower priority than :code:`&&`. But remember that high-level :code:`||` requires to enclose
+operands or multi-read blocks inside operands into square brackets to avoid ambiguity with read-level OR operator.
+
+Square brackets with score thresholds can be used with high-level queries too:
+
+.. code-block:: console
+
+   mist extract --pattern "~[0: ATTA \ GACA && * \ TTT] || [-18: CCC \ GGG]" --input R1.fastq R2.fastq
