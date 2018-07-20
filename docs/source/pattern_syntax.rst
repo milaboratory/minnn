@@ -4,7 +4,7 @@
 Pattern Syntax
 ==============
 
-Patterns are used in :code:`extract` action to specify which sequences must pass to the output and which sequences
+Patterns are used in :ref:`extract` action to specify which sequences must pass to the output and which sequences
 must be filtered out. Also, capture groups in patterns are used for barcode extraction. Patterns must always
 be specified after :code:`--pattern` option and must always be in double quotes. Examples:
 
@@ -54,7 +54,7 @@ nested inside other groups.
 
 **Important:** in matches that come from swapped R1 and R2 reads, R1 in input will become R2 in output and vice versa,
 if you don't use built-in group names override. If you use the override, R1, R2, R3 etc in output will come from
-the place where they matched. If you export the output MIF file from :code:`extract` action to FASTQ and want
+the place where they matched. If you export the output MIF file from :ref:`extract` action to FASTQ and want
 to determine whether the match came from straight or swapped R1, R2, check the comments for :code:`||~` character
 sequence: it is added to matches that came from swapped reads. Look at :ref:`mif2fastq` section for
 detailed information.
