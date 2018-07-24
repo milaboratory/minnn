@@ -41,7 +41,7 @@ allowed in pattern query. Examples of pattern filter usage:
    mist filter "G1~'~ATT$ && ~^GCC'"
 
 Length filter is used for filtering reads by group length. The syntax is :code:`Len(group_name)=value`. Only reads
-where length of the specified group equals to the *value* will be passed to the output. Examples:
+where length of the specified group equals to the :code:`value` will be passed to the output. Examples:
 
 .. code-block:: console
 
@@ -49,8 +49,8 @@ where length of the specified group equals to the *value* will be passed to the 
    mist filter "Len(G1) = 3"
 
 Consensus reads filter is used for filtering MIF files written by :ref:`consensus` action. The syntax is
-:code:`MinConsensusReads=value`. Only consensuses calculated from *value* or more reads will be passed to the output.
-Examples:
+:code:`MinConsensusReads=value`. Only consensuses calculated from :code:`value` or more reads will be passed to the
+output. Examples:
 
 .. code-block:: console
 
