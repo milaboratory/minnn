@@ -28,11 +28,12 @@ sequences.
 ``\`` character is very important syntax element: it used as read separator. There can be single-read input
 files, in this case ``\`` character must not be used. In multi-read inputs ``\`` must be used, and number
 of reads in pattern must be equal to number of input FASTQ files (or to number of reads in input MIF file if
-:code:`--input-format mif` parameter is used). There can be many reads, but the most common case is 2 reads: R1 and R2.
-By default, extract action will search R1, R2 combination and then try the same search with swapped reads R2, R1.
-Then it will choose the match with better score. This is the default behavior; if you want to check only R1, R2
-combination without checking reversed order, use :code:`--oriented` flag. R3, R4, R5 and further reads are never
-swapped and not affected by :code:`--oriented` flag.
+:code:`--input-format mif` parameter is used). There can be many reads, but the most common case is 2 reads:
+:code:`R1` and :code:`R2`. By default, extract action will search :code:`R1`, :code:`R2` combination and then try
+the same search with swapped reads :code:`R2`, :code:`R1`. Then it will choose the match with better score. This is
+the default behavior; if you want to check only :code:`R1`, :code:`R2` combination without checking reversed order,
+use :code:`--oriented` flag. :code:`R3`, :code:`R4`, :code:`R5` and further reads are never swapped and not affected
+by :code:`--oriented` flag.
 
 Another important syntax element is capture group. It looks like :code:`(group_name:query)` where :code:`group_name`
 is any sequence of letters and digits (like :code:`UMI` or :code:`SB1`) that you use as group name. Group names are
@@ -48,16 +49,16 @@ reads. For example, query like this
 
    mist extract --input R1.fastq R2.fastq --pattern "^NNN(R1:(UMI:NNN)ATTAN{*})\^NNN(R2:NNNGACAN{*})"
 
-can be used if you want to strip first 3 characters and override built-in R1 and R2 groups to write output reads
-without stripped characters. Note that R1, R2, R3 etc, like any common groups, can contain nested groups and can be
-nested inside other groups.
+can be used if you want to strip first 3 characters and override built-in :code:`R1` and :code:`R2` groups to write
+output reads without stripped characters. Note that :code:`R1`, :code:`R2`, :code:`R3` etc, like any common groups,
+can contain nested groups and can be nested inside other groups.
 
-**Important:** in matches that come from swapped R1 and R2 reads, R1 in input will become R2 in output and vice versa,
-if you don't use built-in group names override. If you use the override, R1, R2, R3 etc in output will come from
-the place where they matched. If you export the output MIF file from :ref:`extract` action to FASTQ and want
-to determine whether the match came from straight or swapped R1, R2, check the comments for :code:`||~` character
-sequence: it is added to matches that came from swapped reads. Look at :ref:`mif2fastq` section for
-detailed information.
+**Important:** in matches that come from swapped :code:`R1` and :code:`R2` reads, :code:`R1` in input will become
+:code:`R2` in output and vice versa, if you don't use built-in group names override. If you use the override,
+:code:`R1`, :code:`R2`, :code:`R3` etc in output will come from the place where they matched. If you export the output
+MIF file from :ref:`extract` action to FASTQ and want to determine whether the match came from straight or swapped
+:code:`R1`, :code:`R2`, check the comments for :code:`||~` character sequence: it is added to matches that came from
+swapped reads. Look at :ref:`mif2fastq` section for detailed information.
 
 :code:`*` character can be used instead of read contents if any contents must match. It can be enclosed in one or
 multiple capture groups, but can't be used if there are other query elements in the same read. If there are other
@@ -244,8 +245,8 @@ Instead, this query can be used:
 
    mist extract --pattern "~[ATTAGACA \ *] && * \ TTC" --input R1.fastq R2.fastq
 
-Note that if R1 and R2 are swapped, they will be swapped synchronously for all multi-read queries that appear as
-operands in the entire query, so this query will never match:
+Note that if :code:`R1` and :code:`R2` are swapped, they will be swapped synchronously for all multi-read queries
+that appear as operands in the entire query, so this query will never match:
 
 .. code-block:: console
 

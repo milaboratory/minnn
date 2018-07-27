@@ -12,7 +12,8 @@ Correct action works in 3 stages:
 :code:`--input` argument is mandatory, reading data from stdin is not supported because correct action reads input
 file twice, on stages 1 and 3. :code:`--output` argument is optional: results will be written to stdout if
 :code:`--output` argument is missing. :code:`--groups` argument is mandatory, it must contain space separated list
-of groups that will be corrected. Built-in groups R1, R2, R3 etc are not supported in correct action.
+of groups that will be corrected. Built-in groups :code:`R1`, :code:`R2`, :code:`R3` etc are not supported in correct
+action.
 
 Examples for correct action:
 

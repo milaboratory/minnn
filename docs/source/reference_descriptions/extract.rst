@@ -18,12 +18,12 @@ action with input from MIF. If :code:`--output` argument is missing, data will b
 
 **Important:** number of reads in the specified pattern must be equal to number of reads in the input data.
 For example, if there are 2 FASTQ files in the input, there must be a read separator (``\``) in the pattern with
-queries for R1 and R2.
+queries for :code:`R1` and :code:`R2`.
 
-If there is more than 1 read in the input, extract action will search R1, R2 combination and then try the same search
-with swapped reads R2, R1. Then it will choose the match with better score. This will be done for each
-multi-read sequence from input. This is the default behavior; if you want to check only R1, R2 combination without
-checking reversed order, use :code:`--oriented` flag.
+If there is more than 1 read in the input, extract action will search :code:`R1`, :code:`R2` combination and then try
+the same search with swapped reads :code:`R2`, :code:`R1`. Then it will choose the match with better score. This will
+be done for each multi-read sequence from input. This is the default behavior; if you want to check only :code:`R1`,
+:code:`R2` combination without checking reversed order, use :code:`--oriented` flag.
 
 Extract action uses bitap algorithm to quickly search nucleotide sequences from pattern in the target, and then
 it uses aligner to align pattern sequence with found section of the target and calculate match score. You can set
@@ -55,9 +55,9 @@ information from description and save it as groups in the output. Syntax for des
 will be saved. It must **not** duplicate any group name from the pattern or built-in groups :code:`R1`, :code:`R2` etc.
 Multiple :code:`description-group-` arguments can be specified. :code:`regular_expression` is common java regular
 expression (**not** the pattern syntax), and it must always be in single quotes :code:`''`. Regular expressions will
-be applied to read descriptions of all reads (first R1, then R2, R3 etc), and then there will be attempt to parse match
-as nucleotide sequence. If valid nucleotide sequence will not be found by this regexp in any read description, extract
-action will stop with error. Usage examples for :code:`--description-group-` arguments:
+be applied to read descriptions of all reads (first :code:`R1`, then :code:`R2`, :code:`R3` etc), and then there will
+be attempt to parse match as nucleotide sequence. If valid nucleotide sequence will not be found by this regexp in any
+read description, extract action will stop with error. Usage examples for :code:`--description-group-` arguments:
 
 .. code-block:: console
 

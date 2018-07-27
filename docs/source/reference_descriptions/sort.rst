@@ -5,8 +5,8 @@ determines the priority: reads will be compared by contents of 1st group in the 
 etc. The information about groups by which the sorting was performed is saved in output file, so warnings can be
 displayed if :ref:`consensus` action is used with unsorted groups.
 
-**Important:** sort action must be used before :ref:`consensus` action with the same groups in the same order
-in :code:`--groups` argument as in consensus action, otherwise the results of consensus action will be wrong!
+**Important:** sort action must be used before :ref:`consensus` action with the same groups in :code:`--groups`
+argument as in consensus action, otherwise the results of consensus action will be wrong!
 
 Sort action must be used after :ref:`correct` action, and not before it, because correcting barcodes will
 cause groups to be unsorted again. However, if correcting barcodes is not needed, sort action can be used right
