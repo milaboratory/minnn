@@ -50,17 +50,19 @@ public final class GenerateDocsIO {
                 int i = 0;
                 for (Field field : parameterClass.getDeclaredFields()) {
                     final int secondaryOrder = i++;
-                    String names = getAnnotationValue(field, "names");
-                    String description = getAnnotationValue(field, "description");
-                    int primaryOrder = getOrder(field);
-                    if (names.length() > 2) {
-                        names = names.substring(1, names.length() - 1);
-                        parameters.add(new OrderedParameter(" " + names + ": " + description,
-                                primaryOrder, secondaryOrder));
-                    } else
-                        replaceTable.keySet().stream().filter(description::contains).findFirst()
-                                .ifPresent(s -> parameters.add(new OrderedParameter(description
-                                        .replace(s, replaceTable.get(s)) + "\n", primaryOrder, secondaryOrder)));
+                    if (!isHidden(field)) {
+                        String names = getAnnotationValue(field, "names");
+                        String description = getAnnotationValue(field, "description");
+                        int primaryOrder = getOrder(field);
+                        if (names.length() > 2) {
+                            names = names.substring(1, names.length() - 1);
+                            parameters.add(new OrderedParameter(" " + names + ": " + description,
+                                    primaryOrder, secondaryOrder));
+                        } else
+                            replaceTable.keySet().stream().filter(description::contains).findFirst()
+                                    .ifPresent(s -> parameters.add(new OrderedParameter(description
+                                            .replace(s, replaceTable.get(s)) + "\n", primaryOrder, secondaryOrder)));
+                    }
                 }
                 parameters.forEach(p -> writer.println(p.text));
                 writer.println();
@@ -71,40 +73,42 @@ public final class GenerateDocsIO {
     }
 
     private String getAnnotationValue(AnnotatedElement annotatedElement, String parameterName) {
-        Annotation annotation = Stream.of(Parameter.class, DynamicParameter.class)
-                .map((Function<Class<? extends Annotation>, Annotation>)annotatedElement::getAnnotation)
-                .filter(Objects::nonNull).findFirst().orElse(null);
-        if (annotation == null)
-            throw exitWithError("Annotation for " + annotatedElement + " not found!");
-        try {
-            for (Method method : annotation.annotationType().getDeclaredMethods())
-                if (method.getName().equals(parameterName)) {
-                    Object value = method.invoke(annotation, (Object[])null);
-                    return value.getClass().isArray() ? Arrays.toString((Object[])value) : value.toString();
-                }
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw exitWithError(e.toString());
-        }
-        throw exitWithError("Parameter " + parameterName + " not found in annotation " + annotation);
+        Object value = getAnnotationValueObject(annotatedElement, parameterName,
+                Stream.of(Parameter.class, DynamicParameter.class));
+        if (value instanceof RuntimeException)
+            throw exitWithError(((RuntimeException)value).getMessage());
+        else
+            return value.getClass().isArray() ? Arrays.toString((Object[])value) : value.toString();
     }
 
     private int getOrder(AnnotatedElement annotatedElement) {
-        Annotation annotation = annotatedElement.getAnnotation(Parameter.class);
+        Object value = getAnnotationValueObject(annotatedElement, "order",
+                Stream.of(Parameter.class));
+        int order = (value instanceof RuntimeException) ? Integer.MAX_VALUE : (int)value;
+        return (order == -1) ? Integer.MAX_VALUE - 1 : order;
+    }
+
+    private boolean isHidden(AnnotatedElement annotatedElement) {
+        Object value = getAnnotationValueObject(annotatedElement, "hidden",
+                Stream.of(Parameter.class));
+        return !(value instanceof RuntimeException) && (boolean)value;
+    }
+
+    private Object getAnnotationValueObject(AnnotatedElement annotatedElement, String parameterName,
+                                            Stream<Class<? extends Annotation>> annotationClasses) {
+        Annotation annotation = annotationClasses
+                .map((Function<Class<? extends Annotation>, Annotation>)annotatedElement::getAnnotation)
+                .filter(Objects::nonNull).findFirst().orElse(null);
         if (annotation == null)
-            return Integer.MAX_VALUE;
-        else {
-            try {
-                for (Method method : annotation.annotationType().getDeclaredMethods())
-                    if (method.getName().equals("order")) {
-                        Object value = method.invoke(annotation, (Object[])null);
-                        int order = Integer.parseInt(value.toString());
-                        return (order == -1) ? Integer.MAX_VALUE - 1 : order;
-                    }
-                return Integer.MAX_VALUE;
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                throw exitWithError(e.toString());
-            }
+            return new RuntimeException("Annotation for " + annotatedElement + " not found!");
+        try {
+            for (Method method : annotation.annotationType().getDeclaredMethods())
+                if (method.getName().equals(parameterName))
+                    return method.invoke(annotation, (Object[])null);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw exitWithError(e.toString());
         }
+        return new RuntimeException("Parameter " + parameterName + " not found in annotation " + annotation);
     }
 
     private String getActionName(Class parameterClass) {
