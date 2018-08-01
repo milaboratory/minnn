@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.milaboratory.core.alignment.BandedLinearAligner.alignLocalGlobal;
+import static com.milaboratory.core.sequence.SequenceQuality.*;
 import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.cli.Defaults.*;
@@ -34,8 +35,7 @@ import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 public final class ConsensusIO {
     private static final NucleotideSequence[] consensusMajorBases = new NucleotideSequence[] {
             sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
-            sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")),
-            NucleotideSequence.EMPTY };
+            sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")) };
     private final String inputFileName;
     private final String outputFileName;
     private final int alignerWidth;
@@ -850,8 +850,7 @@ public final class ConsensusIO {
                 for (LettersWithPositions currentLettersWithPositions : lettersList) {
                     NSequenceWithQuality currentLetter = currentLettersWithPositions.get(targetIndex, position);
                     if (currentLetter == NSequenceWithQuality.EMPTY)
-                        baseLetters.add(new NSequenceWithQuality(NucleotideSequence.EMPTY, qualityCache
-                                .get(currentLettersWithPositions.getDeletionQuality(targetIndex, position))));
+                        baseLetters.add(NSequenceWithQuality.EMPTY);
                     else if (currentLetter != null) {
                         NucleotideSequence letterWithoutQuality = currentLetter.getSequence();
                         if (letterWithoutQuality.containsWildcards()) {
@@ -883,22 +882,29 @@ public final class ConsensusIO {
          * @return              calculated consensus letter: letter with quality or EMPTY for deletion
          */
         private NSequenceWithQuality calculateConsensusLetter(List<NSequenceWithQuality> baseLetters) {
-            final double gamma = 1.0 / (consensusMajorBases.length - 1);
+            if (baseLetters.size() == 1)
+                return baseLetters.get(0);
             Map<NucleotideSequence, Integer> letterCounts = Arrays.stream(consensusMajorBases)
                     .collect(Collectors.toMap(majorBase -> majorBase, majorBase -> (int)(baseLetters.stream()
                             .map(NSequenceWithQuality::getSequence).filter(majorBase::equals).count())));
-            NucleotideSequence bestMajorBase = NucleotideSequence.EMPTY;
-            double bestQuality = 0;
+            int deletionsCount = (int)(baseLetters.stream()
+                    .filter(letter -> letter.equals(NSequenceWithQuality.EMPTY)).count());
+            if (letterCounts.values().stream().allMatch(count -> count <= deletionsCount))
+                return NSequenceWithQuality.EMPTY;
+            final double gamma = 1.0 / (consensusMajorBases.length - 1);
 
+            NucleotideSequence bestMajorBase = null;
+            double bestQuality = -1;
             for (NucleotideSequence majorBase : consensusMajorBases) {
                 double product = Math.pow(gamma, -letterCounts.get(majorBase));
-                for (NSequenceWithQuality currentLetter : baseLetters) {
-                    double errorProbability = Math.pow(10.0, -currentLetter.getQuality().value(0) / 10.0);
-                    if (currentLetter.getSequence().equals(majorBase))
-                        product *= (1 - errorProbability) / errorProbability;
-                    else
-                        product *= errorProbability / (1 - gamma * errorProbability);
-                }
+                for (NSequenceWithQuality currentLetter : baseLetters)
+                    if (currentLetter != NSequenceWithQuality.EMPTY) {
+                        double errorProbability = Math.pow(10.0, -currentLetter.getQuality().value(0) / 10.0);
+                        if (currentLetter.getSequence().equals(majorBase))
+                            product *= (1 - errorProbability) / errorProbability;
+                        else
+                            product *= errorProbability / (1 - gamma * errorProbability);
+                    }
 
                 double majorErrorProbability = 1.0 / (1 + product);
                 double quality = -10 * Math.log10(majorErrorProbability);
@@ -908,8 +914,8 @@ public final class ConsensusIO {
                 }
             }
 
-            return (bestMajorBase == NucleotideSequence.EMPTY) ? NSequenceWithQuality.EMPTY
-                    : new NSequenceWithQuality(bestMajorBase, qualityCache.get((byte)bestQuality));
+            return new NSequenceWithQuality(bestMajorBase, qualityCache.get((byte)Math.min(GOOD_QUALITY_VALUE,
+                    bestQuality)));
         }
 
         /**
@@ -978,47 +984,6 @@ public final class ConsensusIO {
 
             NSequenceWithQuality get(int targetIndex, int position) {
                 return targetSequences.get(targetIndex).get(position);
-            }
-
-            byte getDeletionQuality(int targetIndex, int position) {
-                if (get(targetIndex, position) != NSequenceWithQuality.EMPTY)
-                    throw new IllegalArgumentException("getDeletionQuality() called for sequence "
-                            + get(targetIndex, position));
-                ArrayList<NSequenceWithQuality> currentLetters = targetSequences.get(targetIndex);
-
-                NSequenceWithQuality foundPreviousSeq = null;
-                NSequenceWithQuality foundNextSeq = null;
-                int currentPreviousIndex = position - 1;
-                int currentNextIndex = position + 1;
-                while (currentPreviousIndex >= 0) {
-                    NSequenceWithQuality currentSeq = currentLetters.get(currentPreviousIndex);
-                    if (currentSeq == null)
-                        break;
-                    if (currentSeq != NSequenceWithQuality.EMPTY) {
-                        foundPreviousSeq = currentSeq;
-                        break;
-                    }
-                    currentPreviousIndex--;
-                }
-                while (currentNextIndex < currentLetters.size()) {
-                    NSequenceWithQuality currentSeq = currentLetters.get(currentNextIndex);
-                    if (currentSeq == null)
-                        break;
-                    if (currentSeq != NSequenceWithQuality.EMPTY) {
-                        foundNextSeq = currentSeq;
-                        break;
-                    }
-                    currentNextIndex++;
-                }
-                if ((foundPreviousSeq != null) && (foundNextSeq != null))
-                    return (byte)((calculateMinQuality(foundPreviousSeq) + calculateMinQuality(foundNextSeq)) / 2);
-                else if (foundPreviousSeq != null)
-                    return calculateMinQuality(foundPreviousSeq);
-                else if (foundNextSeq != null)
-                    return calculateMinQuality(foundNextSeq);
-                else
-                    throw new IllegalStateException("Found empty sequence with targetIndex " + targetIndex + ": "
-                            + currentLetters);
             }
         }
 
