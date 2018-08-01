@@ -901,9 +901,10 @@ public final class ConsensusIO {
                     if (currentLetter != NSequenceWithQuality.EMPTY) {
                         double errorProbability = Math.pow(10.0, -currentLetter.getQuality().value(0) / 10.0);
                         if (currentLetter.getSequence().equals(majorBase))
-                            product *= (1 - errorProbability) / errorProbability;
+                            product *= (1 - errorProbability) / Math.max(1E-100D, errorProbability);
                         else
-                            product *= errorProbability / (1 - gamma * errorProbability);
+                            product *= errorProbability / Math.max(1E-100D, 1 - gamma * errorProbability);
+                        product = Math.min(product, 1E100D);
                     }
 
                 double majorErrorProbability = 1.0 / (1 + product);
