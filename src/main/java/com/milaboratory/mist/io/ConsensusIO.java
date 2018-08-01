@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.milaboratory.core.alignment.BandedLinearAligner.alignLocalGlobal;
-import static com.milaboratory.core.sequence.SequenceQuality.MAX_QUALITY_VALUE;
 import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.mist.cli.CliUtils.floatFormat;
 import static com.milaboratory.mist.cli.Defaults.*;
@@ -33,6 +32,10 @@ import static com.milaboratory.mist.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class ConsensusIO {
+    private static final NucleotideSequence[] consensusMajorBases = new NucleotideSequence[] {
+            sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
+            sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")),
+            NucleotideSequence.EMPTY };
     private final String inputFileName;
     private final String outputFileName;
     private final int alignerWidth;
@@ -832,7 +835,7 @@ public final class ConsensusIO {
          *
          * @param lettersList       each element of this list is LettersWithPositions structure that allows to get
          *                          letter by targetIndex and position; one element of lettersList is for one original
-         *                          (possibly multi-target) source read for this consensus
+         *                          (possibly multi-target) base read for this consensus
          * @param fullRowLength     row length of aligned sequences matrix for current targetIndex
          * @param targetIndex       current targetIndex
          * @return                  list of calculated consensus letters with qualities
@@ -842,59 +845,71 @@ public final class ConsensusIO {
             ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
 
             for (int position = 0; position < fullRowLength; position++) {
-                // map for quality sums for letters and deletions
-                HashMap<NucleotideSequence, Long> currentPositionQualitySums = new HashMap<>();
+                ArrayList<NSequenceWithQuality> baseLetters = new ArrayList<>();
                 // loop by source reads for this consensus
                 for (LettersWithPositions currentLettersWithPositions : lettersList) {
                     NSequenceWithQuality currentLetter = currentLettersWithPositions.get(targetIndex, position);
-                    if (currentLetter == NSequenceWithQuality.EMPTY) {
-                        currentPositionQualitySums.putIfAbsent(NucleotideSequence.EMPTY, 0L);
-                        currentPositionQualitySums.put(NucleotideSequence.EMPTY,
-                                currentPositionQualitySums.get(NucleotideSequence.EMPTY)
-                                        + currentLettersWithPositions.getDeletionQuality(targetIndex, position));
-                    } else if (currentLetter != null) {
+                    if (currentLetter == NSequenceWithQuality.EMPTY)
+                        baseLetters.add(new NSequenceWithQuality(NucleotideSequence.EMPTY, qualityCache
+                                .get(currentLettersWithPositions.getDeletionQuality(targetIndex, position))));
+                    else if (currentLetter != null) {
                         NucleotideSequence letterWithoutQuality = currentLetter.getSequence();
                         if (letterWithoutQuality.containsWildcards()) {
                             Wildcard wildcard = wildcards.get(letterWithoutQuality);
                             for (int i = 0; i < wildcard.basicSize(); i++) {
                                 NucleotideSequence currentBasicLetter = wildcardCodeToSequence
                                         .get(wildcard.getMatchingCode(i));
-                                currentPositionQualitySums.putIfAbsent(currentBasicLetter, 0L);
-                                currentPositionQualitySums.put(currentBasicLetter,
-                                        currentPositionQualitySums.get(currentBasicLetter)
-                                                + currentLetter.getQuality().value(0)
-                                                / wildcard.basicSize());
+                                baseLetters.add(new NSequenceWithQuality(currentBasicLetter, qualityCache
+                                        .get((byte)(currentLetter.getQuality().value(0)
+                                                / wildcard.basicSize()))));
                             }
-                        } else {
-                            currentPositionQualitySums.putIfAbsent(letterWithoutQuality, 0L);
-                            currentPositionQualitySums.put(letterWithoutQuality,
-                                    currentPositionQualitySums.get(letterWithoutQuality)
-                                            + currentLetter.getQuality().value(0));
-                        }
+                        } else
+                            baseLetters.add(currentLetter);
                     }
                 }
 
-                // choosing consensus letter and calculating consensus letter quality
-                long bestSum = 0;
-                long totalSum = 0;
-                NucleotideSequence consensusLetter = NucleotideSequence.EMPTY;
-                for (HashMap.Entry<NucleotideSequence, Long> entry : currentPositionQualitySums.entrySet()) {
-                    totalSum += entry.getValue();
-                    if (entry.getValue() > bestSum) {
-                        bestSum = entry.getValue();
-                        consensusLetter = entry.getKey();
-                    }
-                }
-                if (consensusLetter != NucleotideSequence.EMPTY) {
-                    float p = 1 - (float)bestSum / totalSum;
-                    long phredQuality = (bestSum == totalSum) ? bestSum
-                            : Math.min((long)(-10 * Math.log10(p)), bestSum);
-                    consensusLetters.add(new NSequenceWithQuality(consensusLetter,
-                            qualityCache.get((byte)Math.min(MAX_QUALITY_VALUE, phredQuality))));
-                }
+                NSequenceWithQuality consensusLetter = calculateConsensusLetter(baseLetters);
+                if (consensusLetter != NSequenceWithQuality.EMPTY)
+                    consensusLetters.add(consensusLetter);
             }
 
             return consensusLetters;
+        }
+
+        /**
+         * Calculate consensus letter from list of base letters.
+         *
+         * @param baseLetters   base letters; allowed values A, T, G, C and EMPTY (deletion)
+         * @return              calculated consensus letter: letter with quality or EMPTY for deletion
+         */
+        private NSequenceWithQuality calculateConsensusLetter(List<NSequenceWithQuality> baseLetters) {
+            final double gamma = 1.0 / (consensusMajorBases.length - 1);
+            Map<NucleotideSequence, Integer> letterCounts = Arrays.stream(consensusMajorBases)
+                    .collect(Collectors.toMap(majorBase -> majorBase, majorBase -> (int)(baseLetters.stream()
+                            .map(NSequenceWithQuality::getSequence).filter(majorBase::equals).count())));
+            NucleotideSequence bestMajorBase = NucleotideSequence.EMPTY;
+            double bestQuality = 0;
+
+            for (NucleotideSequence majorBase : consensusMajorBases) {
+                double product = Math.pow(gamma, -letterCounts.get(majorBase));
+                for (NSequenceWithQuality currentLetter : baseLetters) {
+                    double errorProbability = Math.pow(10.0, -currentLetter.getQuality().value(0) / 10.0);
+                    if (currentLetter.getSequence().equals(majorBase))
+                        product *= (1 - errorProbability) / errorProbability;
+                    else
+                        product *= errorProbability / (1 - gamma * errorProbability);
+                }
+
+                double majorErrorProbability = 1.0 / (1 + product);
+                double quality = -10 * Math.log10(majorErrorProbability);
+                if (quality > bestQuality) {
+                    bestMajorBase = majorBase;
+                    bestQuality = quality;
+                }
+            }
+
+            return (bestMajorBase == NucleotideSequence.EMPTY) ? NSequenceWithQuality.EMPTY
+                    : new NSequenceWithQuality(bestMajorBase, qualityCache.get((byte)bestQuality));
         }
 
         /**
