@@ -13,6 +13,7 @@ $(error The '$(SPHINXBUILD)' command was not found. Make sure you have Sphinx in
 endif
 
 define build_mist
+	mkdir -p $(BUILDDIR) && \
 	cd $(BUILDDIR)/../../milib && \
 	mvn clean install -DskipTests=true && \
 	cd .. && \
@@ -20,11 +21,13 @@ define build_mist
 endef
 
 define generate_command_docs
-	$(eval MIST=$(shell readlink -f `ls -1 $(BUILDDIR)/../../target/*distribution.jar`))
+	$(eval MIST=$(shell mkdir -p $(BUILDDIR) && readlink -f `ls -1 $(BUILDDIR)/../../target/*distribution.jar`))
+	mkdir -p $(BUILDDIR) && \
 	java -jar ${MIST} docs --output $(BUILDDIR)/../source/reference.rst
 endef
 
 define generate_chart
+	mkdir -p $(BUILDDIR) && \
 	soffice --headless --convert-to svg $(BUILDDIR)/../source/usage-chart.odg --outdir $(BUILDDIR)/../source/_static
 endef
 
