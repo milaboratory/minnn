@@ -41,7 +41,7 @@ public final class GenerateDocsIO {
         try (PrintStream writer = new PrintStream(new FileOutputStream(outputFileName))) {
             writer.println(title("Reference", true));
             writer.println(title("Command Line Syntax", false));
-            writer.println();
+            writer.println("\n.. include:: reference_descriptions/header.rst\n");
             for (Class parameterClass : parameterClasses) {
                 String actionName = getActionName(parameterClass);
                 writer.println(subtitle(actionName));
