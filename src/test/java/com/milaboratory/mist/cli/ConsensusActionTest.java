@@ -98,4 +98,13 @@ public class ConsensusActionTest {
                 inputFile, correctedFile, sortedFile, consensusFile, consensusFile2, consensusFile3 })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void qualityOverflowTest() throws Exception {
+        String inputFile = getExampleMif("good-quality");
+        String consensusFile = TEMP_DIR + "consensus-qual-test.mif";
+        exec("consensus --input " + inputFile + " --output " + consensusFile + " --groups G1");
+        for (String fileName : new String[] { inputFile, consensusFile })
+            assertTrue(new File(fileName).delete());
+    }
 }

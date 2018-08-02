@@ -17,9 +17,11 @@ public class TestResources {
                 TEMP_DIR + "singleReadWithG1-G3.mif"));
         examples.put("100reads", new ExampleMif(EXAMPLES_PATH + "small/100.fastq",
                 TEMP_DIR + "100reads.mif"));
+        examples.put("good-quality", new ExampleMif(EXAMPLES_PATH + "small/good-quality.fastq",
+                TEMP_DIR + "good-quality.mif"));
     }
 
-    public static String getExampleMif(String example) throws Exception {
+    public static String getExampleMif(String example) {
         String common = "extract --input " + examples.get(example).fastq + " --output " + examples.get(example).mif
                 + " --mismatch-score -9 --gap-score -10 --single-overlap-penalty -10 --pattern ";
         switch (example) {
@@ -34,6 +36,9 @@ public class TestResources {
                 break;
             case "100reads":
                 exec(common + "\"*\"");
+                break;
+            case "good-quality":
+                exec(common + "\"(G1:CCCGCCC)\"");
                 break;
             default:
                 throw new IllegalArgumentException("Unknown example: " + example);
