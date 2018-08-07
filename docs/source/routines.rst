@@ -35,7 +35,7 @@ and second starting with :code:`GCC` and ending with :code:`TTT`, with length 12
 starts with something else, we want to skip it. First barcode with length 5 is immediately after :code:`ATTAGACA`,
 then there must be :code:`GGC` and any 5 nucleotides, and then the second barcode starting with :code:`TTT` with
 length 12. Also, good sequence must end with :code:`TTAGC`, and last 2 nucleotides can be possibly cut. And we want
-to allow mismatches and indels (but with score penalties) inside sequences:
+to allow substitutions and indels (but with score penalties) inside sequences:
 
 .. code-block:: console
 
@@ -106,6 +106,17 @@ And then issue the following command:
 
 Correcting UMI sequence
 -----------------------
+UMI sequences in input data often contain substitutions and indels, and we want to correct such errors to cluster
+sequences by UMI without creating extra clusters for variants with errors. Barcodes correction is performed with
+:ref:`correct` action. It is performed after barcode extraction, see :ref:`barcode_extraction` section. In common cases
+you can use the default settings for correct action and specify only input and output files and list of barcode names:
+
+.. code-block:: console
+
+   mist correct --groups UMI --input extracted.mif --output corrected.mif
+
+If you want to specify custom settings for correction, see the description of available options on :ref:`correct`
+action page.
 
 .. _consensus_assembly:
 
