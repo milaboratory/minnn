@@ -115,11 +115,43 @@ you can use the default settings for correct action and specify only input and o
 
    mist correct --groups UMI --input extracted.mif --output corrected.mif
 
-If you want to specify custom settings for correction, see the description of available options on :ref:`correct`
-action page.
+You can convert output MIF file into FASTQ with :ref:`mif2fastq` action, or watch statistics for barcode values
+and positions with :ref:`stat-groups` and :ref:`stat-positions` actions. If you want to specify custom settings for
+barcode correction, see the description of available options on :ref:`correct` action page.
+
+**Example.** We want to extract and correct UMI in pair of FASTQ files that contain :code:`R1` and :code:`R2`.
+We know that UMI is first 6 nucleotides of the read, and it starts with :code:`ATT`. Then we use the following
+commands:
+
+.. code-block:: console
+
+   mist extract --pattern "^(UMI:ATTNNN)\*" --input R1.fastq R2.fastq --output extracted.mif
+   mist correct --groups UMI --input extracted.mif --output corrected-UMI.mif
+   mist mif2fastq --input corrected-UMI.mif --group-R1 corrected-UMI-R1.fastq --group-R2 corrected-UMI-R2.fastq
 
 .. _consensus_assembly:
 
 Consensus assembly
 ------------------
+Consensus assembly consists of 5 stages:
 
+1. Extract barcodes from raw sequences.
+2. Correct mismatches and indels in barcodes.
+3. Sort sequences by barcode values to group them for further consensus assembly.
+4. Assembly consensuses for each barcode. There can be one or many consensuses for each barcode, depending on the way
+   of obtaining original data.
+5. Export calculated consensuses to FASTQ format.
+
+**Example.** We have 2 FASTQ files with :code:`R1` and :code:`R2`. We want to assemble consensuses by UMI that is 8
+nucleotides after first 3 nucleotides :code:`TTT`. And we know that there must be only 1 consensus for each UMI.
+Then we use the following commands:
+
+.. code-block:: console
+
+   mist extract --pattern "^TTT(UMI:N{8})\*" --input R1.fastq R2.fastq --output extracted.mif
+   mist correct --groups UMI --input extracted.mif --output corrected.mif
+   mist sort --groups UMI --input corrected.mif --output sorted.mif
+   mist consensus --groups UMI --max-consensuses-per-cluster 1 --input sorted.mif --output consensus.mif
+   mist mif2fastq --input consensus.mif --group-R1 consensus-R1.fastq --group-R2 consensus-R2.fastq
+
+To configure settings for consensus assembly, see the description of available options on :ref:`consensus` action page.
