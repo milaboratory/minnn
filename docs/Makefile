@@ -12,7 +12,7 @@ ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
 $(error The '$(SPHINXBUILD)' command was not found. Make sure you have Sphinx installed, then set the SPHINXBUILD environment variable to point to the full path of the '$(SPHINXBUILD)' executable. Alternatively you can add the directory with the executable to your PATH. If you don't have Sphinx installed, grab it from http://sphinx-doc.org/)
 endif
 
-define build_mist
+define build_minnn
 	mkdir -p $(BUILDDIR) && \
 	cd $(BUILDDIR)/../../milib && \
 	mvn clean install -DskipTests=true && \
@@ -21,9 +21,9 @@ define build_mist
 endef
 
 define generate_command_docs
-	$(eval MIST=$(shell mkdir -p $(BUILDDIR) && readlink -f `ls -1 $(BUILDDIR)/../../target/*distribution.jar`))
+	$(eval MINNN=$(shell mkdir -p $(BUILDDIR) && readlink -f `ls -1 $(BUILDDIR)/../../target/*distribution.jar`))
 	mkdir -p $(BUILDDIR) && \
-	java -jar ${MIST} docs --output $(BUILDDIR)/../source/reference.rst
+	java -jar ${MINNN} docs --output $(BUILDDIR)/../source/reference.rst
 endef
 
 define generate_chart
@@ -33,7 +33,7 @@ endef
 
 define generate_intermediate_files
 	$(MAKE) clean
-	$(call build_mist)
+	$(call build_minnn)
 	$(call generate_command_docs)
 	$(call generate_chart)
 endef
@@ -127,9 +127,9 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/Mist.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/MiNNN.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/Mist.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/MiNNN.qhc"
 
 .PHONY: applehelp
 applehelp:
@@ -148,8 +148,8 @@ devhelp:
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/Mist"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/Mist"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/MiNNN"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/MiNNN"
 	@echo "# devhelp"
 
 .PHONY: epub

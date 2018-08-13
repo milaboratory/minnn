@@ -17,11 +17,11 @@ action.
 
 Examples for correct action:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist correct --groups UMI --input extracted.mif --output corrected.mif --cluster-threshold 0.01
-   mist correct --groups G1 G3 G2 --input filtered.mif | xz > corrected.mif.xz
-   mist correct --groups SB1 SB2 --max-total-errors 2 --input data.mif --output corrected.mif
+   minnn correct --groups UMI --input extracted.mif --output corrected.mif --cluster-threshold 0.01
+   minnn correct --groups G1 G3 G2 --input filtered.mif | xz > corrected.mif.xz
+   minnn correct --groups SB1 SB2 --max-total-errors 2 --input data.mif --output corrected.mif
 
 Arguments :code:`--max-mismatches`, :code:`--max-indels` and :code:`--max-total-errors` specify how two barcodes can
 differ in the same cluster. Two barcodes for which at least one of these 3 restrictions is not met will never be

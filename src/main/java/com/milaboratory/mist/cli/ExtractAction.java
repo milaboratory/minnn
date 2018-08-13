@@ -72,7 +72,7 @@ public final class ExtractAction implements Action {
         @Parameter(description = "--pattern <pattern_query>", order = 0)
         private String description;
 
-        @Parameter(description = "Query, pattern specified in MiST format.",
+        @Parameter(description = "Query, pattern specified in MiNNN format.",
                 names = {"--pattern"}, order = 1, required = true)
         String query = null;
 

@@ -10,11 +10,11 @@ with pipes. Note that only single-read FASTQ file can be passed from stdin. Also
 can be passed from stdin, but note that :code:`--input-format mif` argument must always be present when using extract
 action with input from MIF. If :code:`--output` argument is missing, data will be written to stdout. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --input R1.fastq R2.fastq --output extracted.mif --pattern "(SB1:NNN)atta \ (SB2:NNN)gaca"
-   xzcat data.mif.xz | mist extract --input-format mif --pattern "ATCC\*" | xz > extracted.mif.xz
-   mist extract --input test.mif --input-format mif --pattern "(UMI:^N{:8})" --output test_umi.mif
+   minnn extract --input R1.fastq R2.fastq --output extracted.mif --pattern "(SB1:NNN)atta \ (SB2:NNN)gaca"
+   xzcat data.mif.xz | minnn extract --input-format mif --pattern "ATCC\*" | xz > extracted.mif.xz
+   minnn extract --input test.mif --input-format mif --pattern "(UMI:^N{:8})" --output test_umi.mif
 
 **Important:** number of reads in the specified pattern must be equal to number of reads in the input data.
 For example, if there are 2 FASTQ files in the input, there must be a read separator (``\``) in the pattern with
@@ -59,18 +59,18 @@ be applied to read descriptions of all reads (first :code:`R1`, then :code:`R2`,
 be attempt to parse match as nucleotide sequence. If valid nucleotide sequence will not be found by this regexp in any
 read description, extract action will stop with error. Usage examples for :code:`--description-group-` arguments:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --input R1.fastq R2.fastq --output extracted.mif --pattern "*\*" --description-group-G1='ATG.{10}'
-   mist extract --pattern "(G1:ATTN{10})" --description-group-G2='^.{12}' --description-group-G3='(?<=\=)ATTA.*(?=\;)'
+   minnn extract --input R1.fastq R2.fastq --output extracted.mif --pattern "*\*" --description-group-G1='ATG.{10}'
+   minnn extract --pattern "(G1:ATTN{10})" --description-group-G2='^.{12}' --description-group-G3='(?<=\=)ATTA.*(?=\;)'
 
 :code:`--description-group-` arguments also support parsing sequences with qualities. If you specify 2 named groups
 :code:`seq` and :code:`qual` in regexp query, contents of these matched groups will be parsed as sequence and quality
 for this description group. Usage examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "*" --description-group-G1='UMI~(?<seq>.*?)~(?<qual>.*?)\{'
-   mist extract --pattern "(G1:NNTTA)" --description-group-G2='^(?<qual>.*?)~{5}(?<seq>[a-zA-Z]*)'
+   minnn extract --pattern "*" --description-group-G1='UMI~(?<seq>.*?)~(?<qual>.*?)\{'
+   minnn extract --pattern "(G1:NNTTA)" --description-group-G2='^(?<qual>.*?)~{5}(?<seq>[a-zA-Z]*)'
 
 Command line arguments reference for extract action:

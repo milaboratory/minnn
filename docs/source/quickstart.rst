@@ -10,9 +10,9 @@ following actions:
 
 #. Extract barcodes from data.
 
-   .. code-block:: console
+   .. code-block:: text
 
-      mist extract --input R1.fastq R2.fastq --output extracted.mif --pattern "^(SB1:N{5}) & (SB2:ATGNNNN)\*"
+      minnn extract --input R1.fastq R2.fastq --output extracted.mif --pattern "^(SB1:N{5}) & (SB2:ATGNNNN)\*"
 
    Note that extract action will search :code:`R1`, :code:`R2` combination and then try the same search with swapped
    reads :code:`R2`, :code:`R1`. Then it will choose the match with better score. This is the default behavior; if you
@@ -20,38 +20,38 @@ following actions:
    Details for pattern syntax can be found in :ref:`pattern_syntax` section.
 #. Correct mismatches and indels in barcodes.
 
-   .. code-block:: console
+   .. code-block:: text
 
-      mist correct --input extracted.mif --output corrected.mif --groups SB1 SB2
+      minnn correct --input extracted.mif --output corrected.mif --groups SB1 SB2
 
 #. Filter out garbage reads.
 
-   .. code-block:: console
+   .. code-block:: text
 
-      mist filter --input corrected.mif --output filtered.mif "SB1~'~TTTTT'"
+      minnn filter --input corrected.mif --output filtered.mif "SB1~'~TTTTT'"
 
    Details for filter syntax can be found in :ref:`filter_syntax` section.
 #. (Optionally) check statistics for collected barcodes.
 
-   .. code-block:: console
+   .. code-block:: text
 
-      mist stat-groups --input filtered.mif --output stat-groups.txt --groups SB1 SB2
-      mist stat-positions --input filtered.mif --output stat-positions.txt --groups SB2
+      minnn stat-groups --input filtered.mif --output stat-groups.txt --groups SB1 SB2
+      minnn stat-positions --input filtered.mif --output stat-positions.txt --groups SB2
 
 #. Sort reads by barcode values.
 
-   .. code-block:: console
+   .. code-block:: text
 
-      mist sort --input filtered.mif --output sorted.mif --groups SB1 SB2
+      minnn sort --input filtered.mif --output sorted.mif --groups SB1 SB2
 
 #. Calculate consensuses.
 
-   .. code-block:: console
+   .. code-block:: text
 
-      mist consensus --input sorted.mif --output consensus.mif --max-consensuses-per-cluster 1 --groups SB1 SB2
+      minnn consensus --input sorted.mif --output consensus.mif --max-consensuses-per-cluster 1 --groups SB1 SB2
 
 #. Export consensuses to FASTQ files.
 
-   .. code-block:: console
+   .. code-block:: text
 
-      mist mif2fastq --input consensus.mif --group-R1 consensus-R1.fastq --group-R2 consensus-R2.fastq
+      minnn mif2fastq --input consensus.mif --group-R1 consensus-R1.fastq --group-R2 consensus-R2.fastq

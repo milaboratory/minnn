@@ -2,7 +2,7 @@ Stat-positions action is used to collect summary statistics about positions of g
 table with group names, reads where they matched, their match positions, and counts for each combination occurrences.
 Example:
 
-.. code::
+.. code-block:: text
 
    group.id read pos count percent
    G1 R1 15 4240 4.27%
@@ -40,10 +40,10 @@ input file if :code:`--number-of-reads` argument is not specified)
 
 Examples for stat-positions action:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist stat-positions --groups UMI --reads R2 R3 --input corrected.mif -n 10000
-   xzcat extracted.mif.xz | mist stat-positions --groups G1 G2 G3 --output stat-positions.txt --output-with-seq
+   minnn stat-positions --groups UMI --reads R2 R3 --input corrected.mif -n 10000
+   xzcat extracted.mif.xz | minnn stat-positions --groups G1 G2 G3 --output stat-positions.txt --output-with-seq
 
 :code:`--input` argument means input file in MIF format, or if this argument is missing, stdin will be used.
 :code:`--output` argument means output plain text file where the table will be written. If :code:`--output` argument
@@ -58,7 +58,7 @@ table, and it contains nucleotide sequence for this match. With this argument oc
 *group + read + position* (default), but by *group + read + position + sequence*. Output table example with
 :code:`--output-with-seq` argument:
 
-.. code::
+.. code-block:: text
 
    group.id read pos count percent seq
    G1 R1 15 4231 4.26% TCTCAG

@@ -17,19 +17,19 @@ action to convert it to FASTQ format. Extracted barcodes will be in read descrip
 
 **Example 1.** Barcode is first 8 nucleotides of the sequence:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^(barcode:N{8})\*" --input data-R1.fastq data-R2.fastq --output extracted.mif
-   mist mif2fastq --input extracted.mif --group-R1 barcodes-R1.fastq --group-R2 barcodes-R2.fastq
+   minnn extract --pattern "^(barcode:N{8})\*" --input data-R1.fastq data-R2.fastq --output extracted.mif
+   minnn mif2fastq --input extracted.mif --group-R1 barcodes-R1.fastq --group-R2 barcodes-R2.fastq
 
 **Example 2.** There are 2 barcodes, first starting with :code:`ATT` and ending with :code:`AAA`, with length 9,
 and second starting with :code:`GCC` and ending with :code:`TTT`, with length 12. Reads are oriented (swapping of
 :code:`R1` and :code:`R2` is not allowed), and first barcode is always in :code:`R1` and second in :code:`R2`:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "(B1:ATTNNNAAA)\(B2:GCCN{6}TTT)" --oriented --input data-R1.fastq data-R2.fastq --output extracted.mif
-   mist mif2fastq --input extracted.mif --group-R1 barcodes-R1.fastq --group-R2 barcodes-R2.fastq
+   minnn extract --pattern "(B1:ATTNNNAAA)\(B2:GCCN{6}TTT)" --oriented --input data-R1.fastq data-R2.fastq --output extracted.mif
+   minnn mif2fastq --input extracted.mif --group-R1 barcodes-R1.fastq --group-R2 barcodes-R2.fastq
 
 **Example 3.** Good sequence starts with :code:`ATTAGACA`, and first 5 nucleotides can be possibly cut; and if sequence
 starts with something else, we want to skip it. First barcode with length 5 is immediately after :code:`ATTAGACA`,
@@ -37,10 +37,10 @@ then there must be :code:`GGC` and any 5 nucleotides, and then the second barcod
 length 12. Also, good sequence must end with :code:`TTAGC`, and last 2 nucleotides can be possibly cut. And we want
 to allow substitutions and indels (but with score penalties) inside sequences:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^<{5}attagaca(B1:n{5})gccn{5}(B2:tttn{9})+ttagc>>$\*" --score-threshold -25 --input data-R1.fastq data-R2.fastq --output extracted.mif
-   mist mif2fastq --input extracted.mif --group-R1 barcodes-R1.fastq --group-R2 barcodes-R2.fastq
+   minnn extract --pattern "^<{5}attagaca(B1:n{5})gccn{5}(B2:tttn{9})+ttagc>>$\*" --score-threshold -25 --input data-R1.fastq data-R2.fastq --output extracted.mif
+   minnn mif2fastq --input extracted.mif --group-R1 barcodes-R1.fastq --group-R2 barcodes-R2.fastq
 
 .. _demultiplexing:
 
@@ -55,11 +55,11 @@ and extract samples with specified combinations of barcode values.
 **Example 1.** Split data by unique UMI values. We have input data where UMI is first 6 nucleotides, and we want to
 perform barcodes correction (see :ref:`correcting_umi_sequence` section) before demultiplexing.
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^(UMI:N{6})\*" --input data-R1.fastq data-R2.fastq --output extracted.mif
-   mist correct --groups UMI --input extracted.mif --output corrected.mif
-   mist demultiplex --by-barcode UMI corrected.mif
+   minnn extract --pattern "^(UMI:N{6})\*" --input data-R1.fastq data-R2.fastq --output extracted.mif
+   minnn correct --groups UMI --input extracted.mif --output corrected.mif
+   minnn demultiplex --by-barcode UMI corrected.mif
 
 Note that splitting data by unique UMI values can result in very big number of output files!
 
@@ -67,7 +67,7 @@ Note that splitting data by unique UMI values can result in very big number of o
 :code:`AATTTT`, :code:`AAAGGG`, :code:`CCCCCC`, :code:`AGACAT`, :code:`TTTTTA`, :code:`TTTTTG`. For this task we will
 create the following sample file :code:`umi_samples.txt`:
 
-.. code::
+.. code-block:: text
 
    Sample UMI
    value_AATTTT AATTTT
@@ -79,17 +79,17 @@ create the following sample file :code:`umi_samples.txt`:
 
 And then issue the following commands:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^(UMI:N{6})\*" --input data-R1.fastq data-R2.fastq --output extracted.mif
-   mist correct --groups UMI --input extracted.mif --output corrected.mif
-   mist demultiplex --by-sample umi_samples.txt corrected.mif
+   minnn extract --pattern "^(UMI:N{6})\*" --input data-R1.fastq data-R2.fastq --output extracted.mif
+   minnn correct --groups UMI --input extracted.mif --output corrected.mif
+   minnn demultiplex --by-sample umi_samples.txt corrected.mif
 
 **Example 3.** We extracted sequence barcodes with :ref:`extract` action into :code:`extracted.mif` file, and we named
 these barcodes :code:`SB1` and :code:`SB2`. Now we want to put sequences with specified combinations of :code:`SB1`
 and :code:`SB2` into separate MIF files. There we will use sample file :code:`samples.txt` with multiple barcodes:
 
-.. code::
+.. code-block:: text
 
    Sample SB1 SB2
    sample1 ATTAGACA CCCCCC
@@ -98,9 +98,9 @@ and :code:`SB2` into separate MIF files. There we will use sample file :code:`sa
 
 And then issue the following command:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist demultiplex --by-sample samples.txt extracted.mif
+   minnn demultiplex --by-sample samples.txt extracted.mif
 
 .. _correcting_umi_sequence:
 
@@ -111,9 +111,9 @@ sequences by UMI without creating extra clusters for variants with errors. Barco
 :ref:`correct` action. It is performed after barcode extraction, see :ref:`barcode_extraction` section. In common cases
 you can use the default settings for correct action and specify only input and output files and list of barcode names:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist correct --groups UMI --input extracted.mif --output corrected.mif
+   minnn correct --groups UMI --input extracted.mif --output corrected.mif
 
 You can convert output MIF file into FASTQ with :ref:`mif2fastq` action, or watch statistics for barcode values
 and positions with :ref:`stat-groups` and :ref:`stat-positions` actions. If you want to specify custom settings for
@@ -123,11 +123,11 @@ barcode correction, see the description of available options on :ref:`correct` a
 We know that UMI is first 6 nucleotides of the read, and it starts with :code:`ATT`. Then we use the following
 commands:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^(UMI:ATTNNN)\*" --input R1.fastq R2.fastq --output extracted.mif
-   mist correct --groups UMI --input extracted.mif --output corrected-UMI.mif
-   mist mif2fastq --input corrected-UMI.mif --group-R1 corrected-UMI-R1.fastq --group-R2 corrected-UMI-R2.fastq
+   minnn extract --pattern "^(UMI:ATTNNN)\*" --input R1.fastq R2.fastq --output extracted.mif
+   minnn correct --groups UMI --input extracted.mif --output corrected-UMI.mif
+   minnn mif2fastq --input corrected-UMI.mif --group-R1 corrected-UMI-R1.fastq --group-R2 corrected-UMI-R2.fastq
 
 .. _consensus_assembly:
 
@@ -146,12 +146,12 @@ Consensus assembly consists of 5 stages:
 nucleotides after first 3 nucleotides :code:`TTT`. And we know that there must be only 1 consensus for each UMI.
 Then we use the following commands:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^TTT(UMI:N{8})\*" --input R1.fastq R2.fastq --output extracted.mif
-   mist correct --groups UMI --input extracted.mif --output corrected.mif
-   mist sort --groups UMI --input corrected.mif --output sorted.mif
-   mist consensus --groups UMI --max-consensuses-per-cluster 1 --input sorted.mif --output consensus.mif
-   mist mif2fastq --input consensus.mif --group-R1 consensus-R1.fastq --group-R2 consensus-R2.fastq
+   minnn extract --pattern "^TTT(UMI:N{8})\*" --input R1.fastq R2.fastq --output extracted.mif
+   minnn correct --groups UMI --input extracted.mif --output corrected.mif
+   minnn sort --groups UMI --input corrected.mif --output sorted.mif
+   minnn consensus --groups UMI --max-consensuses-per-cluster 1 --input sorted.mif --output consensus.mif
+   minnn mif2fastq --input consensus.mif --group-R1 consensus-R1.fastq --group-R2 consensus-R2.fastq
 
 To configure settings for consensus assembly, see the description of available options on :ref:`consensus` action page.

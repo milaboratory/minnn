@@ -7,22 +7,22 @@ Group options are mandatory, and they specify what output files will be created.
 groups created by :ref:`extract` action, and also there may be built-in groups :code:`CR1`, :code:`CR2`, :code:`CR3`
 etc if the MIF file was created by :ref:`consensus` action with :code:`--consensuses-to-separate-groups` parameter.
 Group options format is
-:code:`--group-GROUPNAME1 filename1.fastq --group-GROUPNAME2 filename2.fastq --group-GROUPNAME3 filename3.fastq`, and
-there can be any number of pairs of groups and corresponding file names, but at least 1 pair must be specified.
+:code:`--group-GROUPNAME1 filename1.fastq --group-GROUPNAME2 filename2.fastq`, and there can be any number of pairs of
+groups and corresponding file names, but at least 1 pair must be specified.
 
 :code:`--input` argument is optional, and if it's missing, stdin will be used instead of input file.
 
 Examples for mif2fastq action:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist mif2fastq --input corrected.mif --copy-original-headers --group-R1 R1.fastq --group-R2 R2.fastq
-   xzcat data.mif.xz | mist mif2fastq --group-R1 data-R1.fastq --group-R2 data-R2.fastq --group-UMI data-UMI.fastq
-   mist mif2fastq --input consensus.mif --group-R1 consensus-R1.fastq --group-R2 consensus-R2.fastq
-   mist mif2fastq --input consensus-separate.mif --group-R1 data-R1.fastq --group-CR1 consensus-R1.fastq
+   minnn mif2fastq --input corrected.mif --copy-original-headers --group-R1 R1.fastq --group-R2 R2.fastq
+   xzcat data.mif.xz | minnn mif2fastq --group-R1 data-R1.fastq --group-R2 data-R2.fastq --group-UMI data-UMI.fastq
+   minnn mif2fastq --input consensus.mif --group-R1 consensus-R1.fastq --group-R2 consensus-R2.fastq
+   minnn mif2fastq --input consensus-separate.mif --group-R1 data-R1.fastq --group-CR1 consensus-R1.fastq
 
 :code:`--copy-original-headers` parameter specifies to copy original headers (that were in FASTQ files passed to
-:ref:`extract` action) to the start of output header comments. If it isn't specified, only mist comments will be in
+:ref:`extract` action) to the start of output header comments. If it isn't specified, only minnn comments will be in
 output FASTQ files.
 
 **Output FASTQ files comments format:**

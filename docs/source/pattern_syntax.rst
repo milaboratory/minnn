@@ -8,11 +8,11 @@ Patterns are used in :ref:`extract` action to specify which sequences must pass 
 must be filtered out. Also, capture groups in patterns are used for barcode extraction. Patterns must always
 be specified after :code:`--pattern` option and must always be in double quotes. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "ATTAGACA"
-   mist extract --pattern "*\*" --input R1.fastq R2.fastq
-   mist extract --pattern "^(UMI:N{3:5})attwwAAA\*" --input-format mif
+   minnn extract --pattern "ATTAGACA"
+   minnn extract --pattern "*\*" --input R1.fastq R2.fastq
+   minnn extract --pattern "^(UMI:N{3:5})attwwAAA\*" --input-format mif
 
 Basic Syntax Elements
 ---------------------
@@ -45,9 +45,9 @@ single read (see below).
 You can override them by specifying manually in the query, and overridden values will go to output instead of full
 reads. For example, query like this
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --input R1.fastq R2.fastq --pattern "^NNN(R1:(UMI:NNN)ATTAN{*})\^NNN(R2:NNNGACAN{*})"
+   minnn extract --input R1.fastq R2.fastq --pattern "^NNN(R1:(UMI:NNN)ATTAN{*})\^NNN(R2:NNNGACAN{*})"
 
 can be used if you want to strip first 3 characters and override built-in :code:`R1` and :code:`R2` groups to write
 output reads without stripped characters. Note that :code:`R1`, :code:`R2`, :code:`R3` etc, like any common groups,
@@ -64,17 +64,17 @@ swapped reads. Look at :ref:`mif2fastq` section for detailed information.
 multiple capture groups, but can't be used if there are other query elements in the same read. If there are other
 query elements, use :code:`N{*}` instead. For example, the following queries are **valid**:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --input R1.fastq R2.fastq --oriented --pattern "(G1:ATTA)\(G2:(G3:*))"
-   mist extract --input R1.fastq R2.fastq R3.fastq --pattern "*\*\*"
-   mist extract --input R1.fastq R2.fastq --pattern "(G1:ATTAN{*})\(G2:*)"
+   minnn extract --input R1.fastq R2.fastq --oriented --pattern "(G1:ATTA)\(G2:(G3:*))"
+   minnn extract --input R1.fastq R2.fastq R3.fastq --pattern "*\*\*"
+   minnn extract --input R1.fastq R2.fastq --pattern "(G1:ATTAN{*})\(G2:*)"
 
 and this is **invalid**:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --input R1.fastq R2.fastq --pattern "(G1:ATTA*)\*"
+   minnn extract --input R1.fastq R2.fastq --pattern "(G1:ATTA*)\*"
 
 Curly brackets after nucleotide can be used to specify number of repeats for the nucleotide. There can be any
 nucleotide letter (uppercase or lowercase, basic or wildcard) and then curly braces with quantity specifier.
@@ -97,10 +97,10 @@ Symbols :code:`^` and :code:`$` can be used to restrict matched sequence to star
 the beginning of the read sequence. :code:`$` mark must be in the end, and it means that the query match must be in the
 end of the read. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^ATTA"
-   mist extract --input R1.fastq R2.fastq --pattern "TCCNNWW$\^(G1:ATTAGACA)N{3:18}(G2:ssttggca)$"
+   minnn extract --pattern "^ATTA"
+   minnn extract --input R1.fastq R2.fastq --pattern "TCCNNWW$\^(G1:ATTAGACA)N{3:18}(G2:ssttggca)$"
 
 Advanced Syntax Elements
 ------------------------
@@ -110,62 +110,62 @@ There are operators :code:`&`, :code:`+` and :code:`||` that can be used inside 
 :code:`&` operator is logical AND, it means that 2 sequences must match in any order and gap between them.
 Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "ATTA & GACA"
-   mist extract --input R1.fastq R2.fastq --pattern "AAAA & TTTT & CCCC \ *"
-   mist extract --input R1.fastq R2.fastq --pattern "(G1:AAAA) & TTTT & CCCC \ ATTA & (G2:GACA)"
+   minnn extract --pattern "ATTA & GACA"
+   minnn extract --input R1.fastq R2.fastq --pattern "AAAA & TTTT & CCCC \ *"
+   minnn extract --input R1.fastq R2.fastq --pattern "(G1:AAAA) & TTTT & CCCC \ ATTA & (G2:GACA)"
 
 Note that :code:`AAAA`, :code:`TTTT` and :code:`CCCC` sequences can be in any order in the target to consider that the
 entire query is matching. :code:`&` operator is not allowed within groups, so this example is **invalid**:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "(G1:ATTA & GACA)"
+   minnn extract --pattern "(G1:ATTA & GACA)"
 
 :code:`+` operator is also logical AND but with order restriction. Nucleotide sequences can be matched only in
 the specified order. Also, :code:`+` operator can be used within groups. Note that in this case the matched group will
 also include all nucleotides between matched operands. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "(G1:ATTA + GACA)"
-   mist extract --input R1.fastq R2.fastq --pattern "(G1:AAAA + TTTT) + CCCC \ ATTA + (G2:GACA)"
+   minnn extract --pattern "(G1:ATTA + GACA)"
+   minnn extract --input R1.fastq R2.fastq --pattern "(G1:AAAA + TTTT) + CCCC \ ATTA + (G2:GACA)"
 
 :code:`||` operator is logical OR. It is not allowed within groups, but groups with the same name are allowed
 inside operands of :code:`||` operator. Note that if a group is present in one operand of :code:`||` operator and
 missing in another operand, this group may appear not matched in the output while the entire query is matched.
 Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^AAANNN(G1:ATTA) || ^TTTNNN(G1:GACA)"
-   mist extract --input R1.fastq R2.fastq --pattern "(G1:AAAA) || TTTT || (G1:CCCC) \ ATTA || (G2:GACA)"
+   minnn extract --pattern "^AAANNN(G1:ATTA) || ^TTTNNN(G1:GACA)"
+   minnn extract --input R1.fastq R2.fastq --pattern "(G1:AAAA) || TTTT || (G1:CCCC) \ ATTA || (G2:GACA)"
 
 :code:`+`, :code:`&` and :code:`||` operators can be combined in single query. :code:`+` operator has the highest
 priority, then :code:`&`, and :code:`||` has the lowest. Read separator (``\``) has lower priority than all these
 3 operators. To change the priority, square brackets :code:`[]` can be used. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "^[AAA & TTT] + [GGG || CCC]$"
-   mist extract --input R1.fastq R2.fastq --pattern "[(G1:ATTA+GACA)&TTT]+CCC\(G2:AT+AC)"
+   minnn extract --pattern "^[AAA & TTT] + [GGG || CCC]$"
+   minnn extract --input R1.fastq R2.fastq --pattern "[(G1:ATTA+GACA)&TTT]+CCC\(G2:AT+AC)"
 
 Square brackets can be used to create sequences of patterns. Sequence is special pattern that works like :code:`+`
 but with penalty for gaps between patterns. Examples of sequence pattern:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "[AAA & TTT]CCC"
-   mist extract --input R1.fastq R2.fastq --pattern "[(G1:ATTA+GACA)][(G2:TTT)&ATT]\*"
+   minnn extract --pattern "[AAA & TTT]CCC"
+   minnn extract --input R1.fastq R2.fastq --pattern "[(G1:ATTA+GACA)][(G2:TTT)&ATT]\*"
 
 Also square brackets allow to set separate score threshold for the query inside brackets. This can be done by writing
 score threshold value followed by :code:`:` after opening bracket. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "[-14:AAA & TTT]CCC"
-   mist extract --input R1.fastq R2.fastq --pattern "[0:(G1:ATTA+GACA)][(G2:TTT)&ATT]\[-25:c{*}]"
+   minnn extract --pattern "[-14:AAA & TTT]CCC"
+   minnn extract --input R1.fastq R2.fastq --pattern "[0:(G1:ATTA+GACA)][(G2:TTT)&ATT]\[-25:c{*}]"
 
 Matched operands of :code:`&`, :code:`+` and sequence patterns can overlap, but overlaps add penalty to match score.
 You can control maximum overlap size and overlapping letter penalty by :code:`--max-overlap` and
@@ -175,29 +175,29 @@ You can control maximum overlap size and overlapping letter penalty by :code:`--
 edges attached to nucleotide sequences. So, the following examples are different: first example creates sequence
 pattern and second example adds end of :code:`G1` and start of :code:`G2` to the middle of sequence :code:`TTTCCC`.
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "[(G1:AAA+TTT)][(G2:CCC+GGG)]"
-   mist extract --pattern "(G1:AAA+TTT)(G2:CCC+GGG)"
+   minnn extract --pattern "[(G1:AAA+TTT)][(G2:CCC+GGG)]"
+   minnn extract --pattern "(G1:AAA+TTT)(G2:CCC+GGG)"
 
 If some of nucleotides on the edge of nucleotide sequence can be cut without gap penalty, tail cut pattern can be used.
 It looks like repeated :code:`<` characters in the beginning of the sequence, or repeated :code:`>` characters in
 the end of the read, or single :code:`<` or :code:`>` character followed by curly braces with number of
 repeats. It is often used with :code:`^`/:code:`$` marks. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --input R1.fastq R2.fastq --pattern "^<<<ATTAGACA>>$\[^<TTTT || ^<<CCCC]"
-   mist extract --input R1.fastq R2.fastq --pattern "<{6}ACTCACTCGC + GGCTCGC>{2}$\<<AATCC>"
+   minnn extract --input R1.fastq R2.fastq --pattern "^<<<ATTAGACA>>$\[^<TTTT || ^<<CCCC]"
+   minnn extract --input R1.fastq R2.fastq --pattern "<{6}ACTCACTCGC + GGCTCGC>{2}$\<<AATCC>"
 
 **Important:** :code:`<` and :code:`>` marks belong to nucleotide sequences and not to complex patterns, so square
 brackets between :code:`<` / :code:`>` and nucleotide sequences are **not** allowed. Also, the following examples are
 different: in first example edge cut applied only to the first operand, and in second example - to both operands.
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "<{3}ATTA & GACA"
-   mist extract --pattern "<{3}ATTA & <{3}GACA"
+   minnn extract --pattern "<{3}ATTA & GACA"
+   minnn extract --pattern "<{3}ATTA & <{3}GACA"
 
 High Level Logical Operators
 ----------------------------
@@ -210,47 +210,47 @@ high level :code:`||`.
 and if a group is present in one operand of :code:`||` operator and missing in another operand, this group may appear
 not matched in the output while the entire query is matched. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "[AA\*\TT] || [*\GG\CG]" --oriented --input R1.fastq R2.fastq R3.fastq
-   mist extract --pattern "[^(G1:AA) + [ATTA || GACA]$ \ *] || [AT(G1:N{:8})\(G2:AATGC)]" --input R1.fastq R2.fastq
+   minnn extract --pattern "[AA\*\TT] || [*\GG\CG]" --oriented --input R1.fastq R2.fastq R3.fastq
+   minnn extract --pattern "[^(G1:AA) + [ATTA || GACA]$ \ *] || [AT(G1:N{:8})\(G2:AATGC)]" --input R1.fastq R2.fastq
 
 :code:`&&` operator is high-level AND. For AND operator it is not necessary to enclose multi-read query in square
 brackets because there is no ambiguity. Groups with the same name are **not** allowed in different operands of
 :code:`&&` operator. Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "AA\*\TT && *\GG\CG" --oriented --input R1.fastq R2.fastq R3.fastq
-   mist extract --pattern "^(G1:AA) + [ATTA || GACA]$ \ * && AT(G2:N{:8})\(G3:AATGC)" --input R1.fastq R2.fastq
+   minnn extract --pattern "AA\*\TT && *\GG\CG" --oriented --input R1.fastq R2.fastq R3.fastq
+   minnn extract --pattern "^(G1:AA) + [ATTA || GACA]$ \ * && AT(G2:N{:8})\(G3:AATGC)" --input R1.fastq R2.fastq
 
 :code:`~` is high-level NOT operator with single operand. It can sometimes be useful with single-read queries to
 filter out wrong data. Groups are **not** allowed in operand of :code:`~` operator.
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "~ATTAGACA"
-   mist extract --pattern "~[TT \ GC]" --input R1.fastq R2.fastq
+   minnn extract --pattern "~ATTAGACA"
+   minnn extract --pattern "~[TT \ GC]" --input R1.fastq R2.fastq
 
 **Important:** :code:`~` operator always belongs to multi-read query that includes all input reads, so this example
 is **invalid**:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "[~ATTAGACA] \ TTC" --input R1.fastq R2.fastq
+   minnn extract --pattern "[~ATTAGACA] \ TTC" --input R1.fastq R2.fastq
 
 Instead, this query can be used:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "~[ATTAGACA \ *] && * \ TTC" --input R1.fastq R2.fastq
+   minnn extract --pattern "~[ATTAGACA \ *] && * \ TTC" --input R1.fastq R2.fastq
 
 Note that if :code:`R1` and :code:`R2` are swapped, they will be swapped synchronously for all multi-read queries
 that appear as operands in the entire query, so this query will never match:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "~[ATTA \ *] && ATTA \ *" --input R1.fastq R2.fastq
+   minnn extract --pattern "~[ATTA \ *] && ATTA \ *" --input R1.fastq R2.fastq
 
 Square brackets are not required for :code:`~` operator, but recommended for clarity if input contains more than
 1 read. :code:`~` operator have lower priority than ``\``; :code:`&&` has lower priority than :code:`~`, and
@@ -259,6 +259,6 @@ operands or multi-read blocks inside operands into square brackets to avoid ambi
 
 Square brackets with score thresholds can be used with high-level queries too:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist extract --pattern "~[0: ATTA \ GACA && * \ TTT] || [-18: CCC \ GGG]" --input R1.fastq R2.fastq
+   minnn extract --pattern "~[0: ATTA \ GACA && * \ TTT] || [-18: CCC \ GGG]" --input R1.fastq R2.fastq

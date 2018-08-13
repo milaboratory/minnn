@@ -15,10 +15,10 @@ created for each combination of barcode values and samples, so this command can 
 
 Examples for demultiplex action:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist demultiplex --output-buffer-size 30000 --by-barcode SB1 corrected.mif
-   mist demultiplex --by-sample samples1.txt --by-sample samples2.txt --by-barcode UMI data.mif
+   minnn demultiplex --output-buffer-size 30000 --by-barcode SB1 corrected.mif
+   minnn demultiplex --by-sample samples1.txt --by-sample samples2.txt --by-barcode UMI data.mif
 
 **Sample file format:**
 
@@ -28,7 +28,7 @@ for this sample.
 
 Example for sample file with single group:
 
-.. code::
+.. code-block:: text
 
    Sample UMI
    good_value_1 AAAA
@@ -41,7 +41,7 @@ Example for sample file with single group:
 
 Example for sample file with multiple groups:
 
-.. code::
+.. code-block:: text
 
    Sample SB1 SB2 SB3
    test_sample_1_1 AAAA CTT CGCGTCT

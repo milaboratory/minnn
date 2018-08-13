@@ -10,17 +10,17 @@ space separated sequences for multi-read targets. Space separated multi-targets 
 :code:`""`. Nucleotide sequences are without quality, case insensitive (:code:`ATTAGACA` and :code:`attagaca` means
 the same in the target), and can contain wildcards (N, W, S, M etc). Examples:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist report --pattern "(SB1:NNN)atta \ (SB2:NNN)gaca" --target "CCTCCCCACCA ATTAGACA"
-   mist report --pattern "NCCN" --target WCNTDTBCDATD
-   mist report --pattern "[TTT \ CCC] || [AAA \ GGG && AGC \ GTT]" --score-threshold 0 --target "aaagc gggtt"
+   minnn report --pattern "(SB1:NNN)atta \ (SB2:NNN)gaca" --target "CCTCCCCACCA ATTAGACA"
+   minnn report --pattern "NCCN" --target WCNTDTBCDATD
+   minnn report --pattern "[TTT \ CCC] || [AAA \ GGG && AGC \ GTT]" --score-threshold 0 --target "aaagc gggtt"
 
 Example output:
 
-.. code-block:: console
+.. code-block:: text
 
-   $ mist report --pattern "(SB1:NNN)atta \ (SB2:NNN)gaca" --target "CCTCCCCACCA ATTAGACA"
+   $ minnn report --pattern "(SB1:NNN)atta \ (SB2:NNN)gaca" --target "CCTCCCCACCA ATTAGACA"
    Found match in target 1 (CCTCCCCACCA): CCCACCA
    Range in this target: (4->11)
 

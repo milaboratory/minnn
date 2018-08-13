@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Mist documentation build configuration file, created by
+# MiNNN documentation build configuration file, created by
 # sphinx-quickstart on Fri May 25 13:52:00 2018.
 #
 # This file is execfile()d with the current directory set to its
@@ -53,7 +53,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Mist'
+project = 'MiNNN'
 copyright = '2018, MiLaboratory.com'
 author = 'Aleksandr Popov, Dmitry Bolotin, Mikhail Shugay'
 
@@ -207,7 +207,7 @@ html_show_sourcelink = False
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Mistdoc'
+htmlhelp_basename = 'Minnndoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -229,7 +229,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Mist.tex', 'Mist Documentation',
+    (master_doc, 'MiNNN.tex', 'MiNNN Documentation',
      'Aleksandr Popov', 'manual'),
 ]
 
@@ -259,7 +259,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'mist', 'Mist Documentation',
+    (master_doc, 'minnn', 'MiNNN Documentation',
      [author], 1)
 ]
 
@@ -273,8 +273,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Mist', 'Mist Documentation',
-     author, 'Mist', 'One line description of project.',
+    (master_doc, 'MiNNN', 'MiNNN Documentation',
+     author, 'MiNNN', 'Nucleotide sequence processing toolkit for barcode correction and consensus assembly',
      'Miscellaneous'),
 ]
 
@@ -359,6 +359,8 @@ epub_exclude_files = ['search.html']
 
 # If false, no index is generated.
 #epub_use_index = True
+
+highlight_language = 'none'
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 

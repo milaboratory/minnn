@@ -1,7 +1,7 @@
 Stat-groups action is used to collect summary statistics about values of capture groups in MIF file and create table
 with sequences, qualities and counts for these capture groups. The table is plain text, space separated. Example:
 
-.. code::
+.. code-block:: text
 
    G1.seq G1.qual.min G1.qual.avg G2.seq G2.qual.min G2.qual.avg G3.seq G3.qual.min G3.qual.avg G4.seq G4.qual.min G4.qual.avg count percent
    TCTCAG 111111 FFFFFF CGA 1// FFF GGAGC ////0 FFFFF CG // FF 1937 7.8%
@@ -31,10 +31,10 @@ This table contains the following columns:
 
 Examples for stat-groups action:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist stat-groups --groups UMI --input corrected.mif --read-quality-filter 10 --min-frac-filter 0.05
-   xzcat extracted.mif.xz | mist stat-groups --groups G1 G2 G3 --output stat-groups.txt --min-count-filter 100 -n 10000
+   minnn stat-groups --groups UMI --input corrected.mif --read-quality-filter 10 --min-frac-filter 0.05
+   xzcat extracted.mif.xz | minnn stat-groups --groups G1 G2 G3 --output stat-groups.txt --min-count-filter 100 -n 10000
 
 :code:`--input` argument means input file in MIF format, or if this argument is missing, stdin will be used.
 :code:`--output` argument means output plain text file where the table will be written. If :code:`--output` argument

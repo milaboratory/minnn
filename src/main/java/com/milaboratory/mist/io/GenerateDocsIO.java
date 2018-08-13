@@ -45,7 +45,8 @@ public final class GenerateDocsIO {
             for (Class parameterClass : parameterClasses) {
                 String actionName = getActionName(parameterClass);
                 writer.println(subtitle(actionName));
-                writer.println(".. include:: reference_descriptions/" + actionName + ".rst\n\n::\n");
+                writer.println(".. include:: reference_descriptions/" + actionName + ".rst\n\n"
+                        + ".. code-block:: text\n");
                 TreeSet<OrderedParameter> parameters = new TreeSet<>();
                 int i = 0;
                 for (Field field : parameterClass.getDeclaredFields()) {

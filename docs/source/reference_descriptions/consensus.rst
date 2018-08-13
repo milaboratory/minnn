@@ -19,11 +19,11 @@ optional, and if they are missing, stdin and stdout will be used instead of inpu
 
 Examples for consensus action:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist consensus --groups SB1 SB2 --input sorted.mif --output consensus.mif --score-threshold -750
-   xzcat sorted.mif.xz | mist consensus --output consensus.mif
-   mist consensus --max-consensuses-per-cluster 1 --consensuses-to-separate-groups --input data.mif --output result.mif
+   minnn consensus --groups SB1 SB2 --input sorted.mif --output consensus.mif --score-threshold -750
+   xzcat sorted.mif.xz | minnn consensus --output consensus.mif
+   minnn consensus --max-consensuses-per-cluster 1 --consensuses-to-separate-groups --input data.mif --output result.mif
 
 :code:`--score-threshold` is very important option: it is alignment score threshold by which it will be determined
 to include sequence to the consensus or don't include. Too low threshold score can result in including garbage data

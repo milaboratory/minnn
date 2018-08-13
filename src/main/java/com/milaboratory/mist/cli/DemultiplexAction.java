@@ -44,7 +44,7 @@ public final class DemultiplexAction implements Action {
     private static final class DemultiplexActionParameters extends ActionParameters {
         @Parameter(description = "filter_options\n        Filter Options:      Barcodes and sample configuration " +
                 "files that specify sequences for demultiplexing. At least 1 barcode or 1 sample file must be " +
-                "specified. Syntax example: mist demultiplex --by-barcode UID --by-sample samples.txt input.mif",
+                "specified. Syntax example: minnn demultiplex --by-barcode UID --by-sample samples.txt input.mif",
                 order = 0, required = true)
         List<String> argumentsQuery = new ArrayList<>();
 

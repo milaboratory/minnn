@@ -17,10 +17,10 @@ instead of input and output files.
 
 Examples for sort action:
 
-.. code-block:: console
+.. code-block:: text
 
-   mist sort --groups UMI --input corrected.mif --output sorted.mif
-   xzcat data.mif.xz | mist sort --groups G1 G3 G2 | xz > sorted_data.mif.xz
+   minnn sort --groups UMI --input corrected.mif --output sorted.mif
+   xzcat data.mif.xz | minnn sort --groups G1 G3 G2 | xz > sorted_data.mif.xz
 
 :code:`--chunk-size` argument sets the chunk size in bytes for merged sorting. Too large chunks can cause out of
 memory errors, and too small chunks can lead to poor performance. Default value :code:`-1` means automatically
