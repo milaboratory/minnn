@@ -14,5 +14,6 @@ Contents:
     reference
     pattern_syntax
     appendix
+    license
 
 .. include:: description.rst

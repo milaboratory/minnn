@@ -19,6 +19,8 @@ Also minnn has some other functions:
 * Split (demultiplex) data into separate files by barcode values.
 * Collect statistics from data by barcode values and by barcode positions in sequences.
 
+Minnn is free for academic and non-profit use (see :ref:`license`).
+
 ===========
 Usage Chart
 ===========
