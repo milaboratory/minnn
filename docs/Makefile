@@ -12,31 +12,10 @@ ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
 $(error The '$(SPHINXBUILD)' command was not found. Make sure you have Sphinx installed, then set the SPHINXBUILD environment variable to point to the full path of the '$(SPHINXBUILD)' executable. Alternatively you can add the directory with the executable to your PATH. If you don't have Sphinx installed, grab it from http://sphinx-doc.org/)
 endif
 
-define build_minnn
-	mkdir -p $(BUILDDIR) && \
-	cd $(BUILDDIR)/../../milib && \
-	mvn clean install -DskipTests=true && \
-	cd .. && \
-	mvn clean package shade:shade -Dmaven.test.skip=true && \
-	true
-endef
-
-define generate_command_docs
-	$(eval MINNN=$(shell mkdir -p $(BUILDDIR) && readlink -f `ls -1 $(BUILDDIR)/../../target/*distribution.jar`))
-	mkdir -p $(BUILDDIR) && \
-	java -jar ${MINNN} docs --output $(BUILDDIR)/../source/reference.rst
-endef
-
-define generate_chart
-	mkdir -p $(BUILDDIR) && \
-	soffice --headless --convert-to svg $(BUILDDIR)/../source/usage-chart.odg --outdir $(BUILDDIR)/../source/_static
-endef
-
 define generate_intermediate_files
-	$(MAKE) clean
-	$(call build_minnn)
-	$(call generate_command_docs)
-	$(call generate_chart)
+	$(MAKE) clean && \
+	./gen-intermediate-files.sh && \
+	true
 endef
 
 # Internal variables.
