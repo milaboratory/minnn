@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
-import static com.milaboratory.minnn.cli.Defaults.DEFAULT_GOOD_QUALITY;
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
@@ -133,6 +133,19 @@ public class ConsensusActionTest {
         String consensusFile = TEMP_DIR + "consensus-qual-test.mif";
         exec("consensus --input " + inputFile + " --output " + consensusFile + " --groups G1");
         for (String fileName : new String[] { inputFile, consensusFile })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void numberOfReadsTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        String correctedFile = TEMP_DIR + "corrected.mif";
+        String sortedFile = TEMP_DIR + "sorted.mif";
+        String consensusFile = TEMP_DIR + "consensus.mif";
+        exec("correct --input " + inputFile + " --output " + correctedFile + " --groups G1 G2 -n 10000");
+        exec("sort --input " + correctedFile + " --output " + sortedFile + " --groups G1 G2");
+        exec("consensus --input " + sortedFile + " --output " + consensusFile + " --groups G1 G2 -n 1000");
+        for (String fileName : new String[] { inputFile, correctedFile, sortedFile, consensusFile })
             assertTrue(new File(fileName).delete());
     }
 }
