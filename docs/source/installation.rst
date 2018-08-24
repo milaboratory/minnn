@@ -2,6 +2,9 @@
 Installation
 ============
 
+Manual Installation
+-------------------
+
 #. To use minnn, you need to install java version 8 or higher. For Mac OS X you can download it here:
    https://java.com/en/download/
 
@@ -12,14 +15,28 @@ Installation
       java -version
 
    If everything is correct, it should display version 1.8 or higher.
-#. Copy minnn.jar into ~/bin directory, or you can use any other directory where you store binary executables.
-#. Edit ~/.bash_profile (on Mac OS X) or ~/.bashrc (on Linux) and add the line:
+#. Download latest minnn release from https://github.com/milaboratory/minnn/releases/
+#. Extract zip archive. Copy minnn and minnn.jar into ~/bin directory, or you can use any other directory where you
+   store executables. This directory must be in your PATH environment variable.
+#. To check that minnn is installed, type:
 
    .. code-block:: text
 
-      alias minnn='java -jar ~/bin/minnn.jar'
+      minnn --help
 
-   Then open new terminal window and type:
+   If everything is correct, minnn help will be displayed.
+
+Installation with Homebrew
+--------------------------
+
+#. If you don't have homebrew, install it from https://brew.sh/ (on Mac OS X) or from http://linuxbrew.sh/ (on Linux).
+#. Type minnn installation command:
+
+   .. code-block:: text
+
+      brew install milaboratory/all/minnn
+
+#. To check that minnn is installed, type:
 
    .. code-block:: text
 
