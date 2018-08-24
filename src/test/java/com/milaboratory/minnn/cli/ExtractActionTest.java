@@ -188,4 +188,15 @@ public class ExtractActionTest {
         for (String fileName : new String[] { inputFile, fastqR1, fastqR2, outputFile })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void multipleThreadsTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        String outputFile = TEMP_DIR + "outputMTT.mif";
+        String argsIO = "extract --input-format mif --input " + inputFile + " --output " + outputFile;
+        String query = argsIO + " --pattern \"TTC + N{1:10} & TTC || AAC \\ *\" --threads 1000";
+        exec(query);
+        for (String fileName : new String[] { inputFile, outputFile })
+            assertTrue(new File(fileName).delete());
+    }
 }
