@@ -28,6 +28,18 @@
  */
 package com.milaboratory.minnn.cli;
 
-public class ReportActionTest {
+import org.junit.*;
 
+import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
+import static com.milaboratory.minnn.util.CommonTestUtils.*;
+
+public class ReportActionTest {
+    @Test
+    public void simpleTest() throws Exception {
+        String commonArgs = "report --pattern ";
+        String test1 = "\"[TTT \\ CCC] || [AAA \\ GGG && AGC \\ GTT]\" --score-threshold 0 --target \"aaagc gggtt\"";
+        assertOutputContains(false, "(AAAGC): AGC", () -> callableExec(commonArgs + test1));
+        String test2 = "\"(SB1:NNN)atta \\ (SB2:NNN)gaca\" --target \"CCTCCCCACCA ATTAGACA\" --score-threshold 0";
+        assertOutputContains(false, "not found", () -> callableExec(commonArgs + test2));
+    }
 }
