@@ -94,11 +94,13 @@ public final class ReportAction implements Action {
                     System.out.println("Range in target string: " + matchedGroup.getRange() + "\n");
                 }
             } else {
-                for (MatchedRange matchedRange : bestMatch.getMatchedRanges()) {
-                    System.out.println("Found match in target " + matchedRange.getTargetId() + " ("
-                            + matchedRange.getTarget().getSequence() + "): " + matchedRange.getValue().getSequence());
-                    System.out.println("Range in this target: " + matchedRange.getRange() + "\n");
-                }
+                for (MatchedRange matchedRange : bestMatch.getMatchedRanges())
+                    if (!(matchedRange instanceof NullMatchedRange)) {
+                        System.out.println("Found match in target " + matchedRange.getTargetId() + " ("
+                                + matchedRange.getTarget().getSequence() + "): "
+                                + matchedRange.getValue().getSequence());
+                        System.out.println("Range in this target: " + matchedRange.getRange() + "\n");
+                    }
                 for (MatchedGroup matchedGroup : matchedGroups) {
                     System.out.println("Found matched group " + matchedGroup.getGroupName() + " in target "
                             + matchedGroup.getTargetId() + " (" + matchedGroup.getTarget().getSequence() + "): "
