@@ -158,8 +158,9 @@ public final class ConsensusIO {
                         return null;
                     Cluster preparedCluster = null;
                     while (preparedCluster == null) {
-                        ParsedRead parsedRead = reader.take();
-                        if ((parsedRead != null) && ((inputReadsLimit == 0) || (totalReads.get() < inputReadsLimit))) {
+                        ParsedRead parsedRead = ((inputReadsLimit == 0) || (totalReads.get() < inputReadsLimit))
+                                ? reader.take() : null;
+                        if (parsedRead != null) {
                             Set<String> allGroups = parsedRead.getGroups().stream().map(MatchedGroup::getGroupName)
                                     .filter(groupName -> !defaultGroups.contains(groupName))
                                     .collect(Collectors.toSet());
