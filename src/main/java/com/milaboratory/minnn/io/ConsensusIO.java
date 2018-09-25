@@ -60,6 +60,8 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class ConsensusIO {
+    private static final double OVERFLOW_PROTECTION_MIN = 1E-100D;
+    private static final double OVERFLOW_PROTECTION_MAX = 1E100D;
     private static final NucleotideSequence[] consensusMajorBases = new NucleotideSequence[] {
             sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
             sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")) };
@@ -428,8 +430,7 @@ public final class ConsensusIO {
                         originalRead = new MultiRead(reads);
 
                     Match bestMatch = new Match(numberOfTargets, 0, matchedGroupEdges);
-                    generatedReads.add(new ParsedRead(originalRead, false, bestMatch,
-                            consensusReadsNum));
+                    generatedReads.add(new ParsedRead(originalRead, false, bestMatch, consensusReadsNum));
                 }
                 return generatedReads;
             }
@@ -930,10 +931,11 @@ public final class ConsensusIO {
                     if (currentLetter != NSequenceWithQuality.EMPTY) {
                         double errorProbability = Math.pow(10.0, -currentLetter.getQuality().value(0) / 10.0);
                         if (currentLetter.getSequence().equals(majorBase))
-                            product *= (1 - errorProbability) / Math.max(1E-100D, errorProbability);
+                            product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
                         else
-                            product *= errorProbability / Math.max(1E-100D, 1 - gamma * errorProbability);
-                        product = Math.min(product, 1E100D);
+                            product *= errorProbability / Math.max(OVERFLOW_PROTECTION_MIN,
+                                    1 - gamma * errorProbability);
+                        product = Math.min(product, OVERFLOW_PROTECTION_MAX);
                     }
 
                 double majorErrorProbability = 1.0 / (1 + product);
