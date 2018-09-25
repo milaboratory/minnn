@@ -46,6 +46,7 @@ import com.milaboratory.util.SmartProgressReporter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
@@ -86,7 +87,7 @@ public final class ReadProcessor {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
         long matchedReads = 0;
-        try (IndexedSequenceReader reader = createReader();
+        try (IndexedSequenceReader<?> reader = createReader();
              MifWriter writer = createWriter()) {
             SmartProgressReporter.startProgressReport("Parsing", reader, System.err);
             Merger<Chunk<IndexedSequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader,
@@ -120,7 +121,7 @@ public final class ReadProcessor {
                 switch (inputFileNames.size()) {
                     case 0:
                         numberOfReads = 1;
-                        reader = new IndexedSequenceReader(new SingleFastqReader(System.in));
+                        reader = new IndexedSequenceReader<>(new SingleFastqReader(System.in), t -> t);
                         break;
                     case 1:
                         numberOfReads = 1;
@@ -128,22 +129,22 @@ public final class ReadProcessor {
                         if (s[s.length - 1].equals("fasta") || s[s.length - 1].equals("fa")
                                 || ((s.length > 2) && s[s.length - 1].equals("gz")
                                     && (s[s.length - 2].equals("fasta") || s[s.length - 2].equals("fa"))))
-                            reader = new IndexedSequenceReader(new FastaSequenceReaderWrapper(new FastaReader<>(
-                                    inputFileNames.get(0), NucleotideSequence.ALPHABET)));
+                            reader = new IndexedSequenceReader<>(new FastaSequenceReaderWrapper(new FastaReader<>(
+                                    inputFileNames.get(0), NucleotideSequence.ALPHABET)), t -> t);
                         else
-                            reader = new IndexedSequenceReader(new SingleFastqReader(inputFileNames.get(0)));
+                            reader = new IndexedSequenceReader<>(new SingleFastqReader(inputFileNames.get(0)), t -> t);
                         break;
                     case 2:
                         numberOfReads = 2;
-                        reader = new IndexedSequenceReader(new PairedFastqReader(inputFileNames.get(0),
-                                inputFileNames.get(1)));
+                        reader = new IndexedSequenceReader<>(new PairedFastqReader(inputFileNames.get(0),
+                                inputFileNames.get(1)), t -> t);
                         break;
                     default:
                         numberOfReads = inputFileNames.size();
                         SingleFastqReader readers[] = new SingleFastqReader[inputFileNames.size()];
                         for (int i = 0; i < inputFileNames.size(); i++)
                             readers[i] = new SingleFastqReader(inputFileNames.get(i));
-                        reader = new IndexedSequenceReader(new MultiReader(readers));
+                        reader = new IndexedSequenceReader<>(new MultiReader(readers), t -> t);
                 }
                 break;
             case MIF:
@@ -152,7 +153,7 @@ public final class ReadProcessor {
                 if (inputReadsLimit > 0)
                     mifReader.setParsedReadsLimit(inputReadsLimit);
                 numberOfReads = mifReader.getNumberOfReads();
-                reader = new IndexedSequenceReader(mifReader);
+                reader = new IndexedSequenceReader<>(mifReader, ParsedRead::getOriginalRead);
                 break;
             default:
                 throw new IllegalStateException("Unknown input format: " + inputFormat);
@@ -181,69 +182,41 @@ public final class ReadProcessor {
         }
     }
 
-    private class IndexedSequenceReader implements OutputPortCloseable<IndexedSequenceRead>, CanReportProgress {
-        private final OutputPortCloseable<? extends SequenceRead> fastqReader;
-        private final CanReportProgress fastqProgress;
-        private final MifReader mifReader;
+    private class IndexedSequenceReader<T> implements OutputPortCloseable<IndexedSequenceRead>, CanReportProgress {
+        private final OutputPortCloseable<? extends T> innerReader;
+        private final Function<T, SequenceRead> toSequenceRead;
+        private final CanReportProgress progress;
         private AtomicLong index = new AtomicLong(0);
-        private boolean finished = false;
 
-        IndexedSequenceReader(OutputPortCloseable<? extends SequenceRead> fastqReader) {
-            this.fastqReader = fastqReader;
-            this.fastqProgress = (CanReportProgress)fastqReader;
-            this.mifReader = null;
-        }
-
-        IndexedSequenceReader(MifReader mifReader) {
-            this.fastqReader = null;
-            this.fastqProgress = null;
-            this.mifReader = mifReader;
+        IndexedSequenceReader(OutputPortCloseable<? extends T> innerReader, Function<T, SequenceRead> toSequenceRead) {
+            this.innerReader = innerReader;
+            this.toSequenceRead = toSequenceRead;
+            this.progress = innerReader instanceof CanReportProgress ? (CanReportProgress) innerReader : null;
         }
 
         @Override
-        public synchronized void close() {
-            if (fastqReader != null)
-                fastqReader.close();
-            if (mifReader != null)
-                mifReader.close();
-            finished = true;
-        }
+        public synchronized void close() { innerReader.close(); }
 
         @Override
-        public synchronized IndexedSequenceRead take() {
-            if (finished)
+        public IndexedSequenceRead take() {
+            T t = innerReader.take();
+            if (t == null)
                 return null;
-            if (fastqReader != null) {
-                SequenceRead sequenceRead = fastqReader.take();
-                if (sequenceRead == null) {
-                    finished = true;
-                    return null;
-                } else
-                    return new IndexedSequenceRead(sequenceRead, index.getAndIncrement());
-            }
-            if (mifReader != null) {
-                ParsedRead parsedRead = mifReader.take();
-                if (parsedRead == null) {
-                    finished = true;
-                    return null;
-                } else
-                    return new IndexedSequenceRead(parsedRead.getOriginalRead(), index.getAndIncrement());
-            }
-            throw new IllegalStateException("MifReader and FastqReader are both null!");
+            else
+                return new IndexedSequenceRead(toSequenceRead.apply(t), index.getAndIncrement());
         }
 
         @Override
         public double getProgress() {
-            if (fastqProgress != null)
-                return fastqProgress.getProgress();
-            if (mifReader != null)
-                return mifReader.getProgress();
-            throw new IllegalStateException("MifReader and FastqReader are both null!");
+            if (progress != null)
+                return progress.getProgress();
+            else
+                return Double.NaN;
         }
 
         @Override
         public synchronized boolean isFinished() {
-            return finished;
+            return progress != null && progress.isFinished();
         }
     }
 
