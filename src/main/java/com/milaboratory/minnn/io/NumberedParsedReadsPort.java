@@ -29,7 +29,6 @@
 package com.milaboratory.minnn.io;
 
 import cc.redberry.pipe.OutputPort;
-import com.milaboratory.core.io.sequence.SequenceReadUtil;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,12 +42,12 @@ final class NumberedParsedReadsPort implements OutputPort<ParsedRead> {
     }
 
     @Override
-    public ParsedRead take() {
-        ParsedRead oldParsedRead = port.take();
-        if (oldParsedRead != null)
-            return new ParsedRead(SequenceReadUtil.setReadId(readId.getAndIncrement(), oldParsedRead.getOriginalRead()),
-                    oldParsedRead.isReverseMatch(), oldParsedRead.getBestMatch(), oldParsedRead.getConsensusReads());
-        else
+    public synchronized ParsedRead take() {
+        ParsedRead parsedRead = port.take();
+        if (parsedRead != null) {
+            parsedRead.setOutputPortId(readId.getAndIncrement());
+            return parsedRead;
+        } else
             return null;
     }
 }

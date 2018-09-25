@@ -72,6 +72,6 @@ public final class PatternReadFilter implements ReadFilter {
             return parsedRead;
         else
             return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                    parsedRead.getConsensusReads());
+                    parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
     }
 }

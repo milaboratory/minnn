@@ -75,7 +75,7 @@ public final class FilterIO {
             OutputPort<Chunk<ParsedRead>> filteredReadsPort = new ParallelProcessor<>(bufferedReaderPort,
                     CUtils.chunked(new FilterProcessor()), threads);
             OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(
-                    CUtils.unchunked(filteredReadsPort), read -> read.getOriginalRead().getId());
+                    CUtils.unchunked(filteredReadsPort), ParsedRead::getOutputPortId);
             for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
                 if (parsedRead.getBestMatch() != null) {
                     writer.write(parsedRead);

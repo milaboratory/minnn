@@ -51,6 +51,7 @@ public final class ParsedRead {
     /* number of reads used to calculate this consensus: used for consensuses and for reads that contain consensuses
        as groups (--consensuses-to-separate-groups argument in consensus); in other cases it must be 0 */
     private final int consensusReads;
+    private long outputPortId;
     private Map<String, MatchedGroup> matchedGroups = null;
     private HashMap<String, ArrayList<GroupEdgePosition>> innerGroupEdgesCache = null;
     private HashMap<String, HashMap<String, Range>> innerRangesCache = null;
@@ -59,10 +60,16 @@ public final class ParsedRead {
     private static Set<String> groupsFromHeader = null;
 
     public ParsedRead(SequenceRead originalRead, boolean reverseMatch, Match bestMatch, int consensusReads) {
+        this(originalRead, reverseMatch, bestMatch, consensusReads, -1);
+    }
+
+    public ParsedRead(SequenceRead originalRead, boolean reverseMatch, Match bestMatch, int consensusReads,
+                      long outputPortId) {
         this.originalRead = originalRead;
         this.reverseMatch = reverseMatch;
         this.bestMatch = bestMatch;
         this.consensusReads = consensusReads;
+        this.outputPortId = outputPortId;
     }
 
     public SequenceRead getOriginalRead() {
@@ -116,6 +123,14 @@ public final class ParsedRead {
                 return NSequenceWithQuality.EMPTY;
         } else
             return bestMatch.getGroupValue(groupName);
+    }
+
+    public long getOutputPortId() {
+        return outputPortId;
+    }
+
+    public void setOutputPortId(long outputPortId) {
+        this.outputPortId = outputPortId;
     }
 
     /**
@@ -218,7 +233,7 @@ public final class ParsedRead {
         }
 
         Match targetMatch = new Match(groupNames.length, getBestMatchScore(), matchedGroupEdges);
-        return new ParsedRead(originalRead, reverseMatch, targetMatch, consensusReads);
+        return new ParsedRead(originalRead, reverseMatch, targetMatch, consensusReads, outputPortId);
     }
 
     public SequenceRead toSequenceRead(boolean copyOriginalHeaders, ArrayList<GroupEdge> allGroupEdges,

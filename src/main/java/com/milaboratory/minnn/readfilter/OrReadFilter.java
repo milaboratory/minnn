@@ -43,7 +43,7 @@ public final class OrReadFilter implements ReadFilter {
     public ParsedRead filter(ParsedRead parsedRead) {
         if (operands.stream().map(o -> o.filter(parsedRead).getBestMatch()).allMatch(Objects::isNull))
             return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                    parsedRead.getConsensusReads());
+                    parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
         else
             return parsedRead;
     }
