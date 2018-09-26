@@ -191,11 +191,13 @@ public final class ReadProcessor {
         IndexedSequenceReader(OutputPortCloseable<? extends T> innerReader, Function<T, SequenceRead> toSequenceRead) {
             this.innerReader = innerReader;
             this.toSequenceRead = toSequenceRead;
-            this.progress = innerReader instanceof CanReportProgress ? (CanReportProgress) innerReader : null;
+            this.progress = innerReader instanceof CanReportProgress ? (CanReportProgress)innerReader : null;
         }
 
         @Override
-        public synchronized void close() { innerReader.close(); }
+        public synchronized void close() {
+            innerReader.close();
+        }
 
         @Override
         public IndexedSequenceRead take() {
@@ -216,7 +218,7 @@ public final class ReadProcessor {
 
         @Override
         public synchronized boolean isFinished() {
-            return progress != null && progress.isFinished();
+            return (progress != null) && progress.isFinished();
         }
     }
 
