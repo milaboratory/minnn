@@ -80,6 +80,7 @@ public final class ConsensusIO {
     private final int minGoodSeqLength;
     private final float avgQualityThreshold;
     private final int trimWindowSize;
+    private final String originalReadStatsFileName;
     private final boolean toSeparateGroups;
     private final long inputReadsLimit;
     private final int maxWarnings;
@@ -97,8 +98,9 @@ public final class ConsensusIO {
                        int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
                        float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
                        float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
-                       float avgQualityThreshold, int trimWindowSize, boolean toSeparateGroups, long inputReadsLimit,
-                       int maxWarnings, int threads, String debugOutputFileName, byte debugQualityThreshold) {
+                       float avgQualityThreshold, int trimWindowSize, String originalReadStatsFileName,
+                       boolean toSeparateGroups, long inputReadsLimit, int maxWarnings, int threads,
+                       String debugOutputFileName, byte debugQualityThreshold) {
         this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -116,6 +118,7 @@ public final class ConsensusIO {
         this.minGoodSeqLength = minGoodSeqLength;
         this.avgQualityThreshold = avgQualityThreshold;
         this.trimWindowSize = trimWindowSize;
+        this.originalReadStatsFileName = originalReadStatsFileName;
         this.inputReadsLimit = inputReadsLimit;
         this.maxWarnings = maxWarnings;
         this.threads = threads;
@@ -202,18 +205,15 @@ public final class ConsensusIO {
             OrderedOutputPort<CalculatedConsensuses> orderedConsensusesPort = new OrderedOutputPort<>(
                     calculatedConsensusesPort, cc -> cc.orderedPortIndex);
             int clusterIndex = 0;
-            long startingReadId = 0;
             for (CalculatedConsensuses calculatedConsensuses : CUtils.it(orderedConsensusesPort)) {
                 for (int i = 0; i < calculatedConsensuses.consensuses.size(); i++) {
                     Consensus consensus = calculatedConsensuses.consensuses.get(i);
                     if (consensus.isConsensus) {
-                        if (toSeparateGroups) {
-                            List<ParsedRead> outputReads = consensus.getReadsWithConsensuses(startingReadId);
-                            startingReadId += outputReads.size();
-                            consensusReads++;
-                            outputReads.forEach(writer::write);
-                        } else
-                            writer.write(consensus.toParsedRead(consensusReads++));
+                        consensusReads++;
+                        if (toSeparateGroups)
+                            consensus.getReadsWithConsensuses().forEach(writer::write);
+                        else
+                            writer.write(consensus.toParsedRead());
                     }
                     if (debugOutputStream != null)
                         consensus.debugData.writeDebugData(clusterIndex++, i);
@@ -269,11 +269,117 @@ public final class ConsensusIO {
         }
     }
 
+    private enum SpecialSequences {
+        NULL_SEQ, EMPTY_SEQ
+    }
+
+    private class SequenceWithAttributes {
+        private final NucleotideSequence seq;
+        private final SequenceQuality qual;
+        private final long originalReadId;
+
+        SequenceWithAttributes(NucleotideSequence seq, SequenceQuality qual, long originalReadId) {
+            this.seq = seq;
+            this.qual = qual;
+            this.originalReadId = originalReadId;
+        }
+
+        SequenceWithAttributes(SpecialSequences type, long originalReadId) {
+            if (type == SpecialSequences.NULL_SEQ) {
+                this.seq = null;
+                this.qual = null;
+            } else if (type == SpecialSequences.EMPTY_SEQ) {
+                this.seq = NucleotideSequence.EMPTY;
+                this.qual = SequenceQuality.EMPTY;
+            } else throw new IllegalArgumentException("Unknown special sequence type: " + type);
+            this.originalReadId = originalReadId;
+        }
+
+        NucleotideSequence getSeq() {
+            return seq;
+        }
+
+        SequenceQuality getQual() {
+            return qual;
+        }
+
+        long getOriginalReadId() {
+            return originalReadId;
+        }
+
+        private SequenceWithAttributes resultWithCachedValues(int from, int to) {
+            NucleotideSequence seqPart = (seq == null) ? null : seq.getRange(from, to);
+            SequenceQuality qualPart = (qual == null) ? null : qual.getRange(from, to);
+            NucleotideSequence cachedSeq = sequencesCache.get(seqPart);
+            if (cachedSeq == null)
+                cachedSeq = seqPart;
+            SequenceQuality cachedQual = ((qualPart != null) && (qualPart.size() == 1))
+                    ? qualityCache.get(qualPart.value(0)) : qualPart;
+            return new SequenceWithAttributes(cachedSeq, cachedQual, originalReadId);
+        }
+
+        SequenceWithAttributes letterAt(int position) {
+            if ((seq == null) || (position < 0) || (position >= seq.size()))
+                return new SequenceWithAttributes(SpecialSequences.NULL_SEQ, originalReadId);
+            return resultWithCachedValues(position, position + 1);
+        }
+
+        SequenceWithAttributes getSubSequence(int from, int to) {
+            if (seq == null)
+                throw new IllegalStateException("getSubSequence() called for null sequence! Read id: "
+                        + originalReadId);
+            if ((from < 0) || (to > seq.size()) || (to - from < 1))
+                throw new IndexOutOfBoundsException("seq.size(): " + seq.size() + ", from: " + from + ", to: " + to);
+            return resultWithCachedValues(from, to);
+        }
+
+        NSequenceWithQuality toNSequenceWithQuality() {
+            return new NSequenceWithQuality(seq, qual);
+        }
+
+        long calculateSumQuality() {
+            if ((qual == null) || isEmpty())
+                return 0;
+            long sum = 0;
+            for (byte quality : qual.asArray())
+                sum += quality;
+            return sum;
+        }
+
+        byte calculateMinQuality() {
+            if ((qual == null) || isEmpty())
+                return 0;
+            byte minQuality = DEFAULT_MAX_QUALITY;
+            for (byte quality : qual.asArray())
+                if (quality < minQuality)
+                    minQuality = quality;
+            return minQuality;
+        }
+
+        boolean isNull() {
+            return seq == null;
+        }
+
+        boolean isEmpty() {
+            return NucleotideSequence.EMPTY.equals(seq);
+        }
+
+        int size() {
+            return (seq == null) ? 0 : seq.size();
+        }
+
+        @Override
+        public String toString() {
+            return "SequenceWithAttributes{" + "seq=" + seq + ", qual=" + qual
+                    + ", originalReadId=" + originalReadId + '}';
+        }
+    }
+
     private class Barcode {
         final String groupName;
-        final NSequenceWithQuality value;
+        final SequenceWithAttributes value;
 
-        Barcode(String groupName, NSequenceWithQuality value) {
+        Barcode(String groupName, SequenceWithAttributes value) {
             this.groupName = groupName;
             this.value = value;
         }
@@ -298,11 +404,13 @@ public final class ConsensusIO {
     }
 
     private class DataFromParsedRead {
-        final NSequenceWithQuality[] sequences;
+        final SequenceWithAttributes[] sequences;
         final TargetBarcodes[] barcodes;
-        final LinkedHashMap<String, NSequenceWithQuality> otherGroups = toSeparateGroups ? new LinkedHashMap<>() : null;
+        final LinkedHashMap<String, SequenceWithAttributes> otherGroups = toSeparateGroups ? new LinkedHashMap<>()
+                : null;
 
         DataFromParsedRead(ParsedRead parsedRead) {
+            long originalReadId = parsedRead.getOriginalRead().getId();
             List<MatchedGroup> parsedReadGroups = parsedRead.getGroups();
             List<MatchedGroup> extractedGroups = parsedReadGroups.stream()
                     .filter(g -> defaultGroups.contains(g.getGroupName())).collect(Collectors.toList());
@@ -310,22 +418,26 @@ public final class ConsensusIO {
                 throw new IllegalArgumentException("Wrong number of target groups in ParsedRead: expected "
                         + numberOfTargets + ", target groups in ParsedRead: " + parsedRead.getGroups().stream()
                         .map(MatchedGroup::getGroupName).filter(defaultGroups::contains).collect(Collectors.toList()));
-            sequences = new NSequenceWithQuality[numberOfTargets];
+            sequences = new SequenceWithAttributes[numberOfTargets];
             extractedGroups.forEach(group ->
-                    sequences[getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch())] = group.getValue());
+                    sequences[getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch())] =
+                            new SequenceWithAttributes(group.getValue().getSequence(), group.getValue().getQuality(),
+                                    originalReadId));
             barcodes = IntStream.range(0, numberOfTargets).mapToObj(i -> new TargetBarcodes(new ArrayList<>()))
                     .toArray(TargetBarcodes[]::new);
             parsedReadGroups.forEach(group -> {
+                SequenceWithAttributes sequenceWithAttributes = new SequenceWithAttributes(
+                        group.getValue().getSequence(), group.getValue().getQuality(), originalReadId);
                 if (groupSet.contains(group.getGroupName())) {
                     int targetIndex = getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch());
                     ArrayList<Barcode> currentTargetList = barcodes[targetIndex].targetBarcodes;
-                    currentTargetList.add(new Barcode(group.getGroupName(), group.getValue()));
+                    currentTargetList.add(new Barcode(group.getGroupName(), sequenceWithAttributes));
                 } else if (toSeparateGroups && !defaultGroups.contains(group.getGroupName()))
-                    otherGroups.put(group.getGroupName(), group.getValue());
+                    otherGroups.put(group.getGroupName(), sequenceWithAttributes);
             });
         }
 
-        DataFromParsedRead(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes) {
+        DataFromParsedRead(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes) {
             this.sequences = sequences;
             this.barcodes = barcodes;
         }
@@ -343,14 +455,14 @@ public final class ConsensusIO {
     }
 
     private class Consensus {
-        final NSequenceWithQuality[] sequences;
+        final SequenceWithAttributes[] sequences;
         final TargetBarcodes[] barcodes;
         final int consensusReadsNum;
         final ArrayList<DataFromParsedRead> savedOriginalSequences = toSeparateGroups ? new ArrayList<>() : null;
         final ConsensusDebugData debugData;
         final boolean isConsensus;
 
-        Consensus(NSequenceWithQuality[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum,
+        Consensus(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum,
                   ConsensusDebugData debugData) {
             this.sequences = sequences;
             this.barcodes = barcodes;
@@ -367,19 +479,21 @@ public final class ConsensusIO {
             this.isConsensus = false;
         }
 
-        ParsedRead toParsedRead(long readId) {
+        ParsedRead toParsedRead() {
             if (!isConsensus || (sequences == null) || (barcodes == null))
                 throw exitWithError("toParsedRead() called for null consensus!");
             SequenceRead originalRead;
             SingleRead[] reads = new SingleRead[numberOfTargets];
             ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
             for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
-                NSequenceWithQuality currentSequence = sequences[targetId - 1];
+                SequenceWithAttributes currentSequence = sequences[targetId - 1];
                 TargetBarcodes targetBarcodes = barcodes[targetId - 1];
-                reads[targetId - 1] = new SingleReadImpl(readId, currentSequence, "Consensus");
-                addReadGroupEdges(matchedGroupEdges, targetId, currentSequence);
+                reads[targetId - 1] = new SingleReadImpl(currentSequence.getOriginalReadId(),
+                        currentSequence.toNSequenceWithQuality(), "Consensus");
+                addReadGroupEdges(matchedGroupEdges, targetId, currentSequence.toNSequenceWithQuality());
                 for (Barcode barcode : targetBarcodes.targetBarcodes)
-                    addGroupEdges(matchedGroupEdges, targetId, barcode.groupName, currentSequence, barcode.value);
+                    addGroupEdges(matchedGroupEdges, targetId, barcode.groupName,
+                            currentSequence.toNSequenceWithQuality(), barcode.value.toNSequenceWithQuality());
             }
             if (numberOfTargets == 1)
                 originalRead = reads[0];
@@ -392,36 +506,39 @@ public final class ConsensusIO {
             return new ParsedRead(originalRead, false, bestMatch, consensusReadsNum);
         }
 
-        List<ParsedRead> getReadsWithConsensuses(long startingReadId) {
+        List<ParsedRead> getReadsWithConsensuses() {
             if (!isConsensus || (sequences == null) || (barcodes == null))
                 throw exitWithError("getReadsWithConsensuses() called for null consensus!");
             if (!toSeparateGroups || (savedOriginalSequences == null))
                 throw exitWithError("getReadsWithConsensuses() called when toSeparateGroups flag is not set!");
             else {
                 List<ParsedRead> generatedReads = new ArrayList<>();
-                for (int i = 0; i < savedOriginalSequences.size(); i++) {
-                    long currentReadId = startingReadId + i;
-                    DataFromParsedRead currentOriginalData = savedOriginalSequences.get(i);
-                    SequenceRead originalRead;
-
+                for (DataFromParsedRead currentOriginalData : savedOriginalSequences) {
                     ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
                     SingleRead[] reads = new SingleRead[numberOfTargets];
                     for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
-                        NSequenceWithQuality currentOriginalSequence = currentOriginalData.sequences[targetId - 1];
-                        NSequenceWithQuality currentConsensusSequence = sequences[targetId - 1];
+                        SequenceWithAttributes currentOriginalSequence = currentOriginalData.sequences[targetId - 1];
+                        SequenceWithAttributes currentConsensusSequence = sequences[targetId - 1];
                         TargetBarcodes targetBarcodes = barcodes[targetId - 1];
-                        reads[targetId - 1] = new SingleReadImpl(currentReadId, currentOriginalSequence, "");
-                        addReadGroupEdges(matchedGroupEdges, targetId, currentOriginalSequence);
-                        addGroupEdges(matchedGroupEdges, targetId, "CR" + targetId, currentOriginalSequence,
-                                currentConsensusSequence);
+                        reads[targetId - 1] = new SingleReadImpl(currentOriginalSequence.getOriginalReadId(),
+                                currentOriginalSequence.toNSequenceWithQuality(), "");
+                        addReadGroupEdges(matchedGroupEdges, targetId,
+                                currentOriginalSequence.toNSequenceWithQuality());
+                        addGroupEdges(matchedGroupEdges, targetId, "CR" + targetId,
+                                currentOriginalSequence.toNSequenceWithQuality(),
+                                currentConsensusSequence.toNSequenceWithQuality());
                         for (Barcode barcode : targetBarcodes.targetBarcodes)
-                            addGroupEdges(matchedGroupEdges, targetId, barcode.groupName, currentOriginalSequence,
-                                    barcode.value);
-                        for (HashMap.Entry<String, NSequenceWithQuality> entry
+                            addGroupEdges(matchedGroupEdges, targetId, barcode.groupName,
+                                    currentOriginalSequence.toNSequenceWithQuality(),
+                                    barcode.value.toNSequenceWithQuality());
+                        for (HashMap.Entry<String, SequenceWithAttributes> entry
                                 : currentOriginalData.otherGroups.entrySet())
-                            addGroupEdges(matchedGroupEdges, targetId, entry.getKey(), currentOriginalSequence,
-                                    entry.getValue());
+                            addGroupEdges(matchedGroupEdges, targetId, entry.getKey(),
+                                    currentOriginalSequence.toNSequenceWithQuality(),
+                                    entry.getValue().toNSequenceWithQuality());
                     }
+
+                    SequenceRead originalRead;
                     if (numberOfTargets == 1)
                         originalRead = reads[0];
                     else if (numberOfTargets == 2)
@@ -476,30 +593,32 @@ public final class ConsensusIO {
 
     private class ConsensusDebugData {
         // outer list - targetIndex, second - sequenceIndex, inner - positionIndex
-        List<ArrayList<ArrayList<NSequenceWithQuality>>> data = IntStream.range(0, numberOfTargets)
-                .mapToObj(i -> new ArrayList<ArrayList<NSequenceWithQuality>>()).collect(Collectors.toList());
+        List<ArrayList<ArrayList<SequenceWithAttributes>>> data = IntStream.range(0, numberOfTargets)
+                .mapToObj(i -> new ArrayList<ArrayList<SequenceWithAttributes>>()).collect(Collectors.toList());
 
         void writeDebugData(int clusterIndex, int consensusIndex) {
             debugOutputStream.println("\nclusterIndex: " + clusterIndex + ", consensusIndex: " + consensusIndex);
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                 debugOutputStream.println("targetIndex: " + targetIndex);
-                ArrayList<ArrayList<NSequenceWithQuality>> targetData = data.get(targetIndex);
-                for (ArrayList<NSequenceWithQuality> sequenceData : targetData) {
+                ArrayList<ArrayList<SequenceWithAttributes>> targetData = data.get(targetIndex);
+                for (ArrayList<SequenceWithAttributes> sequenceData : targetData) {
                     StringBuilder sequenceString = new StringBuilder();
-                    for (NSequenceWithQuality currentLetter : sequenceData) {
-                        if (currentLetter == null)
+                    for (SequenceWithAttributes currentLetter : sequenceData) {
+                        if (currentLetter.isNull())
                             sequenceString.append(".");
-                        else if (currentLetter == NSequenceWithQuality.EMPTY)
+                        else if (currentLetter.isEmpty())
                             sequenceString.append("-");
                         else {
-                            if (currentLetter.getQuality().value(0) < debugQualityThreshold)
-                                sequenceString.append(Character.toLowerCase(currentLetter.getSequence()
+                            if (currentLetter.getQual().value(0) < debugQualityThreshold)
+                                sequenceString.append(Character.toLowerCase(currentLetter.getSeq()
                                         .symbolAt(0)));
                             else
-                                sequenceString.append(Character.toUpperCase(currentLetter.getSequence()
+                                sequenceString.append(Character.toUpperCase(currentLetter.getSeq()
                                         .symbolAt(0)));
                         }
                     }
+                    if (sequenceData.size() > 0)
+                        sequenceString.append(" - originalReadId: ").append(sequenceData.get(0).getOriginalReadId());
                     debugOutputStream.println(sequenceString.toString());
                 }
             }
@@ -520,7 +639,8 @@ public final class ConsensusIO {
                 long bestSumQuality = 0;
                 int bestDataIndex = 0;
                 for (int i = 0; i < data.size(); i++) {
-                    long sumQuality = Arrays.stream(data.get(i).sequences).mapToLong(this::calculateSumQuality).sum();
+                    long sumQuality = Arrays.stream(data.get(i).sequences)
+                            .mapToLong(SequenceWithAttributes::calculateSumQuality).sum();
                     if (sumQuality > bestSumQuality) {
                         bestSumQuality = sumQuality;
                         bestDataIndex = i;
@@ -543,8 +663,9 @@ public final class ConsensusIO {
                     subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data), filteredOutReads,
                             stage1Consensus.sequences, -1);
                     if (subsequencesList.size() > 0) {
-                        Consensus stage2Consensus = generateConsensus(subsequencesList, stage1Consensus.sequences,
-                                stage1Consensus.barcodes);
+                        Consensus stage2Consensus = generateConsensus(subsequencesList,
+                                Objects.requireNonNull(stage1Consensus.sequences),
+                                Objects.requireNonNull(stage1Consensus.barcodes));
                         if (!stage2Consensus.isConsensus) {
                             displayWarning("WARNING: consensus assembled from " + (data.size()
                                     - filteredOutReads.size()) + " reads discarded on stage 2 after "
@@ -592,46 +713,9 @@ public final class ConsensusIO {
                 Barcode barcode = barcodes.get(i);
                 if (i > 0)
                     builder.append(", ");
-                builder.append(barcode.groupName).append('=').append(barcode.value.getSequence().toString());
+                builder.append(barcode.groupName).append('=').append(barcode.value.getSeq().toString());
             }
             return builder.toString();
-        }
-
-        private long calculateSumQuality(NSequenceWithQuality seq) {
-            if ((seq == null) || (seq == NSequenceWithQuality.EMPTY))
-                return 0;
-            long sum = 0;
-            for (byte quality : seq.getQuality().asArray())
-                sum += quality;
-            return sum;
-        }
-
-        private byte calculateMinQuality(NSequenceWithQuality seq) {
-            if ((seq == null) || (seq == NSequenceWithQuality.EMPTY))
-                return 0;
-            byte minQuality = DEFAULT_MAX_QUALITY;
-            for (byte quality : seq.getQuality().asArray())
-                if (quality < minQuality)
-                    minQuality = quality;
-            return minQuality;
-        }
-
-        private NSequenceWithQuality getCachedValues(SequenceWithQuality<NucleotideSequence> input) {
-            NucleotideSequence sequence = sequencesCache.get(input.getSequence());
-            return new NSequenceWithQuality((sequence == null) ? input.getSequence() : sequence,
-                    (input.size() == 1) ? qualityCache.get(input.getQuality().value(0)) : input.getQuality());
-        }
-
-        private NSequenceWithQuality letterAt(NSequenceWithQuality seq, int position) {
-            if ((seq == null) || (position < 0) || (position >= seq.size()))
-                return null;
-            return getCachedValues(seq.getSubSequence(position, position + 1));
-        }
-
-        private NSequenceWithQuality getSubSequence(NSequenceWithQuality seq, int from, int to) {
-            if ((from < 0) || (to > seq.size()) || (to - from < 1))
-                throw new IndexOutOfBoundsException("seq.size(): " + seq.size() + ", from: " + from + ", to: " + to);
-            return getCachedValues(seq.getSubSequence(from, to));
         }
 
         /**
@@ -643,36 +727,30 @@ public final class ConsensusIO {
         private List<DataFromParsedRead> trimBadQualityTails(List<DataFromParsedRead> data) {
             List<DataFromParsedRead> processedData = new ArrayList<>();
             for (DataFromParsedRead dataFromParsedRead : data) {
-                NSequenceWithQuality[] sequences = dataFromParsedRead.sequences;
-                NSequenceWithQuality[] processedSequences = new NSequenceWithQuality[numberOfTargets];
-                TargetBarcodes[] barcodes = dataFromParsedRead.barcodes;
-                TargetBarcodes[] processedBarcodes = IntStream.range(0, numberOfTargets)
-                        .mapToObj(i -> new TargetBarcodes(new ArrayList<>())).toArray(TargetBarcodes[]::new);
+                SequenceWithAttributes[] sequences = dataFromParsedRead.sequences;
+                SequenceWithAttributes[] processedSequences = new SequenceWithAttributes[numberOfTargets];
                 boolean allSequencesAreGood = true;
                 for (int i = 0; i < numberOfTargets; i++) {
-                    NSequenceWithQuality sequence = sequences[i];
-                    TargetBarcodes targetBarcodes = barcodes[i];
-                    int trimResultLeft = trim(sequence.getQuality(), 0, sequence.size(), 1,
+                    SequenceWithAttributes sequence = sequences[i];
+                    int trimResultLeft = trim(sequence.getQual(), 0, sequence.size(), 1,
                             true, readsAvgQualityThreshold, readsTrimWindowSize);
                     if (trimResultLeft < -1) {
                         allSequencesAreGood = false;
                         break;
                     }
-                    int trimResultRight = trim(sequence.getQuality(), 0, sequence.size(), -1,
+                    int trimResultRight = trim(sequence.getQual(), 0, sequence.size(), -1,
                             true, readsAvgQualityThreshold, readsTrimWindowSize);
                     if (trimResultRight < 0)
                         throw new IllegalStateException("Unexpected negative trimming result");
                     else if (trimResultRight - trimResultLeft - 1 < readsMinGoodSeqLength) {
                         allSequencesAreGood = false;
                         break;
-                    } else {
-                        processedSequences[i] = getSubSequence(sequence, trimResultLeft + 1, trimResultRight);
-                        processedBarcodes[i].targetBarcodes.addAll(targetBarcodes.targetBarcodes);
-                    }
+                    } else
+                        processedSequences[i] = sequence.getSubSequence(trimResultLeft + 1, trimResultRight);
                 }
 
                 if (allSequencesAreGood)
-                    processedData.add(new DataFromParsedRead(processedSequences, processedBarcodes));
+                    processedData.add(new DataFromParsedRead(processedSequences, dataFromParsedRead.barcodes));
                 else
                     processedData.add(null);
             }
@@ -691,7 +769,7 @@ public final class ConsensusIO {
          * @return                  list of aligned subsequences for generateConsensus() function
          */
         private ArrayList<AlignedSubsequences> getAlignedSubsequencesList(List<DataFromParsedRead> data,
-                HashSet<Integer> filteredOutReads, NSequenceWithQuality[] bestSequences, int bestSeqIndex) {
+                HashSet<Integer> filteredOutReads, SequenceWithAttributes[] bestSequences, int bestSeqIndex) {
             ArrayList<AlignedSubsequences> subsequencesList = new ArrayList<>();
             for (int i = 0; i < data.size(); i++) {
                 if (i != bestSeqIndex) {
@@ -699,9 +777,10 @@ public final class ConsensusIO {
                         int sumScore = 0;
                         ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
                         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                            NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
+                            SequenceWithAttributes currentSequence = data.get(i).sequences[targetIndex];
                             Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
-                                    bestSequences[targetIndex], currentSequence, alignerWidth);
+                                    bestSequences[targetIndex].toNSequenceWithQuality(),
+                                    currentSequence.toNSequenceWithQuality(), alignerWidth);
                             alignments.add(alignment);
                             sumScore += alignment.getScore();
                         }
@@ -710,28 +789,34 @@ public final class ConsensusIO {
                         else {
                             AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
                             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                                NSequenceWithQuality currentSequence = data.get(i).sequences[targetIndex];
-                                NSequenceWithQuality alignedBestSequence = bestSequences[targetIndex];
+                                SequenceWithAttributes currentSequence = data.get(i).sequences[targetIndex];
+                                SequenceWithAttributes alignedBestSequence = bestSequences[targetIndex];
                                 int previousSeqPosition = -1;
                                 for (int position = 0; position < alignedBestSequence.size(); position++) {
                                     Alignment<NucleotideSequence> alignment = alignments.get(targetIndex);
                                     int seqPosition = alignment.convertToSeq2Position(position);
                                     if (previousSeqPosition < 0) {
                                         if (seqPosition < 0)
-                                            currentSubsequences.set(targetIndex, position, null);
+                                            currentSubsequences.set(targetIndex, position,
+                                                    new SequenceWithAttributes(SpecialSequences.NULL_SEQ,
+                                                            currentSequence.getOriginalReadId()));
                                         else
-                                            currentSubsequences.set(targetIndex, position, getSubSequence(
-                                                    currentSequence, 0, seqPosition + 1));
+                                            currentSubsequences.set(targetIndex, position,
+                                                    currentSequence.getSubSequence(0, seqPosition + 1));
                                         previousSeqPosition = seqPosition;
                                     } else {
                                         if (seqPosition < 0)
-                                            currentSubsequences.set(targetIndex, position, null);
+                                            currentSubsequences.set(targetIndex, position,
+                                                    new SequenceWithAttributes(SpecialSequences.NULL_SEQ,
+                                                            currentSequence.getOriginalReadId()));
                                         else {
                                             if (previousSeqPosition == currentSequence.size() - 1)
-                                                currentSubsequences.set(targetIndex, position, null);
+                                                currentSubsequences.set(targetIndex, position,
+                                                        new SequenceWithAttributes(SpecialSequences.NULL_SEQ,
+                                                                currentSequence.getOriginalReadId()));
                                             else
                                                 currentSubsequences.set(targetIndex, position,
-                                                        getSubSequence(currentSequence, previousSeqPosition + 1,
+                                                        currentSequence.getSubSequence(previousSeqPosition + 1,
                                                                 Math.min(currentSequence.size(), seqPosition + 1)));
                                             previousSeqPosition = seqPosition;
                                         }
@@ -744,9 +829,9 @@ public final class ConsensusIO {
                 } else {
                     AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                        NSequenceWithQuality currentSequence = bestSequences[targetIndex];
+                        SequenceWithAttributes currentSequence = bestSequences[targetIndex];
                         for (int position = 0; position < currentSequence.size(); position++)
-                            currentSubsequences.set(targetIndex, position, letterAt(currentSequence, position));
+                            currentSubsequences.set(targetIndex, position, currentSequence.letterAt(position));
                     }
                     subsequencesList.add(currentSubsequences);
                 }
@@ -766,30 +851,31 @@ public final class ConsensusIO {
          * @return                  consensus: array of sequences (1 sequence for 1 target) and consensus score
          */
         private Consensus generateConsensus(ArrayList<AlignedSubsequences> subsequencesList,
-                                            NSequenceWithQuality[] bestSequences, TargetBarcodes[] barcodes) {
+                                            SequenceWithAttributes[] bestSequences, TargetBarcodes[] barcodes) {
             ConsensusDebugData debugData = (debugOutputStream == null) ? null : new ConsensusDebugData();
             int consensusReadsNum = subsequencesList.size();
-            NSequenceWithQuality[] sequences = new NSequenceWithQuality[numberOfTargets];
+            long bestSeqReadId = bestSequences[0].getOriginalReadId();
+            SequenceWithAttributes[] sequences = new SequenceWithAttributes[numberOfTargets];
             List<LettersWithPositions> lettersList = IntStream.range(0, consensusReadsNum)
                     .mapToObj(i -> new LettersWithPositions()).collect(Collectors.toList());
             TargetBarcodes[] consensusBarcodes = IntStream.range(0, numberOfTargets)
                     .mapToObj(i -> new TargetBarcodes(new ArrayList<>())).toArray(TargetBarcodes[]::new);
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                ArrayList<ArrayList<NSequenceWithQuality>> debugDataForThisTarget = (debugData == null) ? null
+                ArrayList<ArrayList<SequenceWithAttributes>> debugDataForThisTarget = (debugData == null) ? null
                         : debugData.data.get(targetIndex);
                 consensusBarcodes[targetIndex].targetBarcodes.addAll(barcodes[targetIndex].targetBarcodes);
-                List<ArrayList<NSequenceWithQuality>> lettersMatrixList = IntStream.range(0, consensusReadsNum)
-                        .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());
+                List<ArrayList<SequenceWithAttributes>> lettersMatrixList = IntStream.range(0, consensusReadsNum)
+                        .mapToObj(i -> new ArrayList<SequenceWithAttributes>()).collect(Collectors.toList());
                 for (int position = 0; position < bestSequences[targetIndex].size(); position++) {
-                    ArrayList<NSequenceWithQuality> currentPositionSequences = new ArrayList<>();
+                    ArrayList<SequenceWithAttributes> currentPositionSequences = new ArrayList<>();
                     int bestQualityIndex = -1;
                     byte bestQuality = -1;
                     for (int i = 0; i < consensusReadsNum; i++) {
                         AlignedSubsequences currentSubsequences = subsequencesList.get(i);
-                        NSequenceWithQuality currentSequence = currentSubsequences.get(targetIndex, position);
+                        SequenceWithAttributes currentSequence = currentSubsequences.get(targetIndex, position);
                         currentPositionSequences.add(currentSequence);
-                        if (currentSequence != null) {
-                            byte currentQuality = calculateMinQuality(currentSequence);
+                        if (!currentSequence.isNull()) {
+                            byte currentQuality = currentSequence.calculateMinQuality();
                             if (currentQuality > bestQuality) {
                                 bestQuality = currentQuality;
                                 bestQualityIndex = i;
@@ -799,25 +885,25 @@ public final class ConsensusIO {
 
                     LettersMatrix lettersMatrix;
                     if (bestQualityIndex == -1) {
-                        // in this case lettersMatrix is a column of nulls and getRowLength() will return 0
-                        lettersMatrix = new LettersMatrix(null, 0);
+                        // in this case lettersMatrix is empty and getRowLength() will return 0
+                        lettersMatrix = new LettersMatrix();
                     } else {
                         lettersMatrix = new LettersMatrix(currentPositionSequences.get(bestQualityIndex),
                                 bestQualityIndex);
                         for (int i = 0; i < currentPositionSequences.size(); i++) {
                             if (i != bestQualityIndex) {
-                                NSequenceWithQuality currentSeq = currentPositionSequences.get(i);
-                                if (currentSeq != null)
+                                SequenceWithAttributes currentSeq = currentPositionSequences.get(i);
+                                if (!currentSeq.isNull())
                                     lettersMatrix.add(currentSeq, alignLocalGlobal(scoring,
-                                            currentPositionSequences.get(bestQualityIndex),
-                                            currentPositionSequences.get(i), alignerWidth));
+                                            currentPositionSequences.get(bestQualityIndex).toNSequenceWithQuality(),
+                                            currentPositionSequences.get(i).toNSequenceWithQuality(), alignerWidth));
                                 else
-                                    lettersMatrix.addNull();
+                                    lettersMatrix.addNull(currentSeq.getOriginalReadId());
                             }
                         }
                     }
                     for (int sequenceIndex = 0; sequenceIndex < consensusReadsNum; sequenceIndex++) {
-                        ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(sequenceIndex);
+                        ArrayList<SequenceWithAttributes> currentLettersRow = lettersMatrixList.get(sequenceIndex);
                         for (int letterIndex = 0; letterIndex < lettersMatrix.getRowLength(); letterIndex++)
                             addLetterToRow(currentLettersRow,
                                     lettersMatrix.getLetterByCoordinate(sequenceIndex, letterIndex));
@@ -826,7 +912,7 @@ public final class ConsensusIO {
 
                 // moving letters from lists to LettersWithPositions objects
                 for (int sequenceIndex = 0; sequenceIndex < consensusReadsNum; sequenceIndex++) {
-                    ArrayList<NSequenceWithQuality> currentLettersRow = lettersMatrixList.get(sequenceIndex);
+                    ArrayList<SequenceWithAttributes> currentLettersRow = lettersMatrixList.get(sequenceIndex);
                     LettersWithPositions currentLettersWithPositions = lettersList.get(sequenceIndex);
                     currentLettersWithPositions.set(targetIndex, currentLettersRow);
                     if (debugDataForThisTarget != null)
@@ -835,25 +921,30 @@ public final class ConsensusIO {
 
                 // choosing letters for consensus and calculating quality
                 int fullRowLength = lettersMatrixList.get(0).size();
-                ArrayList<NSequenceWithQuality> consensusLetters = getLettersWithQuality(lettersList, fullRowLength,
-                        targetIndex);
+                ArrayList<SequenceWithAttributes> consensusLetters = getLettersWithQuality(lettersList, fullRowLength,
+                        targetIndex, bestSeqReadId);
 
                 // consensus sequence assembling and quality trimming
-                NSequenceWithQuality consensusSequence = NSequenceWithQuality.EMPTY;
-                for (NSequenceWithQuality consensusLetter : consensusLetters)
-                    consensusSequence = consensusSequence.concatenate(consensusLetter);
+                if (consensusLetters.size() == 0)
+                    return new Consensus(debugData);
+                NSequenceWithQuality consensusRawSequence = NSequenceWithQuality.EMPTY;
+                for (SequenceWithAttributes consensusLetter : consensusLetters)
+                    consensusRawSequence = consensusRawSequence.concatenate(consensusLetter.toNSequenceWithQuality());
+                SequenceWithAttributes consensusSequence = new SequenceWithAttributes(
+                        consensusRawSequence.getSequence(), consensusRawSequence.getQuality(),
+                        consensusLetters.get(0).getOriginalReadId());
 
-                int trimResultLeft = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
+                int trimResultLeft = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                         1, true, avgQualityThreshold, trimWindowSize);
                 if (trimResultLeft < -1)
                     return new Consensus(debugData);
-                int trimResultRight = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
+                int trimResultRight = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                         -1, true, avgQualityThreshold, trimWindowSize);
                 if (trimResultRight < 0)
                     throw new IllegalStateException("Unexpected negative trimming result");
                 else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength)
                     return new Consensus(debugData);
-                consensusSequence = getSubSequence(consensusSequence, trimResultLeft + 1, trimResultRight);
+                consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
                 sequences[targetIndex] = consensusSequence;
             }
 
@@ -868,37 +959,39 @@ public final class ConsensusIO {
          *                          (possibly multi-target) base read for this consensus
          * @param fullRowLength     row length of aligned sequences matrix for current targetIndex
          * @param targetIndex       current targetIndex
-         * @return                  list of calculated consensus letters with qualities
+         * @param bestSeqReadId     read id of the best sequence, it will be used as consensus read id
+         * @return                  list of calculated consensus letters with calculated qualities
          */
-        private ArrayList<NSequenceWithQuality> getLettersWithQuality(List<LettersWithPositions> lettersList,
-                                                                      int fullRowLength, int targetIndex) {
-            ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
+        private ArrayList<SequenceWithAttributes> getLettersWithQuality(List<LettersWithPositions> lettersList,
+                                                                        int fullRowLength, int targetIndex,
+                                                                        long bestSeqReadId) {
+            ArrayList<SequenceWithAttributes> consensusLetters = new ArrayList<>();
 
             for (int position = 0; position < fullRowLength; position++) {
-                ArrayList<NSequenceWithQuality> baseLetters = new ArrayList<>();
+                ArrayList<SequenceWithAttributes> baseLetters = new ArrayList<>();
                 // loop by source reads for this consensus
                 for (LettersWithPositions currentLettersWithPositions : lettersList) {
-                    NSequenceWithQuality currentLetter = currentLettersWithPositions.get(targetIndex, position);
-                    if (currentLetter == NSequenceWithQuality.EMPTY)
-                        baseLetters.add(NSequenceWithQuality.EMPTY);
-                    else if (currentLetter != null) {
-                        NucleotideSequence letterWithoutQuality = currentLetter.getSequence();
+                    SequenceWithAttributes currentLetter = currentLettersWithPositions.get(targetIndex, position);
+                    if (currentLetter.isEmpty())
+                        baseLetters.add(currentLetter);
+                    else if (!currentLetter.isNull()) {
+                        NucleotideSequence letterWithoutQuality = currentLetter.getSeq();
                         if (letterWithoutQuality.containsWildcards()) {
                             Wildcard wildcard = wildcards.get(letterWithoutQuality);
                             for (int i = 0; i < wildcard.basicSize(); i++) {
                                 NucleotideSequence currentBasicLetter = wildcardCodeToSequence
                                         .get(wildcard.getMatchingCode(i));
-                                baseLetters.add(new NSequenceWithQuality(currentBasicLetter, qualityCache
-                                        .get((byte)(currentLetter.getQuality().value(0)
-                                                / wildcard.basicSize()))));
+                                baseLetters.add(new SequenceWithAttributes(currentBasicLetter, qualityCache
+                                        .get((byte)(currentLetter.getQual().value(0) / wildcard.basicSize())),
+                                        currentLetter.getOriginalReadId()));
                             }
                         } else
                             baseLetters.add(currentLetter);
                     }
                 }
 
-                NSequenceWithQuality consensusLetter = calculateConsensusLetter(baseLetters);
-                if (consensusLetter != NSequenceWithQuality.EMPTY)
+                SequenceWithAttributes consensusLetter = calculateConsensusLetter(baseLetters, bestSeqReadId);
+                if (!consensusLetter.isEmpty())
                     consensusLetters.add(consensusLetter);
             }
 
@@ -908,29 +1001,30 @@ public final class ConsensusIO {
         /**
          * Calculate consensus letter from list of base letters.
          *
-         * @param baseLetters   base letters; allowed values A, T, G, C and EMPTY (deletion)
-         * @return              calculated consensus letter: letter with quality or EMPTY for deletion
+         * @param baseLetters       base letters; allowed values A, T, G, C and EMPTY_SEQ (deletion)
+         * @param consensusReadId   read id of the best sequence, it will be used as consensus read id
+         * @return                  calculated consensus letter: letter with quality or EMPTY_SEQ for deletion
          */
-        private NSequenceWithQuality calculateConsensusLetter(List<NSequenceWithQuality> baseLetters) {
+        private SequenceWithAttributes calculateConsensusLetter(List<SequenceWithAttributes> baseLetters,
+                                                                long consensusReadId) {
             if (baseLetters.size() == 1)
                 return baseLetters.get(0);
             Map<NucleotideSequence, Integer> letterCounts = Arrays.stream(consensusMajorBases)
                     .collect(Collectors.toMap(majorBase -> majorBase, majorBase -> (int)(baseLetters.stream()
-                            .map(NSequenceWithQuality::getSequence).filter(majorBase::equals).count())));
-            int deletionsCount = (int)(baseLetters.stream()
-                    .filter(letter -> letter.equals(NSequenceWithQuality.EMPTY)).count());
+                            .map(SequenceWithAttributes::getSeq).filter(majorBase::equals).count())));
+            int deletionsCount = (int)(baseLetters.stream().filter(SequenceWithAttributes::isEmpty).count());
             if (letterCounts.values().stream().allMatch(count -> count <= deletionsCount))
-                return NSequenceWithQuality.EMPTY;
+                return new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ, consensusReadId);
             final double gamma = 1.0 / (consensusMajorBases.length - 1);
 
             NucleotideSequence bestMajorBase = null;
             double bestQuality = -1;
             for (NucleotideSequence majorBase : consensusMajorBases) {
                 double product = Math.pow(gamma, -letterCounts.get(majorBase));
-                for (NSequenceWithQuality currentLetter : baseLetters)
-                    if (currentLetter != NSequenceWithQuality.EMPTY) {
-                        double errorProbability = Math.pow(10.0, -currentLetter.getQuality().value(0) / 10.0);
-                        if (currentLetter.getSequence().equals(majorBase))
+                for (SequenceWithAttributes currentLetter : baseLetters)
+                    if (!currentLetter.isEmpty()) {
+                        double errorProbability = Math.pow(10.0, -currentLetter.getQual().value(0) / 10.0);
+                        if (currentLetter.getSeq().equals(majorBase))
                             product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
                         else
                             product *= errorProbability / Math.max(OVERFLOW_PROTECTION_MIN,
@@ -946,8 +1040,8 @@ public final class ConsensusIO {
                 }
             }
 
-            return new NSequenceWithQuality(Objects.requireNonNull(bestMajorBase),
-                    qualityCache.get((byte)Math.min(DEFAULT_MAX_QUALITY, bestQuality)));
+            return new SequenceWithAttributes(Objects.requireNonNull(bestMajorBase),
+                    qualityCache.get((byte)Math.min(DEFAULT_MAX_QUALITY, bestQuality)), consensusReadId);
         }
 
         /**
@@ -955,13 +1049,16 @@ public final class ConsensusIO {
          * deletions because there must be no nulls in the middle of sequence.
          *
          * @param currentLettersRow     current row of letters that will be modified
-         * @param newLetter             new letter (can be null or deletion) that is inserted to the end of row
+         * @param newLetter             new letter (can be NULL_SEQ or deletion) that is inserted to the end of row
          */
-        private void addLetterToRow(ArrayList<NSequenceWithQuality> currentLettersRow, NSequenceWithQuality newLetter) {
-            if (newLetter != null) {
+        private void addLetterToRow(ArrayList<SequenceWithAttributes> currentLettersRow,
+                                    SequenceWithAttributes newLetter) {
+            if (!newLetter.isNull()) {
+                // letters from the same row must have the same read id
+                long currentReadId = newLetter.getOriginalReadId();
                 int firstNullPosition = -1;
                 for (int currentPosition = currentLettersRow.size() - 1; currentPosition >= 0; currentPosition--) {
-                    if (currentLettersRow.get(currentPosition) == null)
+                    if (currentLettersRow.get(currentPosition).isNull())
                         firstNullPosition = currentPosition;
                     else
                         break;
@@ -969,29 +1066,30 @@ public final class ConsensusIO {
                 if (firstNullPosition > 0)
                     for (int currentPosition = firstNullPosition; currentPosition < currentLettersRow.size();
                          currentPosition++)
-                        currentLettersRow.set(currentPosition, NSequenceWithQuality.EMPTY);
+                        currentLettersRow.set(currentPosition, new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ,
+                                currentReadId));
             }
             currentLettersRow.add(newLetter);
         }
 
         private class AlignedSubsequences {
             private final int[] indexes = new int[numberOfTargets];
-            private final NSequenceWithQuality[] sequences;
+            private final SequenceWithAttributes[] sequences;
 
-            AlignedSubsequences(NSequenceWithQuality[] bestSequences) {
+            AlignedSubsequences(SequenceWithAttributes[] bestSequences) {
                 int currentIndex = 0;
                 for (int i = 0; i < numberOfTargets; i++) {
                     indexes[i] = currentIndex;
                     currentIndex += bestSequences[i].size();
                 }
-                sequences = new NSequenceWithQuality[currentIndex];
+                sequences = new SequenceWithAttributes[currentIndex];
             }
 
-            void set(int targetIndex, int position, NSequenceWithQuality value) {
+            void set(int targetIndex, int position, SequenceWithAttributes value) {
                 sequences[index(targetIndex, position)] = value;
             }
 
-            NSequenceWithQuality get(int targetIndex, int position) {
+            SequenceWithAttributes get(int targetIndex, int position) {
                 return sequences[index(targetIndex, position)];
             }
 
@@ -1001,11 +1099,11 @@ public final class ConsensusIO {
         }
 
         private class LettersWithPositions {
-            private HashMap<Integer, ArrayList<NSequenceWithQuality>> targetSequences = new HashMap<>();
+            private HashMap<Integer, ArrayList<SequenceWithAttributes>> targetSequences = new HashMap<>();
 
-            void set(int targetIndex, ArrayList<NSequenceWithQuality> values) {
-                for (NSequenceWithQuality value : values)
-                    if ((value != null) && (value != NSequenceWithQuality.EMPTY) && (value.size() != 1))
+            void set(int targetIndex, ArrayList<SequenceWithAttributes> values) {
+                for (SequenceWithAttributes value : values)
+                    if (!value.isNull() && !value.isEmpty() && (value.size() != 1))
                         throw new IllegalArgumentException("Trying to write sequence " + value
                                 + " to LettersWithPositions");
                 if (targetSequences.containsKey(targetIndex))
@@ -1014,7 +1112,7 @@ public final class ConsensusIO {
                 targetSequences.put(targetIndex, values);
             }
 
-            NSequenceWithQuality get(int targetIndex, int position) {
+            SequenceWithAttributes get(int targetIndex, int position) {
                 return targetSequences.get(targetIndex).get(position);
             }
         }
@@ -1024,17 +1122,21 @@ public final class ConsensusIO {
             private final int[] baseLettersCoordinates;
             private final int baseSequenceRealIndex;
             private final ArrayList<ArrayList<Integer>> positionsCache = new ArrayList<>();
-            private final ArrayList<NSequenceWithQuality> sequences = new ArrayList<>();
+            private final ArrayList<SequenceWithAttributes> sequences = new ArrayList<>();
             private final boolean nullBaseSequence;
 
-            LettersMatrix(NSequenceWithQuality baseSequence, int baseSequenceRealIndex) {
-                if (baseSequence == null) {
-                    baseLettersCoordinates = null;
-                    nullBaseSequence = true;
-                } else {
-                    baseLettersCoordinates = IntStream.rangeClosed(0, baseSequence.size()).toArray();
-                    nullBaseSequence = false;
-                }
+            LettersMatrix() {
+                nullBaseSequence = true;
+                baseLettersCoordinates = null;
+                this.baseSequenceRealIndex = 0;
+            }
+
+            LettersMatrix(SequenceWithAttributes baseSequence, int baseSequenceRealIndex) {
+                if (baseSequence.isNull())
+                    throw new IllegalArgumentException("Base sequence is null in LetterMatrix constructor; "
+                            + "baseSequence = " + baseSequence + ", baseSequenceRealIndex = " + baseSequenceRealIndex);
+                nullBaseSequence = false;
+                baseLettersCoordinates = IntStream.rangeClosed(0, baseSequence.size()).toArray();
                 sequences.add(baseSequence);
                 this.baseSequenceRealIndex = baseSequenceRealIndex;
             }
@@ -1043,7 +1145,7 @@ public final class ConsensusIO {
                 return nullBaseSequence ? 0 : baseLettersCoordinates[baseLettersCoordinates.length - 1];
             }
 
-            void add(NSequenceWithQuality sequence, Alignment<NucleotideSequence> alignment) {
+            void add(SequenceWithAttributes sequence, Alignment<NucleotideSequence> alignment) {
                 if (nullBaseSequence)
                     throw new IllegalStateException("add(" + sequence + ", " + alignment + " called for LettersMatrix "
                             + "with null base sequence!");
@@ -1053,7 +1155,7 @@ public final class ConsensusIO {
                 int currentPartLength = 1;
                 sequences.add(sequence);
                 ArrayList<Integer> currentPositions = new ArrayList<>();
-                NSequenceWithQuality baseSequence = sequences.get(0);
+                SequenceWithAttributes baseSequence = sequences.get(0);
                 for (int i = 0; i < sequence.size(); i++) {
                     int baseSequencePosition = alignment.convertToSeq1Position(i);
                     if (baseSequencePosition == -1) {
@@ -1094,8 +1196,8 @@ public final class ConsensusIO {
                 positionsCache.add(currentPositions);
             }
 
-            void addNull() {
-                sequences.add(null);
+            void addNull(long originalReadId) {
+                sequences.add(new SequenceWithAttributes(SpecialSequences.NULL_SEQ, originalReadId));
                 positionsCache.add(new ArrayList<>());
             }
 
@@ -1116,7 +1218,7 @@ public final class ConsensusIO {
                 }
             }
 
-            NSequenceWithQuality getLetterByCoordinate(int sequenceRealIndex, int coordinate) {
+            SequenceWithAttributes getLetterByCoordinate(int sequenceRealIndex, int coordinate) {
                 if (nullBaseSequence)
                     throw new IllegalStateException("getLetterByCoordinate(" + sequenceRealIndex + ", " + coordinate
                             + " called for LettersMatrix with null base sequence!");
@@ -1124,17 +1226,19 @@ public final class ConsensusIO {
                     for (int i = 0; i < baseLettersCoordinates.length - 1; i++) {
                         int currentCoordinate = baseLettersCoordinates[i];
                         if (currentCoordinate == coordinate)
-                            return letterAt(sequences.get(0), i);
+                            return sequences.get(0).letterAt(i);
                         else if (currentCoordinate > coordinate)
-                            return NSequenceWithQuality.EMPTY;
+                            return new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ,
+                                    sequences.get(0).getOriginalReadId());
                     }
-                    return null;
+                    return new SequenceWithAttributes(SpecialSequences.NULL_SEQ,
+                            sequences.get(0).getOriginalReadId());
                 } else {
                     int sequenceIndex = (sequenceRealIndex > baseSequenceRealIndex) ? sequenceRealIndex
                             : sequenceRealIndex + 1;
-                    NSequenceWithQuality sequence = sequences.get(sequenceIndex);
-                    if (sequence == null)
-                        return null;
+                    SequenceWithAttributes sequence = sequences.get(sequenceIndex);
+                    if (sequence.isNull())
+                        return sequence;
                     /* get positions in current sequence relative to base sequence;
                        sequenceIndex - 1 because there is no base sequence as 1st element */
                     ArrayList<Integer> positions = positionsCache.get(sequenceIndex - 1);
@@ -1147,10 +1251,11 @@ public final class ConsensusIO {
                         if (currentBasePosition > -1) {
                             int currentBaseCoordinate = baseLettersCoordinates[currentBasePosition];
                             if (currentBaseCoordinate == coordinate)
-                                return letterAt(sequence, seqPosition);
+                                return sequence.letterAt(seqPosition);
                             else if (currentBaseCoordinate > coordinate) {
                                 if (seqPosition == 0)
-                                    return null;
+                                    return new SequenceWithAttributes(SpecialSequences.NULL_SEQ,
+                                            sequence.getOriginalReadId());
                                 break;
                             } else if (currentBasePosition == basePosition)
                                 currentPartLength++;
@@ -1166,23 +1271,27 @@ public final class ConsensusIO {
                         int seqStartCoordinate = baseLettersCoordinates[0] - seqPosition;
                         if (coordinate >= baseLettersCoordinates[0]) {
                             // there are deletions on base sequence start positions, and we pick one of them
-                            return NSequenceWithQuality.EMPTY;
+                            return new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ,
+                                    sequence.getOriginalReadId());
                         } else if (coordinate < seqStartCoordinate)
-                            return null;
+                            return new SequenceWithAttributes(SpecialSequences.NULL_SEQ,
+                                    sequence.getOriginalReadId());
                         else
-                            return letterAt(sequence, coordinate - seqStartCoordinate);
+                            return sequence.letterAt(coordinate - seqStartCoordinate);
                     } else {
                         int currentPartStart = seqPosition - currentPartLength;
                         int wantedSeqPosition = currentPartStart + coordinate - baseLettersCoordinates[basePosition];
                         if (wantedSeqPosition >= seqPosition) {
                             /* if nucleotide not found and this is not last position in sequence, this is a deletion,
-                               otherwise we are on the right from all sequence and return null */
+                               otherwise we are on the right from all sequence and return NULL_SEQ */
                             if (seqPosition < sequence.size())
-                                return NSequenceWithQuality.EMPTY;
+                                return new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ,
+                                        sequence.getOriginalReadId());
                             else
-                                return null;
+                                return new SequenceWithAttributes(SpecialSequences.NULL_SEQ,
+                                        sequence.getOriginalReadId());
                         } else
-                            return letterAt(sequence, wantedSeqPosition);
+                            return sequence.letterAt(wantedSeqPosition);
                     }
                 }
             }

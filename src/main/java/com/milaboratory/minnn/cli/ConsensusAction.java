@@ -48,8 +48,9 @@ public final class ConsensusAction implements Action {
                 params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore, params.scoreThreshold,
                 params.skippedFractionToRepeat, params.maxConsensusesPerCluster, params.readsMinGoodSeqLength,
                 params.readsAvgQualityThreshold, params.readsTrimWindowSize, params.minGoodSeqLength,
-                params.avgQualityThreshold, params.trimWindowSize, params.toSeparateGroups, params.inputReadsLimit,
-                params.maxWarnings, params.threads, params.debugOutputFileName, params.debugQualityThreshold);
+                params.avgQualityThreshold, params.trimWindowSize, params.originalReadStatsFileName,
+                params.toSeparateGroups, params.inputReadsLimit, params.maxWarnings, params.threads,
+                params.debugOutputFileName, params.debugQualityThreshold);
         consensusIO.go();
     }
 
@@ -139,24 +140,28 @@ public final class ConsensusAction implements Action {
                 names = {"--trim-window-size"}, order = 15)
         int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
 
+        @Parameter(description = "Save extra statistics for each original read into separate file.",
+                names = {"--original-read-stats"}, order = 16)
+        String originalReadStatsFileName = null;
+
         @Parameter(description = "If this parameter is specified, consensuses will not be written as " +
                 "reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and " +
                 "consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by " +
                 "consensuses using filter / demultiplex actions, or export original reads and corresponding " +
                 "consensuses into separate reads using mif2fastq action.",
-                names = {"--consensuses-to-separate-groups"}, order = 16)
+                names = {"--consensuses-to-separate-groups"}, order = 17)
         boolean toSeparateGroups = false;
 
         @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 17)
+                names = {"-n", "--number-of-reads"}, order = 18)
         long inputReadsLimit = 0;
 
         @Parameter(description = "Maximum allowed number of warnings; -1 means no limit.",
-                names = {"--max-warnings"}, order = 18)
+                names = {"--max-warnings"}, order = 19)
         int maxWarnings = -1;
 
         @Parameter(description = "Number of threads for calculating consensus sequences.",
-                names = {"--threads"}, order = 19)
+                names = {"--threads"}, order = 20)
         int threads = DEFAULT_THREADS;
 
         @Parameter(description = "Output text file for consensus algorithm debug information.",
