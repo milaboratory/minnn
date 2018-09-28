@@ -86,7 +86,7 @@ public class ConsensusActionTest {
                     + " --aligner-gap-score " + gapScore);
             Stream.of(new String[] { outputFile1, outputFile2 }, new String[] { outputFile2, outputFile3 },
                     new String[] { outputFile3, outputFile4 })
-                    .forEach(files -> exec("consensus --input " + files[0] + " --output " + files[1]
+                    .forEach(files -> tryExec("consensus --input " + files[0] + " --output " + files[1]
                             + " --groups " + consensusGroups + " --threads " + (rg.nextInt(10) + 1)
                             + " --score-threshold 0 --width " + width
                             + " --max-consensuses-per-cluster 100 --skipped-fraction-to-repeat 0.001"

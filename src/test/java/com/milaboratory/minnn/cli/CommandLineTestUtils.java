@@ -37,21 +37,25 @@ import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public class CommandLineTestUtils {
-    public static void exec(String cmdLine) {
+    public static void exec(String cmdLine) throws Exception {
         ParsedRead.clearStaticCache();
+        main(cmdLine.split("[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)"));
+    }
+
+    public static void tryExec(String cmdLine) {
         try {
-            main(cmdLine.split("[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)"));
+            exec(cmdLine);
         } catch (Exception e) {
             throw exitWithError(e.toString());
         }
     }
 
     public static Void callableExec(String cmdLine) {
-        exec(cmdLine);
+        tryExec(cmdLine);
         return null;
     }
 
-    public static void createRandomMifFile(String fileName) {
+    public static void createRandomMifFile(String fileName) throws Exception {
         String fastqFile = EXAMPLES_PATH + "small/100.fastq";
         SinglePattern randomPattern = getRandomSinglePattern();
         exec("extract --input " + fastqFile + " --output " + fileName + " --devel-parser-syntax"
