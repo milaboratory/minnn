@@ -922,7 +922,7 @@ public final class ConsensusIO {
                 // choosing letters for consensus and calculating quality
                 int fullRowLength = lettersMatrixList.get(0).size();
                 ArrayList<SequenceWithAttributes> consensusLetters = getLettersWithQuality(lettersList, fullRowLength,
-                        targetIndex, bestSeqReadId);
+                        targetIndex);
 
                 // consensus sequence assembling and quality trimming
                 if (consensusLetters.size() == 0)
@@ -931,8 +931,7 @@ public final class ConsensusIO {
                 for (SequenceWithAttributes consensusLetter : consensusLetters)
                     consensusRawSequence = consensusRawSequence.concatenate(consensusLetter.toNSequenceWithQuality());
                 SequenceWithAttributes consensusSequence = new SequenceWithAttributes(
-                        consensusRawSequence.getSequence(), consensusRawSequence.getQuality(),
-                        consensusLetters.get(0).getOriginalReadId());
+                        consensusRawSequence.getSequence(), consensusRawSequence.getQuality(), bestSeqReadId);
 
                 int trimResultLeft = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                         1, true, avgQualityThreshold, trimWindowSize);
@@ -959,12 +958,10 @@ public final class ConsensusIO {
          *                          (possibly multi-target) base read for this consensus
          * @param fullRowLength     row length of aligned sequences matrix for current targetIndex
          * @param targetIndex       current targetIndex
-         * @param bestSeqReadId     read id of the best sequence, it will be used as consensus read id
          * @return                  list of calculated consensus letters with calculated qualities
          */
         private ArrayList<SequenceWithAttributes> getLettersWithQuality(List<LettersWithPositions> lettersList,
-                                                                        int fullRowLength, int targetIndex,
-                                                                        long bestSeqReadId) {
+                                                                        int fullRowLength, int targetIndex) {
             ArrayList<SequenceWithAttributes> consensusLetters = new ArrayList<>();
 
             for (int position = 0; position < fullRowLength; position++) {
@@ -990,9 +987,11 @@ public final class ConsensusIO {
                     }
                 }
 
-                SequenceWithAttributes consensusLetter = calculateConsensusLetter(baseLetters, bestSeqReadId);
-                if (!consensusLetter.isEmpty())
-                    consensusLetters.add(consensusLetter);
+                if (baseLetters.size() > 0) {
+                    SequenceWithAttributes consensusLetter = calculateConsensusLetter(baseLetters);
+                    if (!consensusLetter.isEmpty())
+                        consensusLetters.add(consensusLetter);
+                }
             }
 
             return consensusLetters;
@@ -1002,11 +1001,9 @@ public final class ConsensusIO {
          * Calculate consensus letter from list of base letters.
          *
          * @param baseLetters       base letters; allowed values A, T, G, C and EMPTY_SEQ (deletion)
-         * @param consensusReadId   read id of the best sequence, it will be used as consensus read id
          * @return                  calculated consensus letter: letter with quality or EMPTY_SEQ for deletion
          */
-        private SequenceWithAttributes calculateConsensusLetter(List<SequenceWithAttributes> baseLetters,
-                                                                long consensusReadId) {
+        private SequenceWithAttributes calculateConsensusLetter(List<SequenceWithAttributes> baseLetters) {
             if (baseLetters.size() == 1)
                 return baseLetters.get(0);
             Map<NucleotideSequence, Integer> letterCounts = Arrays.stream(consensusMajorBases)
@@ -1014,7 +1011,7 @@ public final class ConsensusIO {
                             .map(SequenceWithAttributes::getSeq).filter(majorBase::equals).count())));
             int deletionsCount = (int)(baseLetters.stream().filter(SequenceWithAttributes::isEmpty).count());
             if (letterCounts.values().stream().allMatch(count -> count <= deletionsCount))
-                return new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ, consensusReadId);
+                return new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ, -1);
             final double gamma = 1.0 / (consensusMajorBases.length - 1);
 
             NucleotideSequence bestMajorBase = null;
@@ -1041,7 +1038,7 @@ public final class ConsensusIO {
             }
 
             return new SequenceWithAttributes(Objects.requireNonNull(bestMajorBase),
-                    qualityCache.get((byte)Math.min(DEFAULT_MAX_QUALITY, bestQuality)), consensusReadId);
+                    qualityCache.get((byte)Math.min(DEFAULT_MAX_QUALITY, bestQuality)), -1);
         }
 
         /**
