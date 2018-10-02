@@ -86,6 +86,7 @@ public final class SorterIO {
                     writer.setEstimatedNumberOfReads(reader.getEstimatedNumberOfReads());
                 writer.write(parsedRead);
             }
+            writer.setOriginalNumberOfReads(reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -100,7 +101,7 @@ public final class SorterIO {
     }
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
-        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfReads(), inputHeader.getCorrectedGroups(),
+        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfTargets(), inputHeader.getCorrectedGroups(),
                 true, inputHeader.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
                 : new MifWriter(outputFileName, outputHeader);

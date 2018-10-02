@@ -46,6 +46,7 @@ import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -54,6 +55,7 @@ import static com.milaboratory.core.alignment.BandedLinearAligner.alignLocalGlob
 import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.io.ConsensusIO.OriginalReadStatus.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.invertCoordinate;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
@@ -88,11 +90,13 @@ public final class ConsensusIO {
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
+    private final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
     private long consensusReads = 0;
     private int warningsDisplayed = 0;
     private Set<String> defaultGroups;
     private Set<String> groupSet;
     private int numberOfTargets;
+    private long originalNumberOfReads;
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
                        int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
@@ -129,6 +133,7 @@ public final class ConsensusIO {
             throw exitWithError(e.toString());
         }
         this.debugQualityThreshold = debugQualityThreshold;
+        this.originalReadsData = (originalReadStatsFileName == null) ? null : new ConcurrentHashMap<>();
     }
 
     public void go() {
@@ -187,6 +192,8 @@ public final class ConsensusIO {
                                 previousGroups = currentGroups;
                             }
                             currentCluster.data.add(new DataFromParsedRead(parsedRead));
+                            if (originalReadsData != null)
+                                originalReadsData.put(parsedRead.getOriginalRead().getId(), new OriginalReadData());
                             totalReads.getAndIncrement();
                         } else {
                             finished = true;
@@ -219,8 +226,14 @@ public final class ConsensusIO {
                         consensus.debugData.writeDebugData(clusterIndex++, i);
                 }
             }
+            originalNumberOfReads = reader.getOriginalNumberOfReads();
+            writer.setOriginalNumberOfReads(originalNumberOfReads);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
+        }
+
+        if (originalReadStatsFileName != null) {
+            // TODO: write table
         }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -238,7 +251,7 @@ public final class ConsensusIO {
 
     private MifWriter createWriter(MifHeader mifHeader) throws IOException {
         ArrayList<GroupEdge> groupEdges = mifHeader.getGroupEdges();
-        numberOfTargets = mifHeader.getNumberOfReads();
+        numberOfTargets = mifHeader.getNumberOfTargets();
         defaultGroups = IntStream.rangeClosed(1, numberOfTargets).mapToObj(i -> "R" + i).collect(Collectors.toSet());
         MifHeader newHeader;
         if (toSeparateGroups) {
@@ -267,6 +280,15 @@ public final class ConsensusIO {
             if (warningsDisplayed == maxWarnings)
                 System.err.println("Warnings limit reached!");
         }
+    }
+
+    enum OriginalReadStatus {
+        NOT_MATCHED, READ_DISCARDED_TRIM, CONSENSUS_DISCARDED_TRIM, NOT_USED_IN_CONSENSUS, USED_IN_CONSENSUS;
+    }
+
+    private class OriginalReadData {
+        OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
+        Consensus consensus = null;
     }
 
     private enum SpecialSequences {
@@ -406,11 +428,12 @@ public final class ConsensusIO {
     private class DataFromParsedRead {
         final SequenceWithAttributes[] sequences;
         final TargetBarcodes[] barcodes;
+        final long originalReadId;
         final LinkedHashMap<String, SequenceWithAttributes> otherGroups = toSeparateGroups ? new LinkedHashMap<>()
                 : null;
 
         DataFromParsedRead(ParsedRead parsedRead) {
-            long originalReadId = parsedRead.getOriginalRead().getId();
+            originalReadId = parsedRead.getOriginalRead().getId();
             List<MatchedGroup> parsedReadGroups = parsedRead.getGroups();
             List<MatchedGroup> extractedGroups = parsedReadGroups.stream()
                     .filter(g -> defaultGroups.contains(g.getGroupName())).collect(Collectors.toList());
@@ -437,9 +460,10 @@ public final class ConsensusIO {
             });
         }
 
-        DataFromParsedRead(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes) {
+        DataFromParsedRead(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, long originalReadId) {
             this.sequences = sequences;
             this.barcodes = barcodes;
+            this.originalReadId = originalReadId;
         }
 
         private int getTargetIndex(byte targetId, boolean isReverseMatch) {
@@ -750,9 +774,13 @@ public final class ConsensusIO {
                 }
 
                 if (allSequencesAreGood)
-                    processedData.add(new DataFromParsedRead(processedSequences, dataFromParsedRead.barcodes));
-                else
+                    processedData.add(new DataFromParsedRead(processedSequences, dataFromParsedRead.barcodes,
+                            dataFromParsedRead.originalReadId));
+                else {
                     processedData.add(null);
+                    if (originalReadsData != null)
+                        originalReadsData.get(dataFromParsedRead.originalReadId).status = READ_DISCARDED_TRIM;
+                }
             }
 
             return processedData;
@@ -774,10 +802,11 @@ public final class ConsensusIO {
             for (int i = 0; i < data.size(); i++) {
                 if (i != bestSeqIndex) {
                     if (!filteredOutReads.contains(i) && (data.get(i) != null)) {
+                        DataFromParsedRead currentData = data.get(i);
                         int sumScore = 0;
                         ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
                         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                            SequenceWithAttributes currentSequence = data.get(i).sequences[targetIndex];
+                            SequenceWithAttributes currentSequence = currentData.sequences[targetIndex];
                             Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
                                     bestSequences[targetIndex].toNSequenceWithQuality(),
                                     currentSequence.toNSequenceWithQuality(), alignerWidth);
@@ -787,9 +816,10 @@ public final class ConsensusIO {
                         if (sumScore < scoreThreshold)
                             filteredOutReads.add(i);
                         else {
-                            AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
+                            AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences,
+                                    currentData.originalReadId);
                             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                                SequenceWithAttributes currentSequence = data.get(i).sequences[targetIndex];
+                                SequenceWithAttributes currentSequence = currentData.sequences[targetIndex];
                                 SequenceWithAttributes alignedBestSequence = bestSequences[targetIndex];
                                 int previousSeqPosition = -1;
                                 for (int position = 0; position < alignedBestSequence.size(); position++) {
@@ -827,7 +857,8 @@ public final class ConsensusIO {
                         }
                     }
                 } else {
-                    AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences);
+                    AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences,
+                            data.get(i).originalReadId);
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                         SequenceWithAttributes currentSequence = bestSequences[targetIndex];
                         for (int position = 0; position < currentSequence.size(); position++)
@@ -925,8 +956,10 @@ public final class ConsensusIO {
                         targetIndex);
 
                 // consensus sequence assembling and quality trimming
-                if (consensusLetters.size() == 0)
+                if (consensusLetters.size() == 0) {
+                    storeOriginalReadsData(subsequencesList, CONSENSUS_DISCARDED_TRIM, null);
                     return new Consensus(debugData);
+                }
                 NSequenceWithQuality consensusRawSequence = NSequenceWithQuality.EMPTY;
                 for (SequenceWithAttributes consensusLetter : consensusLetters)
                     consensusRawSequence = consensusRawSequence.concatenate(consensusLetter.toNSequenceWithQuality());
@@ -935,19 +968,35 @@ public final class ConsensusIO {
 
                 int trimResultLeft = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                         1, true, avgQualityThreshold, trimWindowSize);
-                if (trimResultLeft < -1)
+                if (trimResultLeft < -1) {
+                    storeOriginalReadsData(subsequencesList, CONSENSUS_DISCARDED_TRIM, null);
                     return new Consensus(debugData);
+                }
                 int trimResultRight = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                         -1, true, avgQualityThreshold, trimWindowSize);
                 if (trimResultRight < 0)
                     throw new IllegalStateException("Unexpected negative trimming result");
-                else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength)
+                else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
+                    storeOriginalReadsData(subsequencesList, CONSENSUS_DISCARDED_TRIM, null);
                     return new Consensus(debugData);
+                }
                 consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
                 sequences[targetIndex] = consensusSequence;
             }
 
-            return new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData);
+            Consensus consensus = new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData);
+            storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus);
+            return consensus;
+        }
+
+        private void storeOriginalReadsData(ArrayList<AlignedSubsequences> subsequencesList,
+                                            OriginalReadStatus status, Consensus consensus) {
+            if (originalReadsData != null)
+                subsequencesList.forEach(alignedSubsequences -> {
+                    OriginalReadData originalReadData = originalReadsData.get(alignedSubsequences.originalReadId);
+                    originalReadData.status = status;
+                    originalReadData.consensus = consensus;
+                });
         }
 
         /**
@@ -1072,14 +1121,16 @@ public final class ConsensusIO {
         private class AlignedSubsequences {
             private final int[] indexes = new int[numberOfTargets];
             private final SequenceWithAttributes[] sequences;
+            private final long originalReadId;
 
-            AlignedSubsequences(SequenceWithAttributes[] bestSequences) {
+            AlignedSubsequences(SequenceWithAttributes[] bestSequences, long originalReadId) {
                 int currentIndex = 0;
                 for (int i = 0; i < numberOfTargets; i++) {
                     indexes[i] = currentIndex;
                     currentIndex += bestSequences[i].size();
                 }
                 sequences = new SequenceWithAttributes[currentIndex];
+                this.originalReadId = originalReadId;
             }
 
             void set(int targetIndex, int position, SequenceWithAttributes value) {

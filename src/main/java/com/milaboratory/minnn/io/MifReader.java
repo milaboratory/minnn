@@ -50,11 +50,13 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     private long parsedReadsLimit = -1;
     private long parsedReadsTaken = 0;
     private boolean finished = false;
-    private int numberOfReads;
+    private boolean closed = false;
+    private int numberOfTargets;
     private ArrayList<String> correctedGroups = new ArrayList<>();
     private boolean sortedMif;
     private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
     private long firstReadSerializedLength = -1;
+    private long originalNumberOfReads = -1;
 
     public MifReader(InputStream stream) {
         input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
@@ -77,7 +79,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     }
 
     private void readHeader() {
-        numberOfReads = input.readInt();
+        numberOfTargets = input.readInt();
         int correctedGroupsNum = input.readInt();
         for (int i = 0; i < correctedGroupsNum; i++)
             correctedGroups.add(input.readObject(String.class));
@@ -91,9 +93,13 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     }
 
     @Override
-    public void close() {
-        input.close();
-        finished = true;
+    public synchronized void close() {
+        if (!closed) {
+            originalNumberOfReads = input.readLong();
+            input.close();
+            finished = true;
+            closed = true;
+        }
     }
 
     @Override
@@ -135,8 +141,8 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
         return parsedRead;
     }
 
-    public int getNumberOfReads() {
-        return numberOfReads;
+    public int getNumberOfTargets() {
+        return numberOfTargets;
     }
 
     public ArrayList<String> getCorrectedGroups() {
@@ -152,7 +158,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     }
 
     public MifHeader getHeader() {
-        return new MifHeader(numberOfReads, correctedGroups, sortedMif, groupEdges);
+        return new MifHeader(numberOfTargets, correctedGroups, sortedMif, groupEdges);
     }
 
     private void calculateFirstReadLength(ParsedRead parsedRead) {
@@ -161,6 +167,10 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
         outStream.writeObject(parsedRead);
         outStream.close();
         firstReadSerializedLength = counterStream.toByteArray().length;
+    }
+
+    public long getOriginalNumberOfReads() {
+        return originalNumberOfReads;
     }
 
     public long getEstimatedNumberOfReads() {

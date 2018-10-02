@@ -33,21 +33,21 @@ import com.milaboratory.minnn.pattern.GroupEdge;
 import java.util.ArrayList;
 
 public class MifHeader {
-    private final int numberOfReads;
+    private final int numberOfTargets;
     private final ArrayList<String> correctedGroups;
     private final boolean sorted;
     private final ArrayList<GroupEdge> groupEdges;
 
-    public MifHeader(int numberOfReads, ArrayList<String> correctedGroups, boolean sorted,
+    public MifHeader(int numberOfTargets, ArrayList<String> correctedGroups, boolean sorted,
                      ArrayList<GroupEdge> groupEdges) {
-        this.numberOfReads = numberOfReads;
+        this.numberOfTargets = numberOfTargets;
         this.correctedGroups = correctedGroups;
         this.sorted = sorted;
         this.groupEdges = groupEdges;
     }
 
-    public int getNumberOfReads() {
-        return numberOfReads;
+    public int getNumberOfTargets() {
+        return numberOfTargets;
     }
 
     public ArrayList<String> getCorrectedGroups() {

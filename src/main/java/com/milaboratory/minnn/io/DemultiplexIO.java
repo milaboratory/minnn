@@ -52,6 +52,7 @@ public final class DemultiplexIO {
     private final String prefix;
     private final LinkedHashMap<OutputFileIdentifier, OutputFileIdentifier> outputFileIdentifiers;
     private MifHeader header;
+    private long originalNumberOfReads;
 
     public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int outputBufferSize,
                          long inputReadsLimit) {
@@ -83,6 +84,7 @@ public final class DemultiplexIO {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
+            originalNumberOfReads = reader.getOriginalNumberOfReads();
             outputFileIdentifiers.keySet().forEach(OutputFileIdentifier::closeWriter);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
@@ -304,8 +306,10 @@ public final class DemultiplexIO {
         }
 
         void closeWriter() {
-            if (writer != null)
+            if (writer != null) {
+                writer.setOriginalNumberOfReads(originalNumberOfReads);
                 writer.close();
+            }
             writer = null;
         }
 

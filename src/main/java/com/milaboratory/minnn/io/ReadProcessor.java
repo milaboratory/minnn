@@ -64,7 +64,7 @@ public final class ReadProcessor {
     private final int threads;
     private final MinnnDataFormat inputFormat;
     private final DescriptionGroups descriptionGroups;
-    private int numberOfReads;
+    private int numberOfTargets;
 
     public ReadProcessor(List<String> inputFileNames, String outputFileName, Pattern pattern,
                          boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
@@ -104,6 +104,7 @@ public final class ReadProcessor {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
+            writer.setOriginalNumberOfReads(totalReads);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -120,11 +121,11 @@ public final class ReadProcessor {
             case FASTQ:
                 switch (inputFileNames.size()) {
                     case 0:
-                        numberOfReads = 1;
+                        numberOfTargets = 1;
                         reader = new IndexedSequenceReader<>(new SingleFastqReader(System.in), t -> t);
                         break;
                     case 1:
-                        numberOfReads = 1;
+                        numberOfTargets = 1;
                         String[] s = inputFileNames.get(0).split("\\.");
                         if (s[s.length - 1].equals("fasta") || s[s.length - 1].equals("fa")
                                 || ((s.length > 2) && s[s.length - 1].equals("gz")
@@ -135,12 +136,12 @@ public final class ReadProcessor {
                             reader = new IndexedSequenceReader<>(new SingleFastqReader(inputFileNames.get(0)), t -> t);
                         break;
                     case 2:
-                        numberOfReads = 2;
+                        numberOfTargets = 2;
                         reader = new IndexedSequenceReader<>(new PairedFastqReader(inputFileNames.get(0),
                                 inputFileNames.get(1)), t -> t);
                         break;
                     default:
-                        numberOfReads = inputFileNames.size();
+                        numberOfTargets = inputFileNames.size();
                         SingleFastqReader readers[] = new SingleFastqReader[inputFileNames.size()];
                         for (int i = 0; i < inputFileNames.size(); i++)
                             readers[i] = new SingleFastqReader(inputFileNames.get(i));
@@ -152,22 +153,22 @@ public final class ReadProcessor {
                         : new MifReader(inputFileNames.get(0));
                 if (inputReadsLimit > 0)
                     mifReader.setParsedReadsLimit(inputReadsLimit);
-                numberOfReads = mifReader.getNumberOfReads();
+                numberOfTargets = mifReader.getNumberOfTargets();
                 reader = new IndexedSequenceReader<>(mifReader, ParsedRead::getOriginalRead);
                 break;
             default:
                 throw new IllegalStateException("Unknown input format: " + inputFormat);
         }
-        int readsInPattern = pattern instanceof SinglePattern ? 1
+        int targetsInPattern = pattern instanceof SinglePattern ? 1
                 : ((MultipleReadsOperator)pattern).getNumberOfPatterns();
-        if (numberOfReads != readsInPattern)
-            throw exitWithError("Mismatched number of patterns (" + readsInPattern + ") and reads ("
-                    + numberOfReads + ")!");
+        if (numberOfTargets != targetsInPattern)
+            throw exitWithError("Mismatched number of patterns (" + targetsInPattern + ") and target reads ("
+                    + numberOfTargets + ")!");
         return reader;
     }
 
     private MifWriter createWriter() throws IOException {
-        MifHeader mifHeader = new MifHeader(numberOfReads, new ArrayList<>(), false, pattern.getGroupEdges());
+        MifHeader mifHeader = new MifHeader(numberOfTargets, new ArrayList<>(), false, pattern.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
                 : new MifWriter(outputFileName, mifHeader);
     }

@@ -72,7 +72,7 @@ public final class CorrectBarcodesIO {
     private Set<String> defaultGroups;
     private LinkedHashSet<String> keyGroups;
     private Map<String, HashMap<NucleotideSequence, NucleotideSequence>> sequenceCorrectionMaps;
-    private int numberOfReads;
+    private int numberOfTargets;
     private AtomicLong corrected = new AtomicLong(0);
 
     public CorrectBarcodesIO(String inputFileName, String outputFileName, int mismatches, int indels,
@@ -103,7 +103,7 @@ public final class CorrectBarcodesIO {
                 pass2Reader.setParsedReadsLimit(inputReadsLimit);
             }
             SmartProgressReporter.startProgressReport("Counting sequences", pass1Reader, System.err);
-            defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfReads())
+            defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfTargets())
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
             if (groupNames.stream().anyMatch(defaultGroups::contains))
                 throw exitWithError("Default groups R1, R2, etc should not be specified for correction!");
@@ -117,7 +117,7 @@ public final class CorrectBarcodesIO {
                         "corrected again!");
             Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()
                     .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
-            numberOfReads = pass1Reader.getNumberOfReads();
+            numberOfTargets = pass1Reader.getNumberOfTargets();
             for (ParsedRead parsedRead : CUtils.it(pass1Reader)) {
                 for (Map.Entry<String, HashMap<NucleotideSequence, SequenceCounter>> entry : sequenceMaps.entrySet()) {
                     NucleotideSequence groupValue = parsedRead.getGroupValue(entry.getKey()).getSequence();
@@ -160,6 +160,7 @@ public final class CorrectBarcodesIO {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
+            writer.setOriginalNumberOfReads(pass2Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -174,7 +175,7 @@ public final class CorrectBarcodesIO {
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
         LinkedHashSet<String> allCorrectedGroups = new LinkedHashSet<>(inputHeader.getCorrectedGroups());
         allCorrectedGroups.addAll(groupNames);
-        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfReads(), new ArrayList<>(allCorrectedGroups),
+        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfTargets(), new ArrayList<>(allCorrectedGroups),
                 false, inputHeader.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
                 : new MifWriter(outputFileName, outputHeader);
@@ -230,9 +231,9 @@ public final class CorrectBarcodesIO {
             corrected.getAndIncrement();
         }
 
-        Match newMatch = new Match(numberOfReads, parsedRead.getBestMatchScore(), newGroupEdges);
+        Match newMatch = new Match(numberOfTargets, parsedRead.getBestMatchScore(), newGroupEdges);
         if (newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
-                .filter(defaultGroups::contains).count() != numberOfReads)
+                .filter(defaultGroups::contains).count() != numberOfTargets)
             throw new IllegalStateException("Missing default groups in new Match: expected " + defaultGroups
                     + ", got " + newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
                     .filter(defaultGroups::contains).collect(Collectors.toList()));

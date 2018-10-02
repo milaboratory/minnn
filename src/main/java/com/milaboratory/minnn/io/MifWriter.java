@@ -40,9 +40,10 @@ import static java.lang.Double.NaN;
 public final class MifWriter implements AutoCloseable, CanReportProgress {
     private static final int DEFAULT_BUFFER_SIZE = 1 << 20;
     private final PrimitivO output;
-    private boolean finished = false;
+    private boolean closed = false;
     private long estimatedNumberOfReads = -1;
     private long writtenReads = 0;
+    private long originalNumberOfReads = -1;
 
     public MifWriter(OutputStream outputStream, MifHeader mifHeader) {
         output = new PrimitivO(outputStream);
@@ -60,7 +61,7 @@ public final class MifWriter implements AutoCloseable, CanReportProgress {
     }
 
     private void writeHeader(MifHeader mifHeader) {
-        output.writeInt(mifHeader.getNumberOfReads());
+        output.writeInt(mifHeader.getNumberOfTargets());
         output.writeInt(mifHeader.getCorrectedGroups().size());
         for (String correctedGroup : mifHeader.getCorrectedGroups())
             output.writeObject(correctedGroup);
@@ -79,9 +80,16 @@ public final class MifWriter implements AutoCloseable, CanReportProgress {
 
     @Override
     public void close() {
-        output.writeObject(null);
-        output.close();
-        finished = true;
+        if (!closed) {
+            output.writeObject(null);
+            output.writeLong(originalNumberOfReads);
+            output.close();
+            closed = true;
+        }
+    }
+
+    public void setOriginalNumberOfReads(long originalNumberOfReads) {
+        this.originalNumberOfReads = originalNumberOfReads;
     }
 
     public void setEstimatedNumberOfReads(long estimatedNumberOfReads) {
@@ -98,6 +106,6 @@ public final class MifWriter implements AutoCloseable, CanReportProgress {
 
     @Override
     public boolean isFinished() {
-        return finished;
+        return closed;
     }
 }
