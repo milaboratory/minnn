@@ -90,13 +90,13 @@ public final class ConsensusIO {
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
+    private final AtomicLong consensusId = new AtomicLong(0);
     private final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
     private long consensusReads = 0;
     private int warningsDisplayed = 0;
-    private Set<String> defaultGroups;
+    private LinkedHashSet<String> defaultGroups;
     private Set<String> groupSet;
     private int numberOfTargets;
-    private long originalNumberOfReads;
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
                        int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
@@ -138,6 +138,7 @@ public final class ConsensusIO {
 
     public void go() {
         long startTime = System.currentTimeMillis();
+        long originalNumberOfReads;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
             if (inputReadsLimit > 0)
@@ -233,7 +234,42 @@ public final class ConsensusIO {
         }
 
         if (originalReadStatsFileName != null) {
-            // TODO: write table
+            System.err.println("Writing file with stats for original reads...");
+            try (PrintStream originalReadsDataWriter = new PrintStream(
+                    new FileOutputStream(originalReadStatsFileName))) {
+                StringBuilder header = new StringBuilder("read.id status consensus.id");
+                for (String groupName : defaultGroups) {
+                    header.append(' ').append(groupName).append(".consensus.seq ");
+                    header.append(groupName).append(".consensus.qual");
+                }
+                originalReadsDataWriter.println(header);
+
+                for (long readId = 0; readId < originalNumberOfReads; readId++) {
+                    OriginalReadData currentReadData = originalReadsData.get(readId);
+                    OriginalReadStatus status = (currentReadData == null) ? NOT_MATCHED : currentReadData.status;
+                    Consensus consensus = (status == USED_IN_CONSENSUS) ? currentReadData.consensus : null;
+
+                    StringBuilder line = new StringBuilder();
+                    line.append(readId).append(' ');
+                    line.append(status.name()).append(' ');
+                    line.append((consensus == null) ? -1 : consensus.id);
+                    for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
+                        if (consensus == null)
+                            line.append(" - -");
+                        else {
+                            SequenceWithAttributes currentSeq = consensus.sequences[targetIndex];
+                            line.append(' ').append(currentSeq.getSeq());
+                            line.append(' ').append(currentSeq.getQual());
+                            if (currentSeq.getOriginalReadId() != readId)
+                                throw new IllegalStateException("Mismatched read IDs! In set: " + readId
+                                        + ", consensus data for targetIndex " + targetIndex + ": " + currentSeq);
+                        }
+                    }
+                    originalReadsDataWriter.println(line);
+                }
+            } catch (IOException e) {
+                throw exitWithError(e.getMessage());
+            }
         }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -252,7 +288,8 @@ public final class ConsensusIO {
     private MifWriter createWriter(MifHeader mifHeader) throws IOException {
         ArrayList<GroupEdge> groupEdges = mifHeader.getGroupEdges();
         numberOfTargets = mifHeader.getNumberOfTargets();
-        defaultGroups = IntStream.rangeClosed(1, numberOfTargets).mapToObj(i -> "R" + i).collect(Collectors.toSet());
+        defaultGroups = IntStream.rangeClosed(1, numberOfTargets).mapToObj(i -> "R" + i)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         MifHeader newHeader;
         if (toSeparateGroups) {
             Set<String> defaultSeparateGroups = IntStream.rangeClosed(1, numberOfTargets)
@@ -283,7 +320,7 @@ public final class ConsensusIO {
     }
 
     enum OriginalReadStatus {
-        NOT_MATCHED, READ_DISCARDED_TRIM, CONSENSUS_DISCARDED_TRIM, NOT_USED_IN_CONSENSUS, USED_IN_CONSENSUS;
+        NOT_MATCHED, READ_DISCARDED_TRIM, CONSENSUS_DISCARDED_TRIM, NOT_USED_IN_CONSENSUS, USED_IN_CONSENSUS
     }
 
     private class OriginalReadData {
@@ -479,6 +516,7 @@ public final class ConsensusIO {
     }
 
     private class Consensus {
+        final long id;
         final SequenceWithAttributes[] sequences;
         final TargetBarcodes[] barcodes;
         final int consensusReadsNum;
@@ -488,6 +526,7 @@ public final class ConsensusIO {
 
         Consensus(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum,
                   ConsensusDebugData debugData) {
+            this.id = consensusId.getAndIncrement();
             this.sequences = sequences;
             this.barcodes = barcodes;
             this.consensusReadsNum = consensusReadsNum;
@@ -496,6 +535,7 @@ public final class ConsensusIO {
         }
 
         Consensus(ConsensusDebugData debugData) {
+            this.id = -1;
             this.sequences = null;
             this.barcodes = null;
             this.consensusReadsNum = 0;
