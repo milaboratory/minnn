@@ -90,7 +90,6 @@ public final class ConsensusIO {
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
-    private final AtomicLong consensusId = new AtomicLong(0);
     private final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
     private long consensusReads = 0;
     private int warningsDisplayed = 0;
@@ -227,6 +226,7 @@ public final class ConsensusIO {
                         consensus.debugData.writeDebugData(clusterIndex++, i);
                 }
             }
+            reader.close();
             originalNumberOfReads = reader.getOriginalNumberOfReads();
             writer.setOriginalNumberOfReads(originalNumberOfReads);
         } catch (IOException e) {
@@ -237,7 +237,7 @@ public final class ConsensusIO {
             System.err.println("Writing file with stats for original reads...");
             try (PrintStream originalReadsDataWriter = new PrintStream(
                     new FileOutputStream(originalReadStatsFileName))) {
-                StringBuilder header = new StringBuilder("read.id status consensus.id");
+                StringBuilder header = new StringBuilder("read.id status consensus.id reads.num");
                 for (String groupName : defaultGroups) {
                     header.append(' ').append(groupName).append(".consensus.seq ");
                     header.append(groupName).append(".consensus.qual");
@@ -252,7 +252,8 @@ public final class ConsensusIO {
                     StringBuilder line = new StringBuilder();
                     line.append(readId).append(' ');
                     line.append(status.name()).append(' ');
-                    line.append((consensus == null) ? -1 : consensus.id);
+                    line.append((consensus == null) ? -1 : consensus.sequences[0].getOriginalReadId()).append(' ');
+                    line.append((consensus == null) ? 0 : consensus.consensusReadsNum);
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                         if (consensus == null)
                             line.append(" - -");
@@ -260,9 +261,6 @@ public final class ConsensusIO {
                             SequenceWithAttributes currentSeq = consensus.sequences[targetIndex];
                             line.append(' ').append(currentSeq.getSeq());
                             line.append(' ').append(currentSeq.getQual());
-                            if (currentSeq.getOriginalReadId() != readId)
-                                throw new IllegalStateException("Mismatched read IDs! In set: " + readId
-                                        + ", consensus data for targetIndex " + targetIndex + ": " + currentSeq);
                         }
                     }
                     originalReadsDataWriter.println(line);
@@ -516,7 +514,6 @@ public final class ConsensusIO {
     }
 
     private class Consensus {
-        final long id;
         final SequenceWithAttributes[] sequences;
         final TargetBarcodes[] barcodes;
         final int consensusReadsNum;
@@ -526,7 +523,6 @@ public final class ConsensusIO {
 
         Consensus(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum,
                   ConsensusDebugData debugData) {
-            this.id = consensusId.getAndIncrement();
             this.sequences = sequences;
             this.barcodes = barcodes;
             this.consensusReadsNum = consensusReadsNum;
@@ -535,7 +531,6 @@ public final class ConsensusIO {
         }
 
         Consensus(ConsensusDebugData debugData) {
-            this.id = -1;
             this.sequences = null;
             this.barcodes = null;
             this.consensusReadsNum = 0;
@@ -719,7 +714,7 @@ public final class ConsensusIO {
                 if (!stage1Consensus.isConsensus) {
                     displayWarning("WARNING: consensus assembled from " + (data.size() - filteredOutReads.size())
                             + " reads discarded on stage 1 after quality trimming! Barcode values: "
-                            + formatBarcodeValues(bestData.barcodes));
+                            + formatBarcodeValues(bestData.barcodes) + ", best read id: " + bestData.originalReadId);
                     if (debugOutputStream != null)
                         calculatedConsensuses.consensuses.add(stage1Consensus);
                 } else {
@@ -733,7 +728,8 @@ public final class ConsensusIO {
                         if (!stage2Consensus.isConsensus) {
                             displayWarning("WARNING: consensus assembled from " + (data.size()
                                     - filteredOutReads.size()) + " reads discarded on stage 2 after "
-                                    + "quality trimming! Barcode values: " + formatBarcodeValues(bestData.barcodes));
+                                    + "quality trimming! Barcode values: " + formatBarcodeValues(bestData.barcodes)
+                                    + ", best read id: " + bestData.originalReadId);
                             if (debugOutputStream != null)
                                 calculatedConsensuses.consensuses.add(stage2Consensus);
                         } else {

@@ -84,6 +84,7 @@ public final class FilterIO {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
+            reader.close();
             writer.setOriginalNumberOfReads(reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());

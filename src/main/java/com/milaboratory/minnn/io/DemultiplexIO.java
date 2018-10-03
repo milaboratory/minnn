@@ -84,6 +84,7 @@ public final class DemultiplexIO {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
+            reader.close();
             originalNumberOfReads = reader.getOriginalNumberOfReads();
             outputFileIdentifiers.keySet().forEach(OutputFileIdentifier::closeWriter);
         } catch (IOException e) {

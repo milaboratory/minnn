@@ -86,6 +86,7 @@ public final class SorterIO {
                     writer.setEstimatedNumberOfReads(reader.getEstimatedNumberOfReads());
                 writer.write(parsedRead);
             }
+            reader.close();
             writer.setOriginalNumberOfReads(reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());

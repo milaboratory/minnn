@@ -170,6 +170,8 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     }
 
     public long getOriginalNumberOfReads() {
+        if (!closed)
+            throw new IllegalStateException("getOriginalNumberOfReads() used when reader is not closed!");
         return originalNumberOfReads;
     }
 

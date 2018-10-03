@@ -104,7 +104,9 @@ public final class ReadProcessor {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
-            writer.setOriginalNumberOfReads(totalReads);
+            reader.close();
+            long originalNumberOfReads = (inputFormat == MIF) ? reader.getOriginalNumberOfReads() : totalReads;
+            writer.setOriginalNumberOfReads(originalNumberOfReads);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -220,6 +222,13 @@ public final class ReadProcessor {
         @Override
         public synchronized boolean isFinished() {
             return (progress != null) && progress.isFinished();
+        }
+
+        long getOriginalNumberOfReads() {
+            if (inputFormat == FASTQ)
+                throw new IllegalStateException("getOriginalNumberOfReads() must be used only for MIF input!");
+            else
+                return ((MifReader)innerReader).getOriginalNumberOfReads();
         }
     }
 

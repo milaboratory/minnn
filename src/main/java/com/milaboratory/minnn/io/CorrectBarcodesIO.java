@@ -160,6 +160,7 @@ public final class CorrectBarcodesIO {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
+            pass2Reader.close();
             writer.setOriginalNumberOfReads(pass2Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
