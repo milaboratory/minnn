@@ -43,6 +43,7 @@ import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.minnn.pattern.Match;
 import com.milaboratory.minnn.pattern.MatchedGroupEdge;
 import com.milaboratory.util.SmartProgressReporter;
+import gnu.trove.map.hash.TLongLongHashMap;
 
 import java.io.*;
 import java.util.*;
@@ -91,6 +92,8 @@ public final class ConsensusIO {
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
     private final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
+    private final TLongLongHashMap consensusFinalIds;
+    private final AtomicLong consensusCurrentTempId = new AtomicLong(0);
     private long consensusReads = 0;
     private int warningsDisplayed = 0;
     private LinkedHashSet<String> defaultGroups;
@@ -133,6 +136,7 @@ public final class ConsensusIO {
         }
         this.debugQualityThreshold = debugQualityThreshold;
         this.originalReadsData = (originalReadStatsFileName == null) ? null : new ConcurrentHashMap<>();
+        this.consensusFinalIds = (originalReadStatsFileName == null) ? null : new TLongLongHashMap();
     }
 
     public void go() {
@@ -216,6 +220,8 @@ public final class ConsensusIO {
                 for (int i = 0; i < calculatedConsensuses.consensuses.size(); i++) {
                     Consensus consensus = calculatedConsensuses.consensuses.get(i);
                     if (consensus.isConsensus) {
+                        if (consensusFinalIds != null)
+                            consensusFinalIds.put(consensus.tempId, consensusReads);
                         consensusReads++;
                         if (toSeparateGroups)
                             consensus.getReadsWithConsensuses().forEach(writer::write);
@@ -237,7 +243,7 @@ public final class ConsensusIO {
             System.err.println("Writing file with stats for original reads...");
             try (PrintStream originalReadsDataWriter = new PrintStream(
                     new FileOutputStream(originalReadStatsFileName))) {
-                StringBuilder header = new StringBuilder("read.id status consensus.id reads.num");
+                StringBuilder header = new StringBuilder("read.id consensus.id status consensus.best.id reads.num");
                 for (String groupName : defaultGroups) {
                     header.append(' ').append(groupName).append(".consensus.seq ");
                     header.append(groupName).append(".consensus.qual");
@@ -251,6 +257,14 @@ public final class ConsensusIO {
 
                     StringBuilder line = new StringBuilder();
                     line.append(readId).append(' ');
+                    if (consensus == null)
+                        line.append("-1 ");
+                    else {
+                        long finalId = consensusFinalIds.get(consensus.tempId);
+                        if (finalId == -1)
+                            throw new IllegalStateException("Consensus finalId == -1 for tempId " + consensus.tempId);
+                        line.append(finalId).append(' ');
+                    }
                     line.append(status.name()).append(' ');
                     line.append((consensus == null) ? -1 : consensus.sequences[0].getOriginalReadId()).append(' ');
                     line.append((consensus == null) ? 0 : consensus.consensusReadsNum);
@@ -520,14 +534,16 @@ public final class ConsensusIO {
         final ArrayList<DataFromParsedRead> savedOriginalSequences = toSeparateGroups ? new ArrayList<>() : null;
         final ConsensusDebugData debugData;
         final boolean isConsensus;
+        final long tempId;
 
         Consensus(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum,
-                  ConsensusDebugData debugData) {
+                  ConsensusDebugData debugData, long tempId) {
             this.sequences = sequences;
             this.barcodes = barcodes;
             this.consensusReadsNum = consensusReadsNum;
             this.debugData = debugData;
             this.isConsensus = true;
+            this.tempId = tempId;
         }
 
         Consensus(ConsensusDebugData debugData) {
@@ -536,6 +552,7 @@ public final class ConsensusIO {
             this.consensusReadsNum = 0;
             this.debugData = debugData;
             this.isConsensus = false;
+            this.tempId = -1;
         }
 
         ParsedRead toParsedRead() {
@@ -1020,7 +1037,8 @@ public final class ConsensusIO {
                 sequences[targetIndex] = consensusSequence;
             }
 
-            Consensus consensus = new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData);
+            Consensus consensus = new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData,
+                    consensusCurrentTempId.getAndIncrement());
             storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus);
             return consensus;
         }
