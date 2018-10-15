@@ -260,7 +260,7 @@ public final class ConsensusIO {
                     if (consensus == null)
                         line.append("-1 ");
                     else {
-                        long finalId = consensusFinalIds.get(consensus.tempId);
+                        long finalId = Objects.requireNonNull(consensusFinalIds).get(consensus.tempId);
                         if (finalId == -1)
                             throw new IllegalStateException("Consensus finalId == -1 for tempId " + consensus.tempId);
                         line.append(finalId).append(' ');
@@ -726,7 +726,8 @@ public final class ConsensusIO {
                 HashSet<Integer> filteredOutReads = new HashSet<>();
                 ArrayList<AlignedSubsequences> subsequencesList = getAlignedSubsequencesList(data, filteredOutReads,
                         bestData.sequences, bestDataIndex);
-                Consensus stage1Consensus = generateConsensus(subsequencesList, bestData.sequences, bestData.barcodes);
+                Consensus stage1Consensus = generateConsensus(subsequencesList, bestData.sequences, bestData.barcodes,
+                        false);
 
                 if (!stage1Consensus.isConsensus) {
                     displayWarning("WARNING: consensus assembled from " + (data.size() - filteredOutReads.size())
@@ -741,7 +742,7 @@ public final class ConsensusIO {
                     if (subsequencesList.size() > 0) {
                         Consensus stage2Consensus = generateConsensus(subsequencesList,
                                 Objects.requireNonNull(stage1Consensus.sequences),
-                                Objects.requireNonNull(stage1Consensus.barcodes));
+                                Objects.requireNonNull(stage1Consensus.barcodes), true);
                         if (!stage2Consensus.isConsensus) {
                             displayWarning("WARNING: consensus assembled from " + (data.size()
                                     - filteredOutReads.size()) + " reads discarded on stage 2 after "
@@ -932,10 +933,13 @@ public final class ConsensusIO {
          *                          of sequences from this array to sequences from best array
          * @param bestSequences     best array of sequences: 1 sequence in array corresponding to 1 target
          * @param barcodes          barcodes from best sequences
+         * @param stage2            true if this is 2nd stage (best sequences are consensuses from stage1),
+         *                          or false if this is 1nd stage
          * @return                  consensus: array of sequences (1 sequence for 1 target) and consensus score
          */
         private Consensus generateConsensus(ArrayList<AlignedSubsequences> subsequencesList,
-                                            SequenceWithAttributes[] bestSequences, TargetBarcodes[] barcodes) {
+                                            SequenceWithAttributes[] bestSequences, TargetBarcodes[] barcodes,
+                                            boolean stage2) {
             ConsensusDebugData debugData = (debugOutputStream == null) ? null : new ConsensusDebugData();
             int consensusReadsNum = subsequencesList.size();
             long bestSeqReadId = bestSequences[0].getOriginalReadId();
@@ -1039,7 +1043,8 @@ public final class ConsensusIO {
 
             Consensus consensus = new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData,
                     consensusCurrentTempId.getAndIncrement());
-            storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus);
+            if (stage2)
+                storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus);
             return consensus;
         }
 
