@@ -196,7 +196,8 @@ public final class ConsensusIO {
                                 previousGroups = currentGroups;
                             }
                             currentCluster.data.add(new DataFromParsedRead(parsedRead));
-                            if (originalReadsData != null)
+                            if ((originalReadsData != null) && !originalReadsData.containsKey(parsedRead
+                                    .getOriginalRead().getId()))
                                 originalReadsData.put(parsedRead.getOriginalRead().getId(), new OriginalReadData());
                             totalReads.getAndIncrement();
                         } else {
@@ -215,11 +216,11 @@ public final class ConsensusIO {
                     new ClusterProcessor(), threads);
             OrderedOutputPort<CalculatedConsensuses> orderedConsensusesPort = new OrderedOutputPort<>(
                     calculatedConsensusesPort, cc -> cc.orderedPortIndex);
-            int clusterIndex = 0;
+            int clusterIndex = -1;
             for (CalculatedConsensuses calculatedConsensuses : CUtils.it(orderedConsensusesPort)) {
                 for (int i = 0; i < calculatedConsensuses.consensuses.size(); i++) {
                     Consensus consensus = calculatedConsensuses.consensuses.get(i);
-                    if (consensus.isConsensus) {
+                    if (consensus.isConsensus && consensus.stage2) {
                         if (consensusFinalIds != null)
                             consensusFinalIds.put(consensus.tempId, consensusReads);
                         consensusReads++;
@@ -228,8 +229,11 @@ public final class ConsensusIO {
                         else
                             writer.write(consensus.toParsedRead());
                     }
-                    if (debugOutputStream != null)
-                        consensus.debugData.writeDebugData(clusterIndex++, i);
+                    if (debugOutputStream != null) {
+                        if (!consensus.stage2)
+                            clusterIndex++;
+                        consensus.debugData.writeDebugData(clusterIndex, i);
+                    }
                 }
             }
             reader.close();
@@ -246,7 +250,9 @@ public final class ConsensusIO {
                 StringBuilder header = new StringBuilder("read.id consensus.id status consensus.best.id reads.num");
                 for (String groupName : defaultGroups) {
                     header.append(' ').append(groupName).append(".consensus.seq ");
-                    header.append(groupName).append(".consensus.qual");
+                    header.append(groupName).append(".consensus.qual ");
+                    header.append(groupName).append(".alignment.score.stage1 ");
+                    header.append(groupName).append(".alignment.score.stage2");
                 }
                 originalReadsDataWriter.println(header);
 
@@ -269,12 +275,27 @@ public final class ConsensusIO {
                     line.append((consensus == null) ? -1 : consensus.sequences[0].getOriginalReadId()).append(' ');
                     line.append((consensus == null) ? 0 : consensus.consensusReadsNum);
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                        if (consensus == null)
-                            line.append(" - -");
-                        else {
+                        long alignmentScoreStage1 = Long.MIN_VALUE;
+                        long alignmentScoreStage2 = Long.MIN_VALUE;
+                        if ((status != NOT_MATCHED) && (status != READ_DISCARDED_TRIM)
+                                && (status != NOT_USED_IN_CONSENSUS)) {
+                            long[] alignmentScoresStage1 = Objects.requireNonNull(currentReadData)
+                                    .alignmentScores.get(0);
+                            if (alignmentScoresStage1 != null)
+                                alignmentScoreStage1 = alignmentScoresStage1[targetIndex];
+                            long[] alignmentScoresStage2 = Objects.requireNonNull(currentReadData)
+                                    .alignmentScores.get(1);
+                            if (alignmentScoresStage2 != null)
+                                alignmentScoreStage2 = alignmentScoresStage2[targetIndex];
+                        }
+                        if (consensus == null) {
+                            line.append(" - - ").append(Long.MIN_VALUE).append(' ').append(Long.MIN_VALUE);
+                        } else {
                             SequenceWithAttributes currentSeq = consensus.sequences[targetIndex];
                             line.append(' ').append(currentSeq.getSeq());
                             line.append(' ').append(currentSeq.getQual());
+                            line.append(' ').append(alignmentScoreStage1);
+                            line.append(' ').append(alignmentScoreStage2);
                         }
                     }
                     originalReadsDataWriter.println(line);
@@ -332,12 +353,14 @@ public final class ConsensusIO {
     }
 
     enum OriginalReadStatus {
-        NOT_MATCHED, READ_DISCARDED_TRIM, CONSENSUS_DISCARDED_TRIM, NOT_USED_IN_CONSENSUS, USED_IN_CONSENSUS
+        NOT_MATCHED, READ_DISCARDED_TRIM, CONSENSUS_DISCARDED_TRIM_STAGE1, CONSENSUS_DISCARDED_TRIM_STAGE2,
+        NOT_USED_IN_CONSENSUS, USED_IN_CONSENSUS
     }
 
     private class OriginalReadData {
         OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
         Consensus consensus = null;
+        List<long[]> alignmentScores = Arrays.asList(null, null);
     }
 
     private enum SpecialSequences {
@@ -534,24 +557,27 @@ public final class ConsensusIO {
         final ArrayList<DataFromParsedRead> savedOriginalSequences = toSeparateGroups ? new ArrayList<>() : null;
         final ConsensusDebugData debugData;
         final boolean isConsensus;
+        final boolean stage2;
         final long tempId;
 
         Consensus(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum,
-                  ConsensusDebugData debugData, long tempId) {
+                  ConsensusDebugData debugData, boolean stage2, long tempId) {
             this.sequences = sequences;
             this.barcodes = barcodes;
             this.consensusReadsNum = consensusReadsNum;
             this.debugData = debugData;
             this.isConsensus = true;
+            this.stage2 = stage2;
             this.tempId = tempId;
         }
 
-        Consensus(ConsensusDebugData debugData) {
+        Consensus(ConsensusDebugData debugData, boolean stage2) {
             this.sequences = null;
             this.barcodes = null;
             this.consensusReadsNum = 0;
             this.debugData = debugData;
             this.isConsensus = false;
+            this.stage2 = stage2;
             this.tempId = -1;
         }
 
@@ -661,23 +687,35 @@ public final class ConsensusIO {
         CalculatedConsensuses(long orderedPortIndex) {
             this.orderedPortIndex = orderedPortIndex;
         }
-
-        long size() {
-            return consensuses.stream().filter(c -> c.isConsensus).count();
-        }
     }
 
     private class ConsensusDebugData {
+        private final boolean stage2;
         // outer list - targetIndex, second - sequenceIndex, inner - positionIndex
         List<ArrayList<ArrayList<SequenceWithAttributes>>> data = IntStream.range(0, numberOfTargets)
                 .mapToObj(i -> new ArrayList<ArrayList<SequenceWithAttributes>>()).collect(Collectors.toList());
+        // outer list - targetIndex, inner - positionIndex
+        List<ArrayList<SequenceWithAttributes>> consensusData = IntStream.range(0, numberOfTargets)
+                .mapToObj(i -> new ArrayList<SequenceWithAttributes>()).collect(Collectors.toList());
+        // outer list - targetIndex, inner - sequenceIndex
+        List<ArrayList<Long>> alignmentScores = IntStream.range(0, numberOfTargets)
+                .mapToObj(i -> new ArrayList<Long>()).collect(Collectors.toList());
+
+        ConsensusDebugData(boolean stage2) {
+            this.stage2 = stage2;
+        }
 
         void writeDebugData(int clusterIndex, int consensusIndex) {
-            debugOutputStream.println("\nclusterIndex: " + clusterIndex + ", consensusIndex: " + consensusIndex);
+            debugOutputStream.println("\n" + (stage2 ? "Stage 2, " : "Stage 1, ")
+                    + "clusterIndex: " + clusterIndex + ", consensusIndex: " + consensusIndex);
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                 debugOutputStream.println("targetIndex: " + targetIndex);
                 ArrayList<ArrayList<SequenceWithAttributes>> targetData = data.get(targetIndex);
-                for (ArrayList<SequenceWithAttributes> sequenceData : targetData) {
+                ArrayList<SequenceWithAttributes> targetConsensus = consensusData.get(targetIndex);
+                ArrayList<Long> targetAlignmentScores = alignmentScores.get(targetIndex);
+                for (int sequenceIndex = 0; sequenceIndex < targetData.size(); sequenceIndex++) {
+                    ArrayList<SequenceWithAttributes> sequenceData = targetData.get(sequenceIndex);
+                    long alignmentScore = targetAlignmentScores.get(sequenceIndex);
                     StringBuilder sequenceString = new StringBuilder();
                     for (SequenceWithAttributes currentLetter : sequenceData) {
                         if (currentLetter.isNull())
@@ -693,10 +731,26 @@ public final class ConsensusIO {
                                         .symbolAt(0)));
                         }
                     }
-                    if (sequenceData.size() > 0)
+                    if (sequenceData.size() > 0) {
                         sequenceString.append(" - originalReadId: ").append(sequenceData.get(0).getOriginalReadId());
+                        sequenceString.append(", alignmentScore: ").append(alignmentScore);
+                    }
                     debugOutputStream.println(sequenceString.toString());
                 }
+                StringBuilder consensusString = new StringBuilder();
+                for (SequenceWithAttributes currentLetter : targetConsensus) {
+                    if (currentLetter.isEmpty())
+                        consensusString.append("-");
+                    else {
+                        if (currentLetter.getQual().value(0) < debugQualityThreshold)
+                            consensusString.append(Character.toLowerCase(currentLetter.getSeq().symbolAt(0)));
+                        else
+                            consensusString.append(Character.toUpperCase(currentLetter.getSeq().symbolAt(0)));
+                    }
+                }
+                if (targetConsensus.size() > 0)
+                    consensusString.append(" - consensus");
+                debugOutputStream.println(consensusString.toString());
             }
         }
     }
@@ -709,6 +763,7 @@ public final class ConsensusIO {
         public CalculatedConsensuses process(Cluster cluster) {
             CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex);
             List<DataFromParsedRead> data = cluster.data;
+            long numValidConsensuses = 0;
 
             while (data.size() > 0) {
                 // stage 1: align to best quality
@@ -728,14 +783,14 @@ public final class ConsensusIO {
                         bestData.sequences, bestDataIndex);
                 Consensus stage1Consensus = generateConsensus(subsequencesList, bestData.sequences, bestData.barcodes,
                         false);
+                if (debugOutputStream != null)
+                    calculatedConsensuses.consensuses.add(stage1Consensus);
 
-                if (!stage1Consensus.isConsensus) {
+                if (!stage1Consensus.isConsensus)
                     displayWarning("WARNING: consensus assembled from " + (data.size() - filteredOutReads.size())
                             + " reads discarded on stage 1 after quality trimming! Barcode values: "
                             + formatBarcodeValues(bestData.barcodes) + ", best read id: " + bestData.originalReadId);
-                    if (debugOutputStream != null)
-                        calculatedConsensuses.consensuses.add(stage1Consensus);
-                } else {
+                else {
                     // stage 2: align to consensus from stage 1
                     subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data), filteredOutReads,
                             stage1Consensus.sequences, -1);
@@ -757,13 +812,14 @@ public final class ConsensusIO {
                                         stage2Consensus.savedOriginalSequences.add(data.get(i));
                                 }
                             calculatedConsensuses.consensuses.add(stage2Consensus);
+                            numValidConsensuses++;
                         }
                     }
                 }
 
                 if ((filteredOutReads.size() < data.size())
                         && (float)filteredOutReads.size() / cluster.data.size() >= skippedFractionToRepeat) {
-                    if (calculatedConsensuses.size() < maxConsensusesPerCluster) {
+                    if (numValidConsensuses < maxConsensusesPerCluster) {
                         ArrayList<DataFromParsedRead> remainingData = new ArrayList<>();
                         for (int i = 0; i < data.size(); i++)
                             if (filteredOutReads.contains(i))
@@ -857,21 +913,23 @@ public final class ConsensusIO {
                 if (i != bestSeqIndex) {
                     if (!filteredOutReads.contains(i) && (data.get(i) != null)) {
                         DataFromParsedRead currentData = data.get(i);
-                        int sumScore = 0;
+                        long sumScore = 0;
                         ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
+                        long[] alignmentScores = new long[numberOfTargets];
                         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                             SequenceWithAttributes currentSequence = currentData.sequences[targetIndex];
                             Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
                                     bestSequences[targetIndex].toNSequenceWithQuality(),
                                     currentSequence.toNSequenceWithQuality(), alignerWidth);
                             alignments.add(alignment);
+                            alignmentScores[targetIndex] = (long)(alignment.getScore());
                             sumScore += alignment.getScore();
                         }
                         if (sumScore < scoreThreshold)
                             filteredOutReads.add(i);
                         else {
                             AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences,
-                                    currentData.originalReadId);
+                                    currentData.originalReadId, alignmentScores);
                             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                                 SequenceWithAttributes currentSequence = currentData.sequences[targetIndex];
                                 SequenceWithAttributes alignedBestSequence = bestSequences[targetIndex];
@@ -911,8 +969,10 @@ public final class ConsensusIO {
                         }
                     }
                 } else {
+                    long[] alignmentScores = Arrays.stream(bestSequences)
+                            .mapToLong(s -> s.size() * scoring.getMaximalMatchScore()).toArray();
                     AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences,
-                            data.get(i).originalReadId);
+                            data.get(i).originalReadId, alignmentScores);
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                         SequenceWithAttributes currentSequence = bestSequences[targetIndex];
                         for (int position = 0; position < currentSequence.size(); position++)
@@ -940,7 +1000,7 @@ public final class ConsensusIO {
         private Consensus generateConsensus(ArrayList<AlignedSubsequences> subsequencesList,
                                             SequenceWithAttributes[] bestSequences, TargetBarcodes[] barcodes,
                                             boolean stage2) {
-            ConsensusDebugData debugData = (debugOutputStream == null) ? null : new ConsensusDebugData();
+            ConsensusDebugData debugData = (debugOutputStream == null) ? null : new ConsensusDebugData(stage2);
             int consensusReadsNum = subsequencesList.size();
             long bestSeqReadId = bestSequences[0].getOriginalReadId();
             SequenceWithAttributes[] sequences = new SequenceWithAttributes[numberOfTargets];
@@ -951,6 +1011,10 @@ public final class ConsensusIO {
             for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                 ArrayList<ArrayList<SequenceWithAttributes>> debugDataForThisTarget = (debugData == null) ? null
                         : debugData.data.get(targetIndex);
+                ArrayList<SequenceWithAttributes> consensusDebugDataForThisTarget = (debugData == null) ? null
+                        : debugData.consensusData.get(targetIndex);
+                ArrayList<Long> alignmentScoresDebugForThisTarget = (debugData == null) ? null
+                        : debugData.alignmentScores.get(targetIndex);
                 consensusBarcodes[targetIndex].targetBarcodes.addAll(barcodes[targetIndex].targetBarcodes);
                 List<ArrayList<SequenceWithAttributes>> lettersMatrixList = IntStream.range(0, consensusReadsNum)
                         .mapToObj(i -> new ArrayList<SequenceWithAttributes>()).collect(Collectors.toList());
@@ -1003,8 +1067,11 @@ public final class ConsensusIO {
                     ArrayList<SequenceWithAttributes> currentLettersRow = lettersMatrixList.get(sequenceIndex);
                     LettersWithPositions currentLettersWithPositions = lettersList.get(sequenceIndex);
                     currentLettersWithPositions.set(targetIndex, currentLettersRow);
-                    if (debugDataForThisTarget != null)
+                    if (debugData != null) {
                         debugDataForThisTarget.add(currentLettersRow);
+                        alignmentScoresDebugForThisTarget.add(subsequencesList.get(sequenceIndex)
+                                .alignmentScores[targetIndex]);
+                    }
                 }
 
                 // choosing letters for consensus and calculating quality
@@ -1013,38 +1080,44 @@ public final class ConsensusIO {
                         targetIndex);
 
                 // consensus sequence assembling and quality trimming
+                OriginalReadStatus discardedStatus = stage2 ? CONSENSUS_DISCARDED_TRIM_STAGE2
+                        : CONSENSUS_DISCARDED_TRIM_STAGE1;
                 if (consensusLetters.size() == 0) {
-                    storeOriginalReadsData(subsequencesList, CONSENSUS_DISCARDED_TRIM, null);
-                    return new Consensus(debugData);
+                    storeOriginalReadsData(subsequencesList, discardedStatus, null);
+                    return new Consensus(debugData, stage2);
                 }
                 NSequenceWithQuality consensusRawSequence = NSequenceWithQuality.EMPTY;
-                for (SequenceWithAttributes consensusLetter : consensusLetters)
-                    consensusRawSequence = consensusRawSequence.concatenate(consensusLetter.toNSequenceWithQuality());
+                for (SequenceWithAttributes consensusLetter : consensusLetters) {
+                    if (!consensusLetter.isEmpty())
+                        consensusRawSequence = consensusRawSequence
+                                .concatenate(consensusLetter.toNSequenceWithQuality());
+                    if (debugData != null)
+                        consensusDebugDataForThisTarget.add(consensusLetter);
+                }
                 SequenceWithAttributes consensusSequence = new SequenceWithAttributes(
                         consensusRawSequence.getSequence(), consensusRawSequence.getQuality(), bestSeqReadId);
 
                 int trimResultLeft = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                         1, true, avgQualityThreshold, trimWindowSize);
                 if (trimResultLeft < -1) {
-                    storeOriginalReadsData(subsequencesList, CONSENSUS_DISCARDED_TRIM, null);
-                    return new Consensus(debugData);
+                    storeOriginalReadsData(subsequencesList, discardedStatus, null);
+                    return new Consensus(debugData, stage2);
                 }
                 int trimResultRight = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                         -1, true, avgQualityThreshold, trimWindowSize);
                 if (trimResultRight < 0)
                     throw new IllegalStateException("Unexpected negative trimming result");
                 else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
-                    storeOriginalReadsData(subsequencesList, CONSENSUS_DISCARDED_TRIM, null);
-                    return new Consensus(debugData);
+                    storeOriginalReadsData(subsequencesList, discardedStatus, null);
+                    return new Consensus(debugData, stage2);
                 }
                 consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
                 sequences[targetIndex] = consensusSequence;
             }
 
-            Consensus consensus = new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData,
+            Consensus consensus = new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData, stage2,
                     consensusCurrentTempId.getAndIncrement());
-            if (stage2)
-                storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus);
+            storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus);
             return consensus;
         }
 
@@ -1055,6 +1128,8 @@ public final class ConsensusIO {
                     OriginalReadData originalReadData = originalReadsData.get(alignedSubsequences.originalReadId);
                     originalReadData.status = status;
                     originalReadData.consensus = consensus;
+                    originalReadData.alignmentScores.set(consensus.stage2 ? 1 : 0,
+                            alignedSubsequences.alignmentScores);
                 });
         }
 
@@ -1095,11 +1170,10 @@ public final class ConsensusIO {
                     }
                 }
 
-                if (baseLetters.size() > 0) {
-                    SequenceWithAttributes consensusLetter = calculateConsensusLetter(baseLetters);
-                    if (!consensusLetter.isEmpty())
-                        consensusLetters.add(consensusLetter);
-                }
+                if (baseLetters.size() > 0)
+                    consensusLetters.add(calculateConsensusLetter(baseLetters));
+                else
+                    consensusLetters.add(new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ, -1));
             }
 
             return consensusLetters;
@@ -1181,8 +1255,9 @@ public final class ConsensusIO {
             private final int[] indexes = new int[numberOfTargets];
             private final SequenceWithAttributes[] sequences;
             private final long originalReadId;
+            private final long[] alignmentScores;
 
-            AlignedSubsequences(SequenceWithAttributes[] bestSequences, long originalReadId) {
+            AlignedSubsequences(SequenceWithAttributes[] bestSequences, long originalReadId, long[] alignmentScores) {
                 int currentIndex = 0;
                 for (int i = 0; i < numberOfTargets; i++) {
                     indexes[i] = currentIndex;
@@ -1190,6 +1265,10 @@ public final class ConsensusIO {
                 }
                 sequences = new SequenceWithAttributes[currentIndex];
                 this.originalReadId = originalReadId;
+                if (alignmentScores.length != numberOfTargets)
+                    throw new IllegalArgumentException("alignmentScores array: " + Arrays.toString(alignmentScores)
+                            + ", expected length: " + numberOfTargets);
+                this.alignmentScores = alignmentScores;
             }
 
             void set(int targetIndex, int position, SequenceWithAttributes value) {
