@@ -126,6 +126,8 @@ consensus
  --aligner-match-score: Score for perfectly matched nucleotide, used in sequences alignment.
  --aligner-mismatch-score: Score for mismatched nucleotide, used in sequences alignment.
  --aligner-gap-score: Score for gap or insertion, used in sequences alignment.
+ --good-quality-mismatch-penalty: Extra score penalty for mismatch when both sequences have good quality.
+ --good-quality-mismatch-threshold: Quality that will be considered good for applying extra mismatch penalty.
  --score-threshold: Score threshold that used to filter reads for calculating consensus.
  --skipped-fraction-to-repeat: Fraction of reads skipped by score threshold that must start the search for another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of reads with identical barcodes.
  --max-consensuses-per-cluster: Maximal number of consensuses generated from 1 cluster. Every time this threshold is applied to stop searching for new consensuses, warning will be displayed. Too many consensuses per cluster indicate that score threshold, aligner width or skipped fraction to repeat is too low.

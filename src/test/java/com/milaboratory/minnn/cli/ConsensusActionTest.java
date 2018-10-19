@@ -114,13 +114,13 @@ public class ConsensusActionTest {
         exec("sort --input " + correctedFile + " --output " + sortedFile + " --groups G3 G4 G1 G2 R1 R2");
         exec("consensus --input " + sortedFile + " --output " + consensusFile + " --groups G3 G4 G1"
                 + " --threads 5 --score-threshold -1200 --width 30 --max-consensuses-per-cluster 5"
-                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 3");
+                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 3 --good-quality-mismatch-penalty 0");
         exec("consensus --input " + consensusFile + " --output " + consensusFile2
                 + " --groups G3 G4 G1 --threads 3 --score-threshold -1200 --width 30 --reads-avg-quality-threshold 0"
-                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0");
+                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0 --good-quality-mismatch-penalty 0");
         exec("consensus --input " + consensusFile2 + " --output " + consensusFile3
                 + " --groups G3 G4 G1 --threads 3 --score-threshold -1200 --width 30 --reads-avg-quality-threshold 0"
-                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0");
+                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0 --good-quality-mismatch-penalty 0");
         assertFileEquals(consensusFile2, consensusFile3);
         for (String fileName : new String[] {
                 inputFile, correctedFile, sortedFile, consensusFile, consensusFile2, consensusFile3 })

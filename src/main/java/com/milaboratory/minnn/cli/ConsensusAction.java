@@ -45,7 +45,8 @@ public final class ConsensusAction implements Action {
     @Override
     public void go(ActionHelper helper) {
         ConsensusIO consensusIO = new ConsensusIO(params.groupList, params.inputFileName, params.outputFileName,
-                params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore, params.scoreThreshold,
+                params.alignerWidth, params.matchScore, params.mismatchScore, params.gapScore,
+                params.goodQualityMismatchPenalty, params.goodQualityMismatchThreshold, params.scoreThreshold,
                 params.skippedFractionToRepeat, params.maxConsensusesPerCluster, params.readsMinGoodSeqLength,
                 params.readsAvgQualityThreshold, params.readsTrimWindowSize, params.minGoodSeqLength,
                 params.avgQualityThreshold, params.trimWindowSize, params.originalReadStatsFileName,
@@ -94,54 +95,62 @@ public final class ConsensusAction implements Action {
                 names = {"--aligner-gap-score"}, order = 6)
         int gapScore = DEFAULT_GAP_SCORE;
 
+        @Parameter(description = "Extra score penalty for mismatch when both sequences have good quality.",
+                names = {"--good-quality-mismatch-penalty"}, order = 7)
+        long goodQualityMismatchPenalty = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY;
+
+        @Parameter(description = "Quality that will be considered good for applying extra mismatch penalty.",
+                names = {"--good-quality-mismatch-threshold"}, order = 8)
+        byte goodQualityMismatchThreshold = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD;
+
         @Parameter(description = "Score threshold that used to filter reads for calculating consensus.",
-                names = {"--score-threshold"}, order = 7)
+                names = {"--score-threshold"}, order = 9)
         long scoreThreshold = DEFAULT_CONSENSUS_SCORE_THRESHOLD;
 
         @Parameter(description = "Fraction of reads skipped by score threshold that must start the search for " +
                 "another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of " +
                 "reads with identical barcodes.",
-                names = {"--skipped-fraction-to-repeat"}, order = 8)
+                names = {"--skipped-fraction-to-repeat"}, order = 10)
         float skippedFractionToRepeat = DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT;
 
         @Parameter(description = "Maximal number of consensuses generated from 1 cluster. Every time this threshold " +
                 "is applied to stop searching for new consensuses, warning will be displayed. Too many consensuses " +
                 "per cluster indicate that score threshold, aligner width or skipped fraction to repeat is too low.",
-                names = {"--max-consensuses-per-cluster"}, order = 9)
+                names = {"--max-consensuses-per-cluster"}, order = 11)
         int maxConsensusesPerCluster = DEFAULT_CONSENSUS_MAX_PER_CLUSTER;
 
         @Parameter(description = "Minimal length of good sequence that will be still considered good after trimming " +
                 "bad quality tails. This parameter is for trimming input reads.",
-                names = {"--reads-min-good-sequence-length"}, order = 10)
+                names = {"--reads-min-good-sequence-length"}, order = 12)
         int readsMinGoodSeqLength = DEFAULT_CONSENSUS_READS_MIN_GOOD_SEQ_LENGTH;
 
         @Parameter(description = "Minimal average quality for bad quality tails trimmer. This parameter is for " +
                 "trimming input reads.",
-                names = {"--reads-avg-quality-threshold"}, order = 11)
+                names = {"--reads-avg-quality-threshold"}, order = 13)
         float readsAvgQualityThreshold = DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD;
 
         @Parameter(description = "Window size for bad quality tails trimmer. This parameter is for trimming input " +
                 "reads.",
-                names = {"--reads-trim-window-size"}, order = 12)
+                names = {"--reads-trim-window-size"}, order = 14)
         int readsTrimWindowSize = DEFAULT_CONSENSUS_READS_TRIM_WINDOW_SIZE;
 
         @Parameter(description = "Minimal length of good sequence that will be still considered good after trimming " +
                 "bad quality tails. This parameter is for trimming output consensuses.",
-                names = {"--min-good-sequence-length"}, order = 13)
+                names = {"--min-good-sequence-length"}, order = 15)
         int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
         @Parameter(description = "Minimal average quality for bad quality tails trimmer. This parameter is for " +
                 "trimming output consensuses.",
-                names = {"--avg-quality-threshold"}, order = 14)
+                names = {"--avg-quality-threshold"}, order = 16)
         float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
 
         @Parameter(description = "Window size for bad quality tails trimmer. This parameter is for trimming output " +
                 "consensuses.",
-                names = {"--trim-window-size"}, order = 15)
+                names = {"--trim-window-size"}, order = 17)
         int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
 
         @Parameter(description = "Save extra statistics for each original read into separate file.",
-                names = {"--original-read-stats"}, order = 16)
+                names = {"--original-read-stats"}, order = 18)
         String originalReadStatsFileName = null;
 
         @Parameter(description = "If this parameter is specified, consensuses will not be written as " +
@@ -149,19 +158,19 @@ public final class ConsensusAction implements Action {
                 "consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by " +
                 "consensuses using filter / demultiplex actions, or export original reads and corresponding " +
                 "consensuses into separate reads using mif2fastq action.",
-                names = {"--consensuses-to-separate-groups"}, order = 17)
+                names = {"--consensuses-to-separate-groups"}, order = 19)
         boolean toSeparateGroups = false;
 
         @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 18)
+                names = {"-n", "--number-of-reads"}, order = 20)
         long inputReadsLimit = 0;
 
         @Parameter(description = "Maximum allowed number of warnings; -1 means no limit.",
-                names = {"--max-warnings"}, order = 19)
+                names = {"--max-warnings"}, order = 21)
         int maxWarnings = -1;
 
         @Parameter(description = "Number of threads for calculating consensus sequences.",
-                names = {"--threads"}, order = 20)
+                names = {"--threads"}, order = 22)
         int threads = DEFAULT_THREADS;
 
         @Parameter(description = "Output text file for consensus algorithm debug information.",

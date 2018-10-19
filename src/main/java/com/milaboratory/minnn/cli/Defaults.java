@@ -63,5 +63,7 @@ public final class Defaults {
     public final static byte DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH = 5;
     public final static float DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD = 10.0f;
     public final static int DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE = 20;
+    public final static long DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY = -17;
+    public final static byte DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD = GOOD_QUALITY_VALUE;
     public final static int DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE = 1 << 16;
 }

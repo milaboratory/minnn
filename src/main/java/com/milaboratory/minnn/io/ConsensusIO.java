@@ -58,6 +58,7 @@ import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.io.ConsensusIO.OriginalReadStatus.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.invertCoordinate;
+import static com.milaboratory.minnn.util.AlignmentTools.calculateAlignmentScore;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
@@ -74,6 +75,8 @@ public final class ConsensusIO {
     private final int matchScore;
     private final int mismatchScore;
     private final int gapScore;
+    private final long goodQualityMismatchPenalty;
+    private final byte goodQualityMismatchThreshold;
     private final long scoreThreshold;
     private final float skippedFractionToRepeat;
     private final int maxConsensusesPerCluster;
@@ -101,12 +104,12 @@ public final class ConsensusIO {
     private int numberOfTargets;
 
     public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
-                       int matchScore, int mismatchScore, int gapScore, long scoreThreshold,
-                       float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
-                       float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
-                       float avgQualityThreshold, int trimWindowSize, String originalReadStatsFileName,
-                       boolean toSeparateGroups, long inputReadsLimit, int maxWarnings, int threads,
-                       String debugOutputFileName, byte debugQualityThreshold) {
+                       int matchScore, int mismatchScore, int gapScore, long goodQualityMismatchPenalty,
+                       byte goodQualityMismatchThreshold, long scoreThreshold, float skippedFractionToRepeat,
+                       int maxConsensusesPerCluster, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
+                       int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
+                       String originalReadStatsFileName, boolean toSeparateGroups, long inputReadsLimit,
+                       int maxWarnings, int threads, String debugOutputFileName, byte debugQualityThreshold) {
         this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -114,6 +117,8 @@ public final class ConsensusIO {
         this.matchScore = matchScore;
         this.mismatchScore = mismatchScore;
         this.gapScore = gapScore;
+        this.goodQualityMismatchPenalty = goodQualityMismatchPenalty;
+        this.goodQualityMismatchThreshold = goodQualityMismatchThreshold;
         this.scoreThreshold = scoreThreshold;
         this.skippedFractionToRepeat = skippedFractionToRepeat;
         this.maxConsensusesPerCluster = maxConsensusesPerCluster;
@@ -917,13 +922,15 @@ public final class ConsensusIO {
                         ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
                         long[] alignmentScores = new long[numberOfTargets];
                         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                            SequenceWithAttributes currentSequence = currentData.sequences[targetIndex];
-                            Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring,
-                                    bestSequences[targetIndex].toNSequenceWithQuality(),
-                                    currentSequence.toNSequenceWithQuality(), alignerWidth);
+                            NSequenceWithQuality seq1 = bestSequences[targetIndex].toNSequenceWithQuality();
+                            NSequenceWithQuality seq2 = currentData.sequences[targetIndex].toNSequenceWithQuality();
+                            Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring, seq1, seq2,
+                                    alignerWidth);
                             alignments.add(alignment);
-                            alignmentScores[targetIndex] = (long)(alignment.getScore());
-                            sumScore += alignment.getScore();
+                            long alignmentScore = calculateAlignmentScore(goodQualityMismatchPenalty,
+                                    goodQualityMismatchThreshold, alignment, seq1, seq2);
+                            alignmentScores[targetIndex] = alignmentScore;
+                            sumScore += alignmentScore;
                         }
                         if (sumScore < scoreThreshold)
                             filteredOutReads.add(i);
