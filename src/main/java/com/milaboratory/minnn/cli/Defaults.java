@@ -54,8 +54,8 @@ public final class Defaults {
     public final static float DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY = 0.3f;
     public final static float DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY = 0.1f;
     public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 20;
-    public final static int DEFAULT_CONSENSUS_SCORE_THRESHOLD = -500;
-    public final static float DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT = 0.5f;
+    public final static int DEFAULT_CONSENSUS_SCORE_THRESHOLD = -100;
+    public final static float DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT = 0.05f;
     public final static int DEFAULT_CONSENSUS_MAX_PER_CLUSTER = 10;
     public final static byte DEFAULT_CONSENSUS_READS_MIN_GOOD_SEQ_LENGTH = 5;
     public final static float DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD = 10.0f;
