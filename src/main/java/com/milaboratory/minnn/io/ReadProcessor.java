@@ -57,6 +57,7 @@ import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 public final class ReadProcessor {
     private final List<String> inputFileNames;
     private final String outputFileName;
+    private final String notMatchedOutputFileName;
     private final Pattern pattern;
     private final boolean orientedReads;
     private final boolean fairSorting;
@@ -66,14 +67,15 @@ public final class ReadProcessor {
     private final DescriptionGroups descriptionGroups;
     private int numberOfTargets;
 
-    public ReadProcessor(List<String> inputFileNames, String outputFileName, Pattern pattern,
-                         boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
-                         MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
+    public ReadProcessor(List<String> inputFileNames, String outputFileName, String notMatchedOutputFileName,
+                         Pattern pattern, boolean orientedReads, boolean fairSorting, long inputReadsLimit,
+                         int threads, MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
         if ((inputFormat == MIF) && (inputFileNames.size() > 1))
             throw exitWithError("Mif data format uses single file; specified " + inputFileNames.size()
                     + " input files!");
         this.inputFileNames = inputFileNames;
         this.outputFileName = outputFileName;
+        this.notMatchedOutputFileName = notMatchedOutputFileName;
         this.pattern = pattern;
         this.orientedReads = orientedReads;
         this.fairSorting = fairSorting;
@@ -88,7 +90,8 @@ public final class ReadProcessor {
         long totalReads = 0;
         long matchedReads = 0;
         try (IndexedSequenceReader<?> reader = createReader();
-             MifWriter writer = createWriter()) {
+             MifWriter writer = Objects.requireNonNull(createWriter(false));
+             MifWriter mismatchedReadsWriter = createWriter(true)) {
             SmartProgressReporter.startProgressReport("Parsing", reader, System.err);
             Merger<Chunk<IndexedSequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader,
                     4 * 64), 4 * 16);
@@ -100,13 +103,16 @@ public final class ReadProcessor {
                 if (parsedRead.getBestMatch() != null) {
                     writer.write(parsedRead);
                     matchedReads++;
-                }
+                } else if (mismatchedReadsWriter != null)
+                    mismatchedReadsWriter.write(parsedRead);
                 if (++totalReads == inputReadsLimit)
                     break;
             }
             reader.close();
             long originalNumberOfReads = (inputFormat == MIF) ? reader.getOriginalNumberOfReads() : totalReads;
             writer.setOriginalNumberOfReads(originalNumberOfReads);
+            if (mismatchedReadsWriter != null)
+                mismatchedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -169,10 +175,13 @@ public final class ReadProcessor {
         return reader;
     }
 
-    private MifWriter createWriter() throws IOException {
+    private MifWriter createWriter(boolean mismatchedReads) throws IOException {
         MifHeader mifHeader = new MifHeader(numberOfTargets, new ArrayList<>(), false, pattern.getGroupEdges());
-        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
-                : new MifWriter(outputFileName, mifHeader);
+        if (mismatchedReads)
+            return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
+        else
+            return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
+                    : new MifWriter(outputFileName, mifHeader);
     }
 
     private class IndexedSequenceRead {

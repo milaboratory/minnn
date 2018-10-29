@@ -161,16 +161,19 @@ public class ExtractActionTest {
         String mifFile1 = TEMP_DIR + "output1.mif";
         String mifFile2 = TEMP_DIR + "output2.mif";
         String mifFile3 = TEMP_DIR + "output3.mif";
+        String mismatchedMif = TEMP_DIR + "mismatched.mif";
+        String mismatchedFastq = TEMP_DIR + "mismatched.fastq";
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(mifFile1);
             exec("extract --input-format mif --input " + mifFile1 + " --output " + mifFile2
-                    + " --pattern \"*\" --threads 1");
+                    + " --pattern \"*\" --not-matched-output " + mismatchedMif);
             // mifFile1 and mifFile2 can differ by match score, mifFile2 and mifFile3 must be equal
             exec("extract --input-format mif --input " + mifFile2 + " --output " + mifFile3
                     + " --pattern \"*\" --threads 1");
             assertFileEquals(mifFile2, mifFile3);
+            exec("mif2fastq --input " + mismatchedMif + " --group-R1 " + mismatchedFastq);
         }
-        for (String fileName : new String[] { mifFile1, mifFile2, mifFile3 })
+        for (String fileName : new String[] { mifFile1, mifFile2, mifFile3, mismatchedMif, mismatchedFastq })
             assertTrue(new File(fileName).delete());
     }
 
@@ -193,10 +196,17 @@ public class ExtractActionTest {
     public void multipleThreadsTest() throws Exception {
         String inputFile = getExampleMif("twosided");
         String outputFile = TEMP_DIR + "outputMTT.mif";
-        String argsIO = "extract --input-format mif --input " + inputFile + " --output " + outputFile;
-        String query = argsIO + " --pattern \"TTC + N{1:10} & TTC || AAC \\ *\" --threads 1000";
+        String mismatchedOutputFile = TEMP_DIR + "mismatchedOutputMTT.mif";
+        String mismatchedR1 = TEMP_DIR + "mismatchedR1-MTT.fastq";
+        String mismatchedR2 = TEMP_DIR + "mismatchedR2-MTT.fastq";
+        String argsIO = "extract --input-format mif --input " + inputFile + " --output " + outputFile
+                + " --not-matched-output " + mismatchedOutputFile;
+        String query = argsIO + " --pattern \"TTC + N{1:10} & TTC || AAC \\ *\" --threads 1000 --score-threshold 0";
         exec(query);
-        for (String fileName : new String[] { inputFile, outputFile })
+        exec("mif2fastq --input " + mismatchedOutputFile + " --group-R1 " + mismatchedR1
+                + " --group-R2 " + mismatchedR2);
+        for (String fileName : new String[] { inputFile, outputFile, mismatchedOutputFile,
+                mismatchedR1, mismatchedR2 })
             assertTrue(new File(fileName).delete());
     }
 }

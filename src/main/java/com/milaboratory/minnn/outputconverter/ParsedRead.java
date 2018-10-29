@@ -241,20 +241,20 @@ public final class ParsedRead {
         if (groupNames.length == 0)
             throw new IllegalArgumentException("Basic groups for output sequence read are not specified!");
 
+        if (defaultGroups == null) {
+            calculateDefaultGroups(originalRead.numberOfReads());
+            collectGroupNamesFromHeader(allGroupEdges);
+        }
         if (commentsCache == null)
             commentsCache = new HashMap<>();
         if (matchedGroups == null)
             matchedGroups = getGroups().stream().collect(Collectors.toMap(MatchedGroup::getGroupName, mg -> mg));
         if (innerRangesCache == null)
             fillInnerGroupsCache(false, true);
-        if (defaultGroups == null) {
-            calculateDefaultGroups(originalRead.numberOfReads());
-            collectGroupNamesFromHeader(allGroupEdges);
-        }
 
         ArrayList<SingleRead> singleReads = new ArrayList<>();
         for (String outputGroupName : groupNames) {
-            if (!matchedGroups.containsKey(outputGroupName))
+            if (!defaultGroups.contains(outputGroupName) && !matchedGroups.containsKey(outputGroupName))
                 throw new IllegalArgumentException("Group " + outputGroupName
                         + " not found in this ParsedRead; available groups: " + matchedGroups.keySet());
             singleReads.add(new SingleReadImpl(originalRead.getId(), getGroupValue(outputGroupName),
@@ -284,34 +284,41 @@ public final class ParsedRead {
         if (commentsCache.containsKey(outputGroupName))
             return commentsCache.get(outputGroupName);
 
-        TreeSet<FastqCommentGroup> commentGroups = new TreeSet<>();
-        for (String groupName : groupsFromHeader) {
-            if (innerRangesCache.containsKey(groupName)) {
-                HashMap<String, Range> innerRanges = innerRangesCache.get(outputGroupName);
-                if (innerRanges.containsKey(groupName))
-                    commentGroups.add(new FastqCommentGroup(groupName, true, true,
-                            getGroupValue(groupName), innerRanges.get(groupName)));
-                else
-                    commentGroups.add(new FastqCommentGroup(groupName, getGroupValue(groupName)));
-            } else {
-                NSequenceWithQuality groupValue = getGroupValue(groupName);
-                commentGroups.add((groupValue == null) ? new FastqCommentGroup(groupName)
-                        : new FastqCommentGroup(groupName, groupValue));
+        String readDescription;
+        if (bestMatch == null) {
+            byte targetIndex = (byte)(Byte.parseByte(outputGroupName.substring(1)) - 1);
+            readDescription = originalRead.getRead(targetIndex).getDescription();
+        } else {
+            TreeSet<FastqCommentGroup> commentGroups = new TreeSet<>();
+            for (String groupName : groupsFromHeader) {
+                if (innerRangesCache.containsKey(groupName)) {
+                    HashMap<String, Range> innerRanges = innerRangesCache.get(outputGroupName);
+                    if (innerRanges.containsKey(groupName))
+                        commentGroups.add(new FastqCommentGroup(groupName, true, true,
+                                getGroupValue(groupName), innerRanges.get(groupName)));
+                    else
+                        commentGroups.add(new FastqCommentGroup(groupName, getGroupValue(groupName)));
+                } else {
+                    NSequenceWithQuality groupValue = getGroupValue(groupName);
+                    commentGroups.add((groupValue == null) ? new FastqCommentGroup(groupName)
+                            : new FastqCommentGroup(groupName, groupValue));
+                }
             }
+
+            byte commentsTargetId = matchedGroups.get(outputGroupName).getTargetId();
+            if (reverseMatch) {
+                if (commentsTargetId == 1)
+                    commentsTargetId = 2;
+                else if (commentsTargetId == 2)
+                    commentsTargetId = 1;
+            }
+
+            readDescription = generateComments(commentGroups, reverseMatch,
+                    copyOriginalHeaders ? originalRead.getRead(commentsTargetId - 1).getDescription() : "");
         }
 
-        byte commentsTargetId = matchedGroups.get(outputGroupName).getTargetId();
-        if (reverseMatch) {
-            if (commentsTargetId == 1)
-                commentsTargetId = 2;
-            else if (commentsTargetId == 2)
-                commentsTargetId = 1;
-        }
-
-        String comments = generateComments(commentGroups, reverseMatch,
-                copyOriginalHeaders ? originalRead.getRead(commentsTargetId - 1).getDescription() : "");
-        commentsCache.put(outputGroupName, comments);
-        return comments;
+        commentsCache.put(outputGroupName, readDescription);
+        return readDescription;
     }
 
     public static ParsedRead read(PrimitivI input) {

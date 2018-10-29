@@ -17,6 +17,7 @@ extract
  --pattern: Query, pattern specified in MiNNN format.
  --input: Input files. Single file means that there is 1 read or multi-read file; multiple files mean that there is 1 file for each read. If not specified, stdin will be used.
  --output: Output file in "mif" format. If not specified, stdout will be used.
+ --not-matched-output: Output file for not matched reads in "mif" format. If not specified, not matched reads will not be written anywhere.
  --input-format: Input data format. "fastq" (default) or "mif".
  --oriented: By default, if there are 2 or more reads, 2 last reads are checked in direct and reverse order. With this flag, only in direct order.
  --match-score: Score for perfectly matched nucleotide.

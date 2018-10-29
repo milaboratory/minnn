@@ -78,9 +78,9 @@ public final class ExtractAction implements Action {
         if (patternGroups.size() > 0)
             throw exitWithError("Error: groups " + patternGroups + " are both in pattern and in description groups!");
         MinnnDataFormat inputFormat = parameterNames.get(params.inputFormat);
-        ReadProcessor readProcessor = new ReadProcessor(params.inputFileNames, params.outputFileName, pattern,
-                params.oriented, params.fairSorting, params.inputReadsLimit, params.threads, inputFormat,
-                descriptionGroups);
+        ReadProcessor readProcessor = new ReadProcessor(params.inputFileNames, params.outputFileName,
+                params.notMatchedOutputFileName, pattern, params.oriented, params.fairSorting, params.inputReadsLimit,
+                params.threads, inputFormat, descriptionGroups);
         readProcessor.processReadsParallel();
     }
 
@@ -114,71 +114,76 @@ public final class ExtractAction implements Action {
                 names = {"--output"}, order = 3)
         String outputFileName = null;
 
+        @Parameter(description = "Output file for not matched reads in \"mif\" format. If not specified, not " +
+                "matched reads will not be written anywhere.",
+                names = {"--not-matched-output"}, order = 4)
+        String notMatchedOutputFileName = null;
+
         @Parameter(description = "Input data format. \"fastq\" (default) or \"mif\".",
-                names = {"--input-format"}, order = 4)
+                names = {"--input-format"}, order = 5)
         String inputFormat = DEFAULT_INPUT_FORMAT;
 
         @Parameter(description = "By default, if there are 2 or more reads, 2 last reads are checked in direct " +
                 "and reverse order. With this flag, only in direct order.",
-                names = {"--oriented"}, order = 5)
+                names = {"--oriented"}, order = 6)
         boolean oriented = false;
 
         @Parameter(description = "Score for perfectly matched nucleotide.",
-                names = {"--match-score"}, order = 6)
+                names = {"--match-score"}, order = 7)
         int matchScore = DEFAULT_MATCH_SCORE;
 
         @Parameter(description = "Score for mismatched nucleotide.",
-                names = {"--mismatch-score"}, order = 7)
+                names = {"--mismatch-score"}, order = 8)
         int mismatchScore = DEFAULT_MISMATCH_SCORE;
 
         @Parameter(description = "Score for mismatched uppercase nucleotide.",
-                names = {"--uppercase-mismatch-score"}, order = 8)
+                names = {"--uppercase-mismatch-score"}, order = 9)
         int uppercaseMismatchScore = DEFAULT_UPPERCASE_MISMATCH_SCORE;
 
         @Parameter(description = "Score for gap or insertion.",
-                names = {"--gap-score"}, order = 9)
+                names = {"--gap-score"}, order = 10)
         int gapScore = DEFAULT_GAP_SCORE;
 
         @Parameter(description = "Score threshold, matches with score lower than this will not go to output.",
-                names = {"--score-threshold"}, order = 10)
+                names = {"--score-threshold"}, order = 11)
         long scoreThreshold = DEFAULT_SCORE_THRESHOLD;
 
         @Parameter(description = "This or better quality value will be considered good quality, " +
                 "without score penalties.",
-                names = {"--good-quality-value"}, order = 11)
+                names = {"--good-quality-value"}, order = 12)
         int goodQuality = DEFAULT_GOOD_QUALITY;
 
         @Parameter(description = "This or worse quality value will be considered bad quality, " +
                 "with maximal score penalty.",
-                names = {"--bad-quality-value"}, order = 12)
+                names = {"--bad-quality-value"}, order = 13)
         int badQuality = DEFAULT_BAD_QUALITY;
 
         @Parameter(description = "Maximal score penalty for bad quality nucleotide in target.",
-                names = {"--max-quality-penalty"}, order = 13)
+                names = {"--max-quality-penalty"}, order = 14)
         int maxQualityPenalty = DEFAULT_MAX_QUALITY_PENALTY;
 
         @Parameter(description = "Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value.",
-                names = {"--single-overlap-penalty"}, order = 14)
+                names = {"--single-overlap-penalty"}, order = 15)
         long singleOverlapPenalty = DEFAULT_SINGLE_OVERLAP_PENALTY;
 
         @Parameter(description = "Max allowed overlap for 2 intersecting operands in +, & and pattern sequences.",
-                names = {"--max-overlap"}, order = 15)
+                names = {"--max-overlap"}, order = 16)
         int maxOverlap = DEFAULT_MAX_OVERLAP;
 
         @Parameter(description = "Maximum allowed number of errors for bitap matcher.",
-                names = {"--bitap-max-errors"}, order = 16)
+                names = {"--bitap-max-errors"}, order = 17)
         int bitapMaxErrors = DEFAULT_BITAP_MAX_ERRORS;
 
         @Parameter(description = "Use fair sorting and fair best match by score for all patterns.",
-                names = {"--fair-sorting"}, order = 17)
+                names = {"--fair-sorting"}, order = 18)
         boolean fairSorting = false;
 
         @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 18)
+                names = {"-n", "--number-of-reads"}, order = 19)
         long inputReadsLimit = 0;
 
         @Parameter(description = "Number of threads for parsing reads.",
-                names = {"--threads"}, order = 19)
+                names = {"--threads"}, order = 20)
         int threads = DEFAULT_THREADS;
 
         @Parameter(description = "Use \"simplified\" parser syntax with class names and their arguments in " +
