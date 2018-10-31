@@ -108,13 +108,15 @@ public class ConsensusActionTest {
         String correctedFile = TEMP_DIR + "corrected.mif";
         String sortedFile = TEMP_DIR + "sorted.mif";
         String consensusFile = TEMP_DIR + "consensus.mif";
+        String notUsedReadsFile = TEMP_DIR + "not_used_reads.mif";
         String consensusFile2 = TEMP_DIR + "consensus2.mif";
         String consensusFile3 = TEMP_DIR + "consensus3.mif";
         exec("correct --input " + inputFile + " --output " + correctedFile + " --groups G3 G4 G1 G2");
         exec("sort --input " + correctedFile + " --output " + sortedFile + " --groups G3 G4 G1 G2 R1 R2");
         exec("consensus --input " + sortedFile + " --output " + consensusFile + " --groups G3 G4 G1"
                 + " --threads 5 --score-threshold -1200 --width 30 --max-consensuses-per-cluster 5"
-                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 3 --good-quality-mismatch-penalty 0");
+                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 3 --good-quality-mismatch-penalty 0"
+                + " --not-used-reads-output " + notUsedReadsFile);
         exec("consensus --input " + consensusFile + " --output " + consensusFile2
                 + " --groups G3 G4 G1 --threads 3 --score-threshold -1200 --width 30 --reads-avg-quality-threshold 0"
                 + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0 --good-quality-mismatch-penalty 0");
@@ -123,7 +125,8 @@ public class ConsensusActionTest {
                 + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0 --good-quality-mismatch-penalty 0");
         assertFileEquals(consensusFile2, consensusFile3);
         for (String fileName : new String[] {
-                inputFile, correctedFile, sortedFile, consensusFile, consensusFile2, consensusFile3 })
+                inputFile, correctedFile, sortedFile, consensusFile, notUsedReadsFile,
+                consensusFile2, consensusFile3 })
             assertTrue(new File(fileName).delete());
     }
 

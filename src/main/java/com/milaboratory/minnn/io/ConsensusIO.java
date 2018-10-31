@@ -87,6 +87,7 @@ public final class ConsensusIO {
     private final float avgQualityThreshold;
     private final int trimWindowSize;
     private final String originalReadStatsFileName;
+    private final String notUsedReadsOutputFileName;
     private final boolean toSeparateGroups;
     private final long inputReadsLimit;
     private final int maxWarnings;
@@ -108,8 +109,9 @@ public final class ConsensusIO {
                        byte goodQualityMismatchThreshold, long scoreThreshold, float skippedFractionToRepeat,
                        int maxConsensusesPerCluster, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
                        int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
-                       String originalReadStatsFileName, boolean toSeparateGroups, long inputReadsLimit,
-                       int maxWarnings, int threads, String debugOutputFileName, byte debugQualityThreshold) {
+                       String originalReadStatsFileName, String notUsedReadsOutputFileName, boolean toSeparateGroups,
+                       long inputReadsLimit, int maxWarnings, int threads, String debugOutputFileName,
+                       byte debugQualityThreshold) {
         this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -130,6 +132,7 @@ public final class ConsensusIO {
         this.avgQualityThreshold = avgQualityThreshold;
         this.trimWindowSize = trimWindowSize;
         this.originalReadStatsFileName = originalReadStatsFileName;
+        this.notUsedReadsOutputFileName = notUsedReadsOutputFileName;
         this.inputReadsLimit = inputReadsLimit;
         this.maxWarnings = maxWarnings;
         this.threads = threads;
@@ -140,15 +143,17 @@ public final class ConsensusIO {
             throw exitWithError(e.toString());
         }
         this.debugQualityThreshold = debugQualityThreshold;
-        this.originalReadsData = (originalReadStatsFileName == null) ? null : new ConcurrentHashMap<>();
+        this.originalReadsData = ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
+                ? new ConcurrentHashMap<>() : null;
         this.consensusFinalIds = (originalReadStatsFileName == null) ? null : new TLongLongHashMap();
     }
 
     public void go() {
         long startTime = System.currentTimeMillis();
+        MifHeader mifHeader;
         long originalNumberOfReads;
         try (MifReader reader = createReader();
-             MifWriter writer = createWriter(reader.getHeader())) {
+             MifWriter writer = createWriter(mifHeader = reader.getHeader())) {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Calculating consensuses", reader, System.err);
@@ -203,7 +208,8 @@ public final class ConsensusIO {
                             currentCluster.data.add(new DataFromParsedRead(parsedRead));
                             if ((originalReadsData != null) && !originalReadsData.containsKey(parsedRead
                                     .getOriginalRead().getId()))
-                                originalReadsData.put(parsedRead.getOriginalRead().getId(), new OriginalReadData());
+                                originalReadsData.put(parsedRead.getOriginalRead().getId(),
+                                        new OriginalReadData(parsedRead));
                             totalReads.getAndIncrement();
                         } else {
                             finished = true;
@@ -254,7 +260,9 @@ public final class ConsensusIO {
                     new FileOutputStream(originalReadStatsFileName))) {
                 StringBuilder header = new StringBuilder("read.id consensus.id status consensus.best.id reads.num");
                 for (String groupName : defaultGroups) {
-                    header.append(' ').append(groupName).append(".consensus.seq ");
+                    header.append(' ').append(groupName).append(".seq ");
+                    header.append(groupName).append(".qual ");
+                    header.append(groupName).append(".consensus.seq ");
                     header.append(groupName).append(".consensus.qual ");
                     header.append(groupName).append(".alignment.score.stage1 ");
                     header.append(groupName).append(".alignment.score.stage2");
@@ -293,6 +301,14 @@ public final class ConsensusIO {
                             if (alignmentScoresStage2 != null)
                                 alignmentScoreStage2 = alignmentScoresStage2[targetIndex];
                         }
+                        if (currentReadData == null)
+                            line.append(" - -");
+                        else {
+                            NSequenceWithQuality currentOriginalRead = currentReadData.read
+                                    .getGroupValue("R" + (targetIndex + 1));
+                            line.append(' ').append(currentOriginalRead.getSequence());
+                            line.append(' ').append(currentOriginalRead.getQuality());
+                        }
                         if (consensus == null) {
                             line.append(" - - ").append(Long.MIN_VALUE).append(' ').append(Long.MIN_VALUE);
                         } else {
@@ -305,6 +321,20 @@ public final class ConsensusIO {
                     }
                     originalReadsDataWriter.println(line);
                 }
+            } catch (IOException e) {
+                throw exitWithError(e.getMessage());
+            }
+        }
+
+        if (notUsedReadsOutputFileName != null) {
+            System.err.println("Writing not matched reads...");
+            try (MifWriter notUsedReadsWriter = new MifWriter(notUsedReadsOutputFileName, mifHeader)) {
+                for (long readId = 0; readId < originalNumberOfReads; readId++) {
+                    OriginalReadData currentReadData = originalReadsData.get(readId);
+                    if ((currentReadData != null) && (currentReadData.status != USED_IN_CONSENSUS))
+                        notUsedReadsWriter.write(currentReadData.read);
+                }
+                notUsedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
             } catch (IOException e) {
                 throw exitWithError(e.getMessage());
             }
@@ -363,9 +393,14 @@ public final class ConsensusIO {
     }
 
     private class OriginalReadData {
+        final ParsedRead read;
         OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
         Consensus consensus = null;
         List<long[]> alignmentScores = Arrays.asList(null, null);
+
+        OriginalReadData(ParsedRead read) {
+            this.read = read;
+        }
     }
 
     private enum SpecialSequences {
@@ -1090,7 +1125,7 @@ public final class ConsensusIO {
                 OriginalReadStatus discardedStatus = stage2 ? CONSENSUS_DISCARDED_TRIM_STAGE2
                         : CONSENSUS_DISCARDED_TRIM_STAGE1;
                 if (consensusLetters.size() == 0) {
-                    storeOriginalReadsData(subsequencesList, discardedStatus, null);
+                    storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
                     return new Consensus(debugData, stage2);
                 }
                 NSequenceWithQuality consensusRawSequence = NSequenceWithQuality.EMPTY;
@@ -1107,7 +1142,7 @@ public final class ConsensusIO {
                 int trimResultLeft = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                         1, true, avgQualityThreshold, trimWindowSize);
                 if (trimResultLeft < -1) {
-                    storeOriginalReadsData(subsequencesList, discardedStatus, null);
+                    storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
                     return new Consensus(debugData, stage2);
                 }
                 int trimResultRight = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
@@ -1115,7 +1150,7 @@ public final class ConsensusIO {
                 if (trimResultRight < 0)
                     throw new IllegalStateException("Unexpected negative trimming result");
                 else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
-                    storeOriginalReadsData(subsequencesList, discardedStatus, null);
+                    storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
                     return new Consensus(debugData, stage2);
                 }
                 consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
@@ -1124,19 +1159,18 @@ public final class ConsensusIO {
 
             Consensus consensus = new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData, stage2,
                     consensusCurrentTempId.getAndIncrement());
-            storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus);
+            storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus, stage2);
             return consensus;
         }
 
         private void storeOriginalReadsData(ArrayList<AlignedSubsequences> subsequencesList,
-                                            OriginalReadStatus status, Consensus consensus) {
+                                            OriginalReadStatus status, Consensus consensus, boolean stage2) {
             if (originalReadsData != null)
                 subsequencesList.forEach(alignedSubsequences -> {
                     OriginalReadData originalReadData = originalReadsData.get(alignedSubsequences.originalReadId);
                     originalReadData.status = status;
                     originalReadData.consensus = consensus;
-                    originalReadData.alignmentScores.set(consensus.stage2 ? 1 : 0,
-                            alignedSubsequences.alignmentScores);
+                    originalReadData.alignmentScores.set(stage2 ? 1 : 0, alignedSubsequences.alignmentScores);
                 });
         }
 

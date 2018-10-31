@@ -50,8 +50,8 @@ public final class ConsensusAction implements Action {
                 params.skippedFractionToRepeat, params.maxConsensusesPerCluster, params.readsMinGoodSeqLength,
                 params.readsAvgQualityThreshold, params.readsTrimWindowSize, params.minGoodSeqLength,
                 params.avgQualityThreshold, params.trimWindowSize, params.originalReadStatsFileName,
-                params.toSeparateGroups, params.inputReadsLimit, params.maxWarnings, params.threads,
-                params.debugOutputFileName, params.debugQualityThreshold);
+                params.notUsedReadsOutputFileName, params.toSeparateGroups, params.inputReadsLimit, params.maxWarnings,
+                params.threads, params.debugOutputFileName, params.debugQualityThreshold);
         consensusIO.go();
     }
 
@@ -149,28 +149,34 @@ public final class ConsensusAction implements Action {
                 names = {"--trim-window-size"}, order = 17)
         int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
 
-        @Parameter(description = "Save extra statistics for each original read into separate file.",
+        @Parameter(description = "Save extra statistics for each original read into separate file. Output file in " +
+                "space separated text format.",
                 names = {"--original-read-stats"}, order = 18)
         String originalReadStatsFileName = null;
+
+        @Parameter(description = "Write reads not used in consensus assembly into separate file. Output file in " +
+                "\"mif\" format.",
+                names = {"--not-used-reads-output"}, order = 19)
+        String notUsedReadsOutputFileName = null;
 
         @Parameter(description = "If this parameter is specified, consensuses will not be written as " +
                 "reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and " +
                 "consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by " +
                 "consensuses using filter / demultiplex actions, or export original reads and corresponding " +
                 "consensuses into separate reads using mif2fastq action.",
-                names = {"--consensuses-to-separate-groups"}, order = 19)
+                names = {"--consensuses-to-separate-groups"}, order = 20)
         boolean toSeparateGroups = false;
 
         @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 20)
+                names = {"-n", "--number-of-reads"}, order = 21)
         long inputReadsLimit = 0;
 
         @Parameter(description = "Maximum allowed number of warnings; -1 means no limit.",
-                names = {"--max-warnings"}, order = 21)
+                names = {"--max-warnings"}, order = 22)
         int maxWarnings = -1;
 
         @Parameter(description = "Number of threads for calculating consensus sequences.",
-                names = {"--threads"}, order = 22)
+                names = {"--threads"}, order = 23)
         int threads = DEFAULT_THREADS;
 
         @Parameter(description = "Output text file for consensus algorithm debug information.",
