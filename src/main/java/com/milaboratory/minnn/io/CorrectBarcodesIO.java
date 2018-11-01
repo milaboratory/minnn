@@ -36,6 +36,7 @@ import com.milaboratory.core.clustering.SequenceExtractor;
 import com.milaboratory.core.mutations.Mutations;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.Wildcard;
 import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.TreeSearchParameters;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
@@ -54,6 +55,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.util.SequencesCache.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -144,9 +146,9 @@ public final class CorrectBarcodesIO {
                         clustering, System.err);
                 HashMap<NucleotideSequence, NucleotideSequence> currentCorrectionMap = new HashMap<>();
                 clustering.performClustering().forEach(cluster -> {
-                    NucleotideSequence headSequence = cluster.getHead().sequence;
+                    NucleotideSequence headSequence = cluster.getHead().multiSequence.getBestSequence();
                     cluster.processAllChildren((child) -> {
-                        currentCorrectionMap.put(child.getHead().sequence, headSequence);
+                        currentCorrectionMap.put(child.getHead().multiSequence.getBestSequence(), headSequence);
                         return true;
                     });
                 });
@@ -251,12 +253,71 @@ public final class CorrectBarcodesIO {
         }
     }
 
+    private static class MultiSequence {
+        final HashMap<NucleotideSequence, Long> sequences = new HashMap<>();
+
+        MultiSequence(NucleotideSequence seq) {
+            long variability = 1;
+            for (int i = 0; i < seq.size(); i++)
+                variability *= charToWildcard.get(seq.symbolAt(i)).basicSize();
+            sequences.put(seq, variability);
+        }
+
+        /**
+         * @return sequence with smallest variability by wildcards
+         */
+        NucleotideSequence getBestSequence() {
+            Map.Entry<NucleotideSequence, Long> bestEntry = null;
+            for (Map.Entry<NucleotideSequence, Long> entry : sequences.entrySet())
+                if ((bestEntry == null) || (bestEntry.getValue() > entry.getValue()))
+                    bestEntry = entry;
+            return Objects.requireNonNull(bestEntry).getKey();
+        }
+
+        private boolean equalByWildcards(NucleotideSequence seq1, NucleotideSequence seq2) {
+            if (seq1.size() != seq2.size())
+                return false;
+            for (int i = 0; i < seq1.size(); i++) {
+                Wildcard wildcard1 = charToWildcard.get(seq1.symbolAt(i));
+                Wildcard wildcard2 = charToWildcard.get(seq2.symbolAt(i));
+                if ((wildcard1.getBasicMask() & wildcard2.getBasicMask()) == 0)
+                    return false;
+            }
+            return true;
+        }
+
+        /**
+         * Important! Call to equals() will perform mutual merge if MultiSequences are equal by wildcards!
+         *
+         * @param o     other MultiSequence
+         * @return      true if MultiSequences are equal by wildcards
+         */
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MultiSequence that = (MultiSequence)o;
+            if (sequences.keySet().parallelStream().allMatch(seq1 -> that.sequences.keySet().stream()
+                    .allMatch(seq2 -> equalByWildcards(seq1, seq2)))) {
+                sequences.putAll(that.sequences);
+                that.sequences.putAll(sequences);
+                return true;
+            } else
+                return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+    }
+
     private static class SequenceCounter implements Comparable<SequenceCounter> {
-        final NucleotideSequence sequence;
+        final MultiSequence multiSequence;
         long count;
 
         SequenceCounter(NucleotideSequence sequence) {
-            this.sequence = sequence;
+            multiSequence = new MultiSequence(sequence);
             count = 1;
         }
 
@@ -265,12 +326,13 @@ public final class CorrectBarcodesIO {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             SequenceCounter that = (SequenceCounter)o;
-            return sequence.equals(that.sequence);
+            // MultiSequence objects will perform mutual merge if equal
+            return multiSequence.equals(that.multiSequence);
         }
 
         @Override
         public int hashCode() {
-            return sequence.hashCode();
+            return 0;
         }
 
         // compareTo is reversed to start from bigger counts
@@ -283,7 +345,7 @@ public final class CorrectBarcodesIO {
     private static class SequenceCounterExtractor implements SequenceExtractor<SequenceCounter, NucleotideSequence> {
         @Override
         public NucleotideSequence getSequence(SequenceCounter sequenceCounter) {
-            return sequenceCounter.sequence;
+            return sequenceCounter.multiSequence.getBestSequence();
         }
     }
 
