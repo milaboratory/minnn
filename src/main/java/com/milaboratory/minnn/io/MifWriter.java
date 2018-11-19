@@ -35,6 +35,7 @@ import com.milaboratory.util.CanReportProgress;
 
 import java.io.*;
 
+import static com.milaboratory.minnn.io.MifInfoExtractor.*;
 import static java.lang.Double.NaN;
 
 public final class MifWriter implements AutoCloseable, CanReportProgress {
@@ -50,17 +51,20 @@ public final class MifWriter implements AutoCloseable, CanReportProgress {
         writeHeader(mifHeader);
     }
 
-    public MifWriter(String file, MifHeader mifHeader) throws IOException {
+    public MifWriter(String file, MifHeader mifHeader)
+            throws IOException {
         output = new PrimitivO(new BufferedOutputStream(new FileOutputStream(file), DEFAULT_BUFFER_SIZE));
         writeHeader(mifHeader);
     }
 
-    public MifWriter(String file, MifHeader mifHeader, int bufferSize) throws IOException {
+    public MifWriter(String file, MifHeader mifHeader, int bufferSize)
+            throws IOException {
         output = new PrimitivO(new BufferedOutputStream(new FileOutputStream(file), bufferSize));
         writeHeader(mifHeader);
     }
 
     private void writeHeader(MifHeader mifHeader) {
+        output.writeObject(mifHeader.getPipelineConfiguration());
         output.writeInt(mifHeader.getNumberOfTargets());
         output.writeInt(mifHeader.getCorrectedGroups().size());
         for (String correctedGroup : mifHeader.getCorrectedGroups())
@@ -83,6 +87,7 @@ public final class MifWriter implements AutoCloseable, CanReportProgress {
         if (!closed) {
             output.writeObject(null);
             output.writeLong(originalNumberOfReads);
+            output.write(getEndMagicBytes());
             output.close();
             closed = true;
         }

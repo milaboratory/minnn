@@ -28,22 +28,29 @@
  */
 package com.milaboratory.minnn.io;
 
+import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.minnn.pattern.GroupEdge;
 
 import java.util.ArrayList;
 
 public class MifHeader {
+    private final PipelineConfiguration pipelineConfiguration;
     private final int numberOfTargets;
     private final ArrayList<String> correctedGroups;
     private final boolean sorted;
     private final ArrayList<GroupEdge> groupEdges;
 
-    public MifHeader(int numberOfTargets, ArrayList<String> correctedGroups, boolean sorted,
-                     ArrayList<GroupEdge> groupEdges) {
+    public MifHeader(PipelineConfiguration pipelineConfiguration, int numberOfTargets,
+                     ArrayList<String> correctedGroups, boolean sorted, ArrayList<GroupEdge> groupEdges) {
+        this.pipelineConfiguration = pipelineConfiguration;
         this.numberOfTargets = numberOfTargets;
         this.correctedGroups = correctedGroups;
         this.sorted = sorted;
         this.groupEdges = groupEdges;
+    }
+
+    public PipelineConfiguration getPipelineConfiguration() {
+        return pipelineConfiguration;
     }
 
     public int getNumberOfTargets() {

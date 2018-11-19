@@ -33,6 +33,7 @@ import cc.redberry.pipe.blocks.Merger;
 import cc.redberry.pipe.blocks.ParallelProcessor;
 import cc.redberry.pipe.util.Chunk;
 import cc.redberry.pipe.util.OrderedOutputPort;
+import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.io.sequence.fasta.*;
 import com.milaboratory.core.io.sequence.fastq.*;
@@ -55,8 +56,9 @@ import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class ReadProcessor {
+    private final PipelineConfiguration pipelineConfiguration;
     private final List<String> inputFileNames;
-    private final String outputFileName;
+    private final List<String> outputFileNames;
     private final String notMatchedOutputFileName;
     private final Pattern pattern;
     private final boolean orientedReads;
@@ -67,14 +69,16 @@ public final class ReadProcessor {
     private final DescriptionGroups descriptionGroups;
     private int numberOfTargets;
 
-    public ReadProcessor(List<String> inputFileNames, String outputFileName, String notMatchedOutputFileName,
-                         Pattern pattern, boolean orientedReads, boolean fairSorting, long inputReadsLimit,
-                         int threads, MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
+    public ReadProcessor(PipelineConfiguration pipelineConfiguration, List<String> inputFileNames,
+                         List<String> outputFileNames, String notMatchedOutputFileName, Pattern pattern,
+                         boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
+                         MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
         if ((inputFormat == MIF) && (inputFileNames.size() > 1))
             throw exitWithError("Mif data format uses single file; specified " + inputFileNames.size()
                     + " input files!");
+        this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileNames = inputFileNames;
-        this.outputFileName = outputFileName;
+        this.outputFileNames = outputFileNames;
         this.notMatchedOutputFileName = notMatchedOutputFileName;
         this.pattern = pattern;
         this.orientedReads = orientedReads;
@@ -176,12 +180,20 @@ public final class ReadProcessor {
     }
 
     private MifWriter createWriter(boolean mismatchedReads) throws IOException {
-        MifHeader mifHeader = new MifHeader(numberOfTargets, new ArrayList<>(), false, pattern.getGroupEdges());
+        MifHeader mifHeader = new MifHeader(pipelineConfiguration, numberOfTargets, new ArrayList<>(),
+                false, pattern.getGroupEdges());
         if (mismatchedReads)
             return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
-        else
-            return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
-                    : new MifWriter(outputFileName, mifHeader);
+        else {
+            switch (outputFileNames.size()) {
+                case 0:
+                    return new MifWriter(new SystemOutStream(), mifHeader);
+                case 1:
+                    return new MifWriter(outputFileNames.get(0), mifHeader);
+                default:
+                    throw new IllegalArgumentException("More than 1 output file name in list: " + outputFileNames);
+            }
+        }
     }
 
     private class IndexedSequenceRead {

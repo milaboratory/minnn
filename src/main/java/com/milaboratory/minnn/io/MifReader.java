@@ -29,7 +29,9 @@
 package com.milaboratory.minnn.io;
 
 import cc.redberry.pipe.OutputPortCloseable;
+import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.core.io.CompressionType;
+import com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.primitivio.PrimitivI;
@@ -42,7 +44,8 @@ import java.util.ArrayList;
 
 import static java.lang.Double.NaN;
 
-public final class MifReader implements OutputPortCloseable<ParsedRead>, CanReportProgress {
+public final class MifReader extends PipelineConfigurationReaderMiNNN
+        implements OutputPortCloseable<ParsedRead>, CanReportProgress {
     private static final int DEFAULT_BUFFER_SIZE = 1 << 20;
     private final PrimitivI input;
     private final CountingInputStream countingInputStream;
@@ -51,6 +54,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     private long parsedReadsTaken = 0;
     private boolean finished = false;
     private boolean closed = false;
+    private PipelineConfiguration pipelineConfiguration;
     private int numberOfTargets;
     private ArrayList<String> correctedGroups = new ArrayList<>();
     private boolean sortedMif;
@@ -79,6 +83,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     }
 
     private void readHeader() {
+        pipelineConfiguration = input.readObject(PipelineConfiguration.class);
         numberOfTargets = input.readInt();
         int correctedGroupsNum = input.readInt();
         for (int i = 0; i < correctedGroupsNum; i++)
@@ -141,6 +146,11 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
         return parsedRead;
     }
 
+    @Override
+    public PipelineConfiguration getPipelineConfiguration() {
+        return pipelineConfiguration;
+    }
+
     public int getNumberOfTargets() {
         return numberOfTargets;
     }
@@ -158,7 +168,7 @@ public final class MifReader implements OutputPortCloseable<ParsedRead>, CanRepo
     }
 
     public MifHeader getHeader() {
-        return new MifHeader(numberOfTargets, correctedGroups, sortedMif, groupEdges);
+        return new MifHeader(pipelineConfiguration, numberOfTargets, correctedGroups, sortedMif, groupEdges);
     }
 
     private void calculateFirstReadLength(ParsedRead parsedRead) {
