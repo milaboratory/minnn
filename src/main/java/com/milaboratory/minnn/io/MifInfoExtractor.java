@@ -13,20 +13,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 
+import static com.milaboratory.minnn.cli.Magic.*;
+
 public final class MifInfoExtractor implements BinaryFileInfoExtractor {
     public static final MifInfoExtractor mifInfoExtractor = new MifInfoExtractor();
-    public static final int BEGIN_MAGIC_LENGTH = 14;
-    public static final int BEGIN_MAGIC_LENGTH_SHORT = 10;
-    public static final String MAGIC_MIF = "MiNNN.MIF";
-    public static final String END_MAGIC = "#MiNNN.File.End#";
-    private static final byte[] END_MAGIC_BYTES = END_MAGIC.getBytes(StandardCharsets.US_ASCII);
-    public static final int END_MAGIC_LENGTH = END_MAGIC_BYTES.length;
 
     private MifInfoExtractor() {}
-
-    public static byte[] getEndMagicBytes() {
-        return END_MAGIC_BYTES.clone();
-    }
 
     @Override
     public BinaryFileInfo getFileInfo(File file) {

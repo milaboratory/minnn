@@ -38,6 +38,7 @@ import com.milaboratory.minnn.pattern.BasePatternAligner;
 import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.minnn.pattern.Pattern;
 import com.milaboratory.minnn.pattern.PatternAligner;
+import com.milaboratory.minnn.util.MinnnVersionInfo;
 import picocli.CommandLine.*;
 
 import java.util.*;
@@ -46,19 +47,19 @@ import java.util.stream.Collectors;
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.cli.CommonDescriptions.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
-import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_COMMAND_NAME;
+import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
 import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 import static com.milaboratory.minnn.io.MinnnDataFormatNames.parameterNames;
 import static com.milaboratory.minnn.parser.ParserFormat.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
-@Command(name = EXTRACT_COMMAND_NAME,
+@Command(name = EXTRACT_ACTION_NAME,
         sortOptions = false,
         separator = " ",
         description = "Read target nucleotide sequence and find groups and patterns as specified in query.")
 public final class ExtractAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
-    public static final String EXTRACT_COMMAND_NAME = "extract";
+    public static final String EXTRACT_ACTION_NAME = "extract";
 
     public ExtractAction() {
         super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
@@ -87,7 +88,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
             throw exitWithError("Error: groups " + patternGroups + " are both in pattern and in description groups!");
         MinnnDataFormat inputFormat = parameterNames.get(inputFormatName);
         ReadProcessor readProcessor = new ReadProcessor(getFullPipelineConfiguration(), getInputFiles(),
-                getOutputFiles(), notMatchedOutputFileName, pattern, oriented, fairSorting, inputReadsLimit, threads,
+                outputFileName, notMatchedOutputFileName, pattern, oriented, fairSorting, inputReadsLimit, threads,
                 inputFormat, descriptionGroups);
         readProcessor.processReadsParallel();
     }
@@ -116,17 +117,22 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         List<String> outputFileNames = new ArrayList<>();
         if (outputFileName != null)
             outputFileNames.add(outputFileName);
+        if (notMatchedOutputFileName != null)
+            outputFileNames.add(notMatchedOutputFileName);
         return outputFileNames;
     }
 
     @Override
     public ActionConfiguration getConfiguration() {
-        return null;
+        return new ExtractActionConfiguration(new ExtractActionConfiguration.ExtractActionParameters(query,
+                inputFormatName, oriented, matchScore, mismatchScore, uppercaseMismatchScore, gapScore, scoreThreshold,
+                goodQuality, badQuality, maxQualityPenalty, singleOverlapPenalty, maxOverlap, bitapMaxErrors,
+                fairSorting, inputReadsLimit, descriptionGroupsMap, simplifiedSyntax));
     }
 
     @Override
     public PipelineConfiguration getFullPipelineConfiguration() {
-        return null;
+        return PipelineConfiguration.mkInitial(getInputFiles(), getConfiguration(), MinnnVersionInfo.get());
     }
 
     @Option(description = "Query, pattern specified in MiNNN format.",

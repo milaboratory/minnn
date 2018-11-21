@@ -58,7 +58,7 @@ import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 public final class ReadProcessor {
     private final PipelineConfiguration pipelineConfiguration;
     private final List<String> inputFileNames;
-    private final List<String> outputFileNames;
+    private final String outputFileName;
     private final String notMatchedOutputFileName;
     private final Pattern pattern;
     private final boolean orientedReads;
@@ -70,7 +70,7 @@ public final class ReadProcessor {
     private int numberOfTargets;
 
     public ReadProcessor(PipelineConfiguration pipelineConfiguration, List<String> inputFileNames,
-                         List<String> outputFileNames, String notMatchedOutputFileName, Pattern pattern,
+                         String outputFileName, String notMatchedOutputFileName, Pattern pattern,
                          boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
                          MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
         if ((inputFormat == MIF) && (inputFileNames.size() > 1))
@@ -78,7 +78,7 @@ public final class ReadProcessor {
                     + " input files!");
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileNames = inputFileNames;
-        this.outputFileNames = outputFileNames;
+        this.outputFileName = outputFileName;
         this.notMatchedOutputFileName = notMatchedOutputFileName;
         this.pattern = pattern;
         this.orientedReads = orientedReads;
@@ -184,17 +184,9 @@ public final class ReadProcessor {
                 false, pattern.getGroupEdges());
         if (mismatchedReads)
             return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
-        else {
-            switch (outputFileNames.size()) {
-                case 0:
-                    return new MifWriter(new SystemOutStream(), mifHeader);
-                case 1:
-                    return new MifWriter(outputFileNames.get(0), mifHeader);
-                default:
-                    throw new IllegalArgumentException("More than 1 output file name in list: " + outputFileNames);
-            }
-        }
-    }
+        else
+            return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
+                    : new MifWriter(outputFileName, mifHeader);    }
 
     private class IndexedSequenceRead {
         final SequenceRead sequenceRead;

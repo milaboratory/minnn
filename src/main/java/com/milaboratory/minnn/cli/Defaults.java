@@ -31,6 +31,8 @@ package com.milaboratory.minnn.cli;
 import static com.milaboratory.core.sequence.SequenceQuality.*;
 
 public final class Defaults {
+    private Defaults() {}
+
     public final static String APP_NAME = "minnn";
     public final static long DEFAULT_SCORE_THRESHOLD = -30;
     public final static int DEFAULT_BITAP_MAX_ERRORS = 2;

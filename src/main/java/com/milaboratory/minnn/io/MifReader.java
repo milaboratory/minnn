@@ -42,6 +42,7 @@ import com.milaboratory.util.CountingInputStream;
 import java.io.*;
 import java.util.ArrayList;
 
+import static com.milaboratory.minnn.cli.Magic.*;
 import static java.lang.Double.NaN;
 
 public final class MifReader extends PipelineConfigurationReaderMiNNN
@@ -61,6 +62,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
     private long firstReadSerializedLength = -1;
     private long originalNumberOfReads = -1;
+    private String mifVersionInfo;
 
     public MifReader(InputStream stream) {
         input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
@@ -83,6 +85,13 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     }
 
     private void readHeader() {
+        byte[] magicBytes = new byte[BEGIN_MAGIC_LENGTH];
+        input.readFully(magicBytes);
+        String magicString = new String(magicBytes);
+        if (!magicString.equals(BEGIN_MAGIC))
+            throw new RuntimeException("Unsupported file format; .mif file of version " + magicString +
+                    " while you are running MiNNN " + BEGIN_MAGIC);
+        mifVersionInfo = input.readUTF();
         pipelineConfiguration = input.readObject(PipelineConfiguration.class);
         numberOfTargets = input.readInt();
         int correctedGroupsNum = input.readInt();
@@ -169,6 +178,10 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
 
     public MifHeader getHeader() {
         return new MifHeader(pipelineConfiguration, numberOfTargets, correctedGroups, sortedMif, groupEdges);
+    }
+
+    public String getMifVersionInfo() {
+        return mifVersionInfo;
     }
 
     private void calculateFirstReadLength(ParsedRead parsedRead) {
