@@ -28,69 +28,97 @@
  */
 package com.milaboratory.minnn.cli;
 
-import com.beust.jcommander.*;
-import com.milaboratory.cli.Action;
-import com.milaboratory.cli.ActionHelper;
-import com.milaboratory.cli.ActionParameters;
+import com.milaboratory.cli.*;
 import com.milaboratory.minnn.io.SorterIO;
+import picocli.CommandLine.*;
 
 import java.util.*;
 
-public final class SortAction implements Action {
-    public static final String commandName = "sort";
-    private final SortActionParameters params = new SortActionParameters();
+import static com.milaboratory.minnn.cli.CommonDescriptions.*;
+import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
+import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
+import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
+
+@Command(name = SORT_ACTION_NAME,
+        sortOptions = false,
+        separator = " ",
+        description = "Sort reads by contents (nucleotide sequences) of specified groups.")
+public final class SortAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
+    public static final String SORT_ACTION_NAME = "sort";
+
+    public SortAction() {
+        super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
+    }
 
     @Override
-    public void go(ActionHelper helper) {
-        SorterIO sorterIO = new SorterIO(params.inputFileName, params.outputFileName, params.sortGroupNames,
-                params.chunkSize, params.suppressWarnings, params.tmpFile);
+    public void run1() {
+        SorterIO sorterIO = new SorterIO(getFullPipelineConfiguration(), inputFileName, outputFileName,
+                sortGroupNames, chunkSize, suppressWarnings, tmpFile);
         sorterIO.go();
     }
 
     @Override
-    public String command() {
-        return commandName;
+    public void validateInfo(String inputFile) {
+        MiNNNCommand.super.validateInfo(inputFile);
     }
 
     @Override
-    public ActionParameters params() {
-        return params;
+    protected List<String> getInputFiles() {
+        List<String> inputFileNames = new ArrayList<>();
+        if (inputFileName != null)
+            inputFileNames.add(inputFileName);
+        return inputFileNames;
     }
 
-    @Parameters(commandDescription =
-            "Sort reads by contents (nucleotide sequences) of specified groups.")
-    private static final class SortActionParameters extends ActionParameters {
-        @Parameter(description = "--groups <group_names>", order = 0)
-        private String description;
-
-        @Parameter(description = "Group names to use for sorting. Priority is in descending order.",
-                names = {"--groups"}, order = 1, required = true, variableArity = true)
-        List<String> sortGroupNames = null;
-
-        @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",
-                names = {"--input"}, order = 2)
-        String inputFileName = null;
-
-        @Parameter(description = "Output file in \"mif\" format. If not specified, stdout will be used.",
-                names = {"--output"}, order = 3)
-        String outputFileName = null;
-
-        @Parameter(description = "Chunk size for sorter.",
-                names = {"--chunk-size"}, order = 4)
-        int chunkSize = -1;
-
-        @Parameter(description = "Don't display any warnings.",
-                names = {"--suppress-warnings"}, order = 5)
-        boolean suppressWarnings = false;
-
-        @Parameter(description = "Custom temp file, used for debugging purposes.",
-                names = {"--temp-file"}, hidden = true)
-        String tmpFile = null;
-
-        @Override
-        public void validate() {
-            if (sortGroupNames.size() == 0)
-                throw new ParameterException("Sorting groups are not specified!");
-        }
+    @Override
+    protected List<String> getOutputFiles() {
+        List<String> outputFileNames = new ArrayList<>();
+        if (outputFileName != null)
+            outputFileNames.add(outputFileName);
+        return outputFileNames;
     }
+
+    @Override
+    public ActionConfiguration getConfiguration() {
+        return new SortActionConfiguration(new SortActionConfiguration.SortActionParameters(sortGroupNames,
+                chunkSize));
+    }
+
+    @Override
+    public PipelineConfiguration getFullPipelineConfiguration() {
+        if (inputFileName != null)
+            return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
+                    binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
+                    AppVersionInfo.get());
+        else
+            return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
+    }
+
+    @Option(description = "Group names to use for sorting. Priority is in descending order.",
+            names = {"--groups"},
+            required = true,
+            arity = "1..*")
+    private List<String> sortGroupNames = null;
+
+    @Option(description = IN_FILE_OR_STDIN,
+            names = {"--input"})
+    private String inputFileName = null;
+
+    @Option(description = OUT_FILE_OR_STDOUT,
+            names = {"--output"})
+    private String outputFileName = null;
+
+    @Option(description = "Chunk size for sorter.",
+            names = {"--chunk-size"})
+    private int chunkSize = -1;
+
+    @Option(description = SUPPRESS_WARNINGS,
+            names = {"--suppress-warnings"})
+    private boolean suppressWarnings = false;
+
+    @Option(description = "Custom temp file, used for debugging purposes.",
+            names = {"--temp-file"},
+            hidden = true)
+    private String tmpFile = null;
 }

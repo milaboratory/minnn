@@ -38,7 +38,6 @@ import com.milaboratory.minnn.pattern.BasePatternAligner;
 import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.minnn.pattern.Pattern;
 import com.milaboratory.minnn.pattern.PatternAligner;
-import com.milaboratory.minnn.util.MinnnVersionInfo;
 import picocli.CommandLine.*;
 
 import java.util.*;
@@ -87,7 +86,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         if (patternGroups.size() > 0)
             throw exitWithError("Error: groups " + patternGroups + " are both in pattern and in description groups!");
         MinnnDataFormat inputFormat = parameterNames.get(inputFormatName);
-        ReadProcessor readProcessor = new ReadProcessor(getFullPipelineConfiguration(), getInputFiles(),
+        ReadProcessor readProcessor = new ReadProcessor(getFullPipelineConfiguration(), inputFileNames,
                 outputFileName, notMatchedOutputFileName, pattern, oriented, fairSorting, inputReadsLimit, threads,
                 inputFormat, descriptionGroups);
         readProcessor.processReadsParallel();
@@ -103,8 +102,8 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         super.validate();
         if (parameterNames.get(inputFormatName) == null)
             throwValidationException("Unknown input format: " + inputFormatName);
-        validateQuality(goodQuality);
-        validateQuality(badQuality);
+        validateQuality(goodQuality, spec.commandLine());
+        validateQuality(badQuality, spec.commandLine());
     }
 
     @Override
@@ -123,6 +122,14 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     }
 
     @Override
+    public void handleExistenceOfOutputFile(String outFileName) {
+        // disable smart overwrite if output file for not matched reads is specified
+        if (notMatchedOutputFileName != null)
+            return;
+        super.handleExistenceOfOutputFile(outFileName);
+    }
+
+    @Override
     public ActionConfiguration getConfiguration() {
         return new ExtractActionConfiguration(new ExtractActionConfiguration.ExtractActionParameters(query,
                 inputFormatName, oriented, matchScore, mismatchScore, uppercaseMismatchScore, gapScore, scoreThreshold,
@@ -132,7 +139,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
 
     @Override
     public PipelineConfiguration getFullPipelineConfiguration() {
-        return PipelineConfiguration.mkInitial(getInputFiles(), getConfiguration(), MinnnVersionInfo.get());
+        return PipelineConfiguration.mkInitial(getInputFiles(), getConfiguration(), AppVersionInfo.get());
     }
 
     @Option(description = "Query, pattern specified in MiNNN format.",
@@ -214,7 +221,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
             names = "--fair-sorting")
     private boolean fairSorting = false;
 
-    @Option(description = "Number of reads to take; 0 value means to take the entire input file.",
+    @Option(description = NUMBER_OF_READS,
             names = {"-n", "--number-of-reads"})
     private long inputReadsLimit = 0;
 

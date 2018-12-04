@@ -5,6 +5,7 @@ import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.cli.PipelineConfigurationReader;
 import com.milaboratory.minnn.io.MifReader;
 
+import static com.milaboratory.minnn.cli.Magic.BEGIN_MAGIC_MIF;
 import static com.milaboratory.minnn.io.MifInfoExtractor.*;
 
 public class PipelineConfigurationReaderMiNNN implements PipelineConfigurationReader {
@@ -43,7 +44,7 @@ public class PipelineConfigurationReaderMiNNN implements PipelineConfigurationRe
     public PipelineConfiguration fromFile(String fileName, BinaryFileInfo fileInfo) {
         try {
             switch (fileInfo.fileType) {
-                case MAGIC_MIF:
+                case BEGIN_MAGIC_MIF:
                     try (MifReader reader = new MifReader(fileName)) {
                         return reader.getPipelineConfiguration();
                     }

@@ -28,91 +28,122 @@
  */
 package com.milaboratory.minnn.cli;
 
-import com.milaboratory.cli.Action;
-import com.milaboratory.cli.ActionHelper;
-import com.milaboratory.cli.ActionParameters;
+import com.milaboratory.cli.ACommandWithSmartOverwrite;
+import com.milaboratory.cli.ActionConfiguration;
+import com.milaboratory.cli.AppVersionInfo;
+import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.minnn.io.CorrectBarcodesIO;
+import picocli.CommandLine.*;
 
 import java.util.*;
 
+import static com.milaboratory.minnn.cli.CommonDescriptions.*;
+import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
+import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 
-public final class CorrectAction implements Action {
-    public static final String commandName = "correct";
-    private final CorrectActionParameters params = new CorrectActionParameters();
+@Command(name = CORRECT_ACTION_NAME,
+        sortOptions = false,
+        separator = " ",
+        description = "Correct errors in barcodes, and replace all barcodes with corrected variants.")
+public final class CorrectAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
+    public static final String CORRECT_ACTION_NAME = "correct";
+
+    public CorrectAction() {
+        super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
+    }
 
     @Override
-    public void go(ActionHelper helper) {
-        CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(params.inputFileName, params.outputFileName,
-                params.mismatches, params.indels, params.totalErrors, params.threshold, params.groupNames,
-                params.maxClusterDepth, params.singleSubstitutionProbability, params.singleIndelProbability,
-                params.inputReadsLimit, params.suppressWarnings);
+    public void run1() {
+        CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
+                outputFileName, mismatches, indels, totalErrors, threshold, groupNames, maxClusterDepth,
+                singleSubstitutionProbability, singleIndelProbability, inputReadsLimit, suppressWarnings);
         correctBarcodesIO.go();
     }
 
     @Override
-    public String command() {
-        return commandName;
+    public void validateInfo(String inputFile) {
+        MiNNNCommand.super.validateInfo(inputFile);
     }
 
     @Override
-    public ActionParameters params() {
-        return params;
+    protected List<String> getInputFiles() {
+        return Collections.singletonList(inputFileName);
     }
 
-    @Parameters(commandDescription =
-            "Correct errors in barcodes, and replace all barcodes with corrected variants.")
-    private static final class CorrectActionParameters extends ActionParameters {
-        @Parameter(description = "--input <input_mif_file>", order = 0)
-        private String description;
-
-        @Parameter(description = "Group names for correction.",
-                names = {"--groups"}, order = 1, required = true, variableArity = true)
-        List<String> groupNames = null;
-
-        @Parameter(description = "Input file in \"mif\" format. This argument is required; stdin is not supported.",
-                names = {"--input"}, order = 2, required = true)
-        String inputFileName = null;
-
-        @Parameter(description = "Output file in \"mif\" format. If not specified, stdout will be used.",
-                names = {"--output"}, order = 3)
-        String outputFileName = null;
-
-        @Parameter(description = "Maximum number of mismatches between barcodes for which they are considered " +
-                "identical.", names = {"--max-mismatches"}, order = 4)
-        int mismatches = DEFAULT_CORRECT_MAX_MISMATCHES;
-
-        @Parameter(description = "Maximum number of insertions or deletions between barcodes for which they are " +
-                "considered identical.", names = {"--max-indels"}, order = 5)
-        int indels = DEFAULT_CORRECT_MAX_INDELS;
-
-        @Parameter(description = "Maximum Levenshtein distance between barcodes for which they are considered " +
-                "identical.", names = {"--max-total-errors"}, order = 6)
-        int totalErrors = DEFAULT_CORRECT_MAX_TOTAL_ERRORS;
-
-        @Parameter(description = "Threshold for UMI clustering: if smaller UMI count divided to larger UMI count " +
-                "is below this threshold, UMI will be merged to the cluster.",
-                names = {"--cluster-threshold"}, order = 7)
-        float threshold = DEFAULT_CORRECT_CLUSTER_THRESHOLD;
-
-        @Parameter(description = "Maximum cluster depth for algorithm of similar barcodes clustering.",
-                names = {"--max-cluster-depth"}, order = 8)
-        int maxClusterDepth = DEFAULT_CORRECT_MAX_CLUSTER_DEPTH;
-
-        @Parameter(description = "Single substitution probability for clustering algorithm.",
-                names = {"--single-substitution-probability"}, order = 9)
-        float singleSubstitutionProbability = DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY;
-
-        @Parameter(description = "Single insertion/deletion probability for clustering algorithm.",
-                names = {"--single-indel-probability"}, order = 10)
-        float singleIndelProbability = DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY;
-
-        @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 11)
-        long inputReadsLimit = 0;
-
-        @Parameter(description = "Don't display any warnings.",
-                names = {"--suppress-warnings"}, order = 12)
-        boolean suppressWarnings = false;
+    @Override
+    protected List<String> getOutputFiles() {
+        List<String> outputFileNames = new ArrayList<>();
+        if (outputFileName != null)
+            outputFileNames.add(outputFileName);
+        return outputFileNames;
     }
+
+    @Override
+    public ActionConfiguration getConfiguration() {
+        return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
+                mismatches, indels, totalErrors, threshold, maxClusterDepth, singleSubstitutionProbability,
+                singleIndelProbability, inputReadsLimit));
+    }
+
+    @Override
+    public PipelineConfiguration getFullPipelineConfiguration() {
+        return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
+                binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
+                AppVersionInfo.get());
+    }
+
+    @Option(description = "Group names for correction.",
+            names = {"--groups"},
+            required = true,
+            arity = "1..*")
+    private List<String> groupNames = null;
+
+    @Option(description = IN_FILE_NO_STDIN,
+            names = {"--input"},
+            required = true)
+    private String inputFileName = null;
+
+    @Option(description = OUT_FILE_OR_STDOUT,
+            names = {"--output"})
+    private String outputFileName = null;
+
+    @Option(description = "Maximum number of mismatches between barcodes for which they are considered identical.",
+            names = {"--max-mismatches"})
+    private int mismatches = DEFAULT_CORRECT_MAX_MISMATCHES;
+
+    @Option(description = "Maximum number of insertions or deletions between barcodes for which they are " +
+            "considered identical.",
+            names = {"--max-indels"})
+    private int indels = DEFAULT_CORRECT_MAX_INDELS;
+
+    @Option(description = "Maximum Levenshtein distance between barcodes for which they are considered identical.",
+            names = {"--max-total-errors"})
+    private int totalErrors = DEFAULT_CORRECT_MAX_TOTAL_ERRORS;
+
+    @Option(description = "Threshold for UMI clustering: if smaller UMI count divided to larger UMI count " +
+            "is below this threshold, UMI will be merged to the cluster.",
+            names = {"--cluster-threshold"})
+    private float threshold = DEFAULT_CORRECT_CLUSTER_THRESHOLD;
+
+    @Option(description = "Maximum cluster depth for algorithm of similar barcodes clustering.",
+            names = {"--max-cluster-depth"})
+    private int maxClusterDepth = DEFAULT_CORRECT_MAX_CLUSTER_DEPTH;
+
+    @Option(description = "Single substitution probability for clustering algorithm.",
+            names = {"--single-substitution-probability"})
+    private float singleSubstitutionProbability = DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY;
+
+    @Option(description = "Single insertion/deletion probability for clustering algorithm.",
+            names = {"--single-indel-probability"})
+    private float singleIndelProbability = DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY;
+
+    @Option(description = NUMBER_OF_READS,
+            names = {"-n", "--number-of-reads"})
+    private long inputReadsLimit = 0;
+
+    @Option(description = SUPPRESS_WARNINGS,
+            names = {"--suppress-warnings"})
+    private boolean suppressWarnings = false;
 }

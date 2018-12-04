@@ -33,6 +33,7 @@ import cc.redberry.pipe.OutputPort;
 import cc.redberry.pipe.Processor;
 import cc.redberry.pipe.blocks.ParallelProcessor;
 import cc.redberry.pipe.util.OrderedOutputPort;
+import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
 import com.milaboratory.core.io.sequence.*;
@@ -69,6 +70,7 @@ public final class ConsensusIO {
     private static final NucleotideSequence[] consensusMajorBases = new NucleotideSequence[] {
             sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
             sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")) };
+    private final PipelineConfiguration pipelineConfiguration;
     private final String inputFileName;
     private final String outputFileName;
     private final int alignerWidth;
@@ -104,14 +106,15 @@ public final class ConsensusIO {
     private Set<String> groupSet;
     private int numberOfTargets;
 
-    public ConsensusIO(List<String> groupList, String inputFileName, String outputFileName, int alignerWidth,
-                       int matchScore, int mismatchScore, int gapScore, long goodQualityMismatchPenalty,
-                       byte goodQualityMismatchThreshold, long scoreThreshold, float skippedFractionToRepeat,
-                       int maxConsensusesPerCluster, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
-                       int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
-                       String originalReadStatsFileName, String notUsedReadsOutputFileName, boolean toSeparateGroups,
-                       long inputReadsLimit, int maxWarnings, int threads, String debugOutputFileName,
-                       byte debugQualityThreshold) {
+    public ConsensusIO(PipelineConfiguration pipelineConfiguration, List<String> groupList, String inputFileName,
+                       String outputFileName, int alignerWidth, int matchScore, int mismatchScore, int gapScore,
+                       long goodQualityMismatchPenalty, byte goodQualityMismatchThreshold, long scoreThreshold,
+                       float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
+                       float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
+                       float avgQualityThreshold, int trimWindowSize, String originalReadStatsFileName,
+                       String notUsedReadsOutputFileName, boolean toSeparateGroups, long inputReadsLimit,
+                       int maxWarnings, int threads, String debugOutputFileName, byte debugQualityThreshold) {
+        this.pipelineConfiguration = pipelineConfiguration;
         this.groupSet = (groupList == null) ? null : new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -328,7 +331,9 @@ public final class ConsensusIO {
 
         if (notUsedReadsOutputFileName != null) {
             System.err.println("Writing not matched reads...");
-            try (MifWriter notUsedReadsWriter = new MifWriter(notUsedReadsOutputFileName, mifHeader)) {
+            try (MifWriter notUsedReadsWriter = new MifWriter(notUsedReadsOutputFileName, new MifHeader(
+                    pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(), mifHeader.isSorted(),
+                    mifHeader.getGroupEdges()))) {
                 for (long readId = 0; readId < originalNumberOfReads; readId++) {
                     OriginalReadData currentReadData = originalReadsData.get(readId);
                     if ((currentReadData != null) && (currentReadData.status != USED_IN_CONSENSUS))
@@ -371,7 +376,8 @@ public final class ConsensusIO {
                 groupEdges.add(new GroupEdge(name, false));
             });
         }
-        newHeader = new MifHeader(numberOfTargets, mifHeader.getCorrectedGroups(), false, groupEdges);
+        newHeader = new MifHeader(pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
+                false, groupEdges);
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), newHeader)
                 : new MifWriter(outputFileName, newHeader);
     }

@@ -1,45 +1,19 @@
 package com.milaboratory.minnn.util;
 
-import com.fasterxml.jackson.annotation.*;
 import com.milaboratory.cli.AppVersionInfo;
-import com.milaboratory.primitivio.annotations.Serializable;
+import com.milaboratory.cli.AppVersionInfo.OutputType;
 import com.milaboratory.util.VersionInfo;
 
-import java.util.HashMap;
+import java.util.Map;
 
-@JsonAutoDetect(
-        fieldVisibility = JsonAutoDetect.Visibility.ANY,
-        isGetterVisibility = JsonAutoDetect.Visibility.NONE,
-        getterVisibility = JsonAutoDetect.Visibility.NONE)
-@Serializable(asJson = true)
-public final class MinnnVersionInfo extends AppVersionInfo {
-    private MinnnVersionInfo(@JsonProperty("minnn") VersionInfo minnn,
-                            @JsonProperty("milib") VersionInfo milib) {
-        super(prepareComponentVersions(minnn, milib), new HashMap<>());
+import static com.milaboratory.minnn.cli.Defaults.*;
+
+public final class MinnnVersionInfo {
+    private MinnnVersionInfo() {
     }
 
-    private static HashMap<String, VersionInfo> prepareComponentVersions(VersionInfo minnn, VersionInfo milib) {
-        HashMap<String, VersionInfo> componentVersions = new HashMap<>();
-        componentVersions.put("minnn", minnn);
-        componentVersions.put("milib", milib);
-        return componentVersions;
-    }
-
-    public static MinnnVersionInfo get() {
-        if (instance == null)
-            synchronized (MinnnVersionInfo.class) {
-                if (instance == null) {
-                    VersionInfo minnn = VersionInfo.getVersionInfoForArtifact("minnn");
-                    VersionInfo milib = VersionInfo.getVersionInfoForArtifact("milib");
-                    instance = new MinnnVersionInfo(minnn, milib);
-                }
-            }
-        return (MinnnVersionInfo)instance;
-    }
-
-    @Override
-    public String getShortestVersionString() {
-        VersionInfo minnn = componentVersions.get("minnn");
+    public static String getShortestVersionString() {
+        VersionInfo minnn = AppVersionInfo.get().getComponentVersions().get(APP_NAME);
         return minnn.getVersion() +
                 "; built=" +
                 minnn.getTimestamp() +
@@ -47,9 +21,9 @@ public final class MinnnVersionInfo extends AppVersionInfo {
                 minnn.getRevision();
     }
 
-    @Override
-    public String getVersionString(OutputType outputType, boolean full) {
-        VersionInfo minnn = componentVersions.get("minnn");
+    public static String getVersionString(OutputType outputType, boolean full) {
+        Map<String, VersionInfo> componentVersions = AppVersionInfo.get().getComponentVersions();
+        VersionInfo minnn = componentVersions.get(APP_NAME);
         VersionInfo milib = componentVersions.get("milib");
 
         StringBuilder builder = new StringBuilder();

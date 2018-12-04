@@ -29,6 +29,7 @@
 package com.milaboratory.minnn.io;
 
 import cc.redberry.pipe.CUtils;
+import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.core.clustering.Cluster;
 import com.milaboratory.core.clustering.Clustering;
 import com.milaboratory.core.clustering.ClusteringStrategy;
@@ -60,6 +61,7 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class CorrectBarcodesIO {
+    private final PipelineConfiguration pipelineConfiguration;
     private final String inputFileName;
     private final String outputFileName;
     private final int mismatches;
@@ -77,10 +79,11 @@ public final class CorrectBarcodesIO {
     private int numberOfTargets;
     private AtomicLong corrected = new AtomicLong(0);
 
-    public CorrectBarcodesIO(String inputFileName, String outputFileName, int mismatches, int indels,
-                             int totalErrors, float threshold, List<String> groupNames, int maxClusterDepth,
-                             float singleSubstitutionProbability, float singleIndelProbability, long inputReadsLimit,
-                             boolean suppressWarnings) {
+    public CorrectBarcodesIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
+                             int mismatches, int indels, int totalErrors, float threshold, List<String> groupNames,
+                             int maxClusterDepth, float singleSubstitutionProbability, float singleIndelProbability,
+                             long inputReadsLimit, boolean suppressWarnings) {
+        this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.mismatches = mismatches;
@@ -178,8 +181,8 @@ public final class CorrectBarcodesIO {
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
         LinkedHashSet<String> allCorrectedGroups = new LinkedHashSet<>(inputHeader.getCorrectedGroups());
         allCorrectedGroups.addAll(groupNames);
-        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfTargets(), new ArrayList<>(allCorrectedGroups),
-                false, inputHeader.getGroupEdges());
+        MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
+                new ArrayList<>(allCorrectedGroups), false, inputHeader.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
                 : new MifWriter(outputFileName, outputHeader);
     }

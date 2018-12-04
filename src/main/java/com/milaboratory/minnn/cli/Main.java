@@ -37,7 +37,9 @@ import picocli.CommandLine.Model.*;
 
 import java.util.*;
 
+import static com.milaboratory.cli.AppVersionInfo.OutputType.*;
 import static com.milaboratory.minnn.cli.Defaults.APP_NAME;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.getVersionString;
 
 public final class Main {
     private static boolean initialized = false;
@@ -89,6 +91,12 @@ public final class Main {
         if (!initialized) {
             VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");
             VersionInfo minnnVersionInfo = VersionInfo.getVersionInfoForArtifact(APP_NAME);
+            HashMap<String, VersionInfo> componentVersions = new HashMap<>();
+            componentVersions.put("milib", milibVersionInfo);
+            componentVersions.put(APP_NAME, minnnVersionInfo);
+            AppVersionInfo.init(componentVersions, new HashMap<>());
+            versionInfo = getVersionString(ToConsole, true).split("\n");
+
             // Checking whether we are running a snapshot version
             if (minnnVersionInfo.getVersion().contains("SNAPSHOT")) {
                 // If so, enable asserts
@@ -96,19 +104,6 @@ public final class Main {
             }
 
             TempFileManager.setPrefix(APP_NAME + "_");
-
-            versionInfo = new String[] {
-                    "MiNNN v" + minnnVersionInfo.getVersion() +
-                            " (built " + minnnVersionInfo.getTimestamp() +
-                            "; rev=" + minnnVersionInfo.getRevision() +
-                            "; branch=" + milibVersionInfo.getBranch() +
-                            "; host=" + milibVersionInfo.getHost() +
-                            ")",
-                    "MiLib v" + milibVersionInfo.getVersion() +
-                            " (rev=" + milibVersionInfo.getRevision() +
-                            "; branch=" + milibVersionInfo.getBranch() +
-                            ")"
-            };
 
             initialized = true;
         }

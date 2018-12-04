@@ -28,7 +28,8 @@
  */
 package com.milaboratory.minnn.cli;
 
-import com.beust.jcommander.ParameterException;
+import com.milaboratory.cli.ValidationException;
+import picocli.CommandLine;
 
 import java.text.DecimalFormat;
 
@@ -37,9 +38,9 @@ import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
 public final class CliUtils {
     public final static DecimalFormat floatFormat = new DecimalFormat("#.##");
 
-    static void validateQuality(int quality) throws ParameterException {
+    static void validateQuality(int quality, CommandLine commandLine) {
         if ((quality < 0) || (quality > DEFAULT_MAX_QUALITY))
-            throw new ParameterException(quality + " is invalid value for quality! Valid values are from 0 to "
-                    + DEFAULT_MAX_QUALITY + ".");
+            throw new ValidationException(commandLine, quality + " is invalid value for quality! Valid values are "
+                    + "from 0 to " + DEFAULT_MAX_QUALITY + ".", false);
     }
 }

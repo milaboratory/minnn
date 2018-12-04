@@ -10,7 +10,7 @@ public interface MiNNNCommand {
     /** Validate injected parameters and options */
     default void validateInfo(String inputFile) {
         BinaryFileInfo info = mifInfoExtractor.getFileInfo(inputFile);
-        if (info != null && !info.valid)
+        if ((info != null) && !info.valid)
             throwValidationException("ERROR: input file \"" + inputFile + "\" is corrupted.", false);
     }
 }

@@ -30,6 +30,7 @@ package com.milaboratory.minnn.io;
 
 import cc.redberry.pipe.CUtils;
 import cc.redberry.pipe.OutputPortCloseable;
+import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.core.io.CompressionType;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
@@ -49,6 +50,7 @@ import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class SorterIO {
+    private final PipelineConfiguration pipelineConfiguration;
     private final String inputFileName;
     private final String outputFileName;
     private final List<String> sortGroupNames;
@@ -56,8 +58,9 @@ public final class SorterIO {
     private final boolean suppressWarnings;
     private final File tmpFile;
 
-    public SorterIO(String inputFileName, String outputFileName, List<String> sortGroupNames, int chunkSize,
-                    boolean suppressWarnings, String tmpFile) {
+    public SorterIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
+                    List<String> sortGroupNames, int chunkSize, boolean suppressWarnings, String tmpFile) {
+        this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.sortGroupNames = sortGroupNames;
@@ -102,8 +105,8 @@ public final class SorterIO {
     }
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
-        MifHeader outputHeader = new MifHeader(inputHeader.getNumberOfTargets(), inputHeader.getCorrectedGroups(),
-                true, inputHeader.getGroupEdges());
+        MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
+                inputHeader.getCorrectedGroups(), true, inputHeader.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
                 : new MifWriter(outputFileName, outputHeader);
     }
