@@ -54,8 +54,8 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
         private int uppercaseMismatchScore;
         private int gapScore;
         private long scoreThreshold;
-        private int goodQuality;
-        private int badQuality;
+        private byte goodQuality;
+        private byte badQuality;
         private int maxQualityPenalty;
         private long singleOverlapPenalty;
         private int maxOverlap;
@@ -75,8 +75,8 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
                 @JsonProperty("uppercaseMismatchScore") int uppercaseMismatchScore,
                 @JsonProperty("gapScore") int gapScore,
                 @JsonProperty("scoreThreshold") long scoreThreshold,
-                @JsonProperty("goodQuality") int goodQuality,
-                @JsonProperty("badQuality") int badQuality,
+                @JsonProperty("goodQuality") byte goodQuality,
+                @JsonProperty("badQuality") byte badQuality,
                 @JsonProperty("maxQualityPenalty") int maxQualityPenalty,
                 @JsonProperty("singleOverlapPenalty") long singleOverlapPenalty,
                 @JsonProperty("maxOverlap") int maxOverlap,
@@ -169,19 +169,19 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
             this.scoreThreshold = scoreThreshold;
         }
 
-        public int getGoodQuality() {
+        public byte getGoodQuality() {
             return goodQuality;
         }
 
-        public void setGoodQuality(int goodQuality) {
+        public void setGoodQuality(byte goodQuality) {
             this.goodQuality = goodQuality;
         }
 
-        public int getBadQuality() {
+        public byte getBadQuality() {
             return badQuality;
         }
 
-        public void setBadQuality(int badQuality) {
+        public void setBadQuality(byte badQuality) {
             this.badQuality = badQuality;
         }
 
@@ -286,8 +286,8 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
             result = 31 * result + uppercaseMismatchScore;
             result = 31 * result + gapScore;
             result = 31 * result + (int)(scoreThreshold ^ (scoreThreshold >>> 32));
-            result = 31 * result + goodQuality;
-            result = 31 * result + badQuality;
+            result = 31 * result + (int)goodQuality;
+            result = 31 * result + (int)badQuality;
             result = 31 * result + maxQualityPenalty;
             result = 31 * result + (int)(singleOverlapPenalty ^ (singleOverlapPenalty >>> 32));
             result = 31 * result + maxOverlap;

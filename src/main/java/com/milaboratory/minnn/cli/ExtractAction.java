@@ -67,7 +67,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     @Override
     public void run1() {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(matchScore, mismatchScore,
-                gapScore, uppercaseMismatchScore, (byte)goodQuality, (byte)badQuality, maxQualityPenalty);
+                gapScore, uppercaseMismatchScore, goodQuality, badQuality, maxQualityPenalty);
         PatternAligner patternAligner = new BasePatternAligner(scoring, scoreThreshold, singleOverlapPenalty,
                 bitapMaxErrors, maxOverlap);
         Parser patternParser = new Parser(patternAligner);
@@ -142,7 +142,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         return PipelineConfiguration.mkInitial(getInputFiles(), getConfiguration(), AppVersionInfo.get());
     }
 
-    @Option(description = "Query, pattern specified in MiNNN format.",
+    @Option(description = PATTERN_QUERY,
             names = "--pattern",
             required = true)
     private String query = null;
@@ -171,49 +171,47 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
             names = "--oriented")
     private boolean oriented = false;
 
-    @Option(description = "Score for perfectly matched nucleotide.",
+    @Option(description = MATCH_SCORE,
             names = "--match-score")
     private int matchScore = DEFAULT_MATCH_SCORE;
 
-    @Option(description = "Score for mismatched nucleotide.",
+    @Option(description = MISMATCH_SCORE,
             names = "--mismatch-score")
     private int mismatchScore = DEFAULT_MISMATCH_SCORE;
 
-    @Option(description = "Score for mismatched uppercase nucleotide.",
+    @Option(description = UPPERCASE_MISMATCH_SCORE,
             names = "--uppercase-mismatch-score")
     private int uppercaseMismatchScore = DEFAULT_UPPERCASE_MISMATCH_SCORE;
 
-    @Option(description = "Score for gap or insertion.",
+    @Option(description = GAP_SCORE,
             names = "--gap-score")
     private int gapScore = DEFAULT_GAP_SCORE;
 
-    @Option(description = "Score threshold, matches with score lower than this will not go to output.",
+    @Option(description = SCORE_THRESHOLD,
             names = "--score-threshold")
     private long scoreThreshold = DEFAULT_SCORE_THRESHOLD;
 
-    @Option(description = "This or better quality value will be considered good quality, " +
-            "without score penalties.",
+    @Option(description = GOOD_QUALITY_VALUE,
             names = "--good-quality-value")
-    private int goodQuality = DEFAULT_GOOD_QUALITY;
+    private byte goodQuality = DEFAULT_GOOD_QUALITY;
 
-    @Option(description = "This or worse quality value will be considered bad quality, " +
-            "with maximal score penalty.",
+    @Option(description = BAD_QUALITY_VALUE,
             names = "--bad-quality-value")
-    private int badQuality = DEFAULT_BAD_QUALITY;
+    private byte badQuality = DEFAULT_BAD_QUALITY;
 
-    @Option(description = "Maximal score penalty for bad quality nucleotide in target.",
+    @Option(description = MAX_QUALITY_PENALTY,
             names = "--max-quality-penalty")
     private int maxQualityPenalty = DEFAULT_MAX_QUALITY_PENALTY;
 
-    @Option(description = "Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value.",
+    @Option(description = SINGLE_OVERLAP_PENALTY,
             names = "--single-overlap-penalty")
     private long singleOverlapPenalty = DEFAULT_SINGLE_OVERLAP_PENALTY;
 
-    @Option(description = "Max allowed overlap for 2 intersecting operands in +, & and pattern sequences.",
+    @Option(description = MAX_OVERLAP,
             names = "--max-overlap")
     private int maxOverlap = DEFAULT_MAX_OVERLAP;
 
-    @Option(description = "Maximum allowed number of errors for bitap matcher.",
+    @Option(description = BITAP_MAX_ERRORS,
             names = "--bitap-max-errors")
     private int bitapMaxErrors = DEFAULT_BITAP_MAX_ERRORS;
 

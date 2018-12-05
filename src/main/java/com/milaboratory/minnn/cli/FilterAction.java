@@ -28,10 +28,7 @@
  */
 package com.milaboratory.minnn.cli;
 
-import com.beust.jcommander.*;
-import com.milaboratory.cli.Action;
-import com.milaboratory.cli.ActionHelper;
-import com.milaboratory.cli.ActionParameters;
+import com.milaboratory.cli.*;
 import com.milaboratory.minnn.io.FilterIO;
 import com.milaboratory.minnn.readfilter.*;
 import org.antlr.v4.runtime.CharStreams;
@@ -39,63 +36,106 @@ import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import picocli.CommandLine.*;
 
 import java.util.*;
 
+import static com.milaboratory.minnn.cli.CommonDescriptions.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
+import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
+import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
-public final class FilterAction implements Action {
-    public static final String commandName = "filter";
-    private final FilterActionParameters params = new FilterActionParameters();
+@Command(name = FILTER_ACTION_NAME,
+        sortOptions = false,
+        separator = " ",
+        description = "Filter target nucleotide sequences, pass only sequences matching the query.")
+public final class FilterAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
+    public static final String FILTER_ACTION_NAME = "filter";
+
+    public FilterAction() {
+        super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
+    }
 
     @Override
-    public void go(ActionHelper helper) {
-        String filterQuery = String.join("", params.filterQuery);
+    public void run1() {
+        String filterQuery = String.join("", filterQueryList);
         ReadFilter parsedReadFilter = parseFilterQuery(filterQuery);
         if (parsedReadFilter == null)
             throw exitWithError("Filter query not parsed: " + filterQuery);
-        FilterIO filterIO = new FilterIO(parsedReadFilter, params.inputFileName, params.outputFileName,
-                params.inputReadsLimit, params.threads);
+        FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), parsedReadFilter, inputFileName,
+                outputFileName, inputReadsLimit, threads);
         filterIO.go();
     }
 
     @Override
-    public String command() {
-        return commandName;
+    public void validateInfo(String inputFile) {
+        MiNNNCommand.super.validateInfo(inputFile);
     }
 
     @Override
-    public ActionParameters params() {
-        return params;
+    public void validate() {
+        super.validate();
+        if (filterQueryList.size() == 0)
+            throwValidationException("Filter query is not specified!");
     }
 
-    @Parameters(commandDescription =
-            "Filter target nucleotide sequences, pass only sequences matching the query.")
-    private static final class FilterActionParameters extends ActionParameters {
-        @Parameter(description = "\"<filter_query>\"", order = 0, required = true)
-        List<String> filterQuery = new ArrayList<>();
-
-        @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",
-                names = {"--input"}, order = 1)
-        String inputFileName = null;
-
-        @Parameter(description = "Output file in \"mif\" format. If not specified, stdout will be used.",
-                names = {"--output"}, order = 2)
-        String outputFileName = null;
-
-        @Parameter(description = "Use fair sorting and fair best match by score for all patterns.",
-                names = {"--fair-sorting"}, order = 3)
-        boolean fairSorting = false;
-
-        @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 4)
-        long inputReadsLimit = 0;
-
-        @Parameter(description = "Number of threads for parsing reads.",
-                names = {"--threads"}, order = 5)
-        int threads = DEFAULT_THREADS;
+    @Override
+    protected List<String> getInputFiles() {
+        List<String> inputFileNames = new ArrayList<>();
+        if (inputFileName != null)
+            inputFileNames.add(inputFileName);
+        return inputFileNames;
     }
+
+    @Override
+    protected List<String> getOutputFiles() {
+        List<String> outputFileNames = new ArrayList<>();
+        if (outputFileName != null)
+            outputFileNames.add(outputFileName);
+        return outputFileNames;
+    }
+
+    @Override
+    public ActionConfiguration getConfiguration() {
+        return new FilterActionConfiguration(new FilterActionConfiguration.FilterActionParameters(
+                String.join("", filterQueryList), fairSorting, inputReadsLimit));
+    }
+
+    @Override
+    public PipelineConfiguration getFullPipelineConfiguration() {
+        if (inputFileName != null)
+            return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
+                    binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
+                    AppVersionInfo.get());
+        else
+            return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
+    }
+
+    @Parameters(arity = "1..*",
+            description = "\"<filter_query>\"")
+    private List<String> filterQueryList = new ArrayList<>();
+
+    @Option(description = IN_FILE_OR_STDIN,
+            names = {"--input"})
+    private String inputFileName = null;
+
+    @Option(description = OUT_FILE_OR_STDOUT,
+            names = {"--output"})
+    private String outputFileName = null;
+
+    @Option(description = FAIR_SORTING,
+            names = {"--fair-sorting"})
+    private boolean fairSorting = false;
+
+    @Option(description = NUMBER_OF_READS,
+            names = {"-n", "--number-of-reads"})
+    private long inputReadsLimit = 0;
+
+    @Option(description = "Number of threads for parsing reads.",
+            names = {"--threads"})
+    private int threads = DEFAULT_THREADS;
 
     private ReadFilter parseFilterQuery(String filterQuery) {
         CodePointCharStream charStream = CharStreams.fromString(filterQuery);
@@ -146,7 +186,7 @@ public final class FilterAction implements Action {
             if ((patternString.charAt(0) != '\'') && (patternString.charAt(patternString.length() - 1) != '\''))
                 throw exitWithError("Missing single quotes in pattern query " + patternString);
             filter = new PatternReadFilter(ctx.groupName().getText(),
-                    patternString.substring(1, patternString.length() - 1), params.fairSorting);
+                    patternString.substring(1, patternString.length() - 1), fairSorting);
         }
     }
 
