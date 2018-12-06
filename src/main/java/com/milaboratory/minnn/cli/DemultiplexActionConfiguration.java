@@ -36,84 +36,85 @@ import com.milaboratory.util.GlobalObjectMappers;
 
 import java.util.List;
 
-import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 
-public final class SortActionConfiguration implements ActionConfiguration {
-    private static final String SORT_ACTION_VERSION_ID = "1";
-    private final SortActionParameters sortParameters;
+public final class DemultiplexActionConfiguration implements ActionConfiguration {
+    private static final String DEMULTIPLEX_ACTION_VERSION_ID = "1";
+    private final DemultiplexActionParameters demultiplexParameters;
 
     @JsonCreator
-    public SortActionConfiguration(@JsonProperty("sortParameters") SortActionParameters sortParameters) {
-        this.sortParameters = sortParameters;
+    public DemultiplexActionConfiguration(
+            @JsonProperty("filterParameters") DemultiplexActionParameters demultiplexParameters) {
+        this.demultiplexParameters = demultiplexParameters;
     }
 
     @Override
     public String actionName() {
-        return SORT_ACTION_NAME;
+        return DEMULTIPLEX_ACTION_NAME;
     }
 
     @Override
     public String versionId() {
-        return SORT_ACTION_VERSION_ID;
+        return DEMULTIPLEX_ACTION_VERSION_ID;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if ((o == null) || (getClass() != o.getClass())) return false;
-        SortActionConfiguration that = (SortActionConfiguration)o;
-        return sortParameters.equals(that.sortParameters);
+        DemultiplexActionConfiguration that = (DemultiplexActionConfiguration)o;
+        return demultiplexParameters.equals(that.demultiplexParameters);
     }
 
     @Override
     public int hashCode() {
-        return sortParameters.hashCode();
+        return demultiplexParameters.hashCode();
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY,
             isGetterVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE)
     @Serializable(asJson = true)
-    public static final class SortActionParameters implements java.io.Serializable {
-        private List<String> sortGroupNames;
-        private int chunkSize;
+    public static final class DemultiplexActionParameters implements java.io.Serializable {
+        private List<String> argumentsQuery;
+        private long inputReadsLimit;
 
         @JsonCreator
-        public SortActionParameters(
-                @JsonProperty("sortGroupNames") List<String> sortGroupNames,
-                @JsonProperty("chunkSize") int chunkSize) {
-            this.sortGroupNames = sortGroupNames;
-            this.chunkSize = chunkSize;
+        public DemultiplexActionParameters(
+                @JsonProperty("argumentsQuery") List<String> argumentsQuery,
+                @JsonProperty("inputReadsLimit") long inputReadsLimit) {
+            this.argumentsQuery = argumentsQuery;
+            this.inputReadsLimit = inputReadsLimit;
         }
 
-        public List<String> getSortGroupNames() {
-            return sortGroupNames;
+        public List<String> getArgumentsQuery() {
+            return argumentsQuery;
         }
 
-        public void setSortGroupNames(List<String> sortGroupNames) {
-            this.sortGroupNames = sortGroupNames;
+        public void setArgumentsQuery(List<String> argumentsQuery) {
+            this.argumentsQuery = argumentsQuery;
         }
 
-        public int getChunkSize() {
-            return chunkSize;
+        public long getInputReadsLimit() {
+            return inputReadsLimit;
         }
 
-        public void setChunkSize(int chunkSize) {
-            this.chunkSize = chunkSize;
+        public void setInputReadsLimit(long inputReadsLimit) {
+            this.inputReadsLimit = inputReadsLimit;
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            SortActionParameters that = (SortActionParameters)o;
-            if (chunkSize != that.chunkSize) return false;
-            return sortGroupNames != null ? sortGroupNames.equals(that.sortGroupNames) : that.sortGroupNames == null;
+            DemultiplexActionParameters that = (DemultiplexActionParameters)o;
+            if (inputReadsLimit != that.inputReadsLimit) return false;
+            return argumentsQuery != null ? argumentsQuery.equals(that.argumentsQuery) : that.argumentsQuery == null;
         }
 
         @Override
         public int hashCode() {
-            int result = sortGroupNames != null ? sortGroupNames.hashCode() : 0;
-            result = 31 * result + chunkSize;
+            int result = argumentsQuery != null ? argumentsQuery.hashCode() : 0;
+            result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;
         }
 

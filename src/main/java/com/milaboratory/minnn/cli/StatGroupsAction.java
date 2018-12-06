@@ -28,89 +28,103 @@
  */
 package com.milaboratory.minnn.cli;
 
-import com.beust.jcommander.*;
-import com.milaboratory.cli.Action;
-import com.milaboratory.cli.ActionHelper;
-import com.milaboratory.cli.ActionParameters;
+import com.milaboratory.cli.ACommandWithOutput;
 import com.milaboratory.minnn.io.StatGroupsIO;
+import picocli.CommandLine.*;
 
 import java.util.*;
 
 import static com.milaboratory.minnn.cli.CliUtils.*;
+import static com.milaboratory.minnn.cli.CommonDescriptions.*;
+import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAME;
 
-public final class StatGroupsAction implements Action {
-    public static final String commandName = "stat-groups";
-    private final StatGroupsActionParameters params = new StatGroupsActionParameters();
+@Command(name = STAT_GROUPS_ACTION_NAME,
+        sortOptions = false,
+        separator = " ",
+        description = "Collect summary statistics: capture group sequence and quality table.")
+public final class StatGroupsAction extends ACommandWithOutput implements MiNNNCommand {
+    public static final String STAT_GROUPS_ACTION_NAME = "stat-groups";
+
+    public StatGroupsAction() {
+        super(APP_NAME);
+    }
 
     @Override
-    public void go(ActionHelper helper) {
-        StatGroupsIO statGroupsIO = new StatGroupsIO(params.groupList, params.inputFileName, params.outputFileName,
-                params.inputReadsLimit, (byte)(params.readQualityFilter), (byte)(params.minQualityFilter),
-                (byte)(params.avgQualityFilter), params.minCountFilter, params.minFracFilter);
+    public void run0() {
+        StatGroupsIO statGroupsIO = new StatGroupsIO(groupList, inputFileName, outputFileName, inputReadsLimit,
+                readQualityFilter, minQualityFilter, avgQualityFilter, minCountFilter, minFracFilter);
         statGroupsIO.go();
     }
 
     @Override
-    public String command() {
-        return commandName;
+    public void validateInfo(String inputFile) {
+        MiNNNCommand.super.validateInfo(inputFile);
     }
 
     @Override
-    public ActionParameters params() {
-        return params;
+    public void validate() {
+        super.validate();
+        if (groupList.size() == 0)
+            throwValidationException("List of output groups is not specified!");
+        validateQuality(readQualityFilter, spec.commandLine());
+        validateQuality(minQualityFilter, spec.commandLine());
+        validateQuality(avgQualityFilter, spec.commandLine());
     }
 
-    @Parameters(commandDescription =
-            "Collect summary statistics: capture group sequence and quality table.")
-    private static final class StatGroupsActionParameters extends ActionParameters {
-        @Parameter(description = "--groups <group_names>", order = 0)
-        private String description;
-
-        @Parameter(description = "Space separated list of groups to output, determines the keys by which the output " +
-                "table will be aggregated.",
-                names = {"--groups"}, order = 1, required = true, variableArity = true)
-        List<String> groupList = null;
-
-        @Parameter(description = "Input file in \"mif\" format. If not specified, stdin will be used.",
-                names = {"--input"}, order = 2)
-        String inputFileName = null;
-
-        @Parameter(description = "Output text file. If not specified, stdout will be used.",
-                names = {"--output"}, order = 3)
-        String outputFileName = null;
-
-        @Parameter(description = "Filter group values with a min (non-aggregated) quality below a given threshold, " +
-                "applied on by-read basis, should be applied prior to any aggregation. 0 value means no threshold.",
-                names = {"--read-quality-filter"}, order = 4)
-        int readQualityFilter = 0;
-
-        @Parameter(description = "Filter group values based on min aggregated quality. 0 value means no filtering.",
-                names = {"--min-quality-filter"}, order = 5)
-        int minQualityFilter = 0;
-
-        @Parameter(description = "Filter group values based on average aggregated quality. 0 value means no filtering.",
-                names = {"--avg-quality-filter"}, order = 6)
-        int avgQualityFilter = 0;
-
-        @Parameter(description = "Filter unique group values represented by less than specified number of reads.",
-                names = {"--min-count-filter"}, order = 7)
-        int minCountFilter = 0;
-
-        @Parameter(description = "Filter unique group values represented by less than specified fraction of reads.",
-                names = {"--min-frac-filter"}, order = 8)
-        float minFracFilter = 0;
-
-        @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 9)
-        long inputReadsLimit = 0;
-
-        @Override
-        public void validate() {
-            if (groupList.size() == 0)
-                throw new ParameterException("List of output groups is not specified!");
-            validateQuality(readQualityFilter);
-            validateQuality(minQualityFilter);
-            validateQuality(avgQualityFilter);
-        }
+    @Override
+    protected List<String> getInputFiles() {
+        List<String> inputFileNames = new ArrayList<>();
+        if (inputFileName != null)
+            inputFileNames.add(inputFileName);
+        return inputFileNames;
     }
+
+    @Override
+    protected List<String> getOutputFiles() {
+        List<String> outputFileNames = new ArrayList<>();
+        if (outputFileName != null)
+            outputFileNames.add(outputFileName);
+        return outputFileNames;
+    }
+
+    @Option(description = "Space separated list of groups to output, determines the keys by which the output " +
+            "table will be aggregated.",
+            names = {"--groups"},
+            required = true,
+            arity = "1..*")
+    private List<String> groupList = null;
+
+    @Option(description = IN_FILE_OR_STDIN,
+            names = {"--input"})
+    private String inputFileName = null;
+
+    @Option(description = OUT_TEXT_FILE,
+            names = {"--output"})
+    private String outputFileName = null;
+
+    @Option(description = "Filter group values with a min (non-aggregated) quality below a given threshold, " +
+            "applied on by-read basis, should be applied prior to any aggregation. 0 value means no threshold.",
+            names = {"--read-quality-filter"})
+    private byte readQualityFilter = 0;
+
+    @Option(description = "Filter group values based on min aggregated quality. 0 value means no filtering.",
+            names = {"--min-quality-filter"})
+    private byte minQualityFilter = 0;
+
+    @Option(description = "Filter group values based on average aggregated quality. 0 value means no filtering.",
+            names = {"--avg-quality-filter"})
+    private byte avgQualityFilter = 0;
+
+    @Option(description = MIN_COUNT_FILTER,
+            names = {"--min-count-filter"})
+    private int minCountFilter = 0;
+
+    @Option(description = MIN_FRAC_FILTER,
+            names = {"--min-frac-filter"})
+    private float minFracFilter = 0;
+
+    @Option(description = NUMBER_OF_READS,
+            names = {"-n", "--number-of-reads"})
+    private long inputReadsLimit = 0;
 }
