@@ -41,4 +41,11 @@ public interface MiNNNCommand {
         if ((info != null) && !info.valid)
             throwValidationException("ERROR: input file \"" + inputFile + "\" is corrupted.", false);
     }
+
+    /** Specifies behaviour in the case with output exists (default is to throw exception) */
+    default void handleExistenceOfOutputFile(String outFileName, boolean forceOverwrite) {
+        if (!forceOverwrite)
+            throwValidationException("File \"" + outFileName
+                    + "\" already exists. Use -f / --force-overwrite option to overwrite it.", false);
+    }
 }

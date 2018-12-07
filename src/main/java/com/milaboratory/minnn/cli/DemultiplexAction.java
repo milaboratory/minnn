@@ -28,62 +28,121 @@
  */
 package com.milaboratory.minnn.cli;
 
-import com.beust.jcommander.*;
-import com.milaboratory.cli.Action;
-import com.milaboratory.cli.ActionHelper;
-import com.milaboratory.cli.ActionParameters;
+import com.milaboratory.cli.*;
 import com.milaboratory.minnn.io.DemultiplexIO;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import picocli.CommandLine.*;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
+import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
+import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
-public final class DemultiplexAction implements Action {
-    public static final String commandName = "demultiplex";
-    private final DemultiplexActionParameters params = new DemultiplexActionParameters();
+@Command(name = DEMULTIPLEX_ACTION_NAME,
+        sortOptions = false,
+        separator = " ",
+        description = "Multi-filtering (one to many) for nucleotide sequences.")
+public final class DemultiplexAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
+    public static final String DEMULTIPLEX_ACTION_NAME = "demultiplex";
+    private static ParsedDemultiplexArguments parsedDemultiplexArguments = null;
+
+    public DemultiplexAction() {
+        super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
+    }
 
     @Override
-    public void go(ActionHelper helper) {
-        String argumentsQuery = "#" + String.join("#", params.argumentsQuery);
-        ParsedDemultiplexArguments parsedDemultiplexArguments = parseArgumentsQuery(argumentsQuery);
-        if (parsedDemultiplexArguments == null)
-            throw exitWithError("Arguments not parsed: " + argumentsQuery);
-        DemultiplexIO demultiplexIO = new DemultiplexIO(parsedDemultiplexArguments.inputFileName,
-                parsedDemultiplexArguments.demultiplexArguments, params.outputBufferSize, params.inputReadsLimit);
+    public void run1() {
+        prepareDemultiplexArguments();
+        DemultiplexIO demultiplexIO = new DemultiplexIO(getFullPipelineConfiguration(),
+                parsedDemultiplexArguments.inputFileName, parsedDemultiplexArguments.demultiplexArguments,
+                logFileName, outputBufferSize, inputReadsLimit);
         demultiplexIO.go();
     }
 
     @Override
-    public String command() {
-        return commandName;
+    public void validateInfo(String inputFile) {
+        MiNNNCommand.super.validateInfo(inputFile);
     }
 
     @Override
-    public ActionParameters params() {
-        return params;
+    protected List<String> getInputFiles() {
+        prepareDemultiplexArguments();
+        List<String> inputFileNames = new ArrayList<>();
+        inputFileNames.add(parsedDemultiplexArguments.inputFileName);
+        return inputFileNames;
     }
 
-    @Parameters(commandDescription = "Multi-filtering (one to many) for nucleotide sequences.")
-    private static final class DemultiplexActionParameters extends ActionParameters {
-        @Parameter(description = "filter_options\n        Filter Options:      Barcodes and sample configuration " +
-                "files that specify sequences for demultiplexing. At least 1 barcode or 1 sample file must be " +
-                "specified. Syntax example: minnn demultiplex --by-barcode UID --by-sample samples.txt input.mif",
-                order = 0, required = true)
-        List<String> argumentsQuery = new ArrayList<>();
-
-        @Parameter(description = "Write buffer size for each output file.",
-                names = {"--output-buffer-size"}, order = 1)
-        int outputBufferSize = DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE;
-
-        @Parameter(description = "Number of reads to take; 0 value means to take the entire input file.",
-                names = {"-n", "--number-of-reads"}, order = 2)
-        long inputReadsLimit = 0;
+    @Override
+    protected List<String> getOutputFiles() {
+        List<String> outputFileNames = new ArrayList<>();
+        outputFileNames.add(logFileName);
+        try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName)))
+        {
+            String loggedFileName;
+            while ((loggedFileName = logReader.readLine()) != null)
+                outputFileNames.add(loggedFileName);
+        } catch (IOException e) {
+            throw exitWithError("Bad or corrupted log file, read error: " + e.getMessage());
+        }
+        return outputFileNames;
     }
+
+    @Override
+    public void handleExistenceOfOutputFile(String outFileName) {
+        MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
+    }
+
+    @Override
+    public ActionConfiguration getConfiguration() {
+        return new DemultiplexActionConfiguration(new DemultiplexActionConfiguration.DemultiplexActionParameters(
+                argumentsQueryList, inputReadsLimit));
+    }
+
+    @Override
+    public PipelineConfiguration getFullPipelineConfiguration() {
+        prepareDemultiplexArguments();
+        return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(
+                parsedDemultiplexArguments.inputFileName, binaryFileInfoExtractor.getFileInfo(
+                        parsedDemultiplexArguments.inputFileName)), getInputFiles(), getConfiguration(),
+                AppVersionInfo.get());
+    }
+
+    private void prepareDemultiplexArguments() {
+        if (parsedDemultiplexArguments != null)
+            return;
+        String argumentsQuery = "#" + String.join("#", argumentsQueryList);
+        parsedDemultiplexArguments = parseArgumentsQuery(argumentsQuery);
+        if (parsedDemultiplexArguments == null)
+            throw exitWithError("Arguments not parsed: " + argumentsQueryList);
+    }
+
+    @Parameters(arity = "1..*",
+            description = "Filter Options: Barcodes and sample configuration files that specify sequences for " +
+            "demultiplexing. At least 1 barcode or 1 sample file must be specified. Syntax example: " +
+            "minnn demultiplex --by-barcode UID --by-sample samples.txt input.mif")
+    private List<String> argumentsQueryList = new ArrayList<>();
+
+    @Option(description = "Demultiplex log file name, to record names of generated files.",
+            names = {"--demultiplex-log"},
+            required = true)
+    private String logFileName = null;
+
+    @Option(description = "Write buffer size for each output file.",
+            names = {"--output-buffer-size"})
+    private int outputBufferSize = DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE;
+
+    @Option(description = "Number of reads to take; 0 value means to take the entire input file.",
+            names = {"-n", "--number-of-reads"})
+    private long inputReadsLimit = 0;
 
     private static final class ParsedDemultiplexArguments {
         final String inputFileName;
@@ -191,13 +250,13 @@ public final class DemultiplexAction implements Action {
             });
         }
 
-        ParsedDemultiplexArguments getParsedArguments() throws ParameterException {
+        ParsedDemultiplexArguments getParsedArguments() {
             if (inputFileNames.size() > 1)
-                throw new ParameterException("Expected 1 input file name, found multiple: " + inputFileNames);
+                throwValidationException("Expected 1 input file name, found multiple: " + inputFileNames);
             else if (inputFileNames.size() == 0)
-                throw new ParameterException("Missing input file name!");
+                throwValidationException("Missing input file name!");
             if (demultiplexArguments.size() == 0)
-                throw new ParameterException("Expected at least 1 barcode or sample configuration file!");
+                throwValidationException("Expected at least 1 barcode or sample configuration file!");
             return new ParsedDemultiplexArguments(inputFileNames.get(0), demultiplexArguments);
         }
     }

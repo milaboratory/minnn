@@ -28,10 +28,7 @@
  */
 package com.milaboratory.minnn.cli;
 
-import com.milaboratory.cli.ACommandWithSmartOverwrite;
-import com.milaboratory.cli.ActionConfiguration;
-import com.milaboratory.cli.AppVersionInfo;
-import com.milaboratory.cli.PipelineConfiguration;
+import com.milaboratory.cli.*;
 import com.milaboratory.minnn.io.ConsensusIO;
 import picocli.CommandLine.*;
 
@@ -83,6 +80,8 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
         List<String> outputFileNames = new ArrayList<>();
         if (outputFileName != null)
             outputFileNames.add(outputFileName);
+        if (originalReadStatsFileName != null)
+            outputFileNames.add(originalReadStatsFileName);
         if (notUsedReadsOutputFileName != null)
             outputFileNames.add(notUsedReadsOutputFileName);
         return outputFileNames;
@@ -90,10 +89,11 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
 
     @Override
     public void handleExistenceOfOutputFile(String outFileName) {
-        // disable smart overwrite if output file for not used reads is specified
-        if (notUsedReadsOutputFileName != null)
-            return;
-        super.handleExistenceOfOutputFile(outFileName);
+        // disable smart overwrite if extra output files are specified
+        if ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
+            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
+        else
+            super.handleExistenceOfOutputFile(outFileName);
     }
 
     @Override
@@ -102,7 +102,7 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
                 groupList, alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
                 goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxConsensusesPerCluster,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                avgQualityThreshold, trimWindowSize, notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit));
+                avgQualityThreshold, trimWindowSize, toSeparateGroups, inputReadsLimit));
     }
 
     @Override

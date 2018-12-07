@@ -91,7 +91,6 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
         private int minGoodSeqLength;
         private float avgQualityThreshold;
         private int trimWindowSize;
-        private String notUsedReadsOutputFileName;
         private boolean toSeparateGroups;
         private long inputReadsLimit;
 
@@ -112,7 +111,6 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
                 @JsonProperty("minGoodSeqLength") int minGoodSeqLength,
                 @JsonProperty("avgQualityThreshold") float avgQualityThreshold,
                 @JsonProperty("trimWindowSize") int trimWindowSize,
-                @JsonProperty("notUsedReadsOutputFileName") String notUsedReadsOutputFileName,
                 @JsonProperty("toSeparateGroups") boolean toSeparateGroups,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
             this.groupList = groupList;
@@ -131,7 +129,6 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
             this.minGoodSeqLength = minGoodSeqLength;
             this.avgQualityThreshold = avgQualityThreshold;
             this.trimWindowSize = trimWindowSize;
-            this.notUsedReadsOutputFileName = notUsedReadsOutputFileName;
             this.toSeparateGroups = toSeparateGroups;
             this.inputReadsLimit = inputReadsLimit;
         }
@@ -264,14 +261,6 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
             this.trimWindowSize = trimWindowSize;
         }
 
-        public String getNotUsedReadsOutputFileName() {
-            return notUsedReadsOutputFileName;
-        }
-
-        public void setNotUsedReadsOutputFileName(String notUsedReadsOutputFileName) {
-            this.notUsedReadsOutputFileName = notUsedReadsOutputFileName;
-        }
-
         public boolean isToSeparateGroups() {
             return toSeparateGroups;
         }
@@ -310,10 +299,7 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
             if (trimWindowSize != that.trimWindowSize) return false;
             if (toSeparateGroups != that.toSeparateGroups) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
-            if (groupList != null ? !groupList.equals(that.groupList) : that.groupList != null) return false;
-            return notUsedReadsOutputFileName != null
-                    ? notUsedReadsOutputFileName.equals(that.notUsedReadsOutputFileName)
-                    : that.notUsedReadsOutputFileName == null;
+            return groupList != null ? groupList.equals(that.groupList) : that.groupList == null;
         }
 
         @Override
@@ -336,7 +322,6 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
             result = 31 * result + minGoodSeqLength;
             result = 31 * result + (avgQualityThreshold != +0.0f ? Float.floatToIntBits(avgQualityThreshold) : 0);
             result = 31 * result + trimWindowSize;
-            result = 31 * result + (notUsedReadsOutputFileName != null ? notUsedReadsOutputFileName.hashCode() : 0);
             result = 31 * result + (toSeparateGroups ? 1 : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;
