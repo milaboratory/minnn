@@ -29,6 +29,7 @@
 package com.milaboratory.minnn.io;
 
 import cc.redberry.pipe.CUtils;
+import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.minnn.cli.DemultiplexArgument;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
@@ -36,7 +37,9 @@ import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,33 +48,42 @@ import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class DemultiplexIO {
+    private final PipelineConfiguration pipelineConfiguration;
     private final String inputFileName;
     private final List<DemultiplexFilter> demultiplexFilters;
+    private final String logFileName;
     private final int outputBufferSize;
     private final long inputReadsLimit;
     private final String prefix;
     private final LinkedHashMap<OutputFileIdentifier, OutputFileIdentifier> outputFileIdentifiers;
+    private final HashSet<String> outputFileNames;
     private MifHeader header;
     private long originalNumberOfReads;
 
-    public DemultiplexIO(String inputFileName, List<DemultiplexArgument> demultiplexArguments, int outputBufferSize,
+    public DemultiplexIO(PipelineConfiguration pipelineConfiguration, String inputFileName,
+                         List<DemultiplexArgument> demultiplexArguments, String logFileName, int outputBufferSize,
                          long inputReadsLimit) {
+        this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.demultiplexFilters = demultiplexArguments.stream().map(this::parseFilter).collect(Collectors.toList());
+        this.logFileName = logFileName;
         this.outputBufferSize = outputBufferSize;
         this.inputReadsLimit = inputReadsLimit;
         this.prefix = ((inputFileName.length() > 4)
                 && inputFileName.substring(inputFileName.length() - 4).equals(".mif"))
                 ? inputFileName.substring(0, inputFileName.length() - 4) : inputFileName;
         this.outputFileIdentifiers = new LinkedHashMap<>();
+        this.outputFileNames = new HashSet<>();
     }
 
     public void go() {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
         long matchedReads = 0;
-        try (MifReader reader = new MifReader(inputFileName)) {
-            header = reader.getHeader();
+        try (MifReader reader = new MifReader(inputFileName);
+             PrintStream logWriter = new PrintStream(new FileOutputStream(logFileName))) {
+            header = new MifHeader(pipelineConfiguration, reader.getNumberOfTargets(), reader.getCorrectedGroups(),
+                    reader.isSorted(), reader.getGroupEdges());
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Demultiplexing reads", reader, System.err);
@@ -79,6 +91,10 @@ public final class DemultiplexIO {
                 DemultiplexResult demultiplexResult = demultiplex(parsedRead);
                 if (demultiplexResult.mifWriter != null) {
                     demultiplexResult.mifWriter.write(demultiplexResult.parsedRead);
+                    if (!outputFileNames.contains(demultiplexResult.outputFileName)) {
+                        logWriter.println(demultiplexResult.outputFileName);
+                        outputFileNames.add(demultiplexResult.outputFileName);
+                    }
                     matchedReads++;
                 }
                 if (++totalReads == inputReadsLimit)
@@ -119,11 +135,12 @@ public final class DemultiplexIO {
         for (DemultiplexFilter demultiplexFilter : demultiplexFilters) {
             DemultiplexParameterValue parameterValue = demultiplexFilter.filter(parsedRead);
             if (parameterValue == null)
-                return new DemultiplexResult(parsedRead, null);
+                return new DemultiplexResult(parsedRead, null, null);
             else
                 parameterValues.add(parameterValue);
         }
-        return new DemultiplexResult(parsedRead, getMifWriter(new OutputFileIdentifier(parameterValues)));
+        OutputFileIdentifier outputFileIdentifier = new OutputFileIdentifier(parameterValues);
+        return new DemultiplexResult(parsedRead, outputFileIdentifier.toString(), getMifWriter(outputFileIdentifier));
     }
 
     private interface DemultiplexFilter {
@@ -341,10 +358,12 @@ public final class DemultiplexIO {
 
     private class DemultiplexResult {
         final ParsedRead parsedRead;
+        final String outputFileName;
         final MifWriter mifWriter;
 
-        DemultiplexResult(ParsedRead parsedRead, MifWriter mifWriter) {
+        DemultiplexResult(ParsedRead parsedRead, String outputFileName, MifWriter mifWriter) {
             this.parsedRead = parsedRead;
+            this.outputFileName = outputFileName;
             this.mifWriter = mifWriter;
         }
     }

@@ -58,7 +58,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     public void run1() {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, mismatches, indels, totalErrors, threshold, groupNames, maxClusterDepth,
-                singleSubstitutionProbability, singleIndelProbability, inputReadsLimit, suppressWarnings);
+                singleSubstitutionProbability, singleIndelProbability, inputReadsLimit, quiet);
         correctBarcodesIO.go();
     }
 
@@ -142,8 +142,4 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Option(description = NUMBER_OF_READS,
             names = {"-n", "--number-of-reads"})
     private long inputReadsLimit = 0;
-
-    @Option(description = SUPPRESS_WARNINGS,
-            names = {"--suppress-warnings"})
-    private boolean suppressWarnings = false;
 }

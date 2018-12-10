@@ -57,5 +57,4 @@ class CommonDescriptions {
     static final String MIN_FRAC_FILTER = "Filter unique group values represented by less than specified fraction " +
             "of reads.";
     static final String NUMBER_OF_READS = "Number of reads to take; 0 value means to take the entire input file.";
-    static final String SUPPRESS_WARNINGS = "Don't display any warnings.";
 }

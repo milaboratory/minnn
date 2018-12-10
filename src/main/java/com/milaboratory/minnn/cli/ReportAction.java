@@ -118,9 +118,7 @@ public final class ReportAction extends ACommand implements MiNNNCommand {
     }
 
     @Override
-    public void validateInfo(String inputFile) {
-        MiNNNCommand.super.validateInfo(inputFile);
-    }
+    public void validateInfo(String inputFile) {}
 
     @Override
     public void validate() {

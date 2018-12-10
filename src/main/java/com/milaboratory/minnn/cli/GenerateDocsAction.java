@@ -1,35 +1,35 @@
 package com.milaboratory.minnn.cli;
 
-import com.beust.jcommander.*;
-import com.milaboratory.cli.Action;
-import com.milaboratory.cli.ActionHelper;
-import com.milaboratory.cli.ActionParameters;
+import com.milaboratory.cli.ACommand;
 import com.milaboratory.minnn.io.GenerateDocsIO;
+import picocli.CommandLine.*;
 
-public final class GenerateDocsAction implements Action {
-    public static final String commandName = "docs";
-    private final GenerateDocsActionParameters params = new GenerateDocsActionParameters();
+import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.cli.GenerateDocsAction.GENERATE_DOCS_ACTION_NAME;
+
+@Command(name = GENERATE_DOCS_ACTION_NAME,
+        sortOptions = false,
+        separator = " ",
+        description = "Generate docs for all commands. Development use only.",
+        hidden = true)
+public final class GenerateDocsAction extends ACommand {
+    public static final String GENERATE_DOCS_ACTION_NAME = "docs";
+
+    public GenerateDocsAction() {
+        super(APP_NAME);
+    }
 
     @Override
-    public void go(ActionHelper helper) {
-        GenerateDocsIO generateDocsIO = new GenerateDocsIO(params.outputFileName);
+    public void run0() {
+        GenerateDocsIO generateDocsIO = new GenerateDocsIO(outputFileName);
         generateDocsIO.go();
     }
 
     @Override
-    public String command() {
-        return commandName;
-    }
+    public void validateInfo(String inputFile) {}
 
-    @Override
-    public ActionParameters params() {
-        return params;
-    }
-
-    @Parameters(commandDescription = "Generate docs for all commands. Development use only.", hidden = true)
-    private static final class GenerateDocsActionParameters extends ActionParameters {
-        @Parameter(description = "Output .rst file.",
-                names = {"--output"}, required = true)
-        String outputFileName = null;
-    }
+    @Option(description = "Output .rst file.",
+            names = {"--output"},
+            required = true)
+    private String outputFileName = null;
 }

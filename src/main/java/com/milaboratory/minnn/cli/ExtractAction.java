@@ -73,8 +73,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         Parser patternParser = new Parser(patternAligner);
         Pattern pattern;
         try {
-            pattern = simplifiedSyntax ? patternParser.parseQuery(query, SIMPLIFIED)
-                    : patternParser.parseQuery(query);
+            String preparedQuery = query.replaceAll("^\"|\"$", "");
+            pattern = simplifiedSyntax ? patternParser.parseQuery(preparedQuery, SIMPLIFIED)
+                    : patternParser.parseQuery(preparedQuery);
         } catch (ParserException e) {
             System.err.println("Error while parsing the pattern!");
             throw exitWithError(e.getMessage());

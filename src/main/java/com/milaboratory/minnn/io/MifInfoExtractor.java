@@ -66,6 +66,9 @@ public final class MifInfoExtractor implements BinaryFileInfoExtractor {
                 String magicShort = new String(beginMagic, 0, BEGIN_MAGIC_LENGTH_SHORT,
                         StandardCharsets.US_ASCII);
 
+                if (!magicShort.equals(BEGIN_MAGIC_MIF))
+                    return null;
+
                 byte[] endMagic = new byte[END_MAGIC_LENGTH];
                 channel.read(ByteBuffer.wrap(endMagic), channel.size() - END_MAGIC_LENGTH);
                 return new BinaryFileInfo(magicShort, magicFull, Arrays.equals(endMagic, getEndMagicBytes()));

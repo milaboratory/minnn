@@ -1,6 +1,6 @@
 package com.milaboratory.minnn.io;
 
-import com.beust.jcommander.*;
+import picocli.CommandLine.*;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -13,23 +13,38 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.milaboratory.minnn.cli.ConsensusAction.CONSENSUS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
+import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
+import static com.milaboratory.minnn.cli.MifToFastqAction.MIF_TO_FASTQ_ACTION_NAME;
+import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.StatPositionsAction.STAT_POSITIONS_ACTION_NAME;
+import static com.milaboratory.minnn.io.GenerateDocsIO.FieldType.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public final class GenerateDocsIO {
-    private static final HashMap<String, String> replaceTable = new HashMap<>();
+    private static final List<String> skippedOptions = Arrays.asList("--help", "--verbose", "--force");
+    private static final HashMap<String, List<String>> specificOptions = new HashMap<>();
     static {
-        replaceTable.put("filter_options\n        Filter Options:      ", " Filter Options: ");
-        replaceTable.put("group_options\n        Group Options:          ", " Group Options: ");
+        List<String> commandsWithForceOverwrite = Arrays.asList(EXTRACT_ACTION_NAME, FILTER_ACTION_NAME,
+                DEMULTIPLEX_ACTION_NAME, MIF_TO_FASTQ_ACTION_NAME, CORRECT_ACTION_NAME, SORT_ACTION_NAME,
+                CONSENSUS_ACTION_NAME, STAT_GROUPS_ACTION_NAME, STAT_POSITIONS_ACTION_NAME);
+        List<String> commandsWithQuietOption = Arrays.asList(CORRECT_ACTION_NAME, SORT_ACTION_NAME,
+                CONSENSUS_ACTION_NAME);
+        specificOptions.put("--force-overwrite", commandsWithForceOverwrite);
+        specificOptions.put("--no-warnings", commandsWithQuietOption);
     }
-    private final List<Class> parameterClasses = new ArrayList<>();
+    private final List<Class> actionClasses = new ArrayList<>();
     private final String outputFileName;
 
     public GenerateDocsIO(String outputFileName) {
         for (String actionName : new String[] { "Extract", "Filter", "Demultiplex", "MifToFastq", "Correct", "Sort",
                 "Consensus", "StatGroups", "StatPositions", "Report" }) {
             try {
-                parameterClasses.add(Class.forName("com.milaboratory.minnn.cli." + actionName + "Action$" + actionName
-                        + "ActionParameters"));
+                actionClasses.add(Class.forName("com.milaboratory.minnn.cli." + actionName + "Action"));
             } catch (ClassNotFoundException e) {
                 throw exitWithError(e.toString());
             }
@@ -42,30 +57,35 @@ public final class GenerateDocsIO {
             writer.println(title("Reference", true));
             writer.println(title("Command Line Syntax", false));
             writer.println("\n.. include:: reference_descriptions/header.rst\n");
-            for (Class parameterClass : parameterClasses) {
-                String actionName = getActionName(parameterClass);
+            for (Class actionClass : actionClasses) {
+                String actionName = getAnnotationStringParameter(actionClass, "name");
                 writer.println(subtitle(actionName));
                 writer.println(".. include:: reference_descriptions/" + actionName + ".rst\n\n"
                         + ".. code-block:: text\n");
-                TreeSet<OrderedParameter> parameters = new TreeSet<>();
-                int i = 0;
-                for (Field field : parameterClass.getDeclaredFields()) {
-                    final int secondaryOrder = i++;
-                    if (!isHidden(field)) {
-                        String names = getAnnotationValue(field, "names");
-                        String description = getAnnotationValue(field, "description");
-                        int primaryOrder = getOrder(field);
-                        if (names.length() > 2) {
-                            names = names.substring(1, names.length() - 1);
-                            parameters.add(new OrderedParameter(" " + names + ": " + description,
-                                    primaryOrder, secondaryOrder));
-                        } else
-                            replaceTable.keySet().stream().filter(description::contains).findFirst()
-                                    .ifPresent(s -> parameters.add(new OrderedParameter(description
-                                            .replace(s, replaceTable.get(s)) + "\n", primaryOrder, secondaryOrder)));
+                ArrayList<String> parameterDescriptions = new ArrayList<>();
+                ArrayList<String> parameterDescriptionsLast = new ArrayList<>();
+                for (Field field : actionClass.getDeclaredFields()) {
+                    FieldType fieldType = getFieldType(field);
+                    if ((fieldType != UNKNOWN) && !isHidden(field)) {
+                        ArrayList<String> names = getOptionNames(field);
+                        String description = getAnnotationStringParameter(field, "description");
+                        if (names.stream().noneMatch(skippedOptions::contains)) {
+                            if (names.stream().anyMatch(specificOptions.keySet()::contains))
+                                for (HashMap.Entry<String, List<String>> specificOption : specificOptions.entrySet()) {
+                                    if (names.stream().anyMatch(specificOption.getKey()::contains)
+                                            && specificOption.getValue().contains(actionName)) {
+                                        parameterDescriptionsLast.add(" " + String.join(", ", names) + ": "
+                                                + description);
+                                    }
+                                }
+                            else
+                                parameterDescriptions.add(" " + String.join(", ", names) + ": "
+                                        + description);
+                        }
                     }
                 }
-                parameters.forEach(p -> writer.println(p.text));
+                parameterDescriptions.addAll(parameterDescriptionsLast);
+                parameterDescriptions.forEach(writer::println);
                 writer.println();
             }
         } catch (IOException e) {
@@ -73,25 +93,40 @@ public final class GenerateDocsIO {
         }
     }
 
-    private String getAnnotationValue(AnnotatedElement annotatedElement, String parameterName) {
-        Object value = getAnnotationValueObject(annotatedElement, parameterName,
-                Stream.of(Parameter.class, DynamicParameter.class));
-        if (value instanceof RuntimeException)
-            throw exitWithError(((RuntimeException)value).getMessage());
-        else
-            return value.getClass().isArray() ? Arrays.toString((Object[])value) : value.toString();
+    private ArrayList<String> getOptionNames(AnnotatedElement annotatedElement) {
+        Object value = getAnnotationValueObject(annotatedElement, "names", Stream.of(Option.class));
+        ArrayList<String> optionNames = new ArrayList<>();
+        if (value.getClass().isArray()) {
+            for (Object name : (Object[])value)
+                optionNames.add(name.toString());
+        } else
+            optionNames.add(value.toString());
+        return optionNames;
     }
 
-    private int getOrder(AnnotatedElement annotatedElement) {
-        Object value = getAnnotationValueObject(annotatedElement, "order",
-                Stream.of(Parameter.class));
-        int order = (value instanceof RuntimeException) ? Integer.MAX_VALUE : (int)value;
-        return (order == -1) ? Integer.MAX_VALUE - 1 : order;
+    private String getAnnotationStringParameter(AnnotatedElement annotatedElement, String parameterName) {
+        Object value = getAnnotationValueObject(annotatedElement, parameterName,
+                Stream.of(Command.class, Option.class, Parameters.class));
+        if (value instanceof RuntimeException)
+            throw exitWithError(value.toString());
+        else
+            return value.toString();
+    }
+
+    private FieldType getFieldType(AnnotatedElement annotatedElement) {
+        Object value = getAnnotationValueObject(annotatedElement, "description",
+                Stream.of(Option.class));
+        if (!(value instanceof RuntimeException))
+            return OPTION;
+        value = getAnnotationValueObject(annotatedElement, "description", Stream.of(Parameters.class));
+        if (!(value instanceof RuntimeException))
+            return PARAMETERS;
+        return UNKNOWN;
     }
 
     private boolean isHidden(AnnotatedElement annotatedElement) {
         Object value = getAnnotationValueObject(annotatedElement, "hidden",
-                Stream.of(Parameter.class));
+                Stream.of(Command.class, Option.class, Parameters.class));
         return !(value instanceof RuntimeException) && (boolean)value;
     }
 
@@ -112,20 +147,6 @@ public final class GenerateDocsIO {
         return new RuntimeException("Parameter " + parameterName + " not found in annotation " + annotation);
     }
 
-    private String getActionName(Class parameterClass) {
-        Field nameField;
-        try {
-            nameField = parameterClass.getEnclosingClass().getField("commandName");
-        } catch (NoSuchFieldException e) {
-            throw exitWithError(e.toString());
-        }
-        try {
-            return (String)nameField.get(null);
-        } catch (IllegalAccessException e) {
-            throw exitWithError(e.toString());
-        }
-    }
-
     private String title(String str, boolean topLevel) {
         String line = Stream.generate(() -> "=").limit(str.length()).collect(Collectors.joining());
         return (topLevel ? "" : line + "\n") + str + "\n" + line;
@@ -136,39 +157,7 @@ public final class GenerateDocsIO {
                 + Stream.generate(() -> "-").limit(str.length()).collect(Collectors.joining());
     }
 
-    private class OrderedParameter implements Comparable<OrderedParameter> {
-        final String text;
-        final int primaryOrder;
-        final int secondaryOrder;
-
-        OrderedParameter(String text, int primaryOrder, int secondaryOrder) {
-            this.text = text;
-            this.primaryOrder = primaryOrder;
-            this.secondaryOrder = secondaryOrder;
-        }
-
-        @Override
-        public int compareTo(OrderedParameter other) {
-            int firstCompare = Integer.compare(primaryOrder, other.primaryOrder);
-            return (firstCompare != 0) ? firstCompare : Integer.compare(secondaryOrder, other.secondaryOrder);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            OrderedParameter that = (OrderedParameter)o;
-            if (primaryOrder != that.primaryOrder) return false;
-            if (secondaryOrder != that.secondaryOrder) return false;
-            return text.equals(that.text);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = text.hashCode();
-            result = 31 * result + primaryOrder;
-            result = 31 * result + secondaryOrder;
-            return result;
-        }
+    enum FieldType {
+        OPTION, PARAMETERS, UNKNOWN
     }
 }

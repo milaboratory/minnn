@@ -38,7 +38,18 @@ import picocli.CommandLine.Model.*;
 import java.util.*;
 
 import static com.milaboratory.cli.AppVersionInfo.OutputType.*;
+import static com.milaboratory.minnn.cli.ConsensusAction.CONSENSUS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.Defaults.APP_NAME;
+import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
+import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
+import static com.milaboratory.minnn.cli.GenerateDocsAction.GENERATE_DOCS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.MifToFastqAction.MIF_TO_FASTQ_ACTION_NAME;
+import static com.milaboratory.minnn.cli.ReportAction.REPORT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.StatPositionsAction.STAT_POSITIONS_ACTION_NAME;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.getVersionString;
 
 public final class Main {
@@ -108,10 +119,21 @@ public final class Main {
             initialized = true;
         }
 
-        CommandLine cmd = new CommandLine(new CommandMain(APP_NAME, versionInfo))
+        CommandMain.init(versionInfo);
+        CommandLine cmd = new CommandLine(new CommandMain(APP_NAME))
                 .setCommandName(command)
+                .addSubcommand(EXTRACT_ACTION_NAME, ExtractAction.class)
+                .addSubcommand(REPORT_ACTION_NAME, ReportAction.class)
+                .addSubcommand(FILTER_ACTION_NAME, FilterAction.class)
+                .addSubcommand(DEMULTIPLEX_ACTION_NAME, DemultiplexAction.class)
+                .addSubcommand(STAT_GROUPS_ACTION_NAME, StatGroupsAction.class)
+                .addSubcommand(STAT_POSITIONS_ACTION_NAME, StatPositionsAction.class)
+                .addSubcommand(SORT_ACTION_NAME, SortAction.class)
+                .addSubcommand(CORRECT_ACTION_NAME, CorrectAction.class)
+                .addSubcommand(CONSENSUS_ACTION_NAME, ConsensusAction.class)
+                .addSubcommand(MIF_TO_FASTQ_ACTION_NAME, MifToFastqAction.class)
+                .addSubcommand(GENERATE_DOCS_ACTION_NAME, GenerateDocsAction.class)
                 .addSubcommand("help", HelpCommand.class);
-
         cmd.setSeparator(" ");
         return cmd;
     }
@@ -140,45 +162,4 @@ public final class Main {
             return super.handleParseException(ex, args);
         }
     }
-
-
-
-
-
-//    public static void main(String[] args) throws Exception {
-//
-//        Signal.handle(new Signal("PIPE"), signal -> exitWithError("Broken pipe!"));
-//
-//        JCommanderBasedMain jCommanderBasedMain = new JCommanderBasedMain("minnn",
-//                new ExtractAction(),
-//                new ReportAction(),
-//                new FilterAction(),
-//                new DemultiplexAction(),
-//                new StatGroupsAction(),
-//                new StatPositionsAction(),
-//                new SortAction(),
-//                new CorrectAction(),
-//                new ConsensusAction(),
-//                new MifToFastqAction(),
-//                new GenerateDocsAction());
-//
-//        jCommanderBasedMain.setVersionInfoCallback(() -> {
-//            VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");
-//            VersionInfo minnnVersionInfo = VersionInfo.getVersionInfoForArtifact("minnn");
-//
-//            System.out.println(
-//                    "MiNNN v" + minnnVersionInfo.getVersion() +
-//                    " (built " + minnnVersionInfo.getTimestamp() +
-//                    "; rev=" + minnnVersionInfo.getRevision() +
-//                    "; branch=" + milibVersionInfo.getBranch() +
-//                    "; host=" + milibVersionInfo.getHost() +
-//                    ")\n" +
-//                    "MiLib v" + milibVersionInfo.getVersion() +
-//                    " (rev=" + milibVersionInfo.getRevision() +
-//                    "; branch=" + milibVersionInfo.getBranch() +
-//                    ")");
-//        });
-//
-//        jCommanderBasedMain.main(args);
-//    }
 }

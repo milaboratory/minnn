@@ -53,12 +53,14 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
 
     @Override
     public void run1() {
+        int actualMaxWarnings = quiet ? 0 : maxWarnings;
         ConsensusIO consensusIO = new ConsensusIO(getFullPipelineConfiguration(), groupList, inputFileName,
                 outputFileName, alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
                 goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxConsensusesPerCluster,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
                 avgQualityThreshold, trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName,
-                toSeparateGroups, inputReadsLimit, maxWarnings, threads, debugOutputFileName, debugQualityThreshold);
+                toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads, debugOutputFileName,
+                debugQualityThreshold);
         consensusIO.go();
     }
 
