@@ -46,9 +46,10 @@ public class CommonArgumentsTest {
     public void simpleTest() throws Exception {
         assertNotNull(VersionInfo.getVersionInfoForArtifact("milib"));
         assertNotNull(VersionInfo.getVersionInfoForArtifact("minnn"));
-        assertOutputContains(true, "Usage:", () -> callableExec(" "));
-        assertOutputContains(true, "Usage:", () -> callableExec("-h"));
-        assertOutputContains(true, "Usage:", () -> callableExec("--help"));
+        exec(" ");
+        exec("help");
+        assertException(RuntimeException.class, () -> callableExec("-h"));
+        assertException(RuntimeException.class, () -> callableExec("--help"));
         assertOutputContains(false, "MiNNN", () -> callableExec("-v"));
         assertOutputContains(false, "MiNNN", () -> callableExec("--version"));
     }

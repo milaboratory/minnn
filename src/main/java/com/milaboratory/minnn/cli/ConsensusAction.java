@@ -70,6 +70,14 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     }
 
     @Override
+    public void validate() {
+        if (multipleOutputs())
+            MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
+        else
+            super.validate();
+    }
+
+    @Override
     protected List<String> getInputFiles() {
         List<String> inputFileNames = new ArrayList<>();
         if (inputFileName != null)
@@ -92,7 +100,7 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     @Override
     public void handleExistenceOfOutputFile(String outFileName) {
         // disable smart overwrite if extra output files are specified
-        if ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
+        if (multipleOutputs())
             MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
         else
             super.handleExistenceOfOutputFile(outFileName);
@@ -115,6 +123,10 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
                     AppVersionInfo.get());
         else
             return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
+    }
+
+    private boolean multipleOutputs() {
+        return (originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null);
     }
 
     @Option(description = IN_FILE_OR_STDIN,

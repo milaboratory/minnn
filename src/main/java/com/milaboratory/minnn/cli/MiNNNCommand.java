@@ -30,6 +30,9 @@ package com.milaboratory.minnn.cli;
 
 import com.milaboratory.cli.BinaryFileInfo;
 
+import java.io.File;
+import java.util.*;
+
 import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 
 public interface MiNNNCommand {
@@ -41,6 +44,21 @@ public interface MiNNNCommand {
         if ((info != null) && !info.valid)
             throwValidationException("ERROR: input file \"" + inputFile + "\" is corrupted.", false);
     }
+
+    /** Default validation procedure for input and output files */
+    default void validate(List<String> inputFileNames, List<String> outputFileNames) {
+        for (String in : inputFileNames) {
+            if (!new File(in).exists())
+                throwValidationException("ERROR: input file \"" + in + "\" does not exist.", false);
+            validateInfo(in);
+        }
+        for (String f : outputFileNames)
+            if (new File(f).exists())
+                handleExistenceOfOutputFile(f);
+    }
+
+    /** This function must be implemented in commands with output and not used in commands without output */
+    default void handleExistenceOfOutputFile(String outFileName) {}
 
     /** Specifies behaviour in the case with output exists (default is to throw exception) */
     default void handleExistenceOfOutputFile(String outFileName, boolean forceOverwrite) {

@@ -71,6 +71,8 @@ public class PipelineConfigurationReaderMiNNN implements PipelineConfigurationRe
     @Override
     public PipelineConfiguration fromFile(String fileName, BinaryFileInfo fileInfo) {
         try {
+            if (fileInfo == null)
+                throw new RuntimeException("Not a MiNNN file");
             switch (fileInfo.fileType) {
                 case BEGIN_MAGIC_MIF:
                     try (MifReader reader = new MifReader(fileName)) {

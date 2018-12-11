@@ -100,7 +100,10 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
 
     @Override
     public void validate() {
-        super.validate();
+        if (notMatchedOutputFileName != null)
+            MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
+        else
+            super.validate();
         if (parameterNames.get(inputFormatName) == null)
             throwValidationException("Unknown input format: " + inputFormatName);
         validateQuality(goodQuality, spec.commandLine());
@@ -134,9 +137,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     @Override
     public ActionConfiguration getConfiguration() {
         return new ExtractActionConfiguration(new ExtractActionConfiguration.ExtractActionParameters(query,
-                inputFormatName, oriented, matchScore, mismatchScore, uppercaseMismatchScore, gapScore, scoreThreshold,
-                goodQuality, badQuality, maxQualityPenalty, singleOverlapPenalty, maxOverlap, bitapMaxErrors,
-                fairSorting, inputReadsLimit, descriptionGroupsMap, simplifiedSyntax));
+                inputFormatName, oriented, matchScore, mismatchScore, uppercaseMismatchScore, gapScore,
+                scoreThreshold, goodQuality, badQuality, maxQualityPenalty, singleOverlapPenalty, maxOverlap,
+                bitapMaxErrors, fairSorting, inputReadsLimit, descriptionGroupsMap, simplifiedSyntax));
     }
 
     @Override

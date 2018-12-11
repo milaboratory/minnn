@@ -31,34 +31,69 @@ package com.milaboratory.minnn.cli;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.SinglePattern;
 
+import java.io.File;
+
 import static com.milaboratory.minnn.cli.Main.main;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
+import static org.junit.Assert.*;
 
 public class CommandLineTestUtils {
-    public static void exec(String cmdLine) throws Exception {
+    public static void exec(String cmdLine) {
         ParsedRead.clearStaticCache();
         main(cmdLine.split("[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)"));
     }
 
-    public static void tryExec(String cmdLine) {
+    public static Void callableExec(String cmdLine) {
         try {
             exec(cmdLine);
         } catch (Exception e) {
-            throw exitWithError(e.toString());
+            e.printStackTrace();
         }
-    }
-
-    public static Void callableExec(String cmdLine) {
-        tryExec(cmdLine);
         return null;
     }
 
-    public static void createRandomMifFile(String fileName) throws Exception {
+    public static void createRandomMifFile(String fileName) {
         String fastqFile = EXAMPLES_PATH + "small/100.fastq";
         SinglePattern randomPattern = getRandomSinglePattern();
-        exec("extract --input " + fastqFile + " --output " + fileName + " --devel-parser-syntax"
+        exec("extract -f --input " + fastqFile + " --output " + fileName + " --devel-parser-syntax"
                 + " --pattern \"" + randomPattern.toString() + "\"");
+    }
+
+    public static void assertMifEqualsAsFastq(String mif1, String mif2, boolean withR2) throws Exception {
+        checkFastqEquality(mif1, mif2, withR2, true);
+    }
+
+    public static void assertMifNotEqualsAsFastq(String mif1, String mif2, boolean withR2) throws Exception {
+        checkFastqEquality(mif1, mif2, withR2, false);
+    }
+
+    private static void checkFastqEquality(String mif1, String mif2, boolean withR2, boolean equals) throws Exception {
+        String fastq1R1 = TEMP_DIR + "1r1.fastq";
+        String fastq1R2 = TEMP_DIR + "1r2.fastq";
+        String fastq2R1 = TEMP_DIR + "2r1.fastq";
+        String fastq2R2 = TEMP_DIR + "2r2.fastq";
+        if (withR2) {
+            exec("mif2fastq -f --input " + mif1 + " --group R1=" + fastq1R1 + " --group R2=" + fastq1R2);
+            exec("mif2fastq -f --input " + mif2 + " --group R1=" + fastq2R1 + " --group R2=" + fastq2R2);
+            if (equals) {
+                assertFileEquals(fastq1R1, fastq2R1);
+                assertFileEquals(fastq1R2, fastq2R2);
+            } else {
+                assertFileNotEquals(fastq1R1, fastq2R1);
+                assertFileNotEquals(fastq1R2, fastq2R2);
+            }
+        } else {
+            exec("mif2fastq -f --input " + mif1 + " --group R1=" + fastq1R1);
+            exec("mif2fastq -f --input " + mif2 + " --group R1=" + fastq2R1);
+            if (equals)
+                assertFileEquals(fastq1R1, fastq2R1);
+            else
+                assertFileNotEquals(fastq1R1, fastq2R1);
+        }
+        String[] tempFiles = withR2 ? new String[] { fastq1R1, fastq1R2, fastq2R1, fastq2R2 } : new String[] {
+                fastq1R1, fastq2R1 };
+        for (String tempFile : tempFiles)
+            assertTrue(new File(tempFile).delete());
     }
 }

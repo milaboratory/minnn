@@ -34,7 +34,7 @@ public final class Magic {
     private Magic() {}
 
     public static final int BEGIN_MAGIC_LENGTH = 13;
-    public static final int BEGIN_MAGIC_LENGTH_SHORT = 10;
+    public static final int BEGIN_MAGIC_LENGTH_SHORT = 9;
     public static final String BEGIN_MAGIC_MIF = "MiNNN.MIF";
     private static final String MAGIC_V01 = BEGIN_MAGIC_MIF + ".V01";
     public static final String BEGIN_MAGIC = MAGIC_V01;

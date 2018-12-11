@@ -51,6 +51,7 @@ import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAME;
 import static com.milaboratory.minnn.cli.StatPositionsAction.STAT_POSITIONS_ACTION_NAME;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.getVersionString;
+import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 public final class Main {
     private static boolean initialized = false;
@@ -155,11 +156,7 @@ public final class Main {
     private static class ExceptionHandler<R> extends DefaultExceptionHandler<R> {
         @Override
         public R handleParseException(ParameterException ex, String[] args) {
-            if (ex instanceof ValidationException && !((ValidationException)ex).printHelp) {
-                System.err.println(ex.getMessage());
-                return returnResultOrExit(null);
-            }
-            return super.handleParseException(ex, args);
+            throw exitWithError(ex.getMessage());
         }
     }
 }

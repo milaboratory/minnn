@@ -51,8 +51,7 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
 
     @Override
     public void run0() {
-        MifToFastqIO mifToFastqIO = new MifToFastqIO(inputFileName, parseGroups(groupsQuery), copyOriginalHeaders,
-                inputReadsLimit);
+        MifToFastqIO mifToFastqIO = new MifToFastqIO(inputFileName, groupsQuery, copyOriginalHeaders, inputReadsLimit);
         mifToFastqIO.go();
     }
 
@@ -78,14 +77,15 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
 
     @Override
     protected List<String> getOutputFiles() {
-        return new ArrayList<>(parseGroups(groupsQuery).values());
+        return new ArrayList<>(groupsQuery.values());
     }
 
-    @Parameters(arity = "1..*",
-            description = "Group Options: Groups and their file names for output reads. At least 1 group must " +
-            "be specified. Built-in groups R1, R2, R3... used for input reads. Example: --group-R1 out_R1.fastq " +
-            "--group-R2 out_R2.fastq --group-UMI UMI.fastq")
-    private List<String> groupsQuery = new ArrayList<>();
+    @Option(description = "Group Options: Groups and their file names for output reads. At least 1 group must " +
+            "be specified. Built-in groups R1, R2, R3... used for input reads. Example: --group R1=out_R1.fastq " +
+            "--group R2=out_R2.fastq --group UMI=UMI.fastq",
+            names = {"--group"},
+            arity = "1..*")
+    private LinkedHashMap<String, String> groupsQuery = new LinkedHashMap<>();
 
     @Option(description = IN_FILE_OR_STDIN,
             names = {"--input"})
@@ -98,19 +98,4 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
     @Option(description = NUMBER_OF_READS,
             names = {"-n", "--number-of-reads"})
     private long inputReadsLimit = 0;
-
-    private LinkedHashMap<String, String> parseGroups(List<String> groupsQuery) {
-        if (groupsQuery.size() % 2 != 0)
-            throwValidationException("Group Options not parsed, expected pairs of groups and their file names: "
-                    + groupsQuery);
-        LinkedHashMap<String, String> groups = new LinkedHashMap<>();
-        for (int i = 0; i < groupsQuery.size(); i += 2) {
-            String currentGroup = groupsQuery.get(i);
-            String currentFileName = groupsQuery.get(i + 1);
-            if ((currentGroup.length() < 9) || !currentGroup.substring(0, 8).equals("--group-"))
-                throwValidationException("Syntax error in group Option: " + currentGroup);
-            groups.put(currentGroup.substring(8), currentFileName);
-        }
-        return groups;
-    }
 }
