@@ -164,7 +164,8 @@ public class CommonPatternTests {
         for (int i = 0; i < 1000; i++) {
             NucleotideSequence randomSeq = TestUtil.randomSequence(NucleotideSequence.ALPHABET,
                     1, 100);
-            SinglePattern randomPattern = getRandomSinglePattern();
+            SinglePattern randomPattern = rg.nextBoolean() ? getRandomRawSinglePattern()
+                    : getRandomSingleReadPattern();
             MatchingResult matchingResult = randomPattern.match(new NSequenceWithQuality(randomSeq.toString()));
             matchingResult.getBestMatch();
         }

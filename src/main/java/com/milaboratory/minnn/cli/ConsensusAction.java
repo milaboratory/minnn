@@ -71,10 +71,7 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
 
     @Override
     public void validate() {
-        if (multipleOutputs())
-            MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
-        else
-            super.validate();
+        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
     }
 
     @Override
@@ -100,7 +97,7 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     @Override
     public void handleExistenceOfOutputFile(String outFileName) {
         // disable smart overwrite if extra output files are specified
-        if (multipleOutputs())
+        if ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
             MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
         else
             super.handleExistenceOfOutputFile(outFileName);
@@ -123,10 +120,6 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
                     AppVersionInfo.get());
         else
             return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
-    }
-
-    private boolean multipleOutputs() {
-        return (originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null);
     }
 
     @Option(description = IN_FILE_OR_STDIN,
@@ -183,31 +176,31 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     private int maxConsensusesPerCluster = DEFAULT_CONSENSUS_MAX_PER_CLUSTER;
 
     @Option(description = "Minimal length of good sequence that will be still considered good after trimming " +
-            "bad quality tails. This Option is for trimming input reads.",
+            "bad quality tails. This parameter is for trimming input reads.",
             names = {"--reads-min-good-sequence-length"})
     private int readsMinGoodSeqLength = DEFAULT_CONSENSUS_READS_MIN_GOOD_SEQ_LENGTH;
 
-    @Option(description = "Minimal average quality for bad quality tails trimmer. This Option is for " +
+    @Option(description = "Minimal average quality for bad quality tails trimmer. This parameter is for " +
             "trimming input reads.",
             names = {"--reads-avg-quality-threshold"})
     private float readsAvgQualityThreshold = DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD;
 
-    @Option(description = "Window size for bad quality tails trimmer. This Option is for trimming input " +
+    @Option(description = "Window size for bad quality tails trimmer. This parameter is for trimming input " +
             "reads.",
             names = {"--reads-trim-window-size"})
     private int readsTrimWindowSize = DEFAULT_CONSENSUS_READS_TRIM_WINDOW_SIZE;
 
     @Option(description = "Minimal length of good sequence that will be still considered good after trimming " +
-            "bad quality tails. This Option is for trimming output consensuses.",
+            "bad quality tails. This parameter is for trimming output consensuses.",
             names = {"--min-good-sequence-length"})
     private int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
-    @Option(description = "Minimal average quality for bad quality tails trimmer. This Option is for " +
+    @Option(description = "Minimal average quality for bad quality tails trimmer. This parameter is for " +
             "trimming output consensuses.",
             names = {"--avg-quality-threshold"})
     private float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
 
-    @Option(description = "Window size for bad quality tails trimmer. This Option is for trimming output " +
+    @Option(description = "Window size for bad quality tails trimmer. This parameter is for trimming output " +
             "consensuses.",
             names = {"--trim-window-size"})
     private int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
@@ -222,7 +215,7 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
             names = {"--not-used-reads-output"})
     private String notUsedReadsOutputFileName = null;
 
-    @Option(description = "If this Option is specified, consensuses will not be written as " +
+    @Option(description = "If this parameter is specified, consensuses will not be written as " +
             "reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and " +
             "consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by " +
             "consensuses using filter / demultiplex actions, or export original reads and corresponding " +

@@ -136,6 +136,7 @@ public final class Main {
                 .addSubcommand(GENERATE_DOCS_ACTION_NAME, GenerateDocsAction.class)
                 .addSubcommand("help", HelpCommand.class);
         cmd.setSeparator(" ");
+        cmd.setUnmatchedOptionsArePositionalParams(true);
         return cmd;
     }
 

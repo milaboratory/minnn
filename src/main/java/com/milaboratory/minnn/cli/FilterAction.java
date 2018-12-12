@@ -45,6 +45,7 @@ import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
 import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
 import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
+import static com.milaboratory.minnn.util.CommonUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 @Command(name = FILTER_ACTION_NAME,
@@ -60,7 +61,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Override
     public void run1() {
-        String filterQuery = String.join("", filterQueryList);
+        String filterQuery = stripQuotes(String.join("", filterQueryList));
         ReadFilter parsedReadFilter = parseFilterQuery(filterQuery);
         if (parsedReadFilter == null)
             throw exitWithError("Filter query not parsed: " + filterQuery);
@@ -76,7 +77,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Override
     public void validate() {
-        super.validate();
+        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
         if (filterQueryList.size() == 0)
             throwValidationException("Filter query is not specified!");
     }

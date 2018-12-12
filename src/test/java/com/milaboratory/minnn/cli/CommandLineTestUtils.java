@@ -55,7 +55,7 @@ public class CommandLineTestUtils {
 
     public static void createRandomMifFile(String fileName) {
         String fastqFile = EXAMPLES_PATH + "small/100.fastq";
-        SinglePattern randomPattern = getRandomSinglePattern();
+        SinglePattern randomPattern = getRandomSingleReadPattern();
         exec("extract -f --input " + fastqFile + " --output " + fileName + " --devel-parser-syntax"
                 + " --pattern \"" + randomPattern.toString() + "\"");
     }
@@ -79,10 +79,8 @@ public class CommandLineTestUtils {
             if (equals) {
                 assertFileEquals(fastq1R1, fastq2R1);
                 assertFileEquals(fastq1R2, fastq2R2);
-            } else {
-                assertFileNotEquals(fastq1R1, fastq2R1);
-                assertFileNotEquals(fastq1R2, fastq2R2);
-            }
+            } else
+                assertFalse(fileEquals(fastq1R1, fastq2R1) && fileEquals(fastq1R2, fastq2R2));
         } else {
             exec("mif2fastq -f --input " + mif1 + " --group R1=" + fastq1R1);
             exec("mif2fastq -f --input " + mif2 + " --group R1=" + fastq2R1);

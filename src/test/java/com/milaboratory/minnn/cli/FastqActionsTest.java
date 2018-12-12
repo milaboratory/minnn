@@ -52,9 +52,9 @@ public class FastqActionsTest {
     public void simpleTest() throws Exception {
         String inputFile = getExampleMif("singleReadWithG1-G3");
         StringBuilder outputArgs = new StringBuilder();
-        Arrays.stream(new String[] {"R1", "G1", "G2", "G3"}).forEach(groupName -> outputArgs.append(" --group-")
-                .append(groupName).append(' ').append(TEMP_DIR).append("out_").append(groupName).append(".fastq"));
-        String query = "mif2fastq --input " + inputFile + outputArgs + " --copy-original-headers";
+        Arrays.stream(new String[] {"R1", "G1", "G2", "G3"}).forEach(groupName -> outputArgs.append(" --group ")
+                .append(groupName).append('=').append(TEMP_DIR).append("out_").append(groupName).append(".fastq"));
+        String query = "mif2fastq -f --input " + inputFile + outputArgs + " --copy-original-headers";
         exec(query);
         for (String groupName : new String[] {"R1", "G1", "G2", "G3"}) {
             String fileName = TEMP_DIR + "out_" + groupName + ".fastq";

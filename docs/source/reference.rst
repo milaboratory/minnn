@@ -34,7 +34,7 @@ extract
  --fair-sorting: Use fair sorting and fair best match by score for all patterns.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --threads: Number of threads for parsing reads.
- --description-group-: Description group names and regular expressions to parse expected nucleotide sequences for that groups from read description. Example: --description-group-CELLID1='ATTA.{2-5}GACA' --description-group-CELLID2='.{11}$'
+ --description-group: Description group names and regular expressions to parse expected nucleotide sequences for that groups from read description. Example: --description-group CELLID1='ATTA.{2-5}GACA' --description-group CELLID2='.{11}$'
 
 .. _filter:
 
@@ -59,7 +59,7 @@ demultiplex
 .. code-block:: text
 
  Filter Options: Barcodes and sample configuration files that specify sequences for demultiplexing. At least 1 barcode or 1 sample file must be specified. Syntax example: minnn demultiplex --by-barcode UID --by-sample samples.txt input.mif
-
+ --demultiplex-log: Demultiplex log file name, to record names of generated files.
  --output-buffer-size: Write buffer size for each output file.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
 
@@ -71,8 +71,7 @@ mif2fastq
 
 .. code-block:: text
 
- Group Options: Groups and their file names for output reads. At least 1 group must be specified. Built-in groups R1, R2, R3... used for input reads. Example: --group-R1 out_R1.fastq --group-R2 out_R2.fastq --group-UMI UMI.fastq
-
+ --group: Group Options: Groups and their file names for output reads. At least 1 group must be specified. Built-in groups R1, R2, R3... used for input reads. Example: --group R1=out_R1.fastq --group R2=out_R2.fastq --group UMI=UMI.fastq
  --input: Input file in "mif" format. If not specified, stdin will be used.
  --copy-original-headers: Copy original comments from initial fastq files to comments of output fastq files.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
@@ -96,7 +95,6 @@ correct
  --single-substitution-probability: Single substitution probability for clustering algorithm.
  --single-indel-probability: Single insertion/deletion probability for clustering algorithm.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
- --suppress-warnings: Don't display any warnings.
 
 .. _sort:
 
@@ -110,7 +108,6 @@ sort
  --input: Input file in "mif" format. If not specified, stdin will be used.
  --output: Output file in "mif" format. If not specified, stdout will be used.
  --chunk-size: Chunk size for sorter.
- --suppress-warnings: Don't display any warnings.
 
 .. _consensus:
 

@@ -64,6 +64,11 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
     }
 
     @Override
+    public void validate() {
+        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
+    }
+
+    @Override
     protected List<String> getInputFiles() {
         List<String> inputFileNames = new ArrayList<>();
         if (inputFileName != null)

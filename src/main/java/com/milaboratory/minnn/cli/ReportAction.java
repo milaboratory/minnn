@@ -44,6 +44,7 @@ import static com.milaboratory.minnn.cli.CommonDescriptions.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.ReportAction.REPORT_ACTION_NAME;
 import static com.milaboratory.minnn.parser.ParserUtils.parseMultiTargetString;
+import static com.milaboratory.minnn.util.CommonUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 @Command(name = REPORT_ACTION_NAME,
@@ -66,12 +67,12 @@ public final class ReportAction extends ACommand implements MiNNNCommand {
         Parser patternParser = new Parser(patternAligner);
         Pattern pattern;
         try {
-            pattern = patternParser.parseQuery(query);
+            pattern = patternParser.parseQuery(stripQuotes(query));
         } catch (ParserException e) {
             System.err.println("Error while parsing the pattern!");
             throw exitWithError(e.getMessage());
         }
-        MultiNSequenceWithQuality target = parseMultiTargetString(targetString);
+        MultiNSequenceWithQuality target = parseMultiTargetString(stripQuotes(targetString));
         try {
             for (int i = 0; i < target.numberOfSequences(); i++)
                 target.get(i);

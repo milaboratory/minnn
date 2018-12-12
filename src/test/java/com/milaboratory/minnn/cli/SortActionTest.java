@@ -56,14 +56,15 @@ public class SortActionTest {
         String outputFile3 = TEMP_DIR + "sortOutput3.mif";
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(startFile);
-            exec("extract --input-format mif --input " + startFile + " --output " + inputFile
+            exec("extract -f --input-format mif --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:an{3}t)(G2:n{2})\" --bitap-max-errors 0");
-            exec("sort --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + inputFile
+            exec("sort -f --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + inputFile
                     + " --output " + outputFile1 + " --groups G2 G1");
-            exec("sort --input " + outputFile1 + " --output " + outputFile2 + " --groups G1");
-            exec("sort --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + outputFile2
+            exec("sort -f --input " + outputFile1 + " --output " + outputFile2 + " --groups G1");
+            exec("sort -f --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + outputFile2
                     + " --output " + outputFile3 + " --groups G2 G1");
-            assertFileEquals(outputFile1, outputFile3);
+            assertFileNotEquals(outputFile1, outputFile3);
+            assertMifEqualsAsFastq(outputFile1, outputFile3, false);
         }
         for (String fileName : new String[] { startFile, inputFile, outputFile1, outputFile2, outputFile3 })
             assertTrue(new File(fileName).delete());
@@ -75,10 +76,11 @@ public class SortActionTest {
         String outputFile1 = TEMP_DIR + "sortOutput1.mif";
         String outputFile2 = TEMP_DIR + "sortOutput2.mif";
         String outputFile3 = TEMP_DIR + "sortOutput3.mif";
-        exec("sort --input " + inputFile + " --output " + outputFile1 + " --groups G3 G4 G1 G2 R1 R2");
-        exec("sort --input " + outputFile1 + " --output " + outputFile2 + " --groups R2 G2 R1");
-        exec("sort --input " + outputFile2 + " --output " + outputFile3 + " --groups G3 G4 G1 G2 R1 R2");
-        assertFileEquals(outputFile1, outputFile3);
+        exec("sort -f --input " + inputFile + " --output " + outputFile1 + " --groups G3 G4 G1 G2 R1 R2");
+        exec("sort -f --input " + outputFile1 + " --output " + outputFile2 + " --groups R2 G2 R1");
+        exec("sort -f --input " + outputFile2 + " --output " + outputFile3 + " --groups G3 G4 G1 G2 R1 R2");
+        assertFileNotEquals(outputFile1, outputFile3);
+        assertMifEqualsAsFastq(outputFile1, outputFile3, true);
         for (String fileName : new String[] { inputFile, outputFile1, outputFile2, outputFile3 })
             assertTrue(new File(fileName).delete());
     }

@@ -68,6 +68,11 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     }
 
     @Override
+    public void validate() {
+        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
+    }
+
+    @Override
     protected List<String> getInputFiles() {
         return Collections.singletonList(inputFileName);
     }

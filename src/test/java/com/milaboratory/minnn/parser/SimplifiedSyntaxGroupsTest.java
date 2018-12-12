@@ -77,10 +77,10 @@ public class SimplifiedSyntaxGroupsTest {
             }
             for (int j = 0; j < 5; j++) {
                 orPatterns.add(new OrPattern(patternAligner, fuzzyMatchPatterns.get(rg.nextInt(3)),
-                        getRandomSinglePattern(patternAligner, fuzzyMatchPatterns.get(rg.nextInt(3))),
+                        getRandomRawSinglePattern(patternAligner, fuzzyMatchPatterns.get(rg.nextInt(3))),
                         repeatPatterns.get(rg.nextInt(3)),
-                        getRandomSinglePattern(patternAligner, repeatPatterns.get(rg.nextInt(3)))));
-                multiPatterns.add(createMultiPattern(patternAligner, getRandomSinglePattern(patternAligner,
+                        getRandomRawSinglePattern(patternAligner, repeatPatterns.get(rg.nextInt(3)))));
+                multiPatterns.add(createMultiPattern(patternAligner, getRandomRawSinglePattern(patternAligner,
                         rg.nextBoolean() ? fuzzyMatchPatterns.get(rg.nextInt(3))
                                 : repeatPatterns.get(rg.nextInt(3))),
                         getRandomBasicPattern(patternAligner)));
@@ -181,7 +181,7 @@ public class SimplifiedSyntaxGroupsTest {
         String resultPatternName = "";
         do {
             try {
-                resultPattern = rg.nextBoolean() ? getRandomSinglePattern(basicPatterns)
+                resultPattern = rg.nextBoolean() ? getRandomRawSinglePattern(basicPatterns)
                         : getRandomMultiReadPattern(singleToMultiPatterns(basicPatterns));
             } catch (IllegalStateException e) {
                 continue;

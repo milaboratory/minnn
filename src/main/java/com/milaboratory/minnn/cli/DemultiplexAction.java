@@ -36,9 +36,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import picocli.CommandLine.*;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
@@ -53,7 +51,7 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
         description = "Multi-filtering (one to many) for nucleotide sequences.")
 public final class DemultiplexAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
     public static final String DEMULTIPLEX_ACTION_NAME = "demultiplex";
-    private static ParsedDemultiplexArguments parsedDemultiplexArguments = null;
+    private ParsedDemultiplexArguments parsedDemultiplexArguments = null;
 
     public DemultiplexAction() {
         super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
@@ -74,6 +72,11 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     }
 
     @Override
+    public void validate() {
+        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
+    }
+
+    @Override
     protected List<String> getInputFiles() {
         prepareDemultiplexArguments();
         List<String> inputFileNames = new ArrayList<>();
@@ -85,14 +88,15 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     protected List<String> getOutputFiles() {
         List<String> outputFileNames = new ArrayList<>();
         outputFileNames.add(logFileName);
-        try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName)))
-        {
-            String loggedFileName;
-            while ((loggedFileName = logReader.readLine()) != null)
-                outputFileNames.add(loggedFileName);
-        } catch (IOException e) {
-            throw exitWithError("Bad or corrupted log file, read error: " + e.getMessage());
-        }
+        if (new File(logFileName).exists())
+            try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName)))
+            {
+                String loggedFileName;
+                while ((loggedFileName = logReader.readLine()) != null)
+                    outputFileNames.add(loggedFileName);
+            } catch (IOException e) {
+                throw exitWithError("Bad or corrupted log file, read error: " + e.getMessage());
+            }
         return outputFileNames;
     }
 

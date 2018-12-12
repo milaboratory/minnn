@@ -58,15 +58,16 @@ public class FilterActionTest {
             String filter = getRandomFilter();
             String fairSorting = rg.nextBoolean() ? "" : " --fair-sorting";
             createRandomMifFile(startFile);
-            exec("extract --input-format mif --input " + startFile + " --output " + inputFile
+            exec("extract -f --input-format mif --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:tnacn)(G2:ncnc)\" --bitap-max-errors 0");
-            exec("filter --input " + inputFile + " --output " + outputFile1 + fairSorting
+            exec("filter -f --input " + inputFile + " --output " + outputFile1 + fairSorting
                     + " --threads " + (rg.nextInt(5) + 1) + filter);
-            exec("filter --input " + outputFile1 + " --output " + outputFile2 + fairSorting
+            exec("filter -f --input " + outputFile1 + " --output " + outputFile2 + fairSorting
                     + " --threads " + (rg.nextInt(5) + 1) + filter);
-            exec("filter --input " + outputFile2 + " --output " + outputFile3 + fairSorting
+            exec("filter -f --input " + outputFile2 + " --output " + outputFile3 + fairSorting
                     + " --threads " + (rg.nextInt(5) + 1) + filter);
-            assertFileEquals(outputFile2, outputFile3);
+            assertFileNotEquals(outputFile2, outputFile3);
+            assertMifEqualsAsFastq(outputFile2, outputFile3, false);
         }
         for (String fileName : new String[] { startFile, inputFile, outputFile1, outputFile2, outputFile3 })
             assertTrue(new File(fileName).delete());
@@ -90,15 +91,16 @@ public class FilterActionTest {
         String outputFile2 = TEMP_DIR + "filterOutput2.mif";
         String outputFile3 = TEMP_DIR + "filterOutput3.mif";
         String filter = " \"G1~'AT'|G2~'GGC'&R2~'AANC&TA'|Len(G4)=5\"";
-        exec("filter --fair-sorting --input " + inputFile + " --output " + outputFile1 + filter);
+        exec("filter -f --fair-sorting --input " + inputFile + " --output " + outputFile1 + filter);
         for (String fairSorting : new String[] { "", " --fair-sorting" })
-            assertOutputContains(true, "95", () -> callableExec("filter" + fairSorting
+            assertOutputContains(true, "95", () -> callableExec("filter -f" + fairSorting
                     + " --input " + inputFile + " --output " + outputFile1 + filter));
-        exec("filter --fair-sorting --input " + outputFile1 + " --output " + outputFile2 + filter);
-        exec("filter --fair-sorting --input " + outputFile2 + " --output " + outputFile3 + filter);
-        assertFileEquals(outputFile2, outputFile3);
-        assertException(RuntimeException.class, () -> callableExec("filter --input " + inputFile
-                + " G1~'A\\A'"));
+        exec("filter -f --fair-sorting --input " + outputFile1 + " --output " + outputFile2 + filter);
+        exec("filter -f --fair-sorting --input " + outputFile2 + " --output " + outputFile3 + filter);
+        assertFileNotEquals(outputFile2, outputFile3);
+        assertMifEqualsAsFastq(outputFile2, outputFile3, true);
+        assertOutputContains(true, "must be for single read", () -> callableExec("filter -f --input "
+                + inputFile + " G1~'A\\A'"));
         for (String fileName : new String[] { inputFile, outputFile1, outputFile2, outputFile3 })
             assertTrue(new File(fileName).delete());
     }

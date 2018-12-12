@@ -61,7 +61,6 @@ public class CorrectActionTest {
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + inputFile + " --output " + outputFile + " --groups G1 G2");
             assertFileNotEquals(inputFile, outputFile);
-            assertMifNotEqualsAsFastq(inputFile, outputFile, false);
         }
         for (String fileName : new String[] { startFile, inputFile, outputFile })
             assertTrue(new File(fileName).delete());
@@ -89,11 +88,11 @@ public class CorrectActionTest {
         exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct4.mif --max-total-errors 0"
                 + " --groups G1 G2 G3 G4");
         assertFileNotEquals(inputFile, TEMP_DIR + "correct4.mif");
-        assertMifNotEqualsAsFastq(inputFile, TEMP_DIR + "correct4.mif", true);
+        assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct4.mif", true);
         exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct5.mif --max-mismatches 0" +
                 " --max-indels 0 --groups G1 G2 G3 G4");
         assertFileNotEquals(TEMP_DIR + "correct4.mif", TEMP_DIR + "correct5.mif");
-        assertMifEqualsAsFastq(TEMP_DIR + "correct4.mif", TEMP_DIR + "correct5.mif", true);
+        assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct5.mif", true);
         assertTrue(new File(inputFile).delete());
         for (int i = 1; i <= 5; i++)
             assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());

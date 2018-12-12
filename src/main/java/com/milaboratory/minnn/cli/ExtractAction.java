@@ -51,6 +51,7 @@ import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipeli
 import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 import static com.milaboratory.minnn.io.MinnnDataFormatNames.parameterNames;
 import static com.milaboratory.minnn.parser.ParserFormat.*;
+import static com.milaboratory.minnn.util.CommonUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 @Command(name = EXTRACT_ACTION_NAME,
@@ -73,9 +74,8 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         Parser patternParser = new Parser(patternAligner);
         Pattern pattern;
         try {
-            String preparedQuery = query.replaceAll("^\"|\"$", "");
-            pattern = simplifiedSyntax ? patternParser.parseQuery(preparedQuery, SIMPLIFIED)
-                    : patternParser.parseQuery(preparedQuery);
+            pattern = simplifiedSyntax ? patternParser.parseQuery(stripQuotes(query), SIMPLIFIED)
+                    : patternParser.parseQuery(stripQuotes(query));
         } catch (ParserException e) {
             System.err.println("Error while parsing the pattern!");
             throw exitWithError(e.getMessage());
@@ -100,10 +100,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
 
     @Override
     public void validate() {
-        if (notMatchedOutputFileName != null)
-            MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
-        else
-            super.validate();
+        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
         if (parameterNames.get(inputFormatName) == null)
             throwValidationException("Unknown input format: " + inputFormatName);
         validateQuality(goodQuality, spec.commandLine());
@@ -233,9 +230,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     private int threads = DEFAULT_THREADS;
 
     @Option(description = "Description group names and regular expressions to parse expected " +
-            "nucleotide sequences for that groups from read description. Example: --description-group-CELLID1=" +
-            "'ATTA.{2-5}GACA' --description-group-CELLID2='.{11}$'",
-            names = "--description-group-")
+            "nucleotide sequences for that groups from read description. Example: --description-group CELLID1=" +
+            "'ATTA.{2-5}GACA' --description-group CELLID2='.{11}$'",
+            names = "--description-group")
     private LinkedHashMap<String, String> descriptionGroupsMap = new LinkedHashMap<>();
 
     @Option(description = "Use \"simplified\" parser syntax with class names and their arguments in " +

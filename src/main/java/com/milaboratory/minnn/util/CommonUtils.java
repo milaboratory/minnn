@@ -26,31 +26,13 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.cli;
+package com.milaboratory.minnn.util;
 
-import com.milaboratory.util.VersionInfo;
-import org.junit.*;
-
-import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
-import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
-import static org.junit.Assert.*;
-
-public class CommonArgumentsTest {
-    @BeforeClass
-    public static void init() {
-        exitOnError = false;
+public final class CommonUtils {
+    private CommonUtils() {
     }
 
-    @Test
-    public void simpleTest() throws Exception {
-        assertNotNull(VersionInfo.getVersionInfoForArtifact("milib"));
-        assertNotNull(VersionInfo.getVersionInfoForArtifact("minnn"));
-        exec(" ");
-        exec("help");
-        assertOutputContains(true, "-h / --help is not supported", () -> callableExec("-h"));
-        assertOutputContains(true, "-h / --help is not supported", () -> callableExec("--help"));
-        assertOutputContains(false, "MiNNN", () -> callableExec("-v"));
-        assertOutputContains(false, "MiNNN", () -> callableExec("--version"));
+    public static String stripQuotes(String str) {
+        return str.replaceAll("^\"|\"$", "");
     }
 }

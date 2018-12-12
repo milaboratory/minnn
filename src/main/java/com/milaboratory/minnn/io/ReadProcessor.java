@@ -186,7 +186,8 @@ public final class ReadProcessor {
             return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
         else
             return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
-                    : new MifWriter(outputFileName, mifHeader);    }
+                    : new MifWriter(outputFileName, mifHeader);
+    }
 
     private class IndexedSequenceRead {
         final SequenceRead sequenceRead;

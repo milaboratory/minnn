@@ -30,12 +30,10 @@ package com.milaboratory.minnn.parser;
 
 import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 import com.milaboratory.minnn.pattern.*;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 
 import static com.milaboratory.minnn.parser.ParserFormat.SIMPLIFIED;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
@@ -89,7 +87,8 @@ public class SimplifiedTokenizerTest {
             int nestedMultiLevel = rg.nextInt(5) + 1;
             ArrayList<SinglePattern> singlePatterns = new ArrayList<>();
             for (int j = 0; j < nestedSingleLevel; j++) {
-                singlePatterns.add(getRandomSinglePattern(singlePatterns.toArray(new SinglePattern[singlePatterns.size()])));
+                singlePatterns.add(getRandomRawSinglePattern(singlePatterns
+                        .toArray(new SinglePattern[singlePatterns.size()])));
                 Collections.reverse(singlePatterns);
             }
             Parser parser = new Parser(getRandomPatternAligner());
@@ -107,8 +106,9 @@ public class SimplifiedTokenizerTest {
             parseResult = parser.parseQuery(multiPatterns.get(0).toString(), SIMPLIFIED);
             assertNotNull(parseResult);
             assertEquals(multiPatterns.get(0).toString(), parseResult.toString());
-            multiPatterns.add(createMultiPattern(getRandomPatternAligner(), rg.nextBoolean(), getRandomSinglePattern(
-                    getRandomBasicPattern(true), getRandomBasicPattern(), singlePatterns.get(0))));
+            multiPatterns.add(createMultiPattern(getRandomPatternAligner(), rg.nextBoolean(),
+                    getRandomRawSinglePattern(getRandomBasicPattern(true), getRandomBasicPattern(),
+                            singlePatterns.get(0))));
             parseResult = parser.parseQuery(multiPatterns.get(multiPatterns.size() - 1).toString(), SIMPLIFIED);
             assertNotNull(parseResult);
             assertEquals(multiPatterns.get(multiPatterns.size() - 1).toString(), parseResult.toString());

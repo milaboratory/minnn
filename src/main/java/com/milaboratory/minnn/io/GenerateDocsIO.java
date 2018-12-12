@@ -27,6 +27,7 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public final class GenerateDocsIO {
     private static final List<String> skippedOptions = Arrays.asList("--help", "--verbose", "--force");
+    private static final List<String> commandsWithParameters = Collections.singletonList(DEMULTIPLEX_ACTION_NAME);
     private static final HashMap<String, List<String>> specificOptions = new HashMap<>();
     static {
         List<String> commandsWithForceOverwrite = Arrays.asList(EXTRACT_ACTION_NAME, FILTER_ACTION_NAME,
@@ -67,20 +68,27 @@ public final class GenerateDocsIO {
                 for (Field field : actionClass.getDeclaredFields()) {
                     FieldType fieldType = getFieldType(field);
                     if ((fieldType != UNKNOWN) && !isHidden(field)) {
-                        ArrayList<String> names = getOptionNames(field);
-                        String description = getAnnotationStringParameter(field, "description");
-                        if (names.stream().noneMatch(skippedOptions::contains)) {
-                            if (names.stream().anyMatch(specificOptions.keySet()::contains))
-                                for (HashMap.Entry<String, List<String>> specificOption : specificOptions.entrySet()) {
-                                    if (names.stream().anyMatch(specificOption.getKey()::contains)
-                                            && specificOption.getValue().contains(actionName)) {
-                                        parameterDescriptionsLast.add(" " + String.join(", ", names) + ": "
-                                                + description);
+                        if (fieldType == PARAMETERS) {
+                            if (commandsWithParameters.contains(actionName))
+                                parameterDescriptions.add(" " + getAnnotationStringParameter(field,
+                                        "description"));
+                        } else {
+                            ArrayList<String> names = getOptionNames(field);
+                            String description = getAnnotationStringParameter(field, "description");
+                            if (names.stream().noneMatch(skippedOptions::contains)) {
+                                if (names.stream().anyMatch(specificOptions.keySet()::contains))
+                                    for (HashMap.Entry<String, List<String>> specificOption
+                                            : specificOptions.entrySet()) {
+                                        if (names.stream().anyMatch(specificOption.getKey()::contains)
+                                                && specificOption.getValue().contains(actionName)) {
+                                            parameterDescriptionsLast.add(" " + String.join(", ", names)
+                                                    + ": " + description);
+                                        }
                                     }
-                                }
-                            else
-                                parameterDescriptions.add(" " + String.join(", ", names) + ": "
-                                        + description);
+                                else
+                                    parameterDescriptions.add(" " + String.join(", ", names) + ": "
+                                            + description);
+                            }
                         }
                     }
                 }
@@ -109,8 +117,12 @@ public final class GenerateDocsIO {
                 Stream.of(Command.class, Option.class, Parameters.class));
         if (value instanceof RuntimeException)
             throw exitWithError(value.toString());
-        else
-            return value.toString();
+        else {
+            if (value.getClass().isArray())
+                return (String)(((Object[])value)[0]);
+            else
+                return (String)value;
+        }
     }
 
     private FieldType getFieldType(AnnotatedElement annotatedElement) {
