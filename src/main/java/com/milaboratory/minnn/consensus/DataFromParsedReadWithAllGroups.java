@@ -28,22 +28,34 @@
  */
 package com.milaboratory.minnn.consensus;
 
+import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
 import java.util.*;
 
-final class DataFromParsedReadWithAllGroups extends BasicDataFromParsedRead {
+public final class DataFromParsedReadWithAllGroups extends BasicDataFromParsedRead {
     private final LinkedHashMap<String, SequenceWithAttributes> otherGroups;
 
-    
+    public DataFromParsedReadWithAllGroups(
+            ParsedRead parsedRead, DefaultGroups defaultGroups, ConsensusGroups consensusGroups) {
+        super(parsedRead, defaultGroups, consensusGroups);
+        otherGroups = new LinkedHashMap<>();
+        for (MatchedGroup matchedGroup : parsedRead.getGroups()) {
+            String groupName = matchedGroup.getGroupName();
+            if (!defaultGroups.get().contains(groupName) && !consensusGroups.getGroups().contains(groupName))
+                otherGroups.put(groupName, new SequenceWithAttributes(
+                        matchedGroup.getValue().getSequence(), matchedGroup.getValue().getQuality(), originalReadId));
+        }
+    }
 
-    DataFromParsedReadWithAllGroups(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, long originalReadId,
-                                    LinkedHashMap<String, SequenceWithAttributes> otherGroups) {
+    public DataFromParsedReadWithAllGroups(
+            SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, long originalReadId,
+            LinkedHashMap<String, SequenceWithAttributes> otherGroups) {
         super(sequences, barcodes, originalReadId);
         this.otherGroups = new LinkedHashMap<>(otherGroups);
     }
 
-    LinkedHashMap<String, SequenceWithAttributes> getOtherGroups() {
+    public LinkedHashMap<String, SequenceWithAttributes> getOtherGroups() {
         return new LinkedHashMap<>(otherGroups);
     }
 }

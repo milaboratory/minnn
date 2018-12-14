@@ -28,7 +28,19 @@
  */
 package com.milaboratory.minnn.consensus;
 
-public enum OriginalReadStatus {
-    NOT_MATCHED, READ_DISCARDED_TRIM, CONSENSUS_DISCARDED_TRIM_STAGE1, CONSENSUS_DISCARDED_TRIM_STAGE2,
-    NOT_USED_IN_CONSENSUS, USED_IN_CONSENSUS
+import com.milaboratory.minnn.outputconverter.ParsedRead;
+
+import java.util.*;
+
+import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
+
+public final class OriginalReadData {
+    public final ParsedRead read;
+    public OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
+    public Consensus consensus = null;
+    public List<long[]> alignmentScores = Arrays.asList(null, null);
+
+    public OriginalReadData(ParsedRead read) {
+        this.read = read;
+    }
 }

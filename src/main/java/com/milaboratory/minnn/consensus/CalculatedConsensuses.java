@@ -28,7 +28,13 @@
  */
 package com.milaboratory.minnn.consensus;
 
-public enum OriginalReadStatus {
-    NOT_MATCHED, READ_DISCARDED_TRIM, CONSENSUS_DISCARDED_TRIM_STAGE1, CONSENSUS_DISCARDED_TRIM_STAGE2,
-    NOT_USED_IN_CONSENSUS, USED_IN_CONSENSUS
+import java.util.ArrayList;
+
+public final class CalculatedConsensuses {
+    public final ArrayList<Consensus> consensuses = new ArrayList<>();
+    public final long orderedPortIndex;
+
+    public CalculatedConsensuses(long orderedPortIndex) {
+        this.orderedPortIndex = orderedPortIndex;
+    }
 }

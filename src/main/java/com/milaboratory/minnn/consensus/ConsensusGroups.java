@@ -28,26 +28,20 @@
  */
 package com.milaboratory.minnn.consensus;
 
-import com.milaboratory.minnn.outputconverter.MatchedGroup;
-import com.milaboratory.minnn.outputconverter.ParsedRead;
-
 import java.util.*;
-import java.util.stream.Collectors;
 
-final class ConsensusGroups {
+public final class ConsensusGroups {
     private final LinkedHashSet<String> groupSet;
 
-    ConsensusGroups(List<String> groupList) {
+    public ConsensusGroups(List<String> groupList) {
         this.groupSet = new LinkedHashSet<>(groupList);
     }
 
-    ConsensusGroups(ParsedRead parsedRead, DefaultGroups defaultGroups) {
-        this.groupSet = parsedRead.getGroups().stream().map(MatchedGroup::getGroupName)
-                .filter(groupName -> !defaultGroups.get().contains(groupName))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+    public ConsensusGroups(Set<String> groupSet) {
+        this.groupSet = new LinkedHashSet<>(groupSet);
     }
 
-    LinkedHashSet<String> getGroups() {
+    public LinkedHashSet<String> getGroups() {
         return new LinkedHashSet<>(groupSet);
     }
 }

@@ -32,7 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-final class DefaultGroups {
+public final class DefaultGroups {
     private final int numberOfTargets;
     private final LinkedHashSet<String> defaultGroups;
 

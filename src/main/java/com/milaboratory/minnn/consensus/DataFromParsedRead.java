@@ -28,7 +28,7 @@
  */
 package com.milaboratory.minnn.consensus;
 
-interface DataFromParsedRead {
+public interface DataFromParsedRead {
     SequenceWithAttributes[] getSequences();
     TargetBarcodes[] getBarcodes();
     long getOriginalReadId();

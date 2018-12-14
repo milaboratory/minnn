@@ -28,7 +28,24 @@
  */
 package com.milaboratory.minnn.consensus;
 
-public enum OriginalReadStatus {
-    NOT_MATCHED, READ_DISCARDED_TRIM, CONSENSUS_DISCARDED_TRIM_STAGE1, CONSENSUS_DISCARDED_TRIM_STAGE2,
-    NOT_USED_IN_CONSENSUS, USED_IN_CONSENSUS
+import cc.redberry.pipe.Processor;
+import com.milaboratory.core.sequence.NucleotideSequence;
+
+import java.util.function.Consumer;
+
+import static com.milaboratory.minnn.util.SequencesCache.*;
+
+public abstract class ConsensusAlgorithm implements Processor<Cluster, CalculatedConsensuses> {
+    protected static final double OVERFLOW_PROTECTION_MIN = 1E-100D;
+    protected static final double OVERFLOW_PROTECTION_MAX = 1E100D;
+    protected static final NucleotideSequence[] consensusMajorBases = new NucleotideSequence[] {
+            sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
+            sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")) };
+    protected final Consumer<String> displayWarning;
+    protected final int numberOfTargets;
+
+    protected ConsensusAlgorithm(Consumer<String> displayWarning, int numberOfTargets) {
+        this.displayWarning = displayWarning;
+        this.numberOfTargets = numberOfTargets;
+    }
 }

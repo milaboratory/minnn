@@ -34,12 +34,13 @@ import com.milaboratory.minnn.outputconverter.ParsedRead;
 import java.util.*;
 import java.util.stream.*;
 
-class BasicDataFromParsedRead implements DataFromParsedRead {
+public class BasicDataFromParsedRead implements DataFromParsedRead {
     protected final SequenceWithAttributes[] sequences;
     protected final TargetBarcodes[] barcodes;
     protected final long originalReadId;
 
-    BasicDataFromParsedRead(ParsedRead parsedRead, DefaultGroups defaultGroups, ConsensusGroups consensusGroups) {
+    public BasicDataFromParsedRead(ParsedRead parsedRead, DefaultGroups defaultGroups,
+                                   ConsensusGroups consensusGroups) {
         LinkedHashSet<String> defaultGroupsSet = defaultGroups.get();
         int numberOfTargets = defaultGroups.getNumberOfTargets();
         originalReadId = parsedRead.getOriginalRead().getId();
@@ -68,7 +69,8 @@ class BasicDataFromParsedRead implements DataFromParsedRead {
         });
     }
 
-    BasicDataFromParsedRead(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, long originalReadId) {
+    public BasicDataFromParsedRead(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes,
+                                   long originalReadId) {
         this.sequences = sequences;
         this.barcodes = barcodes;
         this.originalReadId = originalReadId;

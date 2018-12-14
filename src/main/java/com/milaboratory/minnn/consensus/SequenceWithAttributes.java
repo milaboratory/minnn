@@ -34,18 +34,18 @@ import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.consensus.SpecialSequences.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
-final class SequenceWithAttributes {
+public final class SequenceWithAttributes {
     private final NucleotideSequence seq;
     private final SequenceQuality qual;
     private final long originalReadId;
 
-    SequenceWithAttributes(NucleotideSequence seq, SequenceQuality qual, long originalReadId) {
+    public SequenceWithAttributes(NucleotideSequence seq, SequenceQuality qual, long originalReadId) {
         this.seq = seq;
         this.qual = qual;
         this.originalReadId = originalReadId;
     }
 
-    SequenceWithAttributes(SpecialSequences type, long originalReadId) {
+    public SequenceWithAttributes(SpecialSequences type, long originalReadId) {
         if (type == NULL_SEQ) {
             this.seq = null;
             this.qual = null;
@@ -56,15 +56,15 @@ final class SequenceWithAttributes {
         this.originalReadId = originalReadId;
     }
 
-    NucleotideSequence getSeq() {
+    public NucleotideSequence getSeq() {
         return seq;
     }
 
-    SequenceQuality getQual() {
+    public SequenceQuality getQual() {
         return qual;
     }
 
-    long getOriginalReadId() {
+    public long getOriginalReadId() {
         return originalReadId;
     }
 
