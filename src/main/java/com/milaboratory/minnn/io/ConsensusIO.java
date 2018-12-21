@@ -35,6 +35,7 @@ import cc.redberry.pipe.util.OrderedOutputPort;
 import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.consensus.*;
+import com.milaboratory.minnn.consensus.singlecell.ConsensusAlgorithmSingleCell;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
@@ -57,6 +58,7 @@ public final class ConsensusIO {
     private final PipelineConfiguration pipelineConfiguration;
     private final String inputFileName;
     private final String outputFileName;
+    private final ConsensusAlgorithms consensusAlgorithmType;
     private final int alignerWidth;
     private final int matchScore;
     private final int mismatchScore;
@@ -91,17 +93,19 @@ public final class ConsensusIO {
     private int numberOfTargets;
 
     public ConsensusIO(PipelineConfiguration pipelineConfiguration, List<String> groupList, String inputFileName,
-                       String outputFileName, int alignerWidth, int matchScore, int mismatchScore, int gapScore,
-                       long goodQualityMismatchPenalty, byte goodQualityMismatchThreshold, long scoreThreshold,
-                       float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
-                       float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
-                       float avgQualityThreshold, int trimWindowSize, String originalReadStatsFileName,
-                       String notUsedReadsOutputFileName, boolean toSeparateGroups, long inputReadsLimit,
-                       int maxWarnings, int threads, String debugOutputFileName, byte debugQualityThreshold) {
+                       String outputFileName, ConsensusAlgorithms consensusAlgorithmType, int alignerWidth,
+                       int matchScore, int mismatchScore, int gapScore, long goodQualityMismatchPenalty,
+                       byte goodQualityMismatchThreshold, long scoreThreshold, float skippedFractionToRepeat,
+                       int maxConsensusesPerCluster, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
+                       int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
+                       String originalReadStatsFileName, String notUsedReadsOutputFileName, boolean toSeparateGroups,
+                       long inputReadsLimit, int maxWarnings, int threads, String debugOutputFileName,
+                       byte debugQualityThreshold) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.consensusGroups = (groupList == null) ? null : new ConsensusGroups(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
+        this.consensusAlgorithmType = consensusAlgorithmType;
         this.alignerWidth = alignerWidth;
         this.matchScore = matchScore;
         this.mismatchScore = mismatchScore;
@@ -136,12 +140,23 @@ public final class ConsensusIO {
     }
 
     private void consensusAlgorithmInit() {
-        consensusAlgorithm = new ConsensusAlgorithmDoubleMultiAlign(this::displayWarning, numberOfTargets,
-                alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
-                goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxConsensusesPerCluster,
-                readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                avgQualityThreshold, trimWindowSize, toSeparateGroups, debugOutputStream, debugQualityThreshold,
-                originalReadsData);
+        switch(consensusAlgorithmType) {
+            case DOUBLE_MULTI_ALIGN:
+                consensusAlgorithm = new ConsensusAlgorithmDoubleMultiAlign(this::displayWarning, numberOfTargets,
+                        alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
+                        goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat,
+                        maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold,
+                        readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold, trimWindowSize, toSeparateGroups,
+                        debugOutputStream, debugQualityThreshold, originalReadsData);
+                break;
+            case RNA_SEQ:
+                consensusAlgorithm = new ConsensusAlgorithmRNASeq();
+                break;
+            case SINGLE_CELL:
+                consensusAlgorithm = new ConsensusAlgorithmSingleCell(this::displayWarning, numberOfTargets,
+                        maxConsensusesPerCluster);
+                break;
+        }
     }
 
     public void go() {

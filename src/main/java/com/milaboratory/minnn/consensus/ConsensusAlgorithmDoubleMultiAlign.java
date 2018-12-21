@@ -40,7 +40,6 @@ import java.util.stream.*;
 
 import static com.milaboratory.core.alignment.BandedLinearAligner.alignLocalGlobal;
 import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
-import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.*;
 import static com.milaboratory.minnn.util.AlignmentTools.calculateAlignmentScore;
@@ -52,18 +51,9 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
     private final long goodQualityMismatchPenalty;
     private final byte goodQualityMismatchThreshold;
     private final long scoreThreshold;
-    private final float skippedFractionToRepeat;
-    private final int maxConsensusesPerCluster;
-    private final int readsMinGoodSeqLength;
-    private final float readsAvgQualityThreshold;
-    private final int readsTrimWindowSize;
-    private final int minGoodSeqLength;
-    private final float avgQualityThreshold;
-    private final int trimWindowSize;
     private final boolean toSeparateGroups;
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
-    private final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
     private final AtomicLong consensusCurrentTempId = new AtomicLong(0);
 
     public ConsensusAlgorithmDoubleMultiAlign(
@@ -73,25 +63,18 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold,
             int trimWindowSize, boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
             ConcurrentHashMap<Long, OriginalReadData> originalReadsData) {
-        super(displayWarning, numberOfTargets);
+        super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
+                readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
+                avgQualityThreshold, trimWindowSize, originalReadsData);
         this.alignerWidth = alignerWidth;
         this.scoring = new LinearGapAlignmentScoring<>(NucleotideSequence.ALPHABET, matchScore, mismatchScore,
                 gapScore);
         this.goodQualityMismatchPenalty = goodQualityMismatchPenalty;
         this.goodQualityMismatchThreshold = goodQualityMismatchThreshold;
         this.scoreThreshold = scoreThreshold;
-        this.skippedFractionToRepeat = skippedFractionToRepeat;
-        this.maxConsensusesPerCluster = maxConsensusesPerCluster;
-        this.readsMinGoodSeqLength = readsMinGoodSeqLength;
-        this.readsAvgQualityThreshold = readsAvgQualityThreshold;
-        this.readsTrimWindowSize = readsTrimWindowSize;
-        this.minGoodSeqLength = minGoodSeqLength;
-        this.avgQualityThreshold = avgQualityThreshold;
-        this.trimWindowSize = trimWindowSize;
         this.toSeparateGroups = toSeparateGroups;
         this.debugOutputStream = debugOutputStream;
         this.debugQualityThreshold = debugQualityThreshold;
-        this.originalReadsData = originalReadsData;
     }
 
     @Override
@@ -173,69 +156,6 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         }
 
         return calculatedConsensuses;
-    }
-
-    private String formatBarcodeValues(TargetBarcodes[] targetBarcodes) {
-        ArrayList<Barcode> barcodes = new ArrayList<>();
-        Arrays.stream(targetBarcodes).forEach(tb -> barcodes.addAll(tb.targetBarcodes));
-        barcodes.sort(Comparator.comparing(b -> b.groupName));
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < barcodes.size(); i++) {
-            Barcode barcode = barcodes.get(i);
-            if (i > 0)
-                builder.append(", ");
-            builder.append(barcode.groupName).append('=').append(barcode.value.getSeq().toString());
-        }
-        return builder.toString();
-    }
-
-    /**
-     * Trim bad quality tails and filter out entirely bad sequences from data.
-     *
-     * @param data  data from cluster of parsed reads with same barcodes
-     * @return      trimmed and filtered data
-     */
-    private List<DataFromParsedRead> trimBadQualityTails(List<DataFromParsedRead> data) {
-        List<DataFromParsedRead> processedData = new ArrayList<>();
-        for (DataFromParsedRead dataFromParsedRead : data) {
-            SequenceWithAttributes[] sequences = dataFromParsedRead.getSequences();
-            SequenceWithAttributes[] processedSequences = new SequenceWithAttributes[numberOfTargets];
-            boolean allSequencesAreGood = true;
-            for (int i = 0; i < numberOfTargets; i++) {
-                SequenceWithAttributes sequence = sequences[i];
-                int trimResultLeft = trim(sequence.getQual(), 0, sequence.size(), 1,
-                        true, readsAvgQualityThreshold, readsTrimWindowSize);
-                if (trimResultLeft < -1) {
-                    allSequencesAreGood = false;
-                    break;
-                }
-                int trimResultRight = trim(sequence.getQual(), 0, sequence.size(), -1,
-                        true, readsAvgQualityThreshold, readsTrimWindowSize);
-                if (trimResultRight < 0)
-                    throw new IllegalStateException("Unexpected negative trimming result");
-                else if (trimResultRight - trimResultLeft - 1 < readsMinGoodSeqLength) {
-                    allSequencesAreGood = false;
-                    break;
-                } else
-                    processedSequences[i] = sequence.getSubSequence(trimResultLeft + 1, trimResultRight);
-            }
-
-            if (allSequencesAreGood) {
-                if (toSeparateGroups)
-                    processedData.add(new DataFromParsedReadWithAllGroups(processedSequences,
-                            dataFromParsedRead.getBarcodes(), dataFromParsedRead.getOriginalReadId(),
-                            ((DataFromParsedReadWithAllGroups)dataFromParsedRead).getOtherGroups()));
-                else
-                    processedData.add(new BasicDataFromParsedRead(processedSequences, dataFromParsedRead.getBarcodes(),
-                        dataFromParsedRead.getOriginalReadId()));
-            } else {
-                processedData.add(null);
-                if (originalReadsData != null)
-                    originalReadsData.get(dataFromParsedRead.getOriginalReadId()).status = READ_DISCARDED_TRIM;
-            }
-        }
-
-        return processedData;
     }
 
     /**
@@ -522,50 +442,6 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         }
 
         return consensusLetters;
-    }
-
-    /**
-     * Calculate consensus letter from list of base letters.
-     *
-     * @param baseLetters       base letters; allowed values A, T, G, C and EMPTY_SEQ (deletion)
-     * @return                  calculated consensus letter: letter with quality or EMPTY_SEQ for deletion
-     */
-    private SequenceWithAttributes calculateConsensusLetter(List<SequenceWithAttributes> baseLetters) {
-        if (baseLetters.size() == 1)
-            return baseLetters.get(0);
-        Map<NucleotideSequence, Integer> letterCounts = Arrays.stream(consensusMajorBases)
-                .collect(Collectors.toMap(majorBase -> majorBase, majorBase -> (int)(baseLetters.stream()
-                        .map(SequenceWithAttributes::getSeq).filter(majorBase::equals).count())));
-        int deletionsCount = (int)(baseLetters.stream().filter(SequenceWithAttributes::isEmpty).count());
-        if (letterCounts.values().stream().allMatch(count -> count <= deletionsCount))
-            return new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ, -1);
-        final double gamma = 1.0 / (consensusMajorBases.length - 1);
-
-        NucleotideSequence bestMajorBase = null;
-        double bestQuality = -1;
-        for (NucleotideSequence majorBase : consensusMajorBases) {
-            double product = Math.pow(gamma, -letterCounts.get(majorBase));
-            for (SequenceWithAttributes currentLetter : baseLetters)
-                if (!currentLetter.isEmpty()) {
-                    double errorProbability = Math.pow(10.0, -currentLetter.getQual().value(0) / 10.0);
-                    if (currentLetter.getSeq().equals(majorBase))
-                        product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
-                    else
-                        product *= errorProbability / Math.max(OVERFLOW_PROTECTION_MIN,
-                                1 - gamma * errorProbability);
-                    product = Math.min(product, OVERFLOW_PROTECTION_MAX);
-                }
-
-            double majorErrorProbability = 1.0 / (1 + product);
-            double quality = -10 * Math.log10(majorErrorProbability);
-            if (quality > bestQuality) {
-                bestMajorBase = majorBase;
-                bestQuality = quality;
-            }
-        }
-
-        return new SequenceWithAttributes(Objects.requireNonNull(bestMajorBase),
-                qualityCache.get((byte)Math.min(DEFAULT_MAX_QUALITY, bestQuality)), -1);
     }
 
     /**

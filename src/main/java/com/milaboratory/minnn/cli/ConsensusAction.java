@@ -29,6 +29,7 @@
 package com.milaboratory.minnn.cli;
 
 import com.milaboratory.cli.*;
+import com.milaboratory.minnn.consensus.ConsensusAlgorithms;
 import com.milaboratory.minnn.io.ConsensusIO;
 import picocli.CommandLine.*;
 
@@ -46,6 +47,7 @@ import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
         description = "Calculate consensus sequences for all barcodes.")
 public final class ConsensusAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
     public static final String CONSENSUS_ACTION_NAME = "consensus";
+    private ConsensusAlgorithms consensusAlgorithmType;
 
     public ConsensusAction() {
         super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
@@ -55,12 +57,12 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     public void run1() {
         int actualMaxWarnings = quiet ? 0 : maxWarnings;
         ConsensusIO consensusIO = new ConsensusIO(getFullPipelineConfiguration(), groupList, inputFileName,
-                outputFileName, alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
-                goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxConsensusesPerCluster,
-                readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                avgQualityThreshold, trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName,
-                toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads, debugOutputFileName,
-                debugQualityThreshold);
+                outputFileName, consensusAlgorithmType, alignerWidth, matchScore, mismatchScore, gapScore,
+                goodQualityMismatchPenalty, goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat,
+                maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
+                minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadStatsFileName,
+                notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
+                debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
     }
 
@@ -72,6 +74,13 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     @Override
     public void validate() {
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
+        consensusAlgorithmType = Arrays.stream(ConsensusAlgorithms.class.getEnumConstants())
+                .filter(alg -> alg.argument.equals(consensusAlgorithmArgument)).findFirst().orElseGet(() -> {
+                    throwValidationException("Unknown consensus algorithm: " + consensusAlgorithmArgument);
+                    return null;
+                });
+        if (maxConsensusesPerCluster < 1)
+            throwValidationException("--max-consensuses-per-cluster value must be positive!");
     }
 
     @Override
@@ -134,6 +143,10 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
             names = {"--groups"},
             arity = "1..*")
     private List<String> groupList = null;
+
+    @Option(description = "Consensus algorithm. Available algorithms are single-cell and double-multi-align.",
+            names = {"--consensus-algorithm"})
+    private String consensusAlgorithmArgument = DEFAULT_CONSENSUS_ALGORITHM;
 
     @Option(description = "Window width (maximum allowed number of indels) for banded aligner.",
             names = {"--width"})

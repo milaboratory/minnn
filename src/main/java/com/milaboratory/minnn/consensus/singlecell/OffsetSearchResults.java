@@ -26,19 +26,29 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.consensus;
+package com.milaboratory.minnn.consensus.singlecell;
 
-import java.util.ArrayList;
+import com.milaboratory.minnn.consensus.DataFromParsedRead;
+import com.milaboratory.minnn.consensus.TargetBarcodes;
+import gnu.trove.map.hash.TLongObjectHashMap;
 
-public final class TargetBarcodes {
-    public final ArrayList<Barcode> targetBarcodes;
+import java.util.*;
 
-    public TargetBarcodes(ArrayList<Barcode> targetBarcodes) {
-        this.targetBarcodes = targetBarcodes;
+final class OffsetSearchResults {
+    final List<DataFromParsedRead> usedReads;
+    final TLongObjectHashMap<int[]> offsetsForReads;
+    final List<DataFromParsedRead> remainingReads;
+    final TargetBarcodes[] barcodes;
+
+    OffsetSearchResults(List<DataFromParsedRead> usedReads, TLongObjectHashMap<int[]> offsetsForReads,
+                        List<DataFromParsedRead> remainingReads, TargetBarcodes[] barcodes) {
+        this.usedReads = Collections.unmodifiableList(usedReads);
+        this.offsetsForReads = offsetsForReads;
+        this.remainingReads = Collections.unmodifiableList(remainingReads);
+        this.barcodes = barcodes.clone();
     }
 
-    @Override
-    public String toString() {
-        return "TargetBarcodes{" + "targetBarcodes=" + targetBarcodes + '}';
+    long[] getUsedReadsIds() {
+        return usedReads.stream().mapToLong(DataFromParsedRead::getOriginalReadId).toArray();
     }
 }

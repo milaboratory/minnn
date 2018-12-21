@@ -28,17 +28,12 @@
  */
 package com.milaboratory.minnn.consensus;
 
-import java.util.ArrayList;
+public enum ConsensusAlgorithms {
+    SINGLE_CELL("single-cell"), RNA_SEQ("rna-seq"), DOUBLE_MULTI_ALIGN("double-multi-align");
 
-public final class TargetBarcodes {
-    public final ArrayList<Barcode> targetBarcodes;
+    public final String argument;
 
-    public TargetBarcodes(ArrayList<Barcode> targetBarcodes) {
-        this.targetBarcodes = targetBarcodes;
-    }
-
-    @Override
-    public String toString() {
-        return "TargetBarcodes{" + "targetBarcodes=" + targetBarcodes + '}';
+    ConsensusAlgorithms(String argument) {
+        this.argument = argument;
     }
 }

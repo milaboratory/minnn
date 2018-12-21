@@ -26,19 +26,33 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.consensus;
+package com.milaboratory.minnn.consensus.singlecell;
 
-import java.util.ArrayList;
+import com.milaboratory.core.sequence.NucleotideSequence;
 
-public final class TargetBarcodes {
-    public final ArrayList<Barcode> targetBarcodes;
+public final class KMer implements Comparable<KMer> {
+    public final NucleotideSequence seq;
+    public long count = 0;
 
-    public TargetBarcodes(ArrayList<Barcode> targetBarcodes) {
-        this.targetBarcodes = targetBarcodes;
+    public KMer(NucleotideSequence seq) {
+        this.seq = seq;
     }
 
     @Override
-    public String toString() {
-        return "TargetBarcodes{" + "targetBarcodes=" + targetBarcodes + '}';
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KMer kMer = (KMer)o;
+        return seq.equals(kMer.seq);
+    }
+
+    @Override
+    public int hashCode() {
+        return seq.hashCode();
+    }
+
+    @Override
+    public int compareTo(KMer other) {
+        return Long.compare(count, other.count);
     }
 }

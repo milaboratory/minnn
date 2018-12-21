@@ -28,17 +28,16 @@
  */
 package com.milaboratory.minnn.consensus;
 
-import java.util.ArrayList;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-public final class TargetBarcodes {
-    public final ArrayList<Barcode> targetBarcodes;
-
-    public TargetBarcodes(ArrayList<Barcode> targetBarcodes) {
-        this.targetBarcodes = targetBarcodes;
+public class ConsensusAlgorithmRNASeq extends ConsensusAlgorithm {
+    public ConsensusAlgorithmRNASeq() {
+        super(null, 0);
+        throw new NotImplementedException();
     }
 
     @Override
-    public String toString() {
-        return "TargetBarcodes{" + "targetBarcodes=" + targetBarcodes + '}';
+    public CalculatedConsensuses process(Cluster cluster) {
+        throw new NotImplementedException();
     }
 }
