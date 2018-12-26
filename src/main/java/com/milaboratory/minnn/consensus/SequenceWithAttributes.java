@@ -79,13 +79,13 @@ public final class SequenceWithAttributes {
         return new SequenceWithAttributes(cachedSeq, cachedQual, originalReadId);
     }
 
-    SequenceWithAttributes letterAt(int position) {
+    public SequenceWithAttributes letterAt(int position) {
         if ((seq == null) || (position < 0) || (position >= seq.size()))
             return new SequenceWithAttributes(NULL_SEQ, originalReadId);
         return resultWithCachedValues(position, position + 1);
     }
 
-    SequenceWithAttributes getSubSequence(int from, int to) {
+    public SequenceWithAttributes getSubSequence(int from, int to) {
         if (seq == null)
             throw new IllegalStateException("getSubSequence() called for null sequence! Read id: "
                     + originalReadId);
@@ -94,11 +94,11 @@ public final class SequenceWithAttributes {
         return resultWithCachedValues(from, to);
     }
 
-    NSequenceWithQuality toNSequenceWithQuality() {
+    public NSequenceWithQuality toNSequenceWithQuality() {
         return new NSequenceWithQuality(seq, qual);
     }
 
-    long calculateSumQuality() {
+    public long calculateSumQuality() {
         if ((qual == null) || isEmpty())
             return 0;
         long sum = 0;
@@ -107,7 +107,7 @@ public final class SequenceWithAttributes {
         return sum;
     }
 
-    byte calculateMinQuality() {
+    public byte calculateMinQuality() {
         if ((qual == null) || isEmpty())
             return 0;
         byte minQuality = DEFAULT_MAX_QUALITY;
@@ -117,15 +117,15 @@ public final class SequenceWithAttributes {
         return minQuality;
     }
 
-    boolean isNull() {
+    public boolean isNull() {
         return seq == null;
     }
 
-    boolean isEmpty() {
+    public boolean isEmpty() {
         return NucleotideSequence.EMPTY.equals(seq);
     }
 
-    int size() {
+    public int size() {
         return (seq == null) ? 0 : seq.size();
     }
 

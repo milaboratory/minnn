@@ -62,7 +62,7 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
                 maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
                 minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadStatsFileName,
                 notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
-                debugOutputFileName, debugQualityThreshold);
+                kmerLength, kmerOffset, kmerMaxErrors, debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
     }
 
@@ -148,31 +148,38 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
             names = {"--consensus-algorithm"})
     private String consensusAlgorithmArgument = DEFAULT_CONSENSUS_ALGORITHM;
 
-    @Option(description = "Window width (maximum allowed number of indels) for banded aligner.",
+    @Option(description = "Window width (maximum allowed number of indels) for banded aligner."
+            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
             names = {"--width"})
     private int alignerWidth = DEFAULT_CONSENSUS_ALIGNER_WIDTH;
 
-    @Option(description = "Score for perfectly matched nucleotide, used in sequences alignment.",
+    @Option(description = "Score for perfectly matched nucleotide, used in sequences alignment."
+            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
             names = {"--aligner-match-score"})
     private int matchScore = DEFAULT_MATCH_SCORE;
 
-    @Option(description = "Score for mismatched nucleotide, used in sequences alignment.",
+    @Option(description = "Score for mismatched nucleotide, used in sequences alignment."
+            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
             names = {"--aligner-mismatch-score"})
     private int mismatchScore = DEFAULT_MISMATCH_SCORE;
 
-    @Option(description = "Score for gap or insertion, used in sequences alignment.",
+    @Option(description = "Score for gap or insertion, used in sequences alignment."
+            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
             names = {"--aligner-gap-score"})
     private int gapScore = DEFAULT_GAP_SCORE;
 
-    @Option(description = "Extra score penalty for mismatch when both sequences have good quality.",
+    @Option(description = "Extra score penalty for mismatch when both sequences have good quality."
+            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
             names = {"--good-quality-mismatch-penalty"})
     private long goodQualityMismatchPenalty = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY;
 
-    @Option(description = "Quality that will be considered good for applying extra mismatch penalty.",
+    @Option(description = "Quality that will be considered good for applying extra mismatch penalty."
+            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
             names = {"--good-quality-mismatch-threshold"})
     private byte goodQualityMismatchThreshold = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD;
 
-    @Option(description = "Score threshold that used to filter reads for calculating consensus.",
+    @Option(description = "Score threshold that used to filter reads for calculating consensus."
+            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
             names = {"--score-threshold"})
     private long scoreThreshold = DEFAULT_CONSENSUS_SCORE_THRESHOLD;
 
@@ -232,7 +239,7 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
             "reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and " +
             "consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by " +
             "consensuses using filter / demultiplex actions, or export original reads and corresponding " +
-            "consensuses into separate reads using mif2fastq action.",
+            "consensuses into separate reads using mif2fastq action." + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
             names = {"--consensuses-to-separate-groups"})
     private boolean toSeparateGroups = false;
 
@@ -247,6 +254,19 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     @Option(description = "Number of threads for calculating consensus sequences.",
             names = {"--threads"})
     private int threads = DEFAULT_THREADS;
+
+    @Option(description = "K-mer length." + USED_ONLY_IN_SINGLE_CELL,
+            names = {"--kmer-length"})
+    private int kmerLength = DEFAULT_CONSENSUS_KMER_LENGTH;
+
+    @Option(description = "Max offset from the middle of the read when searching k-mers." + USED_ONLY_IN_SINGLE_CELL,
+            names = {"--kmer-offset"})
+    private int kmerOffset = DEFAULT_CONSENSUS_KMER_OFFSET;
+
+    @Option(description = "Maximal allowed number of mismatches when searching k-mers in sequences."
+            + USED_ONLY_IN_SINGLE_CELL,
+            names = {"--kmer-max-errors"})
+    private int kmerMaxErrors = DEFAULT_CONSENSUS_KMER_MAX_ERRORS;
 
     @Option(description = "Output text file for consensus algorithm debug information.",
             names = {"--debug-output"},

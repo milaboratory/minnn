@@ -43,7 +43,6 @@ import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.*;
 import static com.milaboratory.minnn.util.AlignmentTools.calculateAlignmentScore;
-import static com.milaboratory.minnn.util.SequencesCache.*;
 
 public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
     private final int alignerWidth;
@@ -417,22 +416,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             // loop by source reads for this consensus
             for (LettersWithPositions currentLettersWithPositions : lettersList) {
                 SequenceWithAttributes currentLetter = currentLettersWithPositions.get(targetIndex, position);
-                if (currentLetter.isEmpty())
-                    baseLetters.add(currentLetter);
-                else if (!currentLetter.isNull()) {
-                    NucleotideSequence letterWithoutQuality = currentLetter.getSeq();
-                    if (letterWithoutQuality.containsWildcards()) {
-                        Wildcard wildcard = wildcards.get(letterWithoutQuality);
-                        for (int i = 0; i < wildcard.basicSize(); i++) {
-                            NucleotideSequence currentBasicLetter = wildcardCodeToSequence
-                                    .get(wildcard.getMatchingCode(i));
-                            baseLetters.add(new SequenceWithAttributes(currentBasicLetter, qualityCache
-                                    .get((byte)(currentLetter.getQual().value(0) / wildcard.basicSize())),
-                                    currentLetter.getOriginalReadId()));
-                        }
-                    } else
-                        baseLetters.add(currentLetter);
-                }
+                baseLetters.addAll(prepareForConsensus(currentLetter));
             }
 
             if (baseLetters.size() > 0)

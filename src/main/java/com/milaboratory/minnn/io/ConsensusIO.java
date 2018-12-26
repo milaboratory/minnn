@@ -80,6 +80,9 @@ public final class ConsensusIO {
     private final long inputReadsLimit;
     private final int maxWarnings;
     private final int threads;
+    private final int kmerLength;
+    private final int kmerMaxOffset;
+    private final int kmerMatchMaxErrors;
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
@@ -99,8 +102,8 @@ public final class ConsensusIO {
                        int maxConsensusesPerCluster, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
                        int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
                        String originalReadStatsFileName, String notUsedReadsOutputFileName, boolean toSeparateGroups,
-                       long inputReadsLimit, int maxWarnings, int threads, String debugOutputFileName,
-                       byte debugQualityThreshold) {
+                       long inputReadsLimit, int maxWarnings, int threads, int kmerLength, int kmerMaxOffset,
+                       int kmerMatchMaxErrors, String debugOutputFileName, byte debugQualityThreshold) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.consensusGroups = (groupList == null) ? null : new ConsensusGroups(groupList);
         this.inputFileName = inputFileName;
@@ -127,6 +130,9 @@ public final class ConsensusIO {
         this.inputReadsLimit = inputReadsLimit;
         this.maxWarnings = maxWarnings;
         this.threads = threads;
+        this.kmerLength = kmerLength;
+        this.kmerMaxOffset = kmerMaxOffset;
+        this.kmerMatchMaxErrors = kmerMatchMaxErrors;
         try {
             debugOutputStream = (debugOutputFileName == null) ? null
                     : new PrintStream(new FileOutputStream(debugOutputFileName));
@@ -154,7 +160,9 @@ public final class ConsensusIO {
                 break;
             case SINGLE_CELL:
                 consensusAlgorithm = new ConsensusAlgorithmSingleCell(this::displayWarning, numberOfTargets,
-                        maxConsensusesPerCluster);
+                        maxConsensusesPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength,
+                        readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold,
+                        trimWindowSize, originalReadsData, kmerLength, kmerMaxOffset, kmerMatchMaxErrors);
                 break;
         }
     }

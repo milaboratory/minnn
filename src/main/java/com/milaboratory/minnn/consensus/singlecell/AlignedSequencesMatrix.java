@@ -28,31 +28,42 @@
  */
 package com.milaboratory.minnn.consensus.singlecell;
 
-import com.milaboratory.minnn.consensus.DataFromParsedRead;
-import com.milaboratory.minnn.consensus.TargetBarcodes;
-import gnu.trove.map.hash.TLongIntHashMap;
+import com.milaboratory.minnn.consensus.SequenceWithAttributes;
+import gnu.trove.map.hash.TLongObjectHashMap;
 
-import java.util.*;
+public final class AlignedSequencesMatrix {
+    private final TLongObjectHashMap<AlignedMatrixRow> rows = new TLongObjectHashMap<>();
 
-final class OffsetSearchResults {
-    final TLongIntHashMap[] kmerOffsetsForTargets;
-    final List<DataFromParsedRead> usedReads;
-    final List<DataFromParsedRead> remainingReads;
-    final TargetBarcodes[] barcodes;
-
-    OffsetSearchResults(TLongIntHashMap[] kmerOffsetsForTargets, List<DataFromParsedRead> usedReads,
-                        List<DataFromParsedRead> remainingReads, TargetBarcodes[] barcodes) {
-        this.kmerOffsetsForTargets = kmerOffsetsForTargets;
-        if (usedReads.size() < 1)
-            throw new IllegalArgumentException("kmerOffsetsForTargets: " + Arrays.toString(kmerOffsetsForTargets)
-                    + ", usedReads: " + usedReads + ", remainingReads: " + remainingReads + ", barcodes: "
-                    + Arrays.toString(barcodes));
-        this.usedReads = Collections.unmodifiableList(usedReads);
-        this.remainingReads = Collections.unmodifiableList(remainingReads);
-        this.barcodes = barcodes.clone();
+    public void addRow(SequenceWithAttributes seq, int kmerOffset) {
+        rows.put(seq.getOriginalReadId(), new AlignedMatrixRow(seq, kmerOffset));
     }
 
-    long[] getUsedReadsIds() {
-        return usedReads.stream().mapToLong(DataFromParsedRead::getOriginalReadId).toArray();
+    public int getMinCoordinate() {
+        return rows.valueCollection().stream().mapToInt(row -> row.minCoordinate).min()
+                .orElseThrow(IllegalStateException::new);
+    }
+
+    public int getMaxCoordinate() {
+        return rows.valueCollection().stream().mapToInt(row -> row.maxCoordinate).max()
+                .orElseThrow(IllegalStateException::new);
+    }
+
+    public SequenceWithAttributes letterAt(long readId, int coordinate) {
+        AlignedMatrixRow row = rows.get(readId);
+        return row.seq.letterAt(coordinate + row.kmerOffset);
+    }
+
+    private final class AlignedMatrixRow {
+        final SequenceWithAttributes seq;
+        final int kmerOffset;
+        final int minCoordinate;
+        final int maxCoordinate;
+
+        private AlignedMatrixRow(SequenceWithAttributes seq, int kmerOffset) {
+            this.seq = seq;
+            this.kmerOffset = kmerOffset;
+            this.minCoordinate = -kmerOffset;
+            this.maxCoordinate = seq.size() - kmerOffset - 1;   // inclusive
+        }
     }
 }

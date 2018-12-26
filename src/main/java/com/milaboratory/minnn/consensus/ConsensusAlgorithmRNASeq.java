@@ -32,7 +32,9 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ConsensusAlgorithmRNASeq extends ConsensusAlgorithm {
     public ConsensusAlgorithmRNASeq() {
-        super(null, 0);
+        super(null, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, null);
         throw new NotImplementedException();
     }
 

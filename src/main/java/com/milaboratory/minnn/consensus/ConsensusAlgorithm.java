@@ -30,6 +30,7 @@ package com.milaboratory.minnn.consensus;
 
 import cc.redberry.pipe.Processor;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.Wildcard;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -119,6 +120,34 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
 
         return new SequenceWithAttributes(Objects.requireNonNull(bestMajorBase),
                 qualityCache.get((byte)Math.min(DEFAULT_MAX_QUALITY, bestQuality)), -1);
+    }
+
+    /**
+     * Prepare letters for consensus calculation: expand wildcards and skip NULL_SEQ (missing edges).
+     *
+     * @param rawLetter input letter, can be basic, wildcard, EMPTY_SEQ or NULL_SEQ
+     * @return          list of valid letters for consensus calculation: can be basic nucleotides,
+     *                  deletion (EMPTY_SEQ) or empty list
+     */
+    protected List<SequenceWithAttributes> prepareForConsensus(SequenceWithAttributes rawLetter) {
+        ArrayList<SequenceWithAttributes> baseLetters = new ArrayList<>();
+        if (rawLetter.isEmpty())
+            baseLetters.add(rawLetter);
+        else if (!rawLetter.isNull()) {
+            NucleotideSequence letterWithoutQuality = rawLetter.getSeq();
+            if (letterWithoutQuality.containsWildcards()) {
+                Wildcard wildcard = wildcards.get(letterWithoutQuality);
+                for (int i = 0; i < wildcard.basicSize(); i++) {
+                    NucleotideSequence currentBasicLetter = wildcardCodeToSequence.get(wildcard.getMatchingCode(i));
+                    baseLetters.add(new SequenceWithAttributes(currentBasicLetter, qualityCache
+                            .get((byte)(rawLetter.getQual().value(0) / wildcard.basicSize())),
+                            rawLetter.getOriginalReadId()));
+                }
+            } else
+                baseLetters.add(rawLetter);
+        }
+
+        return baseLetters;
     }
 
     /**
