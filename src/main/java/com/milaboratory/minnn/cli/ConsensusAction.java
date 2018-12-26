@@ -255,11 +255,15 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
             names = {"--threads"})
     private int threads = DEFAULT_THREADS;
 
-    @Option(description = "K-mer length." + USED_ONLY_IN_SINGLE_CELL,
+    @Option(description = "K-mer length. Also affects --min-good-sequence-length because good sequence length must "
+            + "not be lower than k-mer length, so the biggest of --kmer-length and --min-good-sequence-length "
+            + "will be used as --min-good-sequence-length value."
+            + USED_ONLY_IN_SINGLE_CELL,
             names = {"--kmer-length"})
     private int kmerLength = DEFAULT_CONSENSUS_KMER_LENGTH;
 
-    @Option(description = "Max offset from the middle of the read when searching k-mers." + USED_ONLY_IN_SINGLE_CELL,
+    @Option(description = "Max offset from the middle of the read when searching k-mers."
+            + USED_ONLY_IN_SINGLE_CELL,
             names = {"--kmer-offset"})
     private int kmerOffset = DEFAULT_CONSENSUS_KMER_OFFSET;
 

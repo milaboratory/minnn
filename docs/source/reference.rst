@@ -142,7 +142,7 @@ consensus
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --max-warnings: Maximum allowed number of warnings; -1 means no limit.
  --threads: Number of threads for calculating consensus sequences.
- --kmer-length: K-mer length. Used only in single-cell consensus algorithm.
+ --kmer-length: K-mer length. Also affects --min-good-sequence-length because good sequence length must not be lower than k-mer length, so the biggest of --kmer-length and --min-good-sequence-length will be used as --min-good-sequence-length value. Used only in single-cell consensus algorithm.
  --kmer-offset: Max offset from the middle of the read when searching k-mers. Used only in single-cell consensus algorithm.
  --kmer-max-errors: Maximal allowed number of mismatches when searching k-mers in sequences. Used only in single-cell consensus algorithm.
 
