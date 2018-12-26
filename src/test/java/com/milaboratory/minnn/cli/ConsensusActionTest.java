@@ -176,4 +176,32 @@ public class ConsensusActionTest {
                 inputFile, correctedFile, sortedFile, consensusFile, outFastqR1, outFastqR2 })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void singleCellPreparedMifTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        String correctedFile = TEMP_DIR + "corrected.mif";
+        String sortedFile = TEMP_DIR + "sorted.mif";
+        String consensusFile = TEMP_DIR + "consensus.mif";
+        String notUsedReadsFile = TEMP_DIR + "not_used_reads.mif";
+        String consensusFile2 = TEMP_DIR + "consensus2.mif";
+        String consensusFile3 = TEMP_DIR + "consensus3.mif";
+        exec("correct -f --input " + inputFile + " --output " + correctedFile + " --groups G3 G4 G1 G2");
+        exec("sort -f --input " + correctedFile + " --output " + sortedFile + " --groups G3 G4 G1 G2 R1 R2");
+        exec("consensus -f --input " + sortedFile + " --output " + consensusFile + " --groups G3 G4 G1"
+                + " --consensus-algorithm single-cell --threads 5 --skipped-fraction-to-repeat 0.75"
+                + " --avg-quality-threshold 3 --not-used-reads-output " + notUsedReadsFile);
+        exec("consensus -f --input " + consensusFile + " --output " + consensusFile2 + " --groups G3 G4 G1"
+                + " --consensus-algorithm single-cell --threads 2 --skipped-fraction-to-repeat 1"
+                + " --avg-quality-threshold 0 --reads-avg-quality-threshold 0 --kmer-max-errors 0"
+                + " --not-used-reads-output " + notUsedReadsFile);
+        exec("consensus -f --input " + consensusFile2 + " --output " + consensusFile3 + " --groups G3 G4 G1"
+                + " --consensus-algorithm single-cell --threads 3 --skipped-fraction-to-repeat 1"
+                + " --avg-quality-threshold 0 --reads-avg-quality-threshold 0 --kmer-max-errors 0"
+                + " --not-used-reads-output " + notUsedReadsFile);
+        assertMifEqualsAsFastq(consensusFile2, consensusFile3, true);
+        for (String fileName : new String[] { inputFile, correctedFile, sortedFile, consensusFile, notUsedReadsFile,
+                consensusFile2, consensusFile3 })
+            assertTrue(new File(fileName).delete());
+    }
 }
