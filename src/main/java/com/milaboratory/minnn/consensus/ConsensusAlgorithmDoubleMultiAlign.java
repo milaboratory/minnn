@@ -110,8 +110,8 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                         + bestData.getOriginalReadId());
             else {
                 // stage 2: align to consensus from stage 1
-                subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data), filteredOutReads,
-                        stage1Consensus.sequences, -1);
+                subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data, true),
+                        filteredOutReads, stage1Consensus.sequences, -1);
                 if (subsequencesList.size() > 0) {
                     Consensus stage2Consensus = generateConsensus(subsequencesList,
                             Objects.requireNonNull(stage1Consensus.sequences),

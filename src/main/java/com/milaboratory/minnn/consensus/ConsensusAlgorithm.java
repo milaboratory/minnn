@@ -153,10 +153,11 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     /**
      * Trim bad quality tails and filter out entirely bad sequences from data.
      *
-     * @param data  data from cluster of parsed reads with same barcodes
-     * @return      trimmed and filtered data
+     * @param data      data from cluster of parsed reads with same barcodes
+     * @param saveNulls put null values in place of discarded reads
+     * @return          trimmed and filtered data
      */
-    protected List<DataFromParsedRead> trimBadQualityTails(List<DataFromParsedRead> data) {
+    protected List<DataFromParsedRead> trimBadQualityTails(List<DataFromParsedRead> data, boolean saveNulls) {
         List<DataFromParsedRead> processedData = new ArrayList<>();
         for (DataFromParsedRead dataFromParsedRead : data) {
             SequenceWithAttributes[] sequences = dataFromParsedRead.getSequences();
@@ -190,7 +191,8 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
                     processedData.add(new BasicDataFromParsedRead(processedSequences, dataFromParsedRead.getBarcodes(),
                             dataFromParsedRead.getOriginalReadId()));
             } else {
-                processedData.add(null);
+                if (saveNulls)
+                    processedData.add(null);
                 if (originalReadsData != null)
                     originalReadsData.get(dataFromParsedRead.getOriginalReadId()).status = READ_DISCARDED_TRIM;
             }

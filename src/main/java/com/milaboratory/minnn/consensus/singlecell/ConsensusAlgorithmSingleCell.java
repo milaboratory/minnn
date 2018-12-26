@@ -63,7 +63,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
     @Override
     public CalculatedConsensuses process(Cluster cluster) {
         CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex);
-        List<DataFromParsedRead> remainingData = trimBadQualityTails(cluster.data);
+        List<DataFromParsedRead> remainingData = trimBadQualityTails(cluster.data, false);
         int clusterSize = cluster.data.size();
         int numValidConsensuses = 0;
 

@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.consensus.ConsensusAlgorithms.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
@@ -314,8 +315,8 @@ public final class ConsensusIO {
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                         long alignmentScoreStage1 = Long.MIN_VALUE;
                         long alignmentScoreStage2 = Long.MIN_VALUE;
-                        if ((status != NOT_MATCHED) && (status != READ_DISCARDED_TRIM)
-                                && (status != NOT_USED_IN_CONSENSUS)) {
+                        if ((status == CONSENSUS_DISCARDED_TRIM_STAGE1) || (status == CONSENSUS_DISCARDED_TRIM_STAGE2)
+                                || ((consensusAlgorithmType == DOUBLE_MULTI_ALIGN) && (status == USED_IN_CONSENSUS))) {
                             long[] alignmentScoresStage1 = Objects.requireNonNull(currentReadData)
                                     .alignmentScores.get(0);
                             if (alignmentScoresStage1 != null)
