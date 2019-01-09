@@ -32,6 +32,9 @@ import cc.redberry.pipe.CUtils;
 import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.Range;
 import com.milaboratory.core.alignment.*;
+import com.milaboratory.core.io.sequence.*;
+import com.milaboratory.core.io.sequence.fastq.SingleFastqReader;
+import com.milaboratory.core.io.sequence.fastq.SingleFastqWriter;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.pattern.*;
 import com.milaboratory.test.TestUtil;
@@ -590,6 +593,26 @@ public class CommonTestUtils {
         }
         scanner.close();
         return count;
+    }
+
+    public static void seqToFastq(List<NSequenceWithQuality> sequences, String fileName) {
+        try (SequenceWriter<SingleRead> writer = new SingleFastqWriter(fileName)) {
+            long id = 0;
+            for (NSequenceWithQuality seq : sequences)
+                writer.write(new SingleReadImpl(id++, seq, ""));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static List<NSequenceWithQuality> fastqToSeq(String fileName) {
+        List<NSequenceWithQuality> sequences;
+        try (SingleFastqReader reader = new SingleFastqReader(fileName)) {
+            sequences = streamPort(reader).map(SingleRead::getData).collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return sequences;
     }
 
     @FunctionalInterface

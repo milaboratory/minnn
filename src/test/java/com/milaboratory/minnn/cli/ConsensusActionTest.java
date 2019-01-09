@@ -28,10 +28,13 @@
  */
 package com.milaboratory.minnn.cli;
 
+import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.core.sequence.NucleotideSequence;
 import org.junit.*;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
@@ -202,6 +205,34 @@ public class ConsensusActionTest {
         assertMifEqualsAsFastq(consensusFile2, consensusFile3, true);
         for (String fileName : new String[] { inputFile, correctedFile, sortedFile, consensusFile, notUsedReadsFile,
                 consensusFile2, consensusFile3 })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void sequencesTest() throws Exception {
+        String inputFastqFile = TEMP_DIR + "input.fastq";
+        String inputMifFile = TEMP_DIR + "input.mif";
+        String sortedFile = TEMP_DIR + "sorted.mif";
+        String consensusMifFile = TEMP_DIR + "consensus.mif";
+        String consensusFastqFile = TEMP_DIR + "consensus.fastq";
+        String barcode = "TTT";
+        LinkedHashMap<List<String>, String> testData = new LinkedHashMap<>();
+        testData.put(Arrays.asList("ATTTGACA", "ACTAGATA", "CTGAGACC"), "ATTAGACA");
+        for (HashMap.Entry<List<String>, String> entry : testData.entrySet()) {
+            List<NSequenceWithQuality> dataWithBarcodes = entry.getKey().stream()
+                    .map(str -> barcode + str).map(NSequenceWithQuality::new).collect(Collectors.toList());
+            seqToFastq(dataWithBarcodes, inputFastqFile);
+            exec("extract -f --input " + inputFastqFile + " --output " + inputMifFile
+                    + " --pattern \"(G1:" + barcode + ")N{*}\"");
+            exec("sort -f --input " + inputMifFile + " --output " + sortedFile + " --groups G1");
+            exec("consensus -f --input " + sortedFile + " --output " + consensusMifFile
+                    + " --consensus-algorithm single-cell --kmer-length 4 --groups G1");
+            exec("mif2fastq -f --input " + consensusMifFile + " --group R1=" + consensusFastqFile);
+            assertEquals(barcode + entry.getValue(),
+                    fastqToSeq(consensusFastqFile).get(0).getSequence().toString());
+        }
+        for (String fileName : new String[] { inputFastqFile, inputMifFile, sortedFile, consensusMifFile,
+                consensusFastqFile })
             assertTrue(new File(fileName).delete());
     }
 }
