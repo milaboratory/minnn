@@ -37,11 +37,11 @@ public final class ConsensusDebugData {
     private final byte debugQualityThreshold;
     private final boolean stage2;
     // outer list - targetIndex, second - sequenceIndex, inner - positionIndex
-    List<ArrayList<ArrayList<SequenceWithAttributes>>> data;
+    public List<ArrayList<ArrayList<SequenceWithAttributes>>> data;
     // outer list - targetIndex, inner - positionIndex
-    List<ArrayList<SequenceWithAttributes>> consensusData;
+    public List<ArrayList<SequenceWithAttributes>> consensusData;
     // outer list - targetIndex, inner - sequenceIndex
-    List<ArrayList<Long>> alignmentScores;
+    public List<ArrayList<Long>> alignmentScores;
 
     public ConsensusDebugData(int numberOfTargets, byte debugQualityThreshold, boolean stage2) {
         this.numberOfTargets = numberOfTargets;

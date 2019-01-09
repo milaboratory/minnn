@@ -35,6 +35,7 @@ import cc.redberry.pipe.util.OrderedOutputPort;
 import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.consensus.*;
+import com.milaboratory.minnn.consensus.doublemultialign.ConsensusAlgorithmDoubleMultiAlign;
 import com.milaboratory.minnn.consensus.singlecell.ConsensusAlgorithmSingleCell;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;

@@ -28,6 +28,6 @@
  */
 package com.milaboratory.minnn.consensus;
 
-enum SpecialSequences {
+public enum SpecialSequences {
     NULL_SEQ, EMPTY_SEQ
 }

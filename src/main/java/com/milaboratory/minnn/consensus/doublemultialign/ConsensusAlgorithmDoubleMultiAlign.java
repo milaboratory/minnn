@@ -26,10 +26,11 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.consensus;
+package com.milaboratory.minnn.consensus.doublemultialign;
 
 import com.milaboratory.core.alignment.*;
 import com.milaboratory.core.sequence.*;
+import com.milaboratory.minnn.consensus.*;
 
 import java.io.PrintStream;
 import java.util.*;
