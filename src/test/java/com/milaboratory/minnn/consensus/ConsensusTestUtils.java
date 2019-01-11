@@ -3,6 +3,7 @@ package com.milaboratory.minnn.consensus;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.sequence.SequenceQuality;
+import com.milaboratory.minnn.consensus.doublemultialign.ConsensusAlgorithmDoubleMultiAlign;
 import com.milaboratory.minnn.consensus.singlecell.ConsensusAlgorithmSingleCell;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -31,6 +32,9 @@ public class ConsensusTestUtils {
         int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
         long goodQualityMismatchPenalty = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY;
         byte goodQualityMismatchThreshold = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD;
+        int matchScore = DEFAULT_MATCH_SCORE;
+        int mismatchScore = DEFAULT_MISMATCH_SCORE;
+        int gapScore = DEFAULT_GAP_SCORE;
         int kmerLength = DEFAULT_CONSENSUS_KMER_LENGTH;
         int kmerOffset = DEFAULT_CONSENSUS_KMER_OFFSET;
         int kmerMaxErrors = DEFAULT_CONSENSUS_KMER_MAX_ERRORS;
@@ -74,6 +78,15 @@ public class ConsensusTestUtils {
                     case "GOOD_QUALITY_MISMATCH_THRESHOLD":
                         goodQualityMismatchThreshold = (Byte)(entry.getValue());
                         break;
+                    case "MATCH_SCORE":
+                        matchScore = (Integer)(entry.getValue());
+                        break;
+                    case "MISMATCH_SCORE":
+                        mismatchScore = (Integer)(entry.getValue());
+                        break;
+                    case "GAP_SCORE":
+                        gapScore = (Integer)(entry.getValue());
+                        break;
                     case "KMER_LENGTH":
                         kmerLength = (Integer)(entry.getValue());
                         break;
@@ -83,11 +96,18 @@ public class ConsensusTestUtils {
                     case "KMER_MAX_ERRORS":
                         kmerMaxErrors = (Integer)(entry.getValue());
                         break;
+                    default:
+                        throw new IllegalArgumentException();
                 }
 
         switch (algorithmType) {
             case DOUBLE_MULTI_ALIGN:
-                throw new NotImplementedException();
+                return new ConsensusAlgorithmDoubleMultiAlign(ConsensusTestUtils::displayTestWarning, numberOfTargets,
+                        alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
+                        goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxPerCluster,
+                        readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
+                        avgQualityThreshold, trimWindowSize, false, null,
+                        (byte)0, null);
             case SINGLE_CELL:
                 return new ConsensusAlgorithmSingleCell(ConsensusTestUtils::displayTestWarning, numberOfTargets,
                         maxPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength, readsAvgQualityThreshold,
