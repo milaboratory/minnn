@@ -15,6 +15,24 @@ import static org.junit.Assert.*;
 
 public class ConsensusAlgorithmDoubleMultiAlignTest {
     @Test
+    public void sequencesTest() throws Exception {
+        ConsensusAlgorithm algorithm = createConsensusAlgorithm(DOUBLE_MULTI_ALIGN, 2,
+                new HashMap<String, Object>() {{
+                    put("READS_MIN_GOOD_SEQ_LENGTH", (byte)4);
+                    put("READS_TRIM_WINDOW_SIZE", 3);
+                    put("MIN_GOOD_SEQ_LENGTH", (byte)4);
+                    put("TRIM_WINDOW_SIZE", 3);
+                }});
+
+        for (HashMap.Entry<List<List<String>>, List<List<String>>> testCase : simpleSequencesTestData.entrySet()) {
+            Cluster cluster = rawSequencesToCluster(testCase.getKey(), simpleSequencesTestBarcodes);
+            CalculatedConsensuses calculatedConsensuses = algorithm.process(cluster);
+            List<List<String>> consensusSequences = consensusesToRawSequences(calculatedConsensuses);
+            assertEquals(consensusSequences, testCase.getValue());
+        }
+    }
+
+    @Test
     public void specialCases1() throws Exception {
         ConsensusAlgorithm algorithm = createConsensusAlgorithm(DOUBLE_MULTI_ALIGN, 1,
                 null);
