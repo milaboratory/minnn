@@ -44,7 +44,7 @@ public final class Defaults {
     public final static int DEFAULT_GAP_SCORE = -11;
     public final static byte DEFAULT_MAX_QUALITY = MAX_QUALITY_VALUE;
     public final static byte DEFAULT_GOOD_QUALITY = GOOD_QUALITY_VALUE;
-    public final static byte DEFAULT_BAD_QUALITY = BAD_QUALITY_VALUE;
+    public final static byte DEFAULT_BAD_QUALITY = (byte)10;
     public final static int DEFAULT_MAX_QUALITY_PENALTY = -4;
     public final static long DEFAULT_SINGLE_OVERLAP_PENALTY = DEFAULT_GAP_SCORE;
     public final static int DEFAULT_THREADS = 4;

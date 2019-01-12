@@ -63,8 +63,12 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
     @Override
     public CalculatedConsensuses process(Cluster cluster) {
         CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex);
-        List<DataFromParsedRead> remainingData = trimBadQualityTails(cluster.data, false);
+        List<DataFromParsedRead> remainingData = trimBadQualityTails(cluster.data);
         int clusterSize = cluster.data.size();
+        if ((remainingData.size() == 0) && (clusterSize > 1))
+            displayWarning.accept("WARNING: all reads discarded after quality trimming from cluster of "
+                    + clusterSize + " reads! Barcode values: "
+                    + formatBarcodeValues(cluster.data.get(0).getBarcodes()));
         int numValidConsensuses = 0;
 
         OffsetSearchResults offsetSearchResults = null;

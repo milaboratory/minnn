@@ -98,12 +98,12 @@ public final class SequenceWithAttributes {
         return new NSequenceWithQuality(seq, qual);
     }
 
-    public long calculateSumQuality() {
+    public long calculateQualityOfSequence() {
         if ((qual == null) || isEmpty())
             return 0;
         long sum = 0;
         for (byte quality : qual.asArray())
-            sum += quality;
+            sum += quality - DEFAULT_BAD_QUALITY;
         return sum;
     }
 

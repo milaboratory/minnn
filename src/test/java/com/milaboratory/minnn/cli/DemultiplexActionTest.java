@@ -100,13 +100,13 @@ public class DemultiplexActionTest {
         exec("demultiplex -f " + inputFile + " --by-barcode G1 --by-sample " + sampleFile1
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE);
         File[] outputFiles = getOutputFiles();
-        assertEquals(4663, outputFiles.length);
+        assertEquals(4650, outputFiles.length);
         Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
 
         exec("demultiplex -f " + inputFile + " --by-sample " + sampleFile2 + " --by-sample " + sampleFile3
                 + " --demultiplex-log " + LOG_FILE);
         outputFiles = getOutputFiles();
-        assertEquals(16, outputFiles.length);
+        assertEquals(17, outputFiles.length);
         Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
 
         assertOutputContains(true, "Invalid sample", () -> callableExec("demultiplex -f " + inputFile

@@ -80,16 +80,25 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
     @Override
     public CalculatedConsensuses process(Cluster cluster) {
         CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex);
-        List<DataFromParsedRead> data = cluster.data;
+        List<DataFromParsedRead> data = trimBadQualityTails(cluster.data);
+        if (data.size() == 0) {
+            calculatedConsensuses.consensuses.add(new Consensus((debugOutputStream == null) ? null
+                    : new ConsensusDebugData(numberOfTargets, debugQualityThreshold, false), numberOfTargets,
+                    false));
+            if (cluster.data.size() > 1)
+                displayWarning.accept("WARNING: all reads discarded after quality trimming from cluster of "
+                        + cluster.data.size() + " reads! Barcode values: "
+                        + formatBarcodeValues(cluster.data.get(0).getBarcodes()));
+        }
         long numValidConsensuses = 0;
 
         while (data.size() > 0) {
             // stage 1: align to best quality
-            long bestSumQuality = 0;
-            int bestDataIndex = 0;
+            long bestSumQuality = Long.MIN_VALUE;
+            int bestDataIndex = -1;
             for (int i = 0; i < data.size(); i++) {
                 long sumQuality = Arrays.stream(data.get(i).getSequences())
-                        .mapToLong(SequenceWithAttributes::calculateSumQuality).sum();
+                        .mapToLong(SequenceWithAttributes::calculateQualityOfSequence).sum();
                 if (sumQuality > bestSumQuality) {
                     bestSumQuality = sumQuality;
                     bestDataIndex = i;
@@ -111,8 +120,8 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                         + bestData.getOriginalReadId());
             else {
                 // stage 2: align to consensus from stage 1
-                subsequencesList = getAlignedSubsequencesList(trimBadQualityTails(data, true),
-                        filteredOutReads, stage1Consensus.sequences, -1);
+                subsequencesList = getAlignedSubsequencesList(data, filteredOutReads, stage1Consensus.sequences,
+                        -1);
                 if (subsequencesList.size() > 0) {
                     Consensus stage2Consensus = generateConsensus(subsequencesList,
                             Objects.requireNonNull(stage1Consensus.sequences),
