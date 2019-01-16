@@ -146,11 +146,16 @@ public class ConsensusTestUtils {
         return cluster;
     }
 
-    public static List<List<String>> consensusesToRawSequences(CalculatedConsensuses calculatedConsensuses) {
+    public static List<List<String>> consensusesToRawSequences(CalculatedConsensuses calculatedConsensuses,
+                                                               boolean withQuality) {
         List<List<String>> outputSequences = new ArrayList<>();
         for (Consensus consensus : calculatedConsensuses.consensuses)
-            outputSequences.add(Arrays.stream(consensus.sequences).map(seq -> seq.getSeq().toString())
-                    .collect(Collectors.toList()));
+            if (withQuality)
+                outputSequences.add(Arrays.stream(consensus.sequences).map(seq -> seq.toString()
+                        .replace(" ", "\n")).collect(Collectors.toList()));
+            else
+                outputSequences.add(Arrays.stream(consensus.sequences).map(seq -> seq.getSeq().toString())
+                        .collect(Collectors.toList()));
         return outputSequences;
     }
 

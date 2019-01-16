@@ -27,7 +27,7 @@ public class ConsensusAlgorithmDoubleMultiAlignTest {
         for (HashMap.Entry<List<List<String>>, List<List<String>>> testCase : simpleSequencesTestData.entrySet()) {
             Cluster cluster = rawSequencesToCluster(testCase.getKey(), simpleSequencesTestBarcodes);
             CalculatedConsensuses calculatedConsensuses = algorithm.process(cluster);
-            List<List<String>> consensusSequences = consensusesToRawSequences(calculatedConsensuses);
+            List<List<String>> consensusSequences = consensusesToRawSequences(calculatedConsensuses, false);
             assertEquals(consensusSequences, testCase.getValue());
         }
     }
@@ -44,7 +44,7 @@ public class ConsensusAlgorithmDoubleMultiAlignTest {
             Cluster cluster = rawSequencesToCluster(sequences.stream().map(Collections::singletonList)
                     .collect(Collectors.toList()), Collections.singletonList(barcodes));
             CalculatedConsensuses calculatedConsensuses = algorithm.process(cluster);
-            List<List<String>> consensusSequences = consensusesToRawSequences(calculatedConsensuses);
+            List<List<String>> consensusSequences = consensusesToRawSequences(calculatedConsensuses, true);
             System.out.println("Entry " + i + ", barcodes: " + barcodes + ", total number of sequences: "
                     + sequences.size());
             System.out.println("Calculated consensuses:");
