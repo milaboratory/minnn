@@ -93,24 +93,24 @@ public class ExtractActionTest {
         String posR1 = EXAMPLES_PATH + "positional/polyfid10_R1.fastq.gz";
         String posR2 = EXAMPLES_PATH + "positional/polyfid10_R2.fastq.gz";
         String outPos = TEMP_DIR + "outputPos.mif";
-        String positionalArgs = "extract -f --input-format fastq --input " + posR1 + " " + posR2
+        String positionalArgs = "extract -f --input-format FASTQ --input " + posR1 + " " + posR2
                 + " --output " + outPos;
 
         String oneR1 = EXAMPLES_PATH + "onesided/sl4000_R1.fastq.gz";
         String oneR2 = EXAMPLES_PATH + "onesided/sl4000_R2.fastq.gz";
         String outOne = TEMP_DIR + "outputOne.mif";
-        String onesidedArgs = "extract -f --input-format fastq --input " + oneR1 + " " + oneR2
+        String onesidedArgs = "extract -f --input-format FASTQ --input " + oneR1 + " " + oneR2
                 + " --output " + outOne;
 
         String twoR1 = EXAMPLES_PATH + "twosided/p109_R1.fastq.gz";
         String twoR2 = EXAMPLES_PATH + "twosided/p109_R2.fastq.gz";
         String outTwo = TEMP_DIR + "outputTwo.mif";
-        String twosidedArgs = "extract -f --input-format fastq --input " + twoR1 + " " + twoR2
+        String twosidedArgs = "extract -f --input-format FASTQ --input " + twoR1 + " " + twoR2
                 + " --output " + outTwo;
 
         String twoMif = getExampleMif("twosided-raw");
         String outTwoMif = TEMP_DIR + "outputTwoMif.mif";
-        String twosidedMifArgs = "extract -f --input-format mif --input " + twoMif
+        String twosidedMifArgs = "extract -f --input-format MIF --input " + twoMif
                 + " --output " + outTwoMif;
 
         String configuration = " --match-score 0 --mismatch-score -7 --gap-score -11 --single-overlap-penalty -10 "
@@ -152,7 +152,7 @@ public class ExtractActionTest {
     public void specialCaseTest2() throws Exception {
         String inputFile = getExampleMif("100reads");
         String outputFile = TEMP_DIR + "outputSCT2.mif";
-        String argsIO = "extract -f --input-format mif --input " + inputFile + " --output " + outputFile;
+        String argsIO = "extract -f --input-format MIF --input " + inputFile + " --output " + outputFile;
         String query = argsIO + " --pattern \"(G1:accnt) & (G2:nctn) & (G3:atta)\" --bitap-max-errors 2 " +
                 "--score-threshold -80";
         exec(query);
@@ -168,7 +168,7 @@ public class ExtractActionTest {
         String mismatchedFastq = TEMP_DIR + "mismatched.fastq";
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(mifFile1);
-            exec("extract -f --input-format mif --input " + mifFile1 + " --output " + mifFile2
+            exec("extract -f --input-format MIF --input " + mifFile1 + " --output " + mifFile2
                     + " --pattern \"*\" --not-matched-output " + mismatchedMif);
             assertMifEqualsAsFastq(mifFile1, mifFile2, false);
             exec("mif2fastq -f --input " + mismatchedMif + " --group R1=" + mismatchedFastq);
@@ -199,7 +199,7 @@ public class ExtractActionTest {
         String mismatchedOutputFile = TEMP_DIR + "mismatchedOutputMTT.mif";
         String mismatchedR1 = TEMP_DIR + "mismatchedR1-MTT.fastq";
         String mismatchedR2 = TEMP_DIR + "mismatchedR2-MTT.fastq";
-        String argsIO = "extract -f --input-format mif --input " + inputFile + " --output " + outputFile
+        String argsIO = "extract -f --input-format MIF --input " + inputFile + " --output " + outputFile
                 + " --not-matched-output " + mismatchedOutputFile;
         String query = argsIO + " --pattern \"TTC + N{1:10} & TTC || AAC \\ *\" --threads 1000 --score-threshold 0";
         exec(query);

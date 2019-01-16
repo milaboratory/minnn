@@ -9,6 +9,7 @@ import static com.milaboratory.minnn.cli.GenerateDocsAction.GENERATE_DOCS_ACTION
 
 @Command(name = GENERATE_DOCS_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Generate docs for all commands. Development use only.",
         hidden = true)

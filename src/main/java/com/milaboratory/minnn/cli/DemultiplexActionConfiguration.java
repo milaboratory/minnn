@@ -35,6 +35,7 @@ import com.milaboratory.primitivio.annotations.Serializable;
 import com.milaboratory.util.GlobalObjectMappers;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 
@@ -108,7 +109,7 @@ public final class DemultiplexActionConfiguration implements ActionConfiguration
             if (o == null || getClass() != o.getClass()) return false;
             DemultiplexActionParameters that = (DemultiplexActionParameters)o;
             if (inputReadsLimit != that.inputReadsLimit) return false;
-            return argumentsQuery != null ? argumentsQuery.equals(that.argumentsQuery) : that.argumentsQuery == null;
+            return Objects.equals(argumentsQuery, that.argumentsQuery);
         }
 
         @Override

@@ -41,6 +41,7 @@ import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAM
 
 @Command(name = STAT_GROUPS_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Collect summary statistics: capture group sequence and quality table.")
 public final class StatGroupsAction extends ACommandWithOutput implements MiNNNCommand {

@@ -45,6 +45,7 @@ import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 
 @Command(name = CORRECT_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Correct errors in barcodes, and replace all barcodes with corrected variants.")
 public final class CorrectAction extends ACommandWithSmartOverwrite implements MiNNNCommand {

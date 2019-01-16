@@ -31,10 +31,12 @@ package com.milaboratory.minnn.cli;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.milaboratory.cli.ActionConfiguration;
+import com.milaboratory.minnn.io.MinnnDataFormat;
 import com.milaboratory.primitivio.annotations.Serializable;
 import com.milaboratory.util.GlobalObjectMappers;
 
 import java.util.LinkedHashMap;
+import java.util.Objects;
 
 import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
 
@@ -75,7 +77,7 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
     @Serializable(asJson = true)
     public static final class ExtractActionParameters implements java.io.Serializable {
         private String query;
-        private String inputFormatName;
+        private MinnnDataFormat inputFormat;
         private boolean oriented;
         private int matchScore;
         private int mismatchScore;
@@ -96,7 +98,7 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
         @JsonCreator
         public ExtractActionParameters(
                 @JsonProperty("query") String query,
-                @JsonProperty("inputFormatName") String inputFormatName,
+                @JsonProperty("inputFormatName") MinnnDataFormat inputFormat,
                 @JsonProperty("oriented") boolean oriented,
                 @JsonProperty("matchScore") int matchScore,
                 @JsonProperty("mismatchScore") int mismatchScore,
@@ -114,7 +116,7 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
                 @JsonProperty("descriptionGroupsMap") LinkedHashMap<String, String> descriptionGroupsMap,
                 @JsonProperty("simplifiedSyntax") boolean simplifiedSyntax) {
             this.query = query;
-            this.inputFormatName = inputFormatName;
+            this.inputFormat = inputFormat;
             this.oriented = oriented;
             this.matchScore = matchScore;
             this.mismatchScore = mismatchScore;
@@ -141,12 +143,12 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
             this.query = query;
         }
 
-        public String getInputFormatName() {
-            return inputFormatName;
+        public MinnnDataFormat getInputFormat() {
+            return inputFormat;
         }
 
-        public void setInputFormatName(String inputFormatName) {
-            this.inputFormatName = inputFormatName;
+        public void setInputFormat(MinnnDataFormat inputFormat) {
+            this.inputFormat = inputFormat;
         }
 
         public boolean isOriented() {
@@ -297,17 +299,15 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
             if (fairSorting != that.fairSorting) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
             if (simplifiedSyntax != that.simplifiedSyntax) return false;
-            if (query != null ? !query.equals(that.query) : that.query != null) return false;
-            if (inputFormatName != null ? !inputFormatName.equals(that.inputFormatName) : that.inputFormatName != null)
-                return false;
-            return descriptionGroupsMap != null ? descriptionGroupsMap.equals(that.descriptionGroupsMap)
-                    : that.descriptionGroupsMap == null;
+            if (!Objects.equals(query, that.query)) return false;
+            if (inputFormat != that.inputFormat) return false;
+            return Objects.equals(descriptionGroupsMap, that.descriptionGroupsMap);
         }
 
         @Override
         public int hashCode() {
             int result = query != null ? query.hashCode() : 0;
-            result = 31 * result + (inputFormatName != null ? inputFormatName.hashCode() : 0);
+            result = 31 * result + (inputFormat != null ? inputFormat.hashCode() : 0);
             result = 31 * result + (oriented ? 1 : 0);
             result = 31 * result + matchScore;
             result = 31 * result + mismatchScore;

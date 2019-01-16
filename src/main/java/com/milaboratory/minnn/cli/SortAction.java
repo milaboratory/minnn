@@ -42,6 +42,7 @@ import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 
 @Command(name = SORT_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Sort reads by contents (nucleotide sequences) of specified groups.")
 public final class SortAction extends ACommandWithSmartOverwrite implements MiNNNCommand {

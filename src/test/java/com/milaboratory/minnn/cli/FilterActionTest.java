@@ -58,7 +58,7 @@ public class FilterActionTest {
             String filter = getRandomFilter();
             String fairSorting = rg.nextBoolean() ? "" : " --fair-sorting";
             createRandomMifFile(startFile);
-            exec("extract -f --input-format mif --input " + startFile + " --output " + inputFile
+            exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:tnacn)(G2:ncnc)\" --bitap-max-errors 0");
             exec("filter -f --input " + inputFile + " --output " + outputFile1 + fairSorting
                     + " --threads " + (rg.nextInt(5) + 1) + filter);

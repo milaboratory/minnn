@@ -34,6 +34,8 @@ import com.milaboratory.cli.ActionConfiguration;
 import com.milaboratory.primitivio.annotations.Serializable;
 import com.milaboratory.util.GlobalObjectMappers;
 
+import java.util.Objects;
+
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
 
 public final class FilterActionConfiguration implements ActionConfiguration {
@@ -117,7 +119,7 @@ public final class FilterActionConfiguration implements ActionConfiguration {
             FilterActionParameters that = (FilterActionParameters)o;
             if (fairSorting != that.fairSorting) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
-            return filterQuery != null ? filterQuery.equals(that.filterQuery) : that.filterQuery == null;
+            return Objects.equals(filterQuery, that.filterQuery);
         }
 
         @Override

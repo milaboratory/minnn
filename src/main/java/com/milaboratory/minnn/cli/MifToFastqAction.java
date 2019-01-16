@@ -40,6 +40,7 @@ import static com.milaboratory.minnn.cli.MifToFastqAction.MIF_TO_FASTQ_ACTION_NA
 
 @Command(name = MIF_TO_FASTQ_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Convert mif file to fastq format.")
 public final class MifToFastqAction extends ACommandWithOutput implements MiNNNCommand {
@@ -62,9 +63,9 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
 
     @Override
     public void validate() {
-        super.validate();
-        if (groupsQuery.size() == 0)
+        if (groupsQuery == null)
             throwValidationException("Groups for output files (Group Options) are not specified!");
+        super.validate();
     }
 
     @Override
@@ -85,7 +86,7 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
             "--group R2=out_R2.fastq --group UMI=UMI.fastq",
             names = {"--group"},
             arity = "1..*")
-    private LinkedHashMap<String, String> groupsQuery = new LinkedHashMap<>();
+    private LinkedHashMap<String, String> groupsQuery = null;
 
     @Option(description = IN_FILE_OR_STDIN,
             names = {"--input"})

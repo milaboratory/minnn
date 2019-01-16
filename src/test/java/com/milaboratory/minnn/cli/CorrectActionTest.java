@@ -54,7 +54,7 @@ public class CorrectActionTest {
         String outputFile = TEMP_DIR + "correctOutput.mif";
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(startFile);
-            exec("extract -f --input-format mif --input " + startFile + " --output " + inputFile
+            exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
             exec("correct -f --max-mismatches " + rg.nextInt(4) + " --max-indels " + rg.nextInt(4)
                     + " --max-total-errors " + rg.nextInt(5)

@@ -17,8 +17,8 @@ extract
  --pattern: Query, pattern specified in MiNNN format.
  --input: Input files. Single file means that there is 1 read or multi-read file; multiple files mean that there is 1 file for each read. If not specified, stdin will be used.
  --output: Output file in "mif" format. If not specified, stdout will be used.
- --not-matched-output: Output file for not matched reads in "mif" format. If not specified, not matched reads will not be written anywhere.
- --input-format: Input data format. "fastq" (default) or "mif".
+ --not-matched-output: Output file for not matched reads in MIF format. If not specified, not matched reads will not be written anywhere.
+ --input-format: Input data format. Available options: FASTQ, MIF.
  --oriented: By default, if there are 2 or more reads, 2 last reads are checked in direct and reverse order. With this flag, only in direct order.
  --match-score: Score for perfectly matched nucleotide.
  --mismatch-score: Score for mismatched nucleotide.
@@ -34,7 +34,7 @@ extract
  --fair-sorting: Use fair sorting and fair best match by score for all patterns.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --threads: Number of threads for parsing reads.
- --description-group: Description group names and regular expressions to parse expected nucleotide sequences for that groups from read description. Example: --description-group CELLID1='ATTA.{2-5}GACA' --description-group CELLID2='.{11}$'
+ --description-group: Description group names and regular expressions to parse expected nucleotide sequences for that groups from read description. Example: --description-group CID1='ATTA.{2-5}GACA' --description-group CID2='.{11}$'
 
 .. _filter:
 
@@ -94,6 +94,8 @@ correct
  --max-cluster-depth: Maximum cluster depth for algorithm of similar barcodes clustering.
  --single-substitution-probability: Single substitution probability for clustering algorithm.
  --single-indel-probability: Single insertion/deletion probability for clustering algorithm.
+ --min-count: Barcodes with count less than specified will not be included in the output.
+ --excluded-barcodes-output: Output file for reads with barcodes excluded by count. If not specified, reads with excluded barcodes will not be written anywhere
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
 
 .. _sort:
@@ -120,7 +122,7 @@ consensus
  --input: Input file in "mif" format. If not specified, stdin will be used.
  --output: Output file in "mif" format. If not specified, stdout will be used.
  --groups: List of groups that represent barcodes. If not specified, all groups will be used.
- --consensus-algorithm: Consensus algorithm. Available algorithms are single-cell and double-multi-align.
+ --consensus-algorithm: Consensus algorithm. Available algorithms: SINGLE_CELL, DOUBLE_MULTI_ALIGN.
  --width: Window width (maximum allowed number of indels) for banded aligner. Used only in double-multi-align consensus algorithm.
  --aligner-match-score: Score for perfectly matched nucleotide, used in sequences alignment. Used only in double-multi-align consensus algorithm.
  --aligner-mismatch-score: Score for mismatched nucleotide, used in sequences alignment. Used only in double-multi-align consensus algorithm.

@@ -47,6 +47,7 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
 
 @Command(name = DEMULTIPLEX_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Multi-filtering (one to many) for nucleotide sequences.")
 public final class DemultiplexAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
@@ -73,6 +74,8 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
 
     @Override
     public void validate() {
+        if (argumentsQueryList == null)
+            throwValidationException("Filter options are not specified!");
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
     }
 
@@ -133,7 +136,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
             description = "Filter Options: Barcodes and sample configuration files that specify sequences for " +
             "demultiplexing. At least 1 barcode or 1 sample file must be specified. Syntax example: " +
             "minnn demultiplex --by-barcode UID --by-sample samples.txt input.mif")
-    private List<String> argumentsQueryList = new ArrayList<>();
+    private List<String> argumentsQueryList = null;
 
     @Option(description = "Demultiplex log file name, to record names of generated files.",
             names = {"--demultiplex-log"},

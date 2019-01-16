@@ -35,6 +35,7 @@ import com.milaboratory.primitivio.annotations.Serializable;
 import com.milaboratory.util.GlobalObjectMappers;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
 
@@ -107,7 +108,7 @@ public final class SortActionConfiguration implements ActionConfiguration {
             if (o == null || getClass() != o.getClass()) return false;
             SortActionParameters that = (SortActionParameters)o;
             if (chunkSize != that.chunkSize) return false;
-            return sortGroupNames != null ? sortGroupNames.equals(that.sortGroupNames) : that.sortGroupNames == null;
+            return Objects.equals(sortGroupNames, that.sortGroupNames);
         }
 
         @Override

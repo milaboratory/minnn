@@ -35,6 +35,7 @@ import com.milaboratory.primitivio.annotations.Serializable;
 import com.milaboratory.util.GlobalObjectMappers;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
 
@@ -191,7 +192,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (Float.compare(that.singleSubstitutionProbability, singleSubstitutionProbability) != 0) return false;
             if (Float.compare(that.singleIndelProbability, singleIndelProbability) != 0) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
-            return groupNames != null ? groupNames.equals(that.groupNames) : that.groupNames == null;
+            return Objects.equals(groupNames, that.groupNames);
         }
 
         @Override

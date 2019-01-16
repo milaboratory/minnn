@@ -50,6 +50,7 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
 
 @Command(name = FILTER_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Filter target nucleotide sequences, pass only sequences matching the query.")
 public final class FilterAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
@@ -77,9 +78,9 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Override
     public void validate() {
-        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
-        if (filterQueryList.size() == 0)
+        if (filterQueryList == null)
             throwValidationException("Filter query is not specified!");
+        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
     }
 
     @Override
@@ -116,7 +117,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Parameters(arity = "1..*",
             description = "\"<filter_query>\"")
-    private List<String> filterQueryList = new ArrayList<>();
+    private List<String> filterQueryList = null;
 
     @Option(description = IN_FILE_OR_STDIN,
             names = {"--input"})

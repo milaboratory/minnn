@@ -45,8 +45,8 @@ public final class DescriptionGroups {
     private final LinkedHashMap<String, GroupPattern> regexPatterns = new LinkedHashMap<>();
 
     DescriptionGroups(LinkedHashMap<String, String> cliArgs) {
-        this.cliArgs = cliArgs;
-        for (HashMap.Entry<String, String> entry : cliArgs.entrySet())
+        this.cliArgs = (cliArgs == null) ? new LinkedHashMap<>() : cliArgs;
+        for (HashMap.Entry<String, String> entry : this.cliArgs.entrySet())
             regexPatterns.put(entry.getKey(), new GroupPattern(entry.getValue()));
     }
 

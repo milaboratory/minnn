@@ -29,11 +29,5 @@
 package com.milaboratory.minnn.consensus;
 
 public enum ConsensusAlgorithms {
-    SINGLE_CELL("single-cell"), RNA_SEQ("rna-seq"), DOUBLE_MULTI_ALIGN("double-multi-align");
-
-    public final String argument;
-
-    ConsensusAlgorithms(String argument) {
-        this.argument = argument;
-    }
+    SINGLE_CELL, RNA_SEQ, DOUBLE_MULTI_ALIGN
 }

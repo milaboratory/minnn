@@ -59,7 +59,7 @@ public class StatActionsTest {
         String outputP2 = TEMP_DIR + "statPositions2.txt";
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(startFile);
-            exec("extract -f --input-format mif --input " + startFile + " --output " + inputFile
+            exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:accnt) & (G2:nctn) & (G3:atta)\" --bitap-max-errors 2 --score-threshold -80");
 
             int qualityFilter1 = rg.nextInt(DEFAULT_MAX_QUALITY);

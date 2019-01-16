@@ -43,11 +43,11 @@ import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 
 @Command(name = CONSENSUS_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Calculate consensus sequences for all barcodes.")
 public final class ConsensusAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
     public static final String CONSENSUS_ACTION_NAME = "consensus";
-    private ConsensusAlgorithms consensusAlgorithmType;
 
     public ConsensusAction() {
         super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
@@ -74,11 +74,6 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     @Override
     public void validate() {
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
-        consensusAlgorithmType = Arrays.stream(ConsensusAlgorithms.class.getEnumConstants())
-                .filter(alg -> alg.argument.equals(consensusAlgorithmArgument)).findFirst().orElseGet(() -> {
-                    throwValidationException("Unknown consensus algorithm: " + consensusAlgorithmArgument);
-                    return null;
-                });
         if (maxConsensusesPerCluster < 1)
             throwValidationException("--max-consensuses-per-cluster value must be positive!");
     }
@@ -144,9 +139,9 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
             arity = "1..*")
     private List<String> groupList = null;
 
-    @Option(description = "Consensus algorithm. Available algorithms are single-cell and double-multi-align.",
+    @Option(description = "Consensus algorithm. Available algorithms: SINGLE_CELL, DOUBLE_MULTI_ALIGN.",
             names = {"--consensus-algorithm"})
-    private String consensusAlgorithmArgument = DEFAULT_CONSENSUS_ALGORITHM;
+    private ConsensusAlgorithms consensusAlgorithmType = DEFAULT_CONSENSUS_ALGORITHM;
 
     @Option(description = "Window width (maximum allowed number of indels) for banded aligner."
             + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,

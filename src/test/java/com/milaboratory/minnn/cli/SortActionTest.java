@@ -56,7 +56,7 @@ public class SortActionTest {
         String outputFile3 = TEMP_DIR + "sortOutput3.mif";
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(startFile);
-            exec("extract -f --input-format mif --input " + startFile + " --output " + inputFile
+            exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:an{3}t)(G2:n{2})\" --bitap-max-errors 0");
             exec("sort -f --chunk-size " + (rg.nextInt(50000) + 100) + " --input " + inputFile
                     + " --output " + outputFile1 + " --groups G2 G1");

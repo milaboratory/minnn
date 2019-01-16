@@ -35,6 +35,7 @@ import com.milaboratory.primitivio.annotations.Serializable;
 import com.milaboratory.util.GlobalObjectMappers;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.milaboratory.minnn.cli.ConsensusAction.CONSENSUS_ACTION_NAME;
 
@@ -299,7 +300,7 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
             if (trimWindowSize != that.trimWindowSize) return false;
             if (toSeparateGroups != that.toSeparateGroups) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
-            return groupList != null ? groupList.equals(that.groupList) : that.groupList == null;
+            return Objects.equals(groupList, that.groupList);
         }
 
         @Override

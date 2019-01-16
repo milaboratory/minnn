@@ -49,13 +49,13 @@ import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
 import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
-import static com.milaboratory.minnn.io.MinnnDataFormatNames.parameterNames;
 import static com.milaboratory.minnn.parser.ParserFormat.*;
 import static com.milaboratory.minnn.util.CommonUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 @Command(name = EXTRACT_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Read target nucleotide sequence and find groups and patterns as specified in query.")
 public final class ExtractAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
@@ -86,8 +86,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         patternGroups.retainAll(descriptionGroups.getGroupNames());
         if (patternGroups.size() > 0)
             throw exitWithError("Error: groups " + patternGroups + " are both in pattern and in description groups!");
-        MinnnDataFormat inputFormat = parameterNames.get(inputFormatName);
-        ReadProcessor readProcessor = new ReadProcessor(getFullPipelineConfiguration(), inputFileNames,
+        ReadProcessor readProcessor = new ReadProcessor(getFullPipelineConfiguration(), getInputFiles(),
                 outputFileName, notMatchedOutputFileName, pattern, oriented, fairSorting, inputReadsLimit, threads,
                 inputFormat, descriptionGroups);
         readProcessor.processReadsParallel();
@@ -101,15 +100,13 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     @Override
     public void validate() {
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
-        if (parameterNames.get(inputFormatName) == null)
-            throwValidationException("Unknown input format: " + inputFormatName);
         validateQuality(goodQuality, spec.commandLine());
         validateQuality(badQuality, spec.commandLine());
     }
 
     @Override
     protected List<String> getInputFiles() {
-        return inputFileNames;
+        return (inputFileNames == null) ? new ArrayList<>() : inputFileNames;
     }
 
     @Override
@@ -134,9 +131,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     @Override
     public ActionConfiguration getConfiguration() {
         return new ExtractActionConfiguration(new ExtractActionConfiguration.ExtractActionParameters(query,
-                inputFormatName, oriented, matchScore, mismatchScore, uppercaseMismatchScore, gapScore,
-                scoreThreshold, goodQuality, badQuality, maxQualityPenalty, singleOverlapPenalty, maxOverlap,
-                bitapMaxErrors, fairSorting, inputReadsLimit, descriptionGroupsMap, simplifiedSyntax));
+                inputFormat, oriented, matchScore, mismatchScore, uppercaseMismatchScore, gapScore, scoreThreshold,
+                goodQuality, badQuality, maxQualityPenalty, singleOverlapPenalty, maxOverlap, bitapMaxErrors,
+                fairSorting, inputReadsLimit, descriptionGroupsMap, simplifiedSyntax));
     }
 
     @Override
@@ -153,20 +150,20 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
             "multiple files mean that there is 1 file for each read. If not specified, stdin will be used.",
             names = "--input",
             arity = "1..*")
-    private List<String> inputFileNames = new ArrayList<>();
+    private List<String> inputFileNames = null;
 
     @Option(description = OUT_FILE_OR_STDOUT,
             names = "--output")
     private String outputFileName = null;
 
-    @Option(description = "Output file for not matched reads in \"mif\" format. If not specified, not " +
+    @Option(description = "Output file for not matched reads in MIF format. If not specified, not " +
             "matched reads will not be written anywhere.",
             names = "--not-matched-output")
     private String notMatchedOutputFileName = null;
 
-    @Option(description = "Input data format. \"fastq\" (default) or \"mif\".",
+    @Option(description = "Input data format. Available options: FASTQ, MIF.",
             names = "--input-format")
-    private String inputFormatName = DEFAULT_INPUT_FORMAT;
+    private MinnnDataFormat inputFormat = DEFAULT_INPUT_FORMAT;
 
     @Option(description = "By default, if there are 2 or more reads, 2 last reads are checked in direct " +
             "and reverse order. With this flag, only in direct order.",
@@ -230,10 +227,10 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     private int threads = DEFAULT_THREADS;
 
     @Option(description = "Description group names and regular expressions to parse expected " +
-            "nucleotide sequences for that groups from read description. Example: --description-group CELLID1=" +
-            "'ATTA.{2-5}GACA' --description-group CELLID2='.{11}$'",
+            "nucleotide sequences for that groups from read description. Example: --description-group CID1=" +
+            "'ATTA.{2-5}GACA' --description-group CID2='.{11}$'",
             names = "--description-group")
-    private LinkedHashMap<String, String> descriptionGroupsMap = new LinkedHashMap<>();
+    private LinkedHashMap<String, String> descriptionGroupsMap = null;
 
     @Option(description = "Use \"simplified\" parser syntax with class names and their arguments in " +
             "parentheses",

@@ -40,6 +40,7 @@ import static com.milaboratory.minnn.cli.StatPositionsAction.STAT_POSITIONS_ACTI
 
 @Command(name = STAT_POSITIONS_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Collect summary statistics: positions of group matches.")
 public final class StatPositionsAction extends ACommandWithOutput implements MiNNNCommand {

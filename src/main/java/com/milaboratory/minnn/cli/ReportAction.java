@@ -49,6 +49,7 @@ import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 @Command(name = REPORT_ACTION_NAME,
         sortOptions = false,
+        showDefaultValues = true,
         separator = " ",
         description = "Find match and groups in query and display report on the screen.")
 public final class ReportAction extends ACommand implements MiNNNCommand {
