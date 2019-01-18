@@ -97,4 +97,34 @@ public class CorrectActionTest {
         for (int i = 1; i <= 5; i++)
             assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
     }
+
+    @Test
+    public void minCountTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        for (int i = 0; i < 10; i++) {
+            String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
+            String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
+            String currentExcludedOutput = TEMP_DIR + "excluded" + (i + 1) + ".mif";
+            if (i < 9) {
+                exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
+                        + " --excluded-barcodes-output " + currentExcludedOutput
+                        + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
+                        + " --single-indel-probability 0.001 --min-count " + i);
+                assertFileNotEquals(currentInput, currentOutput);
+                assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
+            } else {
+                exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
+                        + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
+                        + " --single-indel-probability 0.001 --min-count 1");
+                assertFileNotEquals(currentInput, currentOutput);
+                assertMifEqualsAsFastq(currentInput, currentOutput, true);
+            }
+        }
+        assertTrue(new File(inputFile).delete());
+        for (int i = 1; i <= 10; i++) {
+            assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
+            if (i < 10)
+                assertTrue(new File(TEMP_DIR + "excluded" + i + ".mif").delete());
+        }
+    }
 }

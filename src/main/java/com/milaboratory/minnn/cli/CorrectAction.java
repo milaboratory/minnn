@@ -59,7 +59,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     public void run1() {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, mismatches, indels, totalErrors, threshold, groupNames, maxClusterDepth,
-                singleSubstitutionProbability, singleIndelProbability, inputReadsLimit, quiet);
+                singleSubstitutionProbability, singleIndelProbability, minCount, excludedBarcodesOutputFileName,
+                inputReadsLimit, quiet);
         correctBarcodesIO.go();
     }
 
@@ -83,14 +84,25 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
         List<String> outputFileNames = new ArrayList<>();
         if (outputFileName != null)
             outputFileNames.add(outputFileName);
+        if (excludedBarcodesOutputFileName != null)
+            outputFileNames.add(excludedBarcodesOutputFileName);
         return outputFileNames;
+    }
+
+    @Override
+    public void handleExistenceOfOutputFile(String outFileName) {
+        // disable smart overwrite if output file for reads with excluded barcodes is specified
+        if (excludedBarcodesOutputFileName != null)
+            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
+        else
+            super.handleExistenceOfOutputFile(outFileName);
     }
 
     @Override
     public ActionConfiguration getConfiguration() {
         return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
                 mismatches, indels, totalErrors, threshold, maxClusterDepth, singleSubstitutionProbability,
-                singleIndelProbability, inputReadsLimit));
+                singleIndelProbability, minCount, inputReadsLimit));
     }
 
     @Override
@@ -144,6 +156,15 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Option(description = "Single insertion/deletion probability for clustering algorithm.",
             names = {"--single-indel-probability"})
     private float singleIndelProbability = DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY;
+
+    @Option(description = "Barcodes with count less than specified will not be included in the output.",
+            names = {"--min-count"})
+    private int minCount = 0;
+
+    @Option(description = "Output file for reads with barcodes excluded by count. If not specified, reads with " +
+            "excluded barcodes will not be written anywhere",
+            names = {"--excluded-barcodes-output"})
+    private String excludedBarcodesOutputFileName = null;
 
     @Option(description = NUMBER_OF_READS,
             names = {"-n", "--number-of-reads"})

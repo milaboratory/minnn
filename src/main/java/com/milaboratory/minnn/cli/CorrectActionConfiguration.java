@@ -83,6 +83,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
         private int maxClusterDepth;
         private float singleSubstitutionProbability;
         private float singleIndelProbability;
+        private int minCount;
         private long inputReadsLimit;
 
         @JsonCreator
@@ -95,6 +96,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                 @JsonProperty("maxClusterDepth") int maxClusterDepth,
                 @JsonProperty("singleSubstitutionProbability") float singleSubstitutionProbability,
                 @JsonProperty("singleIndelProbability") float singleIndelProbability,
+                @JsonProperty("minCount") int minCount,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
             this.groupNames = groupNames;
             this.mismatches = mismatches;
@@ -104,6 +106,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.maxClusterDepth = maxClusterDepth;
             this.singleSubstitutionProbability = singleSubstitutionProbability;
             this.singleIndelProbability = singleIndelProbability;
+            this.minCount = minCount;
             this.inputReadsLimit = inputReadsLimit;
         }
 
@@ -171,6 +174,14 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.singleIndelProbability = singleIndelProbability;
         }
 
+        public int getMinCount() {
+            return minCount;
+        }
+
+        public void setMinCount(int minCount) {
+            this.minCount = minCount;
+        }
+
         public long getInputReadsLimit() {
             return inputReadsLimit;
         }
@@ -191,6 +202,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (maxClusterDepth != that.maxClusterDepth) return false;
             if (Float.compare(that.singleSubstitutionProbability, singleSubstitutionProbability) != 0) return false;
             if (Float.compare(that.singleIndelProbability, singleIndelProbability) != 0) return false;
+            if (minCount != that.minCount) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
             return Objects.equals(groupNames, that.groupNames);
         }
@@ -207,6 +219,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                     ? Float.floatToIntBits(singleSubstitutionProbability) : 0);
             result = 31 * result + (singleIndelProbability != +0.0f
                     ? Float.floatToIntBits(singleIndelProbability) : 0);
+            result = 31 * result + minCount;
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;
         }

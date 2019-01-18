@@ -48,6 +48,7 @@ import com.milaboratory.minnn.pattern.MatchedItem;
 import com.milaboratory.minnn.stat.MutationProbability;
 import com.milaboratory.minnn.stat.SimpleMutationProbability;
 import com.milaboratory.util.SmartProgressReporter;
+import gnu.trove.map.hash.TObjectLongHashMap;
 
 import java.io.IOException;
 import java.util.*;
@@ -71,18 +72,22 @@ public final class CorrectBarcodesIO {
     private final List<String> groupNames;
     private final int maxClusterDepth;
     private final MutationProbability mutationProbability;
+    private final int minCount;
+    private final String excludedBarcodesOutputFileName;
     private final long inputReadsLimit;
     private final boolean suppressWarnings;
     private Set<String> defaultGroups;
     private LinkedHashSet<String> keyGroups;
     private Map<String, HashMap<NucleotideSequence, NucleotideSequence>> sequenceCorrectionMaps;
+    private Map<String, TObjectLongHashMap<NucleotideSequence>> correctedBarcodeCounters;
     private int numberOfTargets;
     private AtomicLong corrected = new AtomicLong(0);
 
     public CorrectBarcodesIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
                              int mismatches, int indels, int totalErrors, float threshold, List<String> groupNames,
                              int maxClusterDepth, float singleSubstitutionProbability, float singleIndelProbability,
-                             long inputReadsLimit, boolean suppressWarnings) {
+                             int minCount, String excludedBarcodesOutputFileName, long inputReadsLimit,
+                             boolean suppressWarnings) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -93,6 +98,8 @@ public final class CorrectBarcodesIO {
         this.groupNames = groupNames;
         this.maxClusterDepth = maxClusterDepth;
         this.mutationProbability = new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability);
+        this.minCount = minCount;
+        this.excludedBarcodesOutputFileName = excludedBarcodesOutputFileName;
         this.inputReadsLimit = inputReadsLimit;
         this.suppressWarnings = suppressWarnings;
     }
@@ -100,30 +107,33 @@ public final class CorrectBarcodesIO {
     public void go() {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
-        try (MifReader pass1Reader = new MifReader(inputFileName);
-             MifReader pass2Reader = new MifReader(inputFileName);
-             MifWriter writer = createWriter(pass1Reader.getHeader())) {
+        long excludedReads = 0;
+        try (MifReader initialReader = new MifReader(inputFileName);
+             MifReader barcodeCountReader = (minCount > 0) ? new MifReader(inputFileName) : null;
+             MifReader finalReader = new MifReader(inputFileName);
+             MifWriter writer = Objects.requireNonNull(createWriter(initialReader.getHeader(), false));
+             MifWriter excludedBarcodesWriter = createWriter(initialReader.getHeader(), true)) {
             if (inputReadsLimit > 0) {
-                pass1Reader.setParsedReadsLimit(inputReadsLimit);
-                pass2Reader.setParsedReadsLimit(inputReadsLimit);
+                initialReader.setParsedReadsLimit(inputReadsLimit);
+                finalReader.setParsedReadsLimit(inputReadsLimit);
             }
-            SmartProgressReporter.startProgressReport("Counting sequences", pass1Reader, System.err);
-            defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfTargets())
+            SmartProgressReporter.startProgressReport("Counting sequences", initialReader, System.err);
+            defaultGroups = IntStream.rangeClosed(1, initialReader.getNumberOfTargets())
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
             if (groupNames.stream().anyMatch(defaultGroups::contains))
                 throw exitWithError("Default groups R1, R2, etc should not be specified for correction!");
             keyGroups = new LinkedHashSet<>(groupNames);
-            if (!suppressWarnings && pass1Reader.isSorted())
+            if (!suppressWarnings && initialReader.isSorted())
                 System.err.println("WARNING: correcting sorted MIF file; output file will be unsorted!");
-            List<String> correctedAgainGroups = keyGroups.stream().filter(gn -> pass1Reader.getCorrectedGroups()
+            List<String> correctedAgainGroups = keyGroups.stream().filter(gn -> initialReader.getCorrectedGroups()
                     .stream().anyMatch(gn::equals)).collect(Collectors.toList());
             if (!suppressWarnings && (correctedAgainGroups.size() != 0))
                 System.err.println("WARNING: group(s) " + correctedAgainGroups + " already corrected and will be " +
                         "corrected again!");
             Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()
                     .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
-            numberOfTargets = pass1Reader.getNumberOfTargets();
-            for (ParsedRead parsedRead : CUtils.it(pass1Reader)) {
+            numberOfTargets = initialReader.getNumberOfTargets();
+            for (ParsedRead parsedRead : CUtils.it(initialReader)) {
                 for (Map.Entry<String, HashMap<NucleotideSequence, SequenceCounter>> entry : sequenceMaps.entrySet()) {
                     NucleotideSequence groupValue = parsedRead.getGroupValue(entry.getKey()).getSequence();
                     SequenceCounter counter = entry.getValue().get(groupValue);
@@ -158,15 +168,29 @@ public final class CorrectBarcodesIO {
                 sequenceCorrectionMaps.put(entry.getKey(), currentCorrectionMap);
             }
 
-            // second pass: correcting barcodes
-            SmartProgressReporter.startProgressReport("Correcting barcodes", pass2Reader, System.err);
-            for (ParsedRead parsedRead : CUtils.it(pass2Reader)) {
-                writer.write(correctBarcodes(parsedRead));
+            // intermediate pass, only if filtering by count is required: calculating counts for corrected barcodes
+            if (minCount > 0) {
+                correctedBarcodeCounters = new HashMap<>();
+                SmartProgressReporter.startProgressReport("Counting barcodes", barcodeCountReader, System.err);
+                for (ParsedRead parsedRead : CUtils.it(barcodeCountReader))
+                    updateBarcodeCounters(parsedRead);
+            }
+
+            // final pass: correcting barcodes
+            SmartProgressReporter.startProgressReport("Correcting barcodes", finalReader, System.err);
+            for (ParsedRead parsedRead : CUtils.it(finalReader)) {
+                CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead);
+                if (correctBarcodesResult.excluded) {
+                    if (excludedBarcodesWriter != null)
+                        excludedBarcodesWriter.write(correctBarcodesResult.parsedRead);
+                    excludedReads++;
+                } else
+                    writer.write(correctBarcodesResult.parsedRead);
                 if (++totalReads == inputReadsLimit)
                     break;
             }
-            pass2Reader.close();
-            writer.setOriginalNumberOfReads(pass2Reader.getOriginalNumberOfReads());
+            finalReader.close();
+            writer.setOriginalNumberOfReads(finalReader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -175,25 +199,47 @@ public final class CorrectBarcodesIO {
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         System.err.println("Processed " + totalReads + " reads");
         float percent = (totalReads == 0) ? 0 : (float)corrected.get() / totalReads * 100;
-        System.err.println("Reads with corrected barcodes: " + corrected + " (" + floatFormat.format(percent) + "%)\n");
+        System.err.println("Reads with corrected barcodes: " + corrected
+                + " (" + floatFormat.format(percent) + "%)");
+        if (excludedReads > 0)
+            System.err.println("Reads excluded by too low barcode count: " + excludedReads
+                    + " (" + floatFormat.format((float)excludedReads / totalReads * 100) + "%)\n");
+        else
+            System.err.println();
     }
 
-    private MifWriter createWriter(MifHeader inputHeader) throws IOException {
+    private MifWriter createWriter(MifHeader inputHeader, boolean excludedBarcodes) throws IOException {
         LinkedHashSet<String> allCorrectedGroups = new LinkedHashSet<>(inputHeader.getCorrectedGroups());
         allCorrectedGroups.addAll(groupNames);
         MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
                 new ArrayList<>(allCorrectedGroups), false, inputHeader.getGroupEdges());
-        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
-                : new MifWriter(outputFileName, outputHeader);
+        if (excludedBarcodes)
+            return (excludedBarcodesOutputFileName == null) ? null
+                    : new MifWriter(excludedBarcodesOutputFileName, outputHeader);
+        else
+            return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
+                    : new MifWriter(outputFileName, outputHeader);
     }
 
-    private ParsedRead correctBarcodes(ParsedRead parsedRead) {
-        Map<String, MatchedGroup> matchedGroups = parsedRead.getGroups().stream()
-                .filter(group -> keyGroups.contains(group.getGroupName()))
-                .collect(Collectors.toMap(MatchedGroup::getGroupName, group -> group));
+    private void updateBarcodeCounters(ParsedRead parsedRead) {
+        for (Map.Entry<String, MatchedGroup> entry : extractMatchedGroups(parsedRead).entrySet()) {
+            String groupName = entry.getKey();
+            correctedBarcodeCounters.computeIfAbsent(groupName, n -> new TObjectLongHashMap<>());
+            TObjectLongHashMap<NucleotideSequence> currentGroupBarcodes = correctedBarcodeCounters.get(groupName);
+            MatchedGroup matchedGroup = entry.getValue();
+            NucleotideSequence oldValue = matchedGroup.getValue().getSequence();
+            NucleotideSequence correctValue = sequenceCorrectionMaps.get(groupName).get(oldValue);
+            if (correctValue == null)
+                correctValue = oldValue;
+            currentGroupBarcodes.adjustOrPutValue(correctValue, 1, 0);
+        }
+    }
+
+    private CorrectBarcodesResult correctBarcodes(ParsedRead parsedRead) {
         HashMap<Byte, ArrayList<CorrectedGroup>> correctedGroups = new HashMap<>();
         boolean isCorrection = false;
-        for (Map.Entry<String, MatchedGroup> entry : matchedGroups.entrySet()) {
+        boolean excluded = false;
+        for (Map.Entry<String, MatchedGroup> entry : extractMatchedGroups(parsedRead).entrySet()) {
             String groupName = entry.getKey();
             MatchedGroup matchedGroup = entry.getValue();
             byte targetId = matchedGroup.getTargetId();
@@ -204,6 +250,9 @@ public final class CorrectBarcodesIO {
             isCorrection |= !correctValue.equals(oldValue);
             correctedGroups.computeIfAbsent(targetId, id -> new ArrayList<>());
             correctedGroups.get(targetId).add(new CorrectedGroup(groupName, correctValue));
+            if (minCount > 0)
+                if (correctedBarcodeCounters.get(groupName).get(correctValue) < minCount)
+                    excluded = true;
         }
 
         ArrayList<MatchedGroupEdge> newGroupEdges;
@@ -243,7 +292,30 @@ public final class CorrectBarcodesIO {
             throw new IllegalStateException("Missing default groups in new Match: expected " + defaultGroups
                     + ", got " + newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
                     .filter(defaultGroups::contains).collect(Collectors.toList()));
-        return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), newMatch, 0);
+        return new CorrectBarcodesResult(new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(),
+                newMatch, 0), excluded);
+    }
+
+    /**
+     * Extract from parsed read all matched groups that must be corrected and map them to their group names.
+     *
+     * @param parsedRead    parsed read
+     * @return              map keys: group names,
+     *                      map values: MatchedGroup structures containing nucleotide sequence and targetId
+     */
+    private Map<String, MatchedGroup> extractMatchedGroups(ParsedRead parsedRead) {
+        return parsedRead.getGroups().stream().filter(group -> keyGroups.contains(group.getGroupName()))
+                .collect(Collectors.toMap(MatchedGroup::getGroupName, group -> group));
+    }
+
+    private static class CorrectBarcodesResult {
+        final ParsedRead parsedRead;
+        final boolean excluded;
+
+        CorrectBarcodesResult(ParsedRead parsedRead, boolean excluded) {
+            this.parsedRead = parsedRead;
+            this.excluded = excluded;
+        }
     }
 
     private static class CorrectedGroup {
