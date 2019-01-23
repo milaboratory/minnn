@@ -414,7 +414,9 @@ public final class CorrectBarcodesIO {
         // compareTo is reversed to start from bigger counts
         @Override
         public int compareTo(SequenceCounter other) {
-            return -Long.compare(count, other.count);
+            int comparisonResult = -Long.compare(count, other.count);
+            // disable equal counts because they lead to objects loss
+            return (comparisonResult == 0) ? 1 : comparisonResult;
         }
     }
 
