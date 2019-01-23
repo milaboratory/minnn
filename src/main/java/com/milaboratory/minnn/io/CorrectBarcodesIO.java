@@ -160,8 +160,9 @@ public final class CorrectBarcodesIO {
                 HashMap<NucleotideSequence, NucleotideSequence> currentCorrectionMap = new HashMap<>();
                 clustering.performClustering().forEach(cluster -> {
                     NucleotideSequence headSequence = cluster.getHead().multiSequence.getBestSequence();
-                    cluster.processAllChildren((child) -> {
-                        currentCorrectionMap.put(child.getHead().multiSequence.getBestSequence(), headSequence);
+                    cluster.processAllChildren(child -> {
+                        child.getHead().multiSequence.sequences.keySet().forEach(seq -> currentCorrectionMap.put(seq,
+                                headSequence));
                         return true;
                     });
                 });
