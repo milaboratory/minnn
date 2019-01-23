@@ -59,8 +59,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     public void run1() {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, mismatches, indels, totalErrors, threshold, groupNames, maxClusterDepth,
-                singleSubstitutionProbability, singleIndelProbability, minCount, excludedBarcodesOutputFileName,
-                inputReadsLimit, quiet);
+                singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes,
+                excludedBarcodesOutputFileName, inputReadsLimit, quiet);
         correctBarcodesIO.go();
     }
 
@@ -102,7 +102,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     public ActionConfiguration getConfiguration() {
         return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
                 mismatches, indels, totalErrors, threshold, maxClusterDepth, singleSubstitutionProbability,
-                singleIndelProbability, minCount, inputReadsLimit));
+                singleIndelProbability, maxUniqueBarcodes, inputReadsLimit));
     }
 
     @Override
@@ -157,12 +157,14 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             names = {"--single-indel-probability"})
     private float singleIndelProbability = DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY;
 
-    @Option(description = "Barcodes with count less than specified will not be included in the output.",
-            names = {"--min-count"})
-    private int minCount = 0;
+    @Option(description = "Maximal number of unique barcodes that will be included into output. Reads containing " +
+            "barcodes with biggest counts will be included, reads with barcodes with smaller counts will be " +
+            "excluded. Value 0 turns off this feature: if this argument is 0, all barcodes will be included.",
+            names = {"--max-unique-barcodes"})
+    private int maxUniqueBarcodes = DEFAULT_CORRECT_MAX_UNIQUE_BARCODES;
 
     @Option(description = "Output file for reads with barcodes excluded by count. If not specified, reads with " +
-            "excluded barcodes will not be written anywhere",
+            "excluded barcodes will not be written anywhere.",
             names = {"--excluded-barcodes-output"})
     private String excludedBarcodesOutputFileName = null;
 

@@ -73,49 +73,50 @@ public class CorrectActionTest {
                 + " --groups G1"));
         assertOutputContains(true, "Error", () -> callableExec("correct -f --input " + inputFile
                 + " --output " + inputFile));
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i <= 1; i++) {
             String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
             exec("correct -f --groups G1 G2 G3 G4 --input " + currentInput + " --output " + currentOutput
                     + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
                     + " --single-indel-probability 0.001");
             assertFileNotEquals(currentInput, currentOutput);
-            if (i < 3) {
+            if (i == 0) {
                 assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
             } else
                 assertMifEqualsAsFastq(currentInput, currentOutput, true);
         }
-        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct4.mif --max-total-errors 0"
+        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct3.mif --max-total-errors 0"
                 + " --groups G1 G2 G3 G4");
-        assertFileNotEquals(inputFile, TEMP_DIR + "correct4.mif");
-        assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct4.mif", true);
-        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct5.mif --max-mismatches 0" +
+        assertFileNotEquals(inputFile, TEMP_DIR + "correct3.mif");
+        assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct3.mif", true);
+        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct4.mif --max-mismatches 0" +
                 " --max-indels 0 --groups G1 G2 G3 G4");
-        assertFileNotEquals(TEMP_DIR + "correct4.mif", TEMP_DIR + "correct5.mif");
-        assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct5.mif", true);
+        assertFileNotEquals(TEMP_DIR + "correct3.mif", TEMP_DIR + "correct4.mif");
+        assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct4.mif", true);
         assertTrue(new File(inputFile).delete());
-        for (int i = 1; i <= 5; i++)
+        for (int i = 1; i <= 4; i++)
             assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
     }
 
     @Test
-    public void minCountTest() throws Exception {
+    public void maxUniqueBarcodesTest() throws Exception {
         String inputFile = getExampleMif("twosided");
         for (int i = 0; i < 10; i++) {
             String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
             String currentExcludedOutput = TEMP_DIR + "excluded" + (i + 1) + ".mif";
             if (i < 9) {
+                int maxUniqueBarcodes = 50 - i * 5;
                 exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
                         + " --excluded-barcodes-output " + currentExcludedOutput
                         + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
-                        + " --single-indel-probability 0.001 --min-count " + i);
+                        + " --single-indel-probability 0.001 --max-unique-barcodes " + maxUniqueBarcodes);
                 assertFileNotEquals(currentInput, currentOutput);
                 assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
             } else {
                 exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
                         + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
-                        + " --single-indel-probability 0.001 --min-count 1");
+                        + " --single-indel-probability 0.001 --max-unique-barcodes 0");
                 assertFileNotEquals(currentInput, currentOutput);
                 assertMifEqualsAsFastq(currentInput, currentOutput, true);
             }

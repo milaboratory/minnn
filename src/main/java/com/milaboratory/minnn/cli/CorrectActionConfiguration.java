@@ -83,7 +83,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
         private int maxClusterDepth;
         private float singleSubstitutionProbability;
         private float singleIndelProbability;
-        private int minCount;
+        private int maxUniqueBarcodes;
         private long inputReadsLimit;
 
         @JsonCreator
@@ -96,7 +96,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                 @JsonProperty("maxClusterDepth") int maxClusterDepth,
                 @JsonProperty("singleSubstitutionProbability") float singleSubstitutionProbability,
                 @JsonProperty("singleIndelProbability") float singleIndelProbability,
-                @JsonProperty("minCount") int minCount,
+                @JsonProperty("maxUniqueBarcodes") int maxUniqueBarcodes,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
             this.groupNames = groupNames;
             this.mismatches = mismatches;
@@ -106,7 +106,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.maxClusterDepth = maxClusterDepth;
             this.singleSubstitutionProbability = singleSubstitutionProbability;
             this.singleIndelProbability = singleIndelProbability;
-            this.minCount = minCount;
+            this.maxUniqueBarcodes = maxUniqueBarcodes;
             this.inputReadsLimit = inputReadsLimit;
         }
 
@@ -174,12 +174,12 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.singleIndelProbability = singleIndelProbability;
         }
 
-        public int getMinCount() {
-            return minCount;
+        public int getMaxUniqueBarcodes() {
+            return maxUniqueBarcodes;
         }
 
-        public void setMinCount(int minCount) {
-            this.minCount = minCount;
+        public void setMaxUniqueBarcodes(int maxUniqueBarcodes) {
+            this.maxUniqueBarcodes = maxUniqueBarcodes;
         }
 
         public long getInputReadsLimit() {
@@ -202,7 +202,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (maxClusterDepth != that.maxClusterDepth) return false;
             if (Float.compare(that.singleSubstitutionProbability, singleSubstitutionProbability) != 0) return false;
             if (Float.compare(that.singleIndelProbability, singleIndelProbability) != 0) return false;
-            if (minCount != that.minCount) return false;
+            if (maxUniqueBarcodes != that.maxUniqueBarcodes) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
             return Objects.equals(groupNames, that.groupNames);
         }
@@ -219,7 +219,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                     ? Float.floatToIntBits(singleSubstitutionProbability) : 0);
             result = 31 * result + (singleIndelProbability != +0.0f
                     ? Float.floatToIntBits(singleIndelProbability) : 0);
-            result = 31 * result + minCount;
+            result = 31 * result + maxUniqueBarcodes;
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;
         }
