@@ -58,8 +58,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Override
     public void run1() {
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
-                outputFileName, mismatches, indels, totalErrors, threshold, groupNames, maxClusterDepth,
-                singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes,
+                outputFileName, mismatches, indels, totalErrors, threshold, groupNames, primaryGroupNames,
+                maxClusterDepth, singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes,
                 excludedBarcodesOutputFileName, inputReadsLimit, quiet);
         correctBarcodesIO.go();
     }
@@ -101,8 +101,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Override
     public ActionConfiguration getConfiguration() {
         return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
-                mismatches, indels, totalErrors, threshold, maxClusterDepth, singleSubstitutionProbability,
-                singleIndelProbability, maxUniqueBarcodes, inputReadsLimit));
+                primaryGroupNames, mismatches, indels, totalErrors, threshold, maxClusterDepth,
+                singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes, inputReadsLimit));
     }
 
     @Override
@@ -117,6 +117,17 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             required = true,
             arity = "1..*")
     private List<String> groupNames = null;
+
+    @Option(description = "Primary group names. If specified, all groups from --groups argument will be treated as " +
+            "secondary. Barcode correction will be performed not in scale of the entire input file, but separately " +
+            "in clusters with the same primary group values. If input file is already sorted by primary groups, " +
+            "correction will be faster and less memory consuming. Usage example: correct cell barcodes (CB) first, " +
+            "then sort by CB, then correct UMI for each CB separately. So, for first correction pass use " +
+            "\"--groups CB\", and for second pass use \"--groups UMI --primary-groups CB\". If multiple primary " +
+            "groups are specified, clusters will be determined by unique combinations of primary groups values.",
+            names = {"--primary-groups"},
+            arity = "1..*")
+    private List<String> primaryGroupNames = null;
 
     @Option(description = IN_FILE_NO_STDIN,
             names = {"--input"},
