@@ -37,8 +37,7 @@ import java.util.Map;
 import static com.milaboratory.minnn.cli.Defaults.*;
 
 public final class MinnnVersionInfo {
-    private MinnnVersionInfo() {
-    }
+    private MinnnVersionInfo() {}
 
     public static String getShortestVersionString() {
         VersionInfo minnn = AppVersionInfo.get().getComponentVersions().get(APP_NAME);

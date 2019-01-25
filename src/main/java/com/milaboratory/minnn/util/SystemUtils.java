@@ -29,6 +29,8 @@
 package com.milaboratory.minnn.util;
 
 public final class SystemUtils {
+    private SystemUtils() {}
+
     public static boolean exitOnError = true;
 
     public static RuntimeException exitWithError(String message) {

@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
 
 public final class SequencesCache {
+    private SequencesCache() {}
+
     public static final HashMap<NucleotideSequence, NucleotideSequence> sequencesCache = new HashMap<>();
     public static final TByteObjectHashMap<SequenceQuality> qualityCache = new TByteObjectHashMap<>();
     public static final HashMap<NucleotideSequence, Wildcard> wildcards = new HashMap<>();

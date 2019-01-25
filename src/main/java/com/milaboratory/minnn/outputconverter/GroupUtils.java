@@ -33,6 +33,8 @@ import com.milaboratory.minnn.pattern.MatchedGroupEdge;
 import java.util.*;
 
 final class GroupUtils {
+    private GroupUtils() {}
+
     static String generateComments(TreeSet<FastqCommentGroup> commentGroups, boolean reverseMatch, String oldComments) {
         StringBuilder comments = new StringBuilder(oldComments);
 

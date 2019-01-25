@@ -33,6 +33,8 @@ import com.milaboratory.minnn.pattern.*;
 import com.milaboratory.primitivio.*;
 
 public final class IO {
+    private IO() {}
+
     public static class ParsedReadSerializer implements Serializer<ParsedRead> {
         @Override
         public void write(PrimitivO output, ParsedRead object) {

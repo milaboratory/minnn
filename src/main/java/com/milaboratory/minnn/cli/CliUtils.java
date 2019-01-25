@@ -36,6 +36,8 @@ import java.text.DecimalFormat;
 import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
 
 public final class CliUtils {
+    private CliUtils() {}
+
     public final static DecimalFormat floatFormat = new DecimalFormat("#.##");
 
     static void validateQuality(int quality, CommandLine commandLine) {

@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class PatternUtils {
+    private PatternUtils() {}
+
     public static int invertCoordinate(int x) {
         return -2 - x;
     }

@@ -32,6 +32,8 @@ import com.milaboratory.core.Range;
 import com.milaboratory.minnn.pattern.MatchIntermediate;
 
 public final class RangeTools {
+    private RangeTools() {}
+
     /**
      * Check if there are any intersections between ranges.
      *
@@ -47,8 +49,8 @@ public final class RangeTools {
     }
 
     /**
-     * Check if there are any intersections between ranges; and intersections not counted while sum of lengths of intersected
-     * parts is lower than maxErrors.
+     * Check if there are any intersections between ranges; and intersections not counted while sum of lengths of
+     * intersected parts is lower than maxErrors.
      *
      * @param maxErrors maximum allowed number of intersected positions
      * @param ranges ranges

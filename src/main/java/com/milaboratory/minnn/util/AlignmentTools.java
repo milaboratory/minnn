@@ -36,6 +36,8 @@ import com.milaboratory.core.sequence.NucleotideSequence;
 import static com.milaboratory.core.mutations.Mutation.*;
 
 public class AlignmentTools {
+    private AlignmentTools() {}
+
     public static long calculateAlignmentScore(long goodQualityMismatchPenalty, byte goodQualityThreshold,
                                                Alignment<NucleotideSequence> alignment, NSequenceWithQuality seq1,
                                                NSequenceWithQuality seq2) {

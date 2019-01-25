@@ -29,8 +29,7 @@
 package com.milaboratory.minnn.util;
 
 public final class CommonUtils {
-    private CommonUtils() {
-    }
+    private CommonUtils() {}
 
     public static String stripQuotes(String str) {
         return str.replaceAll("^\"|\"$", "");

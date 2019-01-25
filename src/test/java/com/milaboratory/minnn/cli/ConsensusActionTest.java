@@ -29,7 +29,6 @@
 package com.milaboratory.minnn.cli;
 
 import com.milaboratory.core.sequence.NSequenceWithQuality;
-import com.milaboratory.core.sequence.NucleotideSequence;
 import org.junit.*;
 
 import java.io.File;
