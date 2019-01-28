@@ -31,7 +31,6 @@ package com.milaboratory.minnn.io;
 import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.minnn.correct.BarcodeClusteringStrategy;
 import com.milaboratory.minnn.correct.CorrectionStats;
-import com.milaboratory.minnn.stat.MutationProbability;
 import com.milaboratory.minnn.stat.SimpleMutationProbability;
 
 import java.io.IOException;
@@ -48,18 +47,13 @@ public final class CorrectBarcodesIO {
     private final PipelineConfiguration pipelineConfiguration;
     private final String inputFileName;
     private final String outputFileName;
-    private final int mismatches;
-    private final int indels;
-    private final int totalErrors;
-    private final float threshold;
     private final List<String> groupNames;
-    private final int maxClusterDepth;
-    private final MutationProbability mutationProbability;
+    private final LinkedHashSet<String> primaryGroups;
+    private final BarcodeClusteringStrategy barcodeClusteringStrategy;
     private final int maxUniqueBarcodes;
     private final String excludedBarcodesOutputFileName;
     private final long inputReadsLimit;
     private final boolean suppressWarnings;
-    private LinkedHashSet<String> primaryGroups;
 
     public CorrectBarcodesIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
                              int mismatches, int indels, int totalErrors, float threshold, List<String> groupNames,
@@ -69,16 +63,11 @@ public final class CorrectBarcodesIO {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
-        this.mismatches = mismatches;
-        this.indels = indels;
-        this.totalErrors = totalErrors;
-        this.threshold = threshold;
         this.groupNames = groupNames;
         this.primaryGroups = (primaryGroupNames == null) ? new LinkedHashSet<>()
                 : new LinkedHashSet<>(primaryGroupNames);
-        this.maxClusterDepth = maxClusterDepth;
-        this.mutationProbability = new SimpleMutationProbability(singleSubstitutionProbability,
-                singleIndelProbability);
+        this.barcodeClusteringStrategy = new BarcodeClusteringStrategy(mismatches, indels, totalErrors, threshold,
+                maxClusterDepth, new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability));
         this.maxUniqueBarcodes = maxUniqueBarcodes;
         this.excludedBarcodesOutputFileName = excludedBarcodesOutputFileName;
         this.inputReadsLimit = inputReadsLimit;
@@ -113,12 +102,15 @@ public final class CorrectBarcodesIO {
                         "corrected again!");
             if (primaryGroups.size() == 0)
                 stats = fullFileCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        new BarcodeClusteringStrategy(mismatches, indels, totalErrors, threshold, maxClusterDepth,
-                                mutationProbability), defaultGroups, keyGroups, maxUniqueBarcodes);
+                        barcodeClusteringStrategy, defaultGroups, keyGroups, maxUniqueBarcodes);
             else if (pass1Reader.isSorted())
-                stats = sortedClustersCorrect(primaryGroups);
+                stats = sortedClustersCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter,
+                        inputReadsLimit, barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups,
+                        maxUniqueBarcodes);
             else
-                stats = unsortedClustersCorrect(primaryGroups);
+                stats = unsortedClustersCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter,
+                        inputReadsLimit, barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups,
+                        maxUniqueBarcodes);
             pass2Reader.close();
             writer.setOriginalNumberOfReads(pass2Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
