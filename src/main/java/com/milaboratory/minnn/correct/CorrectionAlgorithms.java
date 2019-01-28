@@ -12,6 +12,7 @@ import com.milaboratory.minnn.pattern.Match;
 import com.milaboratory.minnn.pattern.MatchedGroupEdge;
 import com.milaboratory.minnn.pattern.MatchedItem;
 import com.milaboratory.util.SmartProgressReporter;
+import gnu.trove.map.hash.TByteObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
@@ -27,7 +28,7 @@ public final class CorrectionAlgorithms {
         Map<String, HashMap<NucleotideSequence, NucleotideSequence>> sequenceCorrectionMaps;
         Map<String, Map<NucleotideSequence, RawSequenceCounter>> notCorrectedBarcodeCounters = (maxUniqueBarcodes > 0)
                 ? new HashMap<>() : null;
-        Map<String, Set<NucleotideSequence>> includedBarcodes;
+        Map<String, Set<NucleotideSequence>> includedBarcodes = null;
         Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()
                 .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
         long totalReads = 0;
@@ -35,6 +36,7 @@ public final class CorrectionAlgorithms {
         long excludedReads = 0;
 
         // 1st pass: counting barcodes
+        SmartProgressReporter.startProgressReport("Counting sequences", pass1Reader, System.err);
         for (ParsedRead parsedRead : CUtils.it(pass1Reader)) {
             for (Map.Entry<String, HashMap<NucleotideSequence, SequenceCounter>> entry : sequenceMaps.entrySet()) {
                 // creating multi-sequence counters, without merging multi-sequences on this stage
@@ -122,7 +124,8 @@ public final class CorrectionAlgorithms {
         // 2nd pass: correcting barcodes
         SmartProgressReporter.startProgressReport("Correcting barcodes", pass2Reader, System.err);
         for (ParsedRead parsedRead : CUtils.it(pass2Reader)) {
-            CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead);
+            CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead, sequenceCorrectionMaps,
+                    includedBarcodes, defaultGroups, keyGroups);
             correctedReads += correctBarcodesResult.numCorrectedBarcodes;
             if (correctBarcodesResult.excluded) {
                 if (excludedBarcodesWriter != null)
@@ -140,15 +143,15 @@ public final class CorrectionAlgorithms {
         throw new NotImplementedException();
     }
 
-    public static CorrectionStats unsortedClustersCorrect() {
+    public static CorrectionStats unsortedClustersCorrect(LinkedHashSet<String> primaryGroups) {
         throw new NotImplementedException();
     }
 
     private static CorrectBarcodesResult correctBarcodes(
             ParsedRead parsedRead, Map<String, HashMap<NucleotideSequence, NucleotideSequence>> sequenceCorrectionMaps,
-            Map<String, Set<NucleotideSequence>> includedBarcodes, int numberOfTargets, Set<String> defaultGroups,
-            LinkedHashSet<String> keyGroups, int maxUniqueBarcodes) {
-        HashMap<Byte, ArrayList<CorrectedGroup>> correctedGroups = new HashMap<>();
+            Map<String, Set<NucleotideSequence>> includedBarcodes, Set<String> defaultGroups,
+            LinkedHashSet<String> keyGroups) {
+        TByteObjectHashMap<ArrayList<CorrectedGroup>> correctedGroups = new TByteObjectHashMap<>();
         boolean isCorrection = false;
         int numCorrectedBarcodes = 0;
         boolean excluded = false;
@@ -163,9 +166,10 @@ public final class CorrectionAlgorithms {
             if (correctValue == null)
                 correctValue = oldValue;
             isCorrection |= !correctValue.equals(oldValue);
-            correctedGroups.computeIfAbsent(targetId, id -> new ArrayList<>());
+            correctedGroups.putIfAbsent(targetId, new ArrayList<>());
             correctedGroups.get(targetId).add(new CorrectedGroup(groupName, correctValue));
-            if (maxUniqueBarcodes > 0)
+            // includedBarcodes is null when filtering barcodes by count is disabled
+            if (includedBarcodes != null)
                 excluded |= !includedBarcodes.get(groupName).contains(correctValue);
         }
 
@@ -200,6 +204,7 @@ public final class CorrectionAlgorithms {
             numCorrectedBarcodes++;
         }
 
+        int numberOfTargets = defaultGroups.size();
         Match newMatch = new Match(numberOfTargets, parsedRead.getBestMatchScore(), newGroupEdges);
         if (newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
                 .filter(defaultGroups::contains).count() != numberOfTargets)

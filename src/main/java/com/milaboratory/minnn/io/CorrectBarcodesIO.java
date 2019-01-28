@@ -29,10 +29,10 @@
 package com.milaboratory.minnn.io;
 
 import com.milaboratory.cli.PipelineConfiguration;
+import com.milaboratory.minnn.correct.BarcodeClusteringStrategy;
 import com.milaboratory.minnn.correct.CorrectionStats;
 import com.milaboratory.minnn.stat.MutationProbability;
 import com.milaboratory.minnn.stat.SimpleMutationProbability;
-import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
 import java.util.*;
@@ -96,7 +96,6 @@ public final class CorrectBarcodesIO {
                 pass1Reader.setParsedReadsLimit(inputReadsLimit);
                 pass2Reader.setParsedReadsLimit(inputReadsLimit);
             }
-            SmartProgressReporter.startProgressReport("Counting sequences", pass1Reader, System.err);
             Set<String> defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfTargets())
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
             if (groupNames.stream().anyMatch(defaultGroups::contains))
@@ -112,13 +111,14 @@ public final class CorrectBarcodesIO {
             if (!suppressWarnings && (correctedAgainGroups.size() != 0))
                 System.err.println("WARNING: group(s) " + correctedAgainGroups + " already corrected and will be " +
                         "corrected again!");
-            int numberOfTargets = pass1Reader.getNumberOfTargets();
             if (primaryGroups.size() == 0)
-                stats = fullFileCorrect();
+                stats = fullFileCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter, inputReadsLimit,
+                        new BarcodeClusteringStrategy(mismatches, indels, totalErrors, threshold, maxClusterDepth,
+                                mutationProbability), defaultGroups, keyGroups, maxUniqueBarcodes);
             else if (pass1Reader.isSorted())
-                stats = sortedClustersCorrect();
+                stats = sortedClustersCorrect(primaryGroups);
             else
-                stats = unsortedClustersCorrect();
+                stats = unsortedClustersCorrect(primaryGroups);
             pass2Reader.close();
             writer.setOriginalNumberOfReads(pass2Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
