@@ -57,7 +57,7 @@ public class CorrectActionTest {
             exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
             exec("correct -f --max-mismatches " + rg.nextInt(4) + " --max-indels " + rg.nextInt(4)
-                    + " --max-total-errors " + rg.nextInt(5)
+                    + " --max-total-errors " + rg.nextInt(5) + " --max-unique-barcodes " + rg.nextInt(10)
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + inputFile + " --output " + outputFile + " --groups G1 G2");
             assertFileNotEquals(inputFile, outputFile);
@@ -127,5 +127,61 @@ public class CorrectActionTest {
             if (i < 10)
                 assertTrue(new File(TEMP_DIR + "excluded" + i + ".mif").delete());
         }
+    }
+
+    @Test
+    public void randomSortedClustersTest() throws Exception {
+        String startFile = TEMP_DIR + "correctStart.mif";
+        String inputFile = TEMP_DIR + "correctInput.mif";
+        String outputPrimary = TEMP_DIR + "correctPrimary.mif";
+        String outputSorted = TEMP_DIR + "sortedPrimary.mif";
+        String outputSecondary = TEMP_DIR + "correctSecondary.mif";
+        for (int i = 0; i < 50; i++) {
+            createRandomMifFile(startFile);
+            exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
+                    + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
+            exec("correct -f --max-mismatches " + rg.nextInt(4) + " --max-indels " + rg.nextInt(4)
+                    + " --max-total-errors " + rg.nextInt(5) + " --max-unique-barcodes " + rg.nextInt(10)
+                    + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
+                    + " --input " + inputFile + " --output " + outputPrimary + " --groups G1");
+            exec("sort -f --input " + outputPrimary + " --output " + outputSorted + " --groups G1");
+            exec("correct -f --max-mismatches " + rg.nextInt(4) + " --max-indels " + rg.nextInt(4)
+                    + " --max-total-errors " + rg.nextInt(5) + " --max-unique-barcodes " + rg.nextInt(10)
+                    + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
+                    + " --input " + outputSorted + " --output " + outputSecondary
+                    + " --primary-groups G1 --groups G2");
+            assertFileNotEquals(inputFile, outputPrimary);
+            assertFileNotEquals(outputSorted, outputSecondary);
+        }
+        for (String fileName : new String[] { startFile, inputFile, outputPrimary, outputSorted, outputSecondary })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void preparedMifSortedClustersTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        for (int i = 0; i <= 1; i++) {
+            String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correctedSecondary" + i + ".mif";
+            String currentPrimaryOutput = TEMP_DIR + "correctedPrimary" + (i + 1) + ".mif";
+            String currentSortedOutput = TEMP_DIR + "sortedPrimary" + (i + 1) + ".mif";
+            String currentSecondaryOutput = TEMP_DIR + "correctedSecondary" + (i + 1) + ".mif";
+            exec("correct -f --groups G1 G2 --input " + currentInput + " --output " + currentPrimaryOutput
+                    + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
+                    + " --single-indel-probability 0.001");
+            exec("sort -f --groups G1 G2 --input " + currentPrimaryOutput
+                    + " --output " + currentSortedOutput);
+            exec("correct -f --primary-groups G1 G2 --groups G3 G4 --input " + currentSortedOutput
+                    + " --output " + currentSecondaryOutput + " --cluster-threshold 0.4"
+                    + " --single-substitution-probability 0.002 --single-indel-probability 0.001");
+            assertFileNotEquals(currentInput, currentSecondaryOutput);
+            if (i == 0) {
+                assertMifNotEqualsAsFastq(currentInput, currentSecondaryOutput, true);
+            } else
+                assertMifEqualsAsFastq(currentInput, currentSecondaryOutput, true);
+        }
+        assertTrue(new File(inputFile).delete());
+        for (String prefix : new String[] { "correctedPrimary", "sortedPrimary", "correctedSecondary" })
+            for (int i = 1; i <= 2; i++)
+                assertTrue(new File(TEMP_DIR + prefix + i + ".mif").delete());
     }
 }

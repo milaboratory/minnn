@@ -85,6 +85,7 @@ correct
 .. code-block:: text
 
  --groups: Group names for correction.
+ --primary-groups: Primary group names. If specified, all groups from --groups argument will be treated as secondary. Barcode correction will be performed not in scale of the entire input file, but separately in clusters with the same primary group values. If input file is already sorted by primary groups, correction will be faster and less memory consuming. Usage example: correct cell barcodes (CB) first, then sort by CB, then correct UMI for each CB separately. So, for first correction pass use "--groups CB", and for second pass use "--groups UMI --primary-groups CB". If multiple primary groups are specified, clusters will be determined by unique combinations of primary groups values.
  --input: Input file in "mif" format. This argument is required; stdin is not supported.
  --output: Output file in "mif" format. If not specified, stdout will be used.
  --max-mismatches: Maximum number of mismatches between barcodes for which they are considered identical.
@@ -94,8 +95,8 @@ correct
  --max-cluster-depth: Maximum cluster depth for algorithm of similar barcodes clustering.
  --single-substitution-probability: Single substitution probability for clustering algorithm.
  --single-indel-probability: Single insertion/deletion probability for clustering algorithm.
- --min-count: Barcodes with count less than specified will not be included in the output.
- --excluded-barcodes-output: Output file for reads with barcodes excluded by count. If not specified, reads with excluded barcodes will not be written anywhere
+ --max-unique-barcodes: Maximal number of unique barcodes that will be included into output. Reads containing barcodes with biggest counts will be included, reads with barcodes with smaller counts will be excluded. Value 0 turns off this feature: if this argument is 0, all barcodes will be included.
+ --excluded-barcodes-output: Output file for reads with barcodes excluded by count. If not specified, reads with excluded barcodes will not be written anywhere.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
 
 .. _sort:
