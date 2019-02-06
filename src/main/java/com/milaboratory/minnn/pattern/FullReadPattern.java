@@ -87,6 +87,7 @@ public final class FullReadPattern extends SinglePattern {
     @Override
     public void setTargetId(byte targetId) {
         super.setTargetId(targetId);
+        operandPattern.setTargetId(targetId);
         targetIdInitialized = true;
     }
 
