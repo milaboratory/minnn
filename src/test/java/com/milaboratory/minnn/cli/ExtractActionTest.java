@@ -209,4 +209,23 @@ public class ExtractActionTest {
                 mismatchedR1, mismatchedR2 })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void groupsOverrideTest() throws Exception {
+        String r1 = EXAMPLES_PATH + "positional/polyfid10_R1.fastq.gz";
+        String r2 = EXAMPLES_PATH + "positional/polyfid10_R2.fastq.gz";
+        String extractedFile = TEMP_DIR + "groups_override_extracted.mif";
+        String correctedFile = TEMP_DIR + "groups_override_corrected.mif";
+        String sortedFile = TEMP_DIR + "groups_override_sorted.mif";
+        String consensusFile = TEMP_DIR + "groups_override_consensus.mif";
+        exec("extract -f --input " + r1 + " " + r2 + " --output " + extractedFile + " --score-threshold -100"
+                + " --pattern \"^(R1:(G1:NNN))aac\\cctc(R2:aaa)(R3:t(G3:tt)t)$\" --bitap-max-errors 10");
+        exec("correct -f --input " + extractedFile + " --output " + correctedFile + " --groups G1 G3");
+        exec("sort -f --input " + correctedFile + " --output " + sortedFile + " --groups G1 G3");
+        exec("consensus -f --input " + sortedFile + " --output " + consensusFile + " --groups G1 G3"
+                + " --score-threshold -100 --min-good-sequence-length 2 --reads-min-good-sequence-length 2"
+                + " --kmer-length 2 --trim-window-size 2 --reads-trim-window-size 2");
+        for (String fileName : new String[] { extractedFile, correctedFile, sortedFile, consensusFile })
+            assertTrue(new File(fileName).delete());
+    }
 }
