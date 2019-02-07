@@ -74,7 +74,9 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
         output.writeInt(mifHeader.getCorrectedGroups().size());
         for (String correctedGroup : mifHeader.getCorrectedGroups())
             output.writeObject(correctedGroup);
-        output.writeBoolean(mifHeader.isSorted());
+        output.writeInt(mifHeader.getSortedGroups().size());
+        for (String sortedGroup : mifHeader.getSortedGroups())
+            output.writeObject(sortedGroup);
         output.writeInt(mifHeader.getGroupEdges().size());
         for (GroupEdge groupEdge : mifHeader.getGroupEdges()) {
             output.writeObject(groupEdge);

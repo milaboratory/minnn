@@ -40,7 +40,7 @@ public class BasicDataFromParsedRead implements DataFromParsedRead {
     protected final long originalReadId;
 
     public BasicDataFromParsedRead(ParsedRead parsedRead, DefaultGroups defaultGroups,
-                                   ConsensusGroups consensusGroups) {
+                                   LinkedHashSet<String> consensusGroups) {
         LinkedHashSet<String> defaultGroupsSet = defaultGroups.get();
         int numberOfTargets = defaultGroups.getNumberOfTargets();
         originalReadId = parsedRead.getOriginalRead().getId();
@@ -61,7 +61,7 @@ public class BasicDataFromParsedRead implements DataFromParsedRead {
         parsedReadGroups.forEach(group -> {
             SequenceWithAttributes sequenceWithAttributes = new SequenceWithAttributes(
                     group.getValue().getSequence(), group.getValue().getQuality(), originalReadId);
-            if (consensusGroups.getGroups().contains(group.getGroupName())) {
+            if (consensusGroups.contains(group.getGroupName())) {
                 int targetIndex = getTargetIndex(group.getTargetId(), parsedRead.isReverseMatch());
                 ArrayList<Barcode> currentTargetList = barcodes[targetIndex].targetBarcodes;
                 currentTargetList.add(new Barcode(group.getGroupName(), sequenceWithAttributes));

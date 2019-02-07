@@ -94,7 +94,7 @@ public final class ConsensusIO {
     private long consensusReads = 0;
     private int warningsDisplayed = 0;
     private DefaultGroups defaultGroups;
-    private ConsensusGroups consensusGroups;
+    private LinkedHashSet<String> consensusGroups;
     private int numberOfTargets;
 
     public ConsensusIO(PipelineConfiguration pipelineConfiguration, List<String> groupList, String inputFileName,
@@ -107,7 +107,7 @@ public final class ConsensusIO {
                        long inputReadsLimit, int maxWarnings, int threads, int kmerLength, int kmerMaxOffset,
                        int kmerMatchMaxErrors, String debugOutputFileName, byte debugQualityThreshold) {
         this.pipelineConfiguration = pipelineConfiguration;
-        this.consensusGroups = (groupList == null) ? null : new ConsensusGroups(groupList);
+        this.consensusGroups = new LinkedHashSet<>(Objects.requireNonNull(groupList));
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.consensusAlgorithmType = consensusAlgorithmType;
@@ -178,20 +178,16 @@ public final class ConsensusIO {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Calculating consensuses", reader, System.err);
-            if (consensusGroups == null) {
-                if (reader.getCorrectedGroups().size() == 0)
-                    displayWarning("WARNING: calculating consensus for not corrected MIF file!");
-            } else {
-                List<String> notCorrectedGroups = consensusGroups.getGroups().stream()
-                        .filter(gn -> reader.getCorrectedGroups().stream().noneMatch(gn::equals))
-                        .collect(Collectors.toList());
-                if (notCorrectedGroups.size() != 0)
-                    displayWarning("WARNING: group(s) " + notCorrectedGroups + " not corrected, but used in " +
-                            "consensus calculation!");
-            }
-            if (!reader.isSorted())
-                displayWarning("WARNING: calculating consensus for not sorted MIF file; result will be wrong!");
-
+            LinkedHashSet<String> notCorrectedGroups = new LinkedHashSet<>(consensusGroups);
+            notCorrectedGroups.removeAll(reader.getCorrectedGroups());
+            LinkedHashSet<String> notSortedGroups = new LinkedHashSet<>(consensusGroups);
+            notSortedGroups.removeAll(reader.getSortedGroups());
+            if (notCorrectedGroups.size() > 0)
+                displayWarning("WARNING: group(s) " + notCorrectedGroups + " not corrected, but used in " +
+                        "consensus calculation!");
+            if (notSortedGroups.size() > 0)
+                displayWarning("WARNING: group(s) " + notSortedGroups + " not sorted, but used in " +
+                        "consensus calculation; result will be wrong!");
             consensusAlgorithmInit();
             OutputPort<Cluster> clusterOutputPort = new OutputPort<Cluster>() {
                 LinkedHashMap<String, NucleotideSequence> previousGroups = null;
@@ -211,14 +207,11 @@ public final class ConsensusIO {
                             Set<String> allGroups = parsedRead.getGroups().stream().map(MatchedGroup::getGroupName)
                                     .filter(groupName -> !defaultGroups.get().contains(groupName))
                                     .collect(Collectors.toSet());
-                            if (consensusGroups != null) {
-                                for (String groupName : consensusGroups.getGroups())
-                                    if (!allGroups.contains(groupName))
-                                        throw exitWithError("Group " + groupName + " not found in the input!");
-                            } else
-                                consensusGroups = new ConsensusGroups(allGroups);
+                            for (String groupName : consensusGroups)
+                                if (!allGroups.contains(groupName))
+                                    throw exitWithError("Group " + groupName + " not found in the input!");
                             LinkedHashMap<String, NucleotideSequence> currentGroups = parsedRead.getGroups().stream()
-                                    .filter(g -> consensusGroups.getGroups().contains(g.getGroupName()))
+                                    .filter(g -> consensusGroups.contains(g.getGroupName()))
                                     .collect(LinkedHashMap::new, (m, g) -> m.put(g.getGroupName(),
                                             g.getValue().getSequence()), Map::putAll);
                             if (!currentGroups.equals(previousGroups)) {
@@ -355,8 +348,8 @@ public final class ConsensusIO {
         if (notUsedReadsOutputFileName != null) {
             System.err.println("Writing not matched reads...");
             try (MifWriter notUsedReadsWriter = new MifWriter(notUsedReadsOutputFileName, new MifHeader(
-                    pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(), mifHeader.isSorted(),
-                    mifHeader.getGroupEdges()))) {
+                    pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
+                    mifHeader.getSortedGroups(), mifHeader.getGroupEdges()))) {
                 for (long readId = 0; readId < originalNumberOfReads; readId++) {
                     OriginalReadData currentReadData = originalReadsData.get(readId);
                     if ((currentReadData != null) && (currentReadData.status != USED_IN_CONSENSUS))
@@ -389,8 +382,7 @@ public final class ConsensusIO {
         if (toSeparateGroups) {
             Set<String> defaultSeparateGroups = IntStream.rangeClosed(1, numberOfTargets)
                     .mapToObj(i -> "CR" + i).collect(Collectors.toSet());
-            if (((consensusGroups != null)
-                    && (consensusGroups.getGroups().stream().anyMatch(defaultSeparateGroups::contains)))
+            if ((consensusGroups.stream().anyMatch(defaultSeparateGroups::contains))
                     || (groupEdges.stream().map(GroupEdge::getGroupName).anyMatch(defaultSeparateGroups::contains)))
                 throw exitWithError("Groups CR1, CR2 etc must not be used in --groups flag and input file if "
                         + "--consensuses-to-separate-groups flag is specified!");
@@ -400,7 +392,7 @@ public final class ConsensusIO {
             });
         }
         newHeader = new MifHeader(pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
-                false, groupEdges);
+                new ArrayList<>(), groupEdges);
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), newHeader)
                 : new MifWriter(outputFileName, newHeader);
     }

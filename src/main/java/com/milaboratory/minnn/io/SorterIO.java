@@ -106,7 +106,7 @@ public final class SorterIO {
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
         MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
-                inputHeader.getCorrectedGroups(), true, inputHeader.getGroupEdges());
+                inputHeader.getCorrectedGroups(), new ArrayList<>(sortGroupNames), inputHeader.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
                 : new MifWriter(outputFileName, outputHeader);
     }

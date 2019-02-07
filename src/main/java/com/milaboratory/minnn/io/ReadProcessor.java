@@ -181,7 +181,7 @@ public final class ReadProcessor {
 
     private MifWriter createWriter(boolean mismatchedReads) throws IOException {
         MifHeader mifHeader = new MifHeader(pipelineConfiguration, numberOfTargets, new ArrayList<>(),
-                false, pattern.getGroupEdges());
+                new ArrayList<>(), pattern.getGroupEdges());
         if (mismatchedReads)
             return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
         else

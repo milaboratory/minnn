@@ -70,11 +70,11 @@ public final class StatPositionsIO {
     public void go() {
         long startTime = System.currentTimeMillis();
         ArrayList<String> correctedGroups;
-        boolean sorted;
+        ArrayList<String> sortedGroups;
 
         try (MifReader reader = createReader()) {
             correctedGroups = reader.getCorrectedGroups();
-            sorted = reader.isSorted();
+            sortedGroups = reader.getSortedGroups();
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
@@ -122,10 +122,13 @@ public final class StatPositionsIO {
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
         if (correctedGroups.size() == 0)
-            System.err.println("Input MIF file is not corrected and " + (sorted ? "" : "not ") + "sorted");
+            System.err.println("Input MIF file is not corrected");
         else
-            System.err.println("Groups " + correctedGroups + " in input MIF file are corrected, and MIF file is "
-                    + (sorted ? "" : "not ") + "sorted");
+            System.err.println("Groups " + correctedGroups + " in input MIF file are corrected");
+        if (sortedGroups.size() == 0)
+            System.err.println("Input MIF file is not sorted");
+        else
+            System.err.println("Groups " + sortedGroups + " in input MIF file are sorted");
         System.err.println("Checked " + totalReads + " reads, " + (totalReads * groupList.size()) + " groups");
         if (totalReads > 0) {
             float percent = (float)table.stream().mapToLong(line -> line.count).sum() / totalReads
@@ -180,7 +183,7 @@ public final class StatPositionsIO {
             if (o == null || getClass() != o.getClass()) return false;
             StatGroupsKey that = (StatGroupsKey)o;
             return position == that.position && groupName.equals(that.groupName) && readId.equals(that.readId)
-                    && (seq != null ? seq.equals(that.seq) : that.seq == null);
+                    && Objects.equals(seq, that.seq);
         }
 
         @Override

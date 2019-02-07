@@ -90,11 +90,13 @@ public final class CorrectBarcodesIO {
             if (groupNames.stream().anyMatch(defaultGroups::contains))
                 throw exitWithError("Default groups R1, R2, etc should not be specified for correction!");
             LinkedHashSet<String> keyGroups = new LinkedHashSet<>(groupNames);
-            if (!suppressWarnings && pass1Reader.isSorted() && (primaryGroups.size() == 0))
+            if (!suppressWarnings && (pass1Reader.getSortedGroups().size() > 0) && (primaryGroups.size() == 0))
                 System.err.println("WARNING: correcting sorted MIF file; output file will be unsorted!");
-            if (!suppressWarnings && !pass1Reader.isSorted() && (primaryGroups.size() > 0))
-                System.err.println("WARNING: correcting unsorted MIF file with primary groups; correction will be " +
-                        "slower and more memory consuming!");
+            LinkedHashSet<String> unsortedPrimaryGroups = new LinkedHashSet<>(primaryGroups);
+            unsortedPrimaryGroups.removeAll(pass1Reader.getSortedGroups());
+            if (!suppressWarnings && (unsortedPrimaryGroups.size() > 0))
+                System.err.println("WARNING: correcting MIF file with unsorted primary groups " +
+                        unsortedPrimaryGroups + "; correction will be slower and more memory consuming!");
             List<String> correctedAgainGroups = keyGroups.stream().filter(gn -> pass1Reader.getCorrectedGroups()
                     .stream().anyMatch(gn::equals)).collect(Collectors.toList());
             if (!suppressWarnings && (correctedAgainGroups.size() != 0))
@@ -103,7 +105,7 @@ public final class CorrectBarcodesIO {
             if (primaryGroups.size() == 0)
                 stats = fullFileCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter, inputReadsLimit,
                         barcodeClusteringStrategy, defaultGroups, keyGroups, maxUniqueBarcodes);
-            else if (pass1Reader.isSorted())
+            else if (unsortedPrimaryGroups.size() == 0)
                 stats = sortedClustersCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter,
                         inputReadsLimit, barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups,
                         maxUniqueBarcodes);
@@ -134,7 +136,7 @@ public final class CorrectBarcodesIO {
         LinkedHashSet<String> allCorrectedGroups = new LinkedHashSet<>(inputHeader.getCorrectedGroups());
         allCorrectedGroups.addAll(groupNames);
         MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
-                new ArrayList<>(allCorrectedGroups), false, inputHeader.getGroupEdges());
+                new ArrayList<>(allCorrectedGroups), new ArrayList<>(), inputHeader.getGroupEdges());
         if (excludedBarcodes)
             return (excludedBarcodesOutputFileName == null) ? null
                     : new MifWriter(excludedBarcodesOutputFileName, outputHeader);

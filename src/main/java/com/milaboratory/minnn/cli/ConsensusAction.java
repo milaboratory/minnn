@@ -134,8 +134,10 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
             names = {"--output"})
     private String outputFileName = null;
 
-    @Option(description = "List of groups that represent barcodes. If not specified, all groups will be used.",
+    @Option(description = "List of groups that represent barcodes. All these groups must be sorted with " +
+            "\"sort\" action.",
             names = {"--groups"},
+            required = true,
             arity = "1..*")
     private List<String> groupList = null;
 

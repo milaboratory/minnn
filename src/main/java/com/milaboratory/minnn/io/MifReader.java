@@ -43,6 +43,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 import static com.milaboratory.minnn.cli.Magic.*;
+import static com.milaboratory.minnn.util.SystemUtils.*;
 import static java.lang.Double.NaN;
 
 public final class MifReader extends PipelineConfigurationReaderMiNNN
@@ -58,7 +59,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private PipelineConfiguration pipelineConfiguration;
     private int numberOfTargets;
     private ArrayList<String> correctedGroups = new ArrayList<>();
-    private boolean sortedMif;
+    private ArrayList<String> sortedGroups = new ArrayList<>();
     private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
     private long firstReadSerializedLength = -1;
     private long originalNumberOfReads = -1;
@@ -89,7 +90,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         input.readFully(magicBytes);
         String magicString = new String(magicBytes);
         if (!magicString.equals(BEGIN_MAGIC))
-            throw new RuntimeException("Unsupported file format; .mif file of version " + magicString +
+            throw exitWithError("Unsupported file format; .mif file of version " + magicString +
                     " while you are running MiNNN " + BEGIN_MAGIC);
         mifVersionInfo = input.readUTF();
         pipelineConfiguration = input.readObject(PipelineConfiguration.class);
@@ -97,7 +98,9 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         int correctedGroupsNum = input.readInt();
         for (int i = 0; i < correctedGroupsNum; i++)
             correctedGroups.add(input.readObject(String.class));
-        sortedMif = input.readBoolean();
+        int sortedGroupsNum = input.readInt();
+        for (int i = 0; i < sortedGroupsNum; i++)
+            sortedGroups.add(input.readObject(String.class));
         int groupEdgesNum = input.readInt();
         for (int i = 0; i < groupEdgesNum; i++) {
             GroupEdge groupEdge = input.readObject(GroupEdge.class);
@@ -168,8 +171,8 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         return correctedGroups;
     }
 
-    public boolean isSorted() {
-        return sortedMif;
+    public ArrayList<String> getSortedGroups() {
+        return sortedGroups;
     }
 
     public ArrayList<GroupEdge> getGroupEdges() {
@@ -177,7 +180,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     }
 
     public MifHeader getHeader() {
-        return new MifHeader(pipelineConfiguration, numberOfTargets, correctedGroups, sortedMif, groupEdges);
+        return new MifHeader(pipelineConfiguration, numberOfTargets, correctedGroups, sortedGroups, groupEdges);
     }
 
     public String getMifVersionInfo() {

@@ -37,12 +37,12 @@ public final class DataFromParsedReadWithAllGroups extends BasicDataFromParsedRe
     private final LinkedHashMap<String, SequenceWithAttributes> otherGroups;
 
     public DataFromParsedReadWithAllGroups(
-            ParsedRead parsedRead, DefaultGroups defaultGroups, ConsensusGroups consensusGroups) {
+            ParsedRead parsedRead, DefaultGroups defaultGroups, LinkedHashSet<String> consensusGroups) {
         super(parsedRead, defaultGroups, consensusGroups);
         otherGroups = new LinkedHashMap<>();
         for (MatchedGroup matchedGroup : parsedRead.getGroups()) {
             String groupName = matchedGroup.getGroupName();
-            if (!defaultGroups.get().contains(groupName) && !consensusGroups.getGroups().contains(groupName))
+            if (!defaultGroups.get().contains(groupName) && !consensusGroups.contains(groupName))
                 otherGroups.put(groupName, new SequenceWithAttributes(
                         matchedGroup.getValue().getSequence(), matchedGroup.getValue().getQuality(), originalReadId));
         }
