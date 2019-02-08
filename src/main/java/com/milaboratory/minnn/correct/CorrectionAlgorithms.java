@@ -14,7 +14,6 @@ import com.milaboratory.minnn.pattern.MatchedGroupEdge;
 import com.milaboratory.minnn.pattern.MatchedItem;
 import com.milaboratory.util.SmartProgressReporter;
 import gnu.trove.map.hash.TByteObjectHashMap;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -76,14 +75,14 @@ public final class CorrectionAlgorithms {
     }
 
     public static CorrectionStats sortedClustersCorrect(
-            MifReader pass1Reader, MifReader pass2Reader, MifWriter writer, MifWriter excludedBarcodesWriter,
-            long inputReadsLimit, BarcodeClusteringStrategy barcodeClusteringStrategy, Set<String> defaultGroups,
+            MifReader reader, MifWriter writer, MifWriter excludedBarcodesWriter, long inputReadsLimit,
+            BarcodeClusteringStrategy barcodeClusteringStrategy, Set<String> defaultGroups,
             LinkedHashSet<String> primaryGroups, LinkedHashSet<String> keyGroups, int maxUniqueBarcodes) {
         AtomicLong totalReads = new AtomicLong(0);
         long correctedReads = 0;
         long excludedReads = 0;
 
-        SmartProgressReporter.startProgressReport("Counting sequences", pass1Reader, System.err);
+        SmartProgressReporter.startProgressReport("Counting sequences", reader, System.err);
         OutputPort<List<ParsedRead>> clustersOutputPort = new OutputPort<List<ParsedRead>>() {
             LinkedHashMap<String, NucleotideSequence> previousGroups = null;
             List<ParsedRead> currentCluster = new ArrayList<>();
@@ -96,17 +95,10 @@ public final class CorrectionAlgorithms {
                 List<ParsedRead> preparedCluster = null;
                 while (preparedCluster == null) {
                     ParsedRead parsedRead = ((inputReadsLimit == 0) || (totalReads.get() < inputReadsLimit))
-                            ? pass1Reader.take() : null;
+                            ? reader.take() : null;
                     if (parsedRead != null) {
-                        Set<String> allGroups = parsedRead.getGroups().stream().map(MatchedGroup::getGroupName)
-                                .filter(groupName -> !defaultGroups.contains(groupName)).collect(Collectors.toSet());
-                        for (String groupName : primaryGroups)
-                            if (!allGroups.contains(groupName))
-                                throw exitWithError("Group " + groupName + " not found in the input!");
-                        LinkedHashMap<String, NucleotideSequence> currentGroups = parsedRead.getGroups().stream()
-                                .filter(g -> primaryGroups.contains(g.getGroupName()))
-                                .collect(LinkedHashMap::new, (m, g) -> m.put(g.getGroupName(),
-                                        g.getValue().getSequence()), Map::putAll);
+                        LinkedHashMap<String, NucleotideSequence> currentGroups = extractPrimaryBarcodes(parsedRead,
+                                defaultGroups, primaryGroups);
                         if (!currentGroups.equals(previousGroups)) {
                             if (previousGroups != null) {
                                 preparedCluster = currentCluster;
@@ -130,49 +122,73 @@ public final class CorrectionAlgorithms {
 
         boolean correctionStarted = false;
         for (List<ParsedRead> cluster : CUtils.it(clustersOutputPort)) {
-            Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()
-                    .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
-            Map<String, Map<NucleotideSequence, RawSequenceCounter>> notCorrectedBarcodeCounters =
-                    (maxUniqueBarcodes > 0) ? new HashMap<>() : null;
-
-            // 1st pass inside cluster: counting barcodes
-            cluster.forEach(parsedRead -> pass1ProcessRead(parsedRead, sequenceMaps, notCorrectedBarcodeCounters));
-
-            // clustering and filling barcode correction maps
-            Map<String, HashMap<NucleotideSequence, NucleotideSequence>> sequenceCorrectionMaps =
-                    performClustering(sequenceMaps, barcodeClusteringStrategy, false);
-
-            // calculating which barcodes must be included or excluded; only if filtering by count is enabled
-            Map<String, Set<NucleotideSequence>> includedBarcodes = (notCorrectedBarcodeCounters == null) ? null
-                    : filterByCount(notCorrectedBarcodeCounters, sequenceCorrectionMaps, maxUniqueBarcodes);
-
-            // 2nd pass inside cluster: correcting barcodes
             if (!correctionStarted) {
-                SmartProgressReporter.startProgressReport("Correcting barcodes", pass2Reader, System.err);
+                SmartProgressReporter.startProgressReport("Correcting barcodes", writer, System.err);
                 correctionStarted = true;
             }
-            for (int i = 0; i < cluster.size(); i++) {
-                ParsedRead parsedRead = Objects.requireNonNull(pass2Reader.take());
-                CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead, sequenceCorrectionMaps,
-                        includedBarcodes, defaultGroups, keyGroups);
-                correctedReads += correctBarcodesResult.numCorrectedBarcodes;
-                if (correctBarcodesResult.excluded) {
-                    if (excludedBarcodesWriter != null)
-                        excludedBarcodesWriter.write(correctBarcodesResult.parsedRead);
-                    excludedReads++;
-                } else
-                    writer.write(correctBarcodesResult.parsedRead);
-            }
+            ClusterStats stats = processCluster(cluster, writer, excludedBarcodesWriter, barcodeClusteringStrategy,
+                    defaultGroups, keyGroups, maxUniqueBarcodes);
+            correctedReads += stats.correctedReads;
+            excludedReads += stats.excludedReads;
         }
 
         return new CorrectionStats(totalReads.get(), correctedReads, excludedReads);
     }
 
     public static CorrectionStats unsortedClustersCorrect(
-            MifReader pass1Reader, MifReader pass2Reader, MifWriter writer, MifWriter excludedBarcodesWriter,
-            long inputReadsLimit, BarcodeClusteringStrategy barcodeClusteringStrategy, Set<String> defaultGroups,
+            MifReader reader, MifWriter writer, MifWriter excludedBarcodesWriter, long inputReadsLimit,
+            BarcodeClusteringStrategy barcodeClusteringStrategy, Set<String> defaultGroups,
             LinkedHashSet<String> primaryGroups, LinkedHashSet<String> keyGroups, int maxUniqueBarcodes) {
-        throw new NotImplementedException();
+        // keys: primary barcodes values; values: all reads that have this combination of barcodes values
+        HashMap<LinkedHashMap<String, NucleotideSequence>, List<ParsedRead>> allClusters = new HashMap<>();
+        long totalReads = 0;
+        long correctedReads = 0;
+        long excludedReads = 0;
+
+        // reading the entire input file into memory and clustering by primary barcodes values
+        SmartProgressReporter.startProgressReport("Reading input file into memory", reader, System.err);
+        for (ParsedRead parsedRead : CUtils.it(reader)) {
+            LinkedHashMap<String, NucleotideSequence> primaryBarcodes = extractPrimaryBarcodes(parsedRead,
+                    defaultGroups, primaryGroups);
+            allClusters.computeIfAbsent(primaryBarcodes, pb -> new ArrayList<>());
+            allClusters.get(primaryBarcodes).add(parsedRead);
+            if (++totalReads == inputReadsLimit)
+                break;
+        }
+
+        boolean correctionStarted = false;
+        for (List<ParsedRead> cluster : allClusters.values()) {
+            if (!correctionStarted) {
+                SmartProgressReporter.startProgressReport("Correcting barcodes", writer, System.err);
+                correctionStarted = true;
+            }
+            ClusterStats stats = processCluster(cluster, writer, excludedBarcodesWriter, barcodeClusteringStrategy,
+                    defaultGroups, keyGroups, maxUniqueBarcodes);
+            correctedReads += stats.correctedReads;
+            excludedReads += stats.excludedReads;
+        }
+
+        return new CorrectionStats(totalReads, correctedReads, excludedReads);
+    }
+
+    /**
+     * Extract values of primary barcodes from parsed read.
+     *
+     * @param parsedRead        parsed read
+     * @param defaultGroups     default group names: R1, R2 etc
+     * @param primaryGroups     names of primary groups
+     * @return                  keys: names of primary groups; values: values (sequences) of primary groups
+     */
+    private static LinkedHashMap<String, NucleotideSequence> extractPrimaryBarcodes(
+            ParsedRead parsedRead, Set<String> defaultGroups, LinkedHashSet<String> primaryGroups) {
+        Set<String> allGroups = parsedRead.getGroups().stream().map(MatchedGroup::getGroupName)
+                .filter(groupName -> !defaultGroups.contains(groupName)).collect(Collectors.toSet());
+        for (String groupName : primaryGroups)
+            if (!allGroups.contains(groupName))
+                throw exitWithError("Group " + groupName + " not found in the input!");
+        return parsedRead.getGroups().stream().filter(g -> primaryGroups.contains(g.getGroupName()))
+                .collect(LinkedHashMap::new, (m, g) -> m.put(g.getGroupName(), g.getValue().getSequence()),
+                        Map::putAll);
     }
 
     /**
@@ -371,6 +387,66 @@ public final class CorrectionAlgorithms {
                     .filter(defaultGroups::contains).collect(Collectors.toList()));
         return new CorrectBarcodesResult(new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(),
                 newMatch, 0), numCorrectedBarcodes, excluded);
+    }
+
+    /**
+     * Correct barcodes in cluster (for correction with primary barcodes) and write corrected cluster to output file.
+     *
+     * @param cluster                       cluster: list of parsed reads with the same primary barcodes
+     * @param writer                        MifWriter for output file
+     * @param excludedBarcodesWriter        MifWriter for excluded barcodes output file
+     * @param barcodeClusteringStrategy     clustering strategy parameters, from CLI arguments values
+     * @param defaultGroups                 default group names: R1, R2 etc
+     * @param keyGroups                     group names in which we will correct barcodes
+     * @param maxUniqueBarcodes             maximum number of included unique barcodes for each group, for filtering
+     *                                      corrected barcodes by count
+     * @return                              stats for cluster: number of corrected reads and number of excluded reads
+     */
+    private static ClusterStats processCluster(
+            List<ParsedRead> cluster, MifWriter writer, MifWriter excludedBarcodesWriter,
+            BarcodeClusteringStrategy barcodeClusteringStrategy, Set<String> defaultGroups,
+            LinkedHashSet<String> keyGroups, int maxUniqueBarcodes) {
+        Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()
+                .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
+        Map<String, Map<NucleotideSequence, RawSequenceCounter>> notCorrectedBarcodeCounters =
+                (maxUniqueBarcodes > 0) ? new HashMap<>() : null;
+        long correctedReads = 0;
+        long excludedReads = 0;
+
+        // counting barcodes
+        cluster.forEach(parsedRead -> pass1ProcessRead(parsedRead, sequenceMaps, notCorrectedBarcodeCounters));
+
+        // clustering and filling barcode correction maps
+        Map<String, HashMap<NucleotideSequence, NucleotideSequence>> sequenceCorrectionMaps =
+                performClustering(sequenceMaps, barcodeClusteringStrategy, false);
+
+        // calculating which barcodes must be included or excluded; only if filtering by count is enabled
+        Map<String, Set<NucleotideSequence>> includedBarcodes = (notCorrectedBarcodeCounters == null) ? null
+                : filterByCount(notCorrectedBarcodeCounters, sequenceCorrectionMaps, maxUniqueBarcodes);
+
+        for (ParsedRead parsedRead : cluster) {
+            CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead, sequenceCorrectionMaps,
+                    includedBarcodes, defaultGroups, keyGroups);
+            correctedReads += correctBarcodesResult.numCorrectedBarcodes;
+            if (correctBarcodesResult.excluded) {
+                if (excludedBarcodesWriter != null)
+                    excludedBarcodesWriter.write(correctBarcodesResult.parsedRead);
+                excludedReads++;
+            } else
+                writer.write(correctBarcodesResult.parsedRead);
+        }
+
+        return new ClusterStats(correctedReads, excludedReads);
+    }
+
+    private static class ClusterStats {
+        final long correctedReads;
+        final long excludedReads;
+
+        ClusterStats(long correctedReads, long excludedReads) {
+            this.correctedReads = correctedReads;
+            this.excludedReads = excludedReads;
+        }
     }
 
     private static class CorrectBarcodesResult {

@@ -78,12 +78,13 @@ public final class CorrectBarcodesIO {
         long startTime = System.currentTimeMillis();
         CorrectionStats stats;
         try (MifReader pass1Reader = new MifReader(inputFileName);
-             MifReader pass2Reader = new MifReader(inputFileName);
+             MifReader pass2Reader = (primaryGroups.size() == 0) ? new MifReader(inputFileName) : null;
              MifWriter writer = Objects.requireNonNull(createWriter(pass1Reader.getHeader(), false));
              MifWriter excludedBarcodesWriter = createWriter(pass1Reader.getHeader(), true)) {
             if (inputReadsLimit > 0) {
                 pass1Reader.setParsedReadsLimit(inputReadsLimit);
-                pass2Reader.setParsedReadsLimit(inputReadsLimit);
+                if (primaryGroups.size() == 0)
+                    Objects.requireNonNull(pass2Reader).setParsedReadsLimit(inputReadsLimit);
             }
             Set<String> defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfTargets())
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
@@ -106,15 +107,13 @@ public final class CorrectBarcodesIO {
                 stats = fullFileCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter, inputReadsLimit,
                         barcodeClusteringStrategy, defaultGroups, keyGroups, maxUniqueBarcodes);
             else if (unsortedPrimaryGroups.size() == 0)
-                stats = sortedClustersCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter,
-                        inputReadsLimit, barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups,
-                        maxUniqueBarcodes);
+                stats = sortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
+                        barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes);
             else
-                stats = unsortedClustersCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter,
-                        inputReadsLimit, barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups,
-                        maxUniqueBarcodes);
-            pass2Reader.close();
-            writer.setOriginalNumberOfReads(pass2Reader.getOriginalNumberOfReads());
+                stats = unsortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
+                        barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes);
+            pass1Reader.close();
+            writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
