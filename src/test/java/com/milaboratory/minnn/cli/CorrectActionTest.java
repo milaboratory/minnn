@@ -158,30 +158,50 @@ public class CorrectActionTest {
     }
 
     @Test
-    public void preparedMifSortedClustersTest() throws Exception {
-        String inputFile = getExampleMif("twosided");
-        for (int i = 0; i <= 1; i++) {
-            String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correctedSecondary" + i + ".mif";
-            String currentPrimaryOutput = TEMP_DIR + "correctedPrimary" + (i + 1) + ".mif";
-            String currentSortedOutput = TEMP_DIR + "sortedPrimary" + (i + 1) + ".mif";
-            String currentSecondaryOutput = TEMP_DIR + "correctedSecondary" + (i + 1) + ".mif";
-            exec("correct -f --groups G1 G2 --input " + currentInput + " --output " + currentPrimaryOutput
-                    + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
-                    + " --single-indel-probability 0.001");
-            exec("sort -f --groups G1 G2 --input " + currentPrimaryOutput
-                    + " --output " + currentSortedOutput);
-            exec("correct -f --primary-groups G1 G2 --groups G3 G4 --input " + currentSortedOutput
-                    + " --output " + currentSecondaryOutput + " --cluster-threshold 0.4"
-                    + " --single-substitution-probability 0.002 --single-indel-probability 0.001");
-            assertFileNotEquals(currentInput, currentSecondaryOutput);
-            if (i == 0) {
-                assertMifNotEqualsAsFastq(currentInput, currentSecondaryOutput, true);
-            } else
-                assertMifEqualsAsFastq(currentInput, currentSecondaryOutput, true);
+    public void preparedMifClustersTest() throws Exception {
+        for (boolean sorted : new boolean[] { true, false }) {
+            String inputFile = getExampleMif("twosided");
+            for (int i = 0; i <= 1; i++) {
+                String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correctedSecondary" + i + ".mif";
+                String currentPrimaryOutput = TEMP_DIR + "correctedPrimary" + (i + 1) + ".mif";
+                String currentSortedOutput = TEMP_DIR + "sortedPrimary" + (i + 1) + ".mif";
+                String currentSecondaryOutput = TEMP_DIR + "correctedSecondary" + (i + 1) + ".mif";
+                exec("correct -f --groups G1 G2 --input " + currentInput + " --output " + currentPrimaryOutput
+                        + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
+                        + " --single-indel-probability 0.001");
+                if (sorted)
+                    exec("sort -f --groups G1 G2 --input " + currentPrimaryOutput
+                            + " --output " + currentSortedOutput);
+                exec("correct -f --primary-groups G1 G2 --groups G3 G4 --input "
+                        + (sorted ? currentSortedOutput : currentPrimaryOutput)
+                        + " --output " + currentSecondaryOutput + " --cluster-threshold 0.4"
+                        + " --single-substitution-probability 0.002 --single-indel-probability 0.001");
+                assertFileNotEquals(currentInput, currentSecondaryOutput);
+                if (i == 0) {
+                    assertMifNotEqualsAsFastq(currentInput, currentSecondaryOutput, true);
+                } else {
+                    if (sorted)
+                        assertMifEqualsAsFastq(currentInput, currentSecondaryOutput, true);
+                    else {
+                        String sorted1 = TEMP_DIR + "sorted1-" + i + ".mif";
+                        String sorted2 = TEMP_DIR + "sorted2-" + i + ".mif";
+                        exec("sort -f --groups G1 G2 G3 G4 --input " + currentInput
+                                + " --output " + sorted1);
+                        exec("sort -f --groups G1 G2 G3 G4 --input " + currentSecondaryOutput
+                                + " --output " + sorted2);
+                        assertMifEqualsAsFastq(sorted1, sorted2, true);
+                        for (String sortedFile : new String[] { sorted1, sorted2 })
+                            assertTrue(new File(sortedFile).delete());
+                    }
+                }
+            }
+            assertTrue(new File(inputFile).delete());
+            for (int i = 1; i <= 2; i++) {
+                for (String prefix : new String[] { "correctedPrimary", "correctedSecondary" })
+                    assertTrue(new File(TEMP_DIR + prefix + i + ".mif").delete());
+                if (sorted)
+                    assertTrue(new File(TEMP_DIR + "sortedPrimary" + i + ".mif").delete());
+            }
         }
-        assertTrue(new File(inputFile).delete());
-        for (String prefix : new String[] { "correctedPrimary", "sortedPrimary", "correctedSecondary" })
-            for (int i = 1; i <= 2; i++)
-                assertTrue(new File(TEMP_DIR + prefix + i + ".mif").delete());
     }
 }
