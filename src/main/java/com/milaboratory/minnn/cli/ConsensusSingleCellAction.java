@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, MiLaboratory LLC
+ * Copyright (c) 2016-2019, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -29,27 +29,27 @@
 package com.milaboratory.minnn.cli;
 
 import com.milaboratory.cli.*;
-import com.milaboratory.minnn.consensus.ConsensusAlgorithms;
 import com.milaboratory.minnn.io.ConsensusIO;
 import picocli.CommandLine.*;
 
 import java.util.*;
 
 import static com.milaboratory.minnn.cli.CommonDescriptions.*;
-import static com.milaboratory.minnn.cli.ConsensusAction.CONSENSUS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.ConsensusSingleCellAction.CONSENSUS_SINGLE_CELL_ACTION_NAME;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
+import static com.milaboratory.minnn.consensus.ConsensusAlgorithms.SINGLE_CELL;
 import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 
-@Command(name = CONSENSUS_ACTION_NAME,
+@Command(name = CONSENSUS_SINGLE_CELL_ACTION_NAME,
         sortOptions = false,
         showDefaultValues = true,
         separator = " ",
         description = "Calculate consensus sequences for all barcodes.")
-public final class ConsensusAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
-    public static final String CONSENSUS_ACTION_NAME = "consensus";
+public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
+    public static final String CONSENSUS_SINGLE_CELL_ACTION_NAME = "consensus";
 
-    public ConsensusAction() {
+    public ConsensusSingleCellAction() {
         super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
     }
 
@@ -57,8 +57,8 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
     public void run1() {
         int actualMaxWarnings = quiet ? 0 : maxWarnings;
         ConsensusIO consensusIO = new ConsensusIO(getFullPipelineConfiguration(), groupList, inputFileName,
-                outputFileName, consensusAlgorithmType, alignerWidth, matchScore, mismatchScore, gapScore,
-                goodQualityMismatchPenalty, goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat,
+                outputFileName, SINGLE_CELL, 0, 0, 0, 0,
+                0, (byte)0, 0, skippedFractionToRepeat,
                 maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
                 minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadStatsFileName,
                 notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
@@ -109,11 +109,11 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
 
     @Override
     public ActionConfiguration getConfiguration() {
-        return new ConsensusActionConfiguration(new ConsensusActionConfiguration.ConsensusActionParameters(
-                groupList, alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
-                goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxConsensusesPerCluster,
+        return new ConsensusSingleCellActionConfiguration(new ConsensusSingleCellActionConfiguration
+                .ConsensusSingleCellActionParameters(groupList, skippedFractionToRepeat, maxConsensusesPerCluster,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                avgQualityThreshold, trimWindowSize, toSeparateGroups, inputReadsLimit));
+                avgQualityThreshold, trimWindowSize, toSeparateGroups, inputReadsLimit, kmerLength, kmerOffset,
+                kmerMaxErrors));
     }
 
     @Override
@@ -134,147 +134,89 @@ public final class ConsensusAction extends ACommandWithSmartOverwrite implements
             names = {"--output"})
     private String outputFileName = null;
 
-    @Option(description = "List of groups that represent barcodes. All these groups must be sorted with " +
-            "\"sort\" action.",
+    @Option(description = CONSENSUS_GROUP_LIST,
             names = {"--groups"},
             required = true,
             arity = "1..*")
     private List<String> groupList = null;
 
-    @Option(description = "Consensus algorithm. Available algorithms: SINGLE_CELL, DOUBLE_MULTI_ALIGN.",
-            names = {"--consensus-algorithm"})
-    private ConsensusAlgorithms consensusAlgorithmType = DEFAULT_CONSENSUS_ALGORITHM;
-
-    @Option(description = "Window width (maximum allowed number of indels) for banded aligner."
-            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
-            names = {"--width"})
-    private int alignerWidth = DEFAULT_CONSENSUS_ALIGNER_WIDTH;
-
-    @Option(description = "Score for perfectly matched nucleotide, used in sequences alignment."
-            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
-            names = {"--aligner-match-score"})
-    private int matchScore = DEFAULT_MATCH_SCORE;
-
-    @Option(description = "Score for mismatched nucleotide, used in sequences alignment."
-            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
-            names = {"--aligner-mismatch-score"})
-    private int mismatchScore = DEFAULT_MISMATCH_SCORE;
-
-    @Option(description = "Score for gap or insertion, used in sequences alignment."
-            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
-            names = {"--aligner-gap-score"})
-    private int gapScore = DEFAULT_GAP_SCORE;
-
-    @Option(description = "Extra score penalty for mismatch when both sequences have good quality."
-            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
-            names = {"--good-quality-mismatch-penalty"})
-    private long goodQualityMismatchPenalty = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY;
-
-    @Option(description = "Quality that will be considered good for applying extra mismatch penalty."
-            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
-            names = {"--good-quality-mismatch-threshold"})
-    private byte goodQualityMismatchThreshold = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD;
-
-    @Option(description = "Score threshold that used to filter reads for calculating consensus."
-            + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
-            names = {"--score-threshold"})
-    private long scoreThreshold = DEFAULT_CONSENSUS_SCORE_THRESHOLD;
-
-    @Option(description = "Fraction of reads skipped by score threshold that must start the search for " +
-            "another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of " +
-            "reads with identical barcodes.",
+    @Option(description = SKIPPED_FRACTION_TO_REPEAT,
             names = {"--skipped-fraction-to-repeat"})
     private float skippedFractionToRepeat = DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT;
 
-    @Option(description = "Maximal number of consensuses generated from 1 cluster. Every time this threshold " +
-            "is applied to stop searching for new consensuses, warning will be displayed. Too many consensuses " +
-            "per cluster indicate that score threshold, aligner width or skipped fraction to repeat is too low.",
+    @Option(description = MAX_CONSENSUSES_PER_CLUSTER,
             names = {"--max-consensuses-per-cluster"})
     private int maxConsensusesPerCluster = DEFAULT_CONSENSUS_MAX_PER_CLUSTER;
 
-    @Option(description = "Minimal length of good sequence that will be still considered good after trimming " +
-            "bad quality tails. This parameter is for trimming input reads.",
+    @Option(description = READS_MIN_GOOD_SEQUENCE_LENGTH,
             names = {"--reads-min-good-sequence-length"})
     private int readsMinGoodSeqLength = DEFAULT_CONSENSUS_READS_MIN_GOOD_SEQ_LENGTH;
 
-    @Option(description = "Minimal average quality for bad quality tails trimmer. This parameter is for " +
-            "trimming input reads.",
+    @Option(description = READS_AVG_QUALITY_THRESHOLD,
             names = {"--reads-avg-quality-threshold"})
     private float readsAvgQualityThreshold = DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD;
 
-    @Option(description = "Window size for bad quality tails trimmer. This parameter is for trimming input " +
-            "reads.",
+    @Option(description = READS_TRIM_WINDOW_SIZE,
             names = {"--reads-trim-window-size"})
     private int readsTrimWindowSize = DEFAULT_CONSENSUS_READS_TRIM_WINDOW_SIZE;
 
-    @Option(description = "Minimal length of good sequence that will be still considered good after trimming " +
-            "bad quality tails. This parameter is for trimming output consensuses.",
+    @Option(description = CONSENSUSES_MIN_GOOD_SEQUENCE_LENGTH,
             names = {"--min-good-sequence-length"})
     private int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
-    @Option(description = "Minimal average quality for bad quality tails trimmer. This parameter is for " +
-            "trimming output consensuses.",
+    @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD,
             names = {"--avg-quality-threshold"})
     private float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
 
-    @Option(description = "Window size for bad quality tails trimmer. This parameter is for trimming output " +
-            "consensuses.",
+    @Option(description = CONSENSUSES_TRIM_WINDOW_SIZE,
             names = {"--trim-window-size"})
     private int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
 
-    @Option(description = "Save extra statistics for each original read into separate file. Output file in " +
-            "space separated text format.",
+    @Option(description = ORIGINAL_READ_STATS,
             names = {"--original-read-stats"})
     private String originalReadStatsFileName = null;
 
-    @Option(description = "Write reads not used in consensus assembly into separate file. Output file in " +
-            "\"mif\" format.",
+    @Option(description = CONSENSUS_NOT_USED_READS_OUTPUT,
             names = {"--not-used-reads-output"})
     private String notUsedReadsOutputFileName = null;
 
-    @Option(description = "If this parameter is specified, consensuses will not be written as " +
-            "reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and " +
-            "consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by " +
-            "consensuses using filter / demultiplex actions, or export original reads and corresponding " +
-            "consensuses into separate reads using mif2fastq action." + USED_ONLY_IN_DOUBLE_MULTI_ALIGN,
-            names = {"--consensuses-to-separate-groups"})
+    @Option(description = CONSENSUSES_TO_SEPARATE_GROUPS,
+            names = {"--consensuses-to-separate-groups"},
+            hidden = true)
     private boolean toSeparateGroups = false;
 
     @Option(description = NUMBER_OF_READS,
             names = {"-n", "--number-of-reads"})
     private long inputReadsLimit = 0;
 
-    @Option(description = "Maximum allowed number of warnings; -1 means no limit.",
+    @Option(description = MAX_WARNINGS,
             names = {"--max-warnings"})
     private int maxWarnings = -1;
 
-    @Option(description = "Number of threads for calculating consensus sequences.",
+    @Option(description = CONSENSUS_NUMBER_OF_THREADS,
             names = {"--threads"})
     private int threads = DEFAULT_THREADS;
 
     @Option(description = "K-mer length. Also affects --min-good-sequence-length because good sequence length must "
             + "not be lower than k-mer length, so the biggest of --kmer-length and --min-good-sequence-length "
-            + "will be used as --min-good-sequence-length value."
-            + USED_ONLY_IN_SINGLE_CELL,
+            + "will be used as --min-good-sequence-length value.",
             names = {"--kmer-length"})
     private int kmerLength = DEFAULT_CONSENSUS_KMER_LENGTH;
 
-    @Option(description = "Max offset from the middle of the read when searching k-mers."
-            + USED_ONLY_IN_SINGLE_CELL,
+    @Option(description = "Max offset from the middle of the read when searching k-mers.",
             names = {"--kmer-offset"})
     private int kmerOffset = DEFAULT_CONSENSUS_KMER_OFFSET;
 
-    @Option(description = "Maximal allowed number of mismatches when searching k-mers in sequences."
-            + USED_ONLY_IN_SINGLE_CELL,
+    @Option(description = "Maximal allowed number of mismatches when searching k-mers in sequences.",
             names = {"--kmer-max-errors"})
     private int kmerMaxErrors = DEFAULT_CONSENSUS_KMER_MAX_ERRORS;
 
-    @Option(description = "Output text file for consensus algorithm debug information.",
+    @Option(description = CONSENSUS_DEBUG_OUTPUT,
             names = {"--debug-output"},
             hidden = true)
     private String debugOutputFileName = null;
 
-    @Option(description = "Quality threshold to write capital letter in debug output file.",
+    @Option(description = CONSENSUS_DEBUG_QUALITY_THRESHOLD,
             names = {"--debug-quality-threshold"},
             hidden = true)
     private byte debugQualityThreshold = (byte)(DEFAULT_GOOD_QUALITY / 2);

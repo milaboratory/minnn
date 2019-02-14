@@ -56,8 +56,40 @@ class CommonDescriptions {
             "reads.";
     static final String MIN_FRAC_FILTER = "Filter unique group values represented by less than specified fraction " +
             "of reads.";
+    static final String CONSENSUS_GROUP_LIST = "List of groups that represent barcodes. All these groups must be " +
+            "sorted with \"sort\" action.";
+    static final String SKIPPED_FRACTION_TO_REPEAT = "Fraction of reads skipped by score threshold that must start " +
+            "the search for another consensus in skipped reads. Value 1 means always get only 1 consensus from one " +
+            "set of reads with identical barcodes.";
+    static final String MAX_CONSENSUSES_PER_CLUSTER = "Maximal number of consensuses generated from 1 cluster. " +
+            "Every time this threshold is applied to stop searching for new consensuses, warning will be displayed. " +
+            "Too many consensuses per cluster indicate that score threshold, aligner width or skipped fraction to " +
+            "repeat is too low.";
+    private static final String MIN_GOOD_SEQUENCE_LENGTH = "Minimal length of good sequence that will be still " +
+            "considered good after trimming bad quality tails.";
+    private static final String AVG_QUALITY_THRESHOLD = "Minimal average quality for bad quality tails trimmer.";
+    private static final String TRIM_WINDOW_SIZE = "Window size for bad quality tails trimmer.";
+    private static final String FOR_INPUT_READS = " This parameter is for trimming input reads.";
+    private static final String FOR_OUTPUT_CONSENSUSES = " This parameter is for trimming output consensuses.";
+    static final String READS_MIN_GOOD_SEQUENCE_LENGTH = MIN_GOOD_SEQUENCE_LENGTH + FOR_INPUT_READS;
+    static final String READS_AVG_QUALITY_THRESHOLD = AVG_QUALITY_THRESHOLD + FOR_INPUT_READS;
+    static final String READS_TRIM_WINDOW_SIZE = TRIM_WINDOW_SIZE + FOR_INPUT_READS;
+    static final String CONSENSUSES_MIN_GOOD_SEQUENCE_LENGTH = MIN_GOOD_SEQUENCE_LENGTH + FOR_OUTPUT_CONSENSUSES;
+    static final String CONSENSUSES_AVG_QUALITY_THRESHOLD = AVG_QUALITY_THRESHOLD + FOR_OUTPUT_CONSENSUSES;
+    static final String CONSENSUSES_TRIM_WINDOW_SIZE = TRIM_WINDOW_SIZE + FOR_OUTPUT_CONSENSUSES;
+    static final String ORIGINAL_READ_STATS = "Save extra statistics for each original read into separate file. " +
+            "Output file in space separated text format.";
+    static final String CONSENSUS_NOT_USED_READS_OUTPUT = "Write reads not used in consensus assembly into separate " +
+            "file. Output file in \"mif\" format.";
+    static final String CONSENSUSES_TO_SEPARATE_GROUPS = "If this parameter is specified, consensuses will not be " +
+            "written as reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc " +
+            "and consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by " +
+            "consensuses using filter / demultiplex actions, or export original reads and corresponding " +
+            "consensuses into separate reads using mif2fastq action.";
+    static final String CONSENSUS_NUMBER_OF_THREADS = "Number of threads for calculating consensus sequences.";
+    static final String CONSENSUS_DEBUG_OUTPUT = "Output text file for consensus algorithm debug information.";
+    static final String CONSENSUS_DEBUG_QUALITY_THRESHOLD = "Quality threshold to write capital letter in debug " +
+            "output file.";
     static final String NUMBER_OF_READS = "Number of reads to take; 0 value means to take the entire input file.";
-    static final String USED_ONLY_IN_SINGLE_CELL = " Used only in single-cell consensus algorithm.";
-    static final String USED_ONLY_IN_RNA_SEQ = " Used only in rna-seq consensus algorithm.";
-    static final String USED_ONLY_IN_DOUBLE_MULTI_ALIGN = " Used only in double-multi-align consensus algorithm.";
+    static final String MAX_WARNINGS = "Maximum allowed number of warnings; -1 means no limit.";
 }

@@ -13,7 +13,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.milaboratory.minnn.cli.ConsensusAction.CONSENSUS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.ConsensusDoubleMultiAlignAction.CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME;
+import static com.milaboratory.minnn.cli.ConsensusSingleCellAction.CONSENSUS_SINGLE_CELL_ACTION_NAME;
 import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
@@ -32,9 +33,10 @@ public final class GenerateDocsIO {
     static {
         List<String> commandsWithForceOverwrite = Arrays.asList(EXTRACT_ACTION_NAME, FILTER_ACTION_NAME,
                 DEMULTIPLEX_ACTION_NAME, MIF_TO_FASTQ_ACTION_NAME, CORRECT_ACTION_NAME, SORT_ACTION_NAME,
-                CONSENSUS_ACTION_NAME, STAT_GROUPS_ACTION_NAME, STAT_POSITIONS_ACTION_NAME);
+                CONSENSUS_SINGLE_CELL_ACTION_NAME, CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME, STAT_GROUPS_ACTION_NAME,
+                STAT_POSITIONS_ACTION_NAME);
         List<String> commandsWithQuietOption = Arrays.asList(CORRECT_ACTION_NAME, SORT_ACTION_NAME,
-                CONSENSUS_ACTION_NAME);
+                CONSENSUS_SINGLE_CELL_ACTION_NAME, CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME);
         specificOptions.put("--force-overwrite", commandsWithForceOverwrite);
         specificOptions.put("--no-warnings", commandsWithQuietOption);
     }
@@ -43,7 +45,7 @@ public final class GenerateDocsIO {
 
     public GenerateDocsIO(String outputFileName) {
         for (String actionName : new String[] { "Extract", "Filter", "Demultiplex", "MifToFastq", "Correct", "Sort",
-                "Consensus", "StatGroups", "StatPositions", "Report" }) {
+                "ConsensusSingleCell", "ConsensusDoubleMultiAlign", "StatGroups", "StatPositions", "Report" }) {
             try {
                 actionClasses.add(Class.forName("com.milaboratory.minnn.cli." + actionName + "Action"));
             } catch (ClassNotFoundException e) {

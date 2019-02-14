@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, MiLaboratory LLC
+ * Copyright (c) 2016-2019, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -37,33 +37,33 @@ import com.milaboratory.util.GlobalObjectMappers;
 import java.util.List;
 import java.util.Objects;
 
-import static com.milaboratory.minnn.cli.ConsensusAction.CONSENSUS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.ConsensusDoubleMultiAlignAction.CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME;
 
-public final class ConsensusActionConfiguration implements ActionConfiguration {
-    private static final String CONSENSUS_ACTION_VERSION_ID = "1";
-    private final ConsensusActionParameters consensusParameters;
+public final class ConsensusDoubleMultiAlignActionConfiguration implements ActionConfiguration {
+    private static final String CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_VERSION_ID = "1";
+    private final ConsensusDoubleMultiAlignActionParameters consensusParameters;
 
     @JsonCreator
-    public ConsensusActionConfiguration(
-            @JsonProperty("consensusParameters") ConsensusActionParameters consensusParameters) {
+    public ConsensusDoubleMultiAlignActionConfiguration(
+            @JsonProperty("consensusParameters") ConsensusDoubleMultiAlignActionParameters consensusParameters) {
         this.consensusParameters = consensusParameters;
     }
 
     @Override
     public String actionName() {
-        return CONSENSUS_ACTION_NAME;
+        return CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME;
     }
 
     @Override
     public String versionId() {
-        return CONSENSUS_ACTION_VERSION_ID;
+        return CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_VERSION_ID;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if ((o == null) || (getClass() != o.getClass())) return false;
-        ConsensusActionConfiguration that = (ConsensusActionConfiguration)o;
+        ConsensusDoubleMultiAlignActionConfiguration that = (ConsensusDoubleMultiAlignActionConfiguration)o;
         return consensusParameters.equals(that.consensusParameters);
     }
 
@@ -75,7 +75,7 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY,
             isGetterVisibility = JsonAutoDetect.Visibility.NONE, getterVisibility = JsonAutoDetect.Visibility.NONE)
     @Serializable(asJson = true)
-    public static final class ConsensusActionParameters implements java.io.Serializable {
+    public static final class ConsensusDoubleMultiAlignActionParameters implements java.io.Serializable {
         private List<String> groupList;
         private int alignerWidth;
         private int matchScore;
@@ -95,7 +95,7 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
         private boolean toSeparateGroups;
         private long inputReadsLimit;
 
-        public ConsensusActionParameters(
+        public ConsensusDoubleMultiAlignActionParameters(
                 @JsonProperty("groupList") List<String> groupList,
                 @JsonProperty("alignerWidth") int alignerWidth,
                 @JsonProperty("matchScore") int matchScore,
@@ -282,7 +282,7 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            ConsensusActionParameters that = (ConsensusActionParameters)o;
+            ConsensusDoubleMultiAlignActionParameters that = (ConsensusDoubleMultiAlignActionParameters)o;
             if (alignerWidth != that.alignerWidth) return false;
             if (matchScore != that.matchScore) return false;
             if (mismatchScore != that.mismatchScore) return false;
@@ -313,15 +313,16 @@ public final class ConsensusActionConfiguration implements ActionConfiguration {
             result = 31 * result + (int)(goodQualityMismatchPenalty ^ (goodQualityMismatchPenalty >>> 32));
             result = 31 * result + (int)goodQualityMismatchThreshold;
             result = 31 * result + (int)(scoreThreshold ^ (scoreThreshold >>> 32));
-            result = 31 * result + (skippedFractionToRepeat != +0.0f ? Float.floatToIntBits(skippedFractionToRepeat)
-                    : 0);
+            result = 31 * result + (skippedFractionToRepeat != +0.0f
+                    ? Float.floatToIntBits(skippedFractionToRepeat) : 0);
             result = 31 * result + maxConsensusesPerCluster;
             result = 31 * result + readsMinGoodSeqLength;
-            result = 31 * result + (readsAvgQualityThreshold != +0.0f ? Float.floatToIntBits(readsAvgQualityThreshold)
-                    : 0);
+            result = 31 * result + (readsAvgQualityThreshold != +0.0f
+                    ? Float.floatToIntBits(readsAvgQualityThreshold) : 0);
             result = 31 * result + readsTrimWindowSize;
             result = 31 * result + minGoodSeqLength;
-            result = 31 * result + (avgQualityThreshold != +0.0f ? Float.floatToIntBits(avgQualityThreshold) : 0);
+            result = 31 * result + (avgQualityThreshold != +0.0f
+                    ? Float.floatToIntBits(avgQualityThreshold) : 0);
             result = 31 * result + trimWindowSize;
             result = 31 * result + (toSeparateGroups ? 1 : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
