@@ -513,17 +513,17 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
             allMatchingLetters.put('T', "Tt");
             allMatchingLetters.put('G', "Gg");
             allMatchingLetters.put('C', "Cc");
-            allMatchingLetters.put('W', "AaTt");
-            allMatchingLetters.put('S', "GgCc");
-            allMatchingLetters.put('M', "AaCc");
-            allMatchingLetters.put('K', "GgTt");
-            allMatchingLetters.put('R', "AaGg");
-            allMatchingLetters.put('Y', "CcTt");
-            allMatchingLetters.put('B', "TtGgCc");
-            allMatchingLetters.put('V', "AaGgCc");
-            allMatchingLetters.put('H', "AaTtCc");
-            allMatchingLetters.put('D', "AaTtGg");
-            allMatchingLetters.put('N', "AaTtGgCc");
+            allMatchingLetters.put('W', "AaTtWw");
+            allMatchingLetters.put('S', "GgCcSs");
+            allMatchingLetters.put('M', "AaCcMm");
+            allMatchingLetters.put('K', "GgTtKk");
+            allMatchingLetters.put('R', "AaGgRr");
+            allMatchingLetters.put('Y', "CcTtYy");
+            allMatchingLetters.put('B', "TtGgCcYySsKkBb");
+            allMatchingLetters.put('V', "AaGgCcRrSsMmVv");
+            allMatchingLetters.put('H', "AaTtCcYyWwMmHh");
+            allMatchingLetters.put('D', "AaTtGgRrWwKkDd");
+            allMatchingLetters.put('N', "AaTtGgCcRrYySsWwKkMmBbDdHhVvNn");
             new HashSet<>(allMatchingLetters.keySet())
                     .forEach(l -> allMatchingLetters.put(Character.toLowerCase(l), allMatchingLetters.get(l)));
         }
