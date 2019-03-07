@@ -93,7 +93,7 @@ public class FilterActionTest {
         String filter = " \"G1~'AT'|G2~'GGC'&R2~'AANC&TA'|Len(G4)=5\"";
         exec("filter -f --fair-sorting --input " + inputFile + " --output " + outputFile1 + filter);
         for (String fairSorting : new String[] { "", " --fair-sorting" })
-            assertOutputContains(true, "96", () -> callableExec("filter -f" + fairSorting
+            assertOutputContains(true, "100", () -> callableExec("filter -f" + fairSorting
                     + " --input " + inputFile + " --output " + outputFile1 + filter));
         exec("filter -f --fair-sorting --input " + outputFile1 + " --output " + outputFile2 + filter);
         exec("filter -f --fair-sorting --input " + outputFile2 + " --output " + outputFile3 + filter);
