@@ -8,6 +8,7 @@ import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
+import static org.junit.Assert.*;
 
 public class SpecialCasesTest {
     @BeforeClass
@@ -19,26 +20,7 @@ public class SpecialCasesTest {
     }
 
     @Test
-    public void testCase1() throws Exception {
-        String inputFile = getExampleMif("twosided-raw");
-        String outputFile = TEMP_DIR + "outputTC1.mif";
-        exec("extract -f --input " + inputFile + " --output " + outputFile + " --input-format MIF"
-                + " --score-threshold -100 --uppercase-mismatch-score -15"
-                + " --pattern \"^(UMI:nnnntnnnntnnnn)TCTTGGG\\*\"");
-    }
-
-    @Test
-    public void testCase2() throws Exception {
-        String inputFile = getExampleMif("twosided-raw");
-        String outputFile = TEMP_DIR + "outputTC1.mif";
-        exec("extract -f --input " + inputFile + " --output " + outputFile + " --input-format MIF"
-                + " --score-threshold -100 --uppercase-mismatch-score -15"
-                + " --pattern \"^(UMI:nnnntnnnntnnnn)TCTTGGG(R1cut:N{*})\\*\"");
-    }
-
-    @Ignore
-    @Test
-    public void extractWrongData() throws Exception {
+    public void scoringForMultipleNTest() throws Exception {
         String inputFile = getExampleMif("twosided-raw");
         String file1 = TEMP_DIR + "file1.mif";
         String file2 = TEMP_DIR + "file2.mif";
@@ -52,14 +34,9 @@ public class SpecialCasesTest {
                 + " --not-matched-output " + diff + " --score-threshold -100 --uppercase-mismatch-score -15"
                 + " --pattern \"^(UMI:nnnntnnnntnnnn)TCTTGGG(R1cut:N{*})\\*\" --max-quality-penalty 0");
         exec("mif2fastq -f --input " + diff + " --group R1=" + diff_R1 + " --group R2=" + diff_R2);
-    }
-
-    @Ignore
-    @Test
-    public void testWrongData() throws Exception {
-        String wrong = TEMP_DIR + "wrong.fastq";
-        exec("extract -f --input " + wrong + " --output /dev/null -n 1 --threads 1"
-                + " --score-threshold -100 --uppercase-mismatch-score -15 --max-quality-penalty 0"
-                + " --pattern \"^(UMI:nnnntnnnntnnnn)TCTTGGG(R1cut:N{*})\"");
+        assertEquals(0, new File(diff_R1).length());
+        assertEquals(0, new File(diff_R2).length());
+        for (String fileName : new String[] { inputFile, file1, file2, diff, diff_R1, diff_R2 })
+            assertTrue(new File(fileName).delete());
     }
 }
