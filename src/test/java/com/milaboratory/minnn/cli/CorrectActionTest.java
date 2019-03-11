@@ -130,6 +130,32 @@ public class CorrectActionTest {
     }
 
     @Test
+    public void minCountTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        for (int i = 0; i < 10; i++) {
+            String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
+            String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
+            if (i < 9) {
+                exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
+                        + " --max-total-errors 0 --min-count " + (int)Math.pow(i, 2));
+                assertFileNotEquals(currentInput, currentOutput);
+                if (i <= 1)
+                    assertMifEqualsAsFastq(currentInput, currentOutput, true);
+                else
+                    assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
+            } else {
+                exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
+                        + " --max-total-errors 0 --min-count 1");
+                assertFileNotEquals(currentInput, currentOutput);
+                assertMifEqualsAsFastq(currentInput, currentOutput, true);
+            }
+        }
+        assertTrue(new File(inputFile).delete());
+        for (int i = 1; i <= 10; i++)
+            assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
+    }
+
+    @Test
     public void randomSortedClustersTest() throws Exception {
         String startFile = TEMP_DIR + "correctStart.mif";
         String inputFile = TEMP_DIR + "correctInput.mif";

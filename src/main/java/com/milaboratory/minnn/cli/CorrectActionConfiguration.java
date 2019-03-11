@@ -85,6 +85,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
         private float singleSubstitutionProbability;
         private float singleIndelProbability;
         private int maxUniqueBarcodes;
+        private int minCount;
         private long inputReadsLimit;
 
         @JsonCreator
@@ -99,6 +100,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                 @JsonProperty("singleSubstitutionProbability") float singleSubstitutionProbability,
                 @JsonProperty("singleIndelProbability") float singleIndelProbability,
                 @JsonProperty("maxUniqueBarcodes") int maxUniqueBarcodes,
+                @JsonProperty("minCount") int minCount,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
             this.groupNames = groupNames;
             this.primaryGroupNames = primaryGroupNames;
@@ -110,6 +112,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.singleSubstitutionProbability = singleSubstitutionProbability;
             this.singleIndelProbability = singleIndelProbability;
             this.maxUniqueBarcodes = maxUniqueBarcodes;
+            this.minCount = minCount;
             this.inputReadsLimit = inputReadsLimit;
         }
 
@@ -193,6 +196,14 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.maxUniqueBarcodes = maxUniqueBarcodes;
         }
 
+        public int getMinCount() {
+            return minCount;
+        }
+
+        public void setMinCount(int minCount) {
+            this.minCount = minCount;
+        }
+
         public long getInputReadsLimit() {
             return inputReadsLimit;
         }
@@ -214,6 +225,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (Float.compare(that.singleSubstitutionProbability, singleSubstitutionProbability) != 0) return false;
             if (Float.compare(that.singleIndelProbability, singleIndelProbability) != 0) return false;
             if (maxUniqueBarcodes != that.maxUniqueBarcodes) return false;
+            if (minCount != that.minCount) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
             if (!Objects.equals(groupNames, that.groupNames)) return false;
             return Objects.equals(primaryGroupNames, that.primaryGroupNames);
@@ -233,6 +245,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             result = 31 * result + (singleIndelProbability != +0.0f
                     ? Float.floatToIntBits(singleIndelProbability) : 0);
             result = 31 * result + maxUniqueBarcodes;
+            result = 31 * result + minCount;
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;
         }

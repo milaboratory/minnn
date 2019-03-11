@@ -51,6 +51,7 @@ public final class CorrectBarcodesIO {
     private final LinkedHashSet<String> primaryGroups;
     private final BarcodeClusteringStrategy barcodeClusteringStrategy;
     private final int maxUniqueBarcodes;
+    private final int minCount;
     private final String excludedBarcodesOutputFileName;
     private final long inputReadsLimit;
     private final boolean suppressWarnings;
@@ -58,7 +59,7 @@ public final class CorrectBarcodesIO {
     public CorrectBarcodesIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
                              int mismatches, int indels, int totalErrors, float threshold, List<String> groupNames,
                              List<String> primaryGroupNames, int maxClusterDepth, float singleSubstitutionProbability,
-                             float singleIndelProbability, int maxUniqueBarcodes,
+                             float singleIndelProbability, int maxUniqueBarcodes, int minCount,
                              String excludedBarcodesOutputFileName, long inputReadsLimit, boolean suppressWarnings) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
@@ -69,6 +70,7 @@ public final class CorrectBarcodesIO {
         this.barcodeClusteringStrategy = new BarcodeClusteringStrategy(mismatches, indels, totalErrors, threshold,
                 maxClusterDepth, new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability));
         this.maxUniqueBarcodes = maxUniqueBarcodes;
+        this.minCount = minCount;
         this.excludedBarcodesOutputFileName = excludedBarcodesOutputFileName;
         this.inputReadsLimit = inputReadsLimit;
         this.suppressWarnings = suppressWarnings;
@@ -105,13 +107,15 @@ public final class CorrectBarcodesIO {
                         "corrected again!");
             if (primaryGroups.size() == 0)
                 stats = fullFileCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategy, defaultGroups, keyGroups, maxUniqueBarcodes);
+                        barcodeClusteringStrategy, defaultGroups, keyGroups, maxUniqueBarcodes, minCount);
             else if (unsortedPrimaryGroups.size() == 0)
                 stats = sortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes);
+                        barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes,
+                        minCount);
             else
                 stats = unsortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes);
+                        barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes,
+                        minCount);
             pass1Reader.close();
             writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
