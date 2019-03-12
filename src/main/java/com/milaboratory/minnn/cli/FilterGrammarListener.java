@@ -1,32 +1,3 @@
-/*
- * Copyright (c) 2016-2018, MiLaboratory LLC
- * All Rights Reserved
- *
- * Permission to use, copy, modify and distribute any part of this program for
- * educational, research and non-profit purposes, by non-profit institutions
- * only, without fee, and without a written agreement is hereby granted,
- * provided that the above copyright notice, this paragraph and the following
- * three paragraphs appear in all copies.
- *
- * Those desiring to incorporate this work into commercial products or use for
- * commercial purposes should contact MiLaboratory LLC, which owns exclusive
- * rights for distribution of this program for commercial purposes, using the
- * following email address: licensing@milaboratory.com.
- *
- * IN NO EVENT SHALL THE INVENTORS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
- * SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
- * ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN IF THE INVENTORS HAS BEEN
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE INVENTORS HAS
- * NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR
- * MODIFICATIONS. THE INVENTORS MAKES NO REPRESENTATIONS AND EXTENDS NO
- * WARRANTIES OF ANY KIND, EITHER IMPLIED OR EXPRESS, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A
- * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
- * PATENT, TRADEMARK OR OTHER RIGHTS.
- */
-
 // Generated from FilterGrammar.g4 by ANTLR 4.7
 package com.milaboratory.minnn.cli;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
@@ -117,6 +88,56 @@ public interface FilterGrammarListener extends ParseTreeListener {
 	 */
 	void exitPattern(FilterGrammarParser.PatternContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#simpleFilter}.
+	 * @param ctx the parse tree
+	 */
+	void enterSimpleFilter(FilterGrammarParser.SimpleFilterContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#simpleFilter}.
+	 * @param ctx the parse tree
+	 */
+	void exitSimpleFilter(FilterGrammarParser.SimpleFilterContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#minGroupQuality}.
+	 * @param ctx the parse tree
+	 */
+	void enterMinGroupQuality(FilterGrammarParser.MinGroupQualityContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#minGroupQuality}.
+	 * @param ctx the parse tree
+	 */
+	void exitMinGroupQuality(FilterGrammarParser.MinGroupQualityContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#avgGroupQuality}.
+	 * @param ctx the parse tree
+	 */
+	void enterAvgGroupQuality(FilterGrammarParser.AvgGroupQualityContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#avgGroupQuality}.
+	 * @param ctx the parse tree
+	 */
+	void exitAvgGroupQuality(FilterGrammarParser.AvgGroupQualityContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#groupNCount}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupNCount(FilterGrammarParser.GroupNCountContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#groupNCount}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupNCount(FilterGrammarParser.GroupNCountContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#groupNFraction}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupNFraction(FilterGrammarParser.GroupNFractionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#groupNFraction}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupNFraction(FilterGrammarParser.GroupNFractionContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FilterGrammarParser#minConsensusReads}.
 	 * @param ctx the parse tree
 	 */
@@ -147,15 +168,45 @@ public interface FilterGrammarListener extends ParseTreeListener {
 	 */
 	void exitPatternString(FilterGrammarParser.PatternStringContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link FilterGrammarParser#groupName}.
+	 * Enter a parse tree produced by {@link FilterGrammarParser#minGroupQualityNum}.
 	 * @param ctx the parse tree
 	 */
-	void enterGroupName(FilterGrammarParser.GroupNameContext ctx);
+	void enterMinGroupQualityNum(FilterGrammarParser.MinGroupQualityNumContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link FilterGrammarParser#groupName}.
+	 * Exit a parse tree produced by {@link FilterGrammarParser#minGroupQualityNum}.
 	 * @param ctx the parse tree
 	 */
-	void exitGroupName(FilterGrammarParser.GroupNameContext ctx);
+	void exitMinGroupQualityNum(FilterGrammarParser.MinGroupQualityNumContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#avgGroupQualityNum}.
+	 * @param ctx the parse tree
+	 */
+	void enterAvgGroupQualityNum(FilterGrammarParser.AvgGroupQualityNumContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#avgGroupQualityNum}.
+	 * @param ctx the parse tree
+	 */
+	void exitAvgGroupQualityNum(FilterGrammarParser.AvgGroupQualityNumContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#groupNCountNum}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupNCountNum(FilterGrammarParser.GroupNCountNumContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#groupNCountNum}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupNCountNum(FilterGrammarParser.GroupNCountNumContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#groupNFractionNum}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupNFractionNum(FilterGrammarParser.GroupNFractionNumContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#groupNFractionNum}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupNFractionNum(FilterGrammarParser.GroupNFractionNumContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FilterGrammarParser#minConsensusReadsNum}.
 	 * @param ctx the parse tree
@@ -166,6 +217,26 @@ public interface FilterGrammarListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitMinConsensusReadsNum(FilterGrammarParser.MinConsensusReadsNumContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#groupName}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupName(FilterGrammarParser.GroupNameContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#groupName}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupName(FilterGrammarParser.GroupNameContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#groupNameOrAll}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupNameOrAll(FilterGrammarParser.GroupNameOrAllContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#groupNameOrAll}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupNameOrAll(FilterGrammarParser.GroupNameOrAllContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FilterGrammarParser#groupLength}.
 	 * @param ctx the parse tree
