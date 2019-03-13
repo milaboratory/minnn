@@ -42,8 +42,7 @@ public final class AndReadFilter implements ReadFilter {
     @Override
     public ParsedRead filter(ParsedRead parsedRead) {
         if (operands.stream().map(o -> o.filter(parsedRead).getBestMatch()).anyMatch(Objects::isNull))
-            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                    parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
+            return notMatchedRead(parsedRead);
         else
             return parsedRead;
     }

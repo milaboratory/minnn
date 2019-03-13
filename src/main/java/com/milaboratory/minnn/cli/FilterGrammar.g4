@@ -13,17 +13,17 @@ minGroupQuality : MIN_GROUP_QUALITY OPEN_PARENTHESIS groupNameOrAll CLOSED_PAREN
 avgGroupQuality : AVG_GROUP_QUALITY OPEN_PARENTHESIS groupNameOrAll CLOSED_PARENTHESIS EQUALS avgGroupQualityNum ;
 groupNCount : GROUP_N_COUNT OPEN_PARENTHESIS groupNameOrAll CLOSED_PARENTHESIS EQUALS groupNCountNum ;
 groupNFraction : GROUP_N_FRACTION OPEN_PARENTHESIS groupNameOrAll CLOSED_PARENTHESIS EQUALS groupNFractionNum ;
+len : LEN OPEN_PARENTHESIS groupNameOrAll CLOSED_PARENTHESIS EQUALS groupLength ;
 minConsensusReads : MIN_CONSENSUS_READS EQUALS minConsensusReadsNum ;
-len : LEN OPEN_PARENTHESIS groupName CLOSED_PARENTHESIS EQUALS groupLength ;
 patternString : STRING ;
 minGroupQualityNum : INT_NUMBER ;
-avgGroupQualityNum : FLOAT_NUMBER | INT_NUMBER ;
+avgGroupQualityNum : INT_NUMBER ;
 groupNCountNum : INT_NUMBER ;
 groupNFractionNum : FLOAT_NUMBER | INT_NUMBER ;
+groupLength : INT_NUMBER ;
 minConsensusReadsNum : INT_NUMBER ;
 groupName : GROUP_NAME ;
 groupNameOrAll : GROUP_NAME | ASTERISK ;
-groupLength : INT_NUMBER ;
 
 SINGLE_QUOTE : '\'' ;
 STRING : SINGLE_QUOTE .*? SINGLE_QUOTE ;

@@ -31,24 +31,33 @@ package com.milaboratory.minnn.readfilter;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
-import java.util.stream.Collectors;
+public final class GroupNCountFilter implements ReadFilter {
+    private final String groupNameOrAll;
+    private final int maxNCount;
 
-import static com.milaboratory.minnn.util.SystemUtils.*;
-
-public interface ReadFilter {
-    ParsedRead filter(ParsedRead parsedRead);
-
-    default ParsedRead notMatchedRead(ParsedRead parsedRead) {
-        return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
+    public GroupNCountFilter(String groupNameOrAll, int maxNCount) {
+        this.groupNameOrAll = groupNameOrAll;
+        this.maxNCount = maxNCount;
     }
 
-    default MatchedGroup getGroupByName(ParsedRead parsedRead, String groupName) {
-        MatchedGroup matchedGroup = parsedRead.getGroupByName(groupName);
-        if (matchedGroup == null)
-            throw exitWithError("Group " + groupName + " not found in the input, available groups are "
-                    + parsedRead.getGroups().stream().map(MatchedGroup::getGroupName).collect(Collectors.toList()));
-        else
-            return matchedGroup;
+    @Override
+    public ParsedRead filter(ParsedRead parsedRead) {
+        if (groupNameOrAll.equals("*")) {
+            if (parsedRead.getNotDefaultGroups().stream()
+                    .allMatch(group -> getNCount(group) <= maxNCount))
+                return parsedRead;
+            else
+                return notMatchedRead(parsedRead);
+        } else {
+            if (getNCount(getGroupByName(parsedRead, groupNameOrAll)) <= maxNCount)
+                return parsedRead;
+            else
+                return notMatchedRead(parsedRead);
+        }
+    }
+
+    static int getNCount(MatchedGroup matchedGroup) {
+        String seqString = matchedGroup.getValue().getSequence().toString().toUpperCase();
+        return seqString.length() - seqString.replace("N", "").length();
     }
 }

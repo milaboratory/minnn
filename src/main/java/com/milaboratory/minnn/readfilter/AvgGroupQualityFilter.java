@@ -28,27 +28,30 @@
  */
 package com.milaboratory.minnn.readfilter;
 
-import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
-import java.util.stream.Collectors;
+public final class AvgGroupQualityFilter implements ReadFilter {
+    private final String groupNameOrAll;
+    private final byte avgQuality;
 
-import static com.milaboratory.minnn.util.SystemUtils.*;
-
-public interface ReadFilter {
-    ParsedRead filter(ParsedRead parsedRead);
-
-    default ParsedRead notMatchedRead(ParsedRead parsedRead) {
-        return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
+    public AvgGroupQualityFilter(String groupNameOrAll, byte avgQuality) {
+        this.groupNameOrAll = groupNameOrAll;
+        this.avgQuality = avgQuality;
     }
 
-    default MatchedGroup getGroupByName(ParsedRead parsedRead, String groupName) {
-        MatchedGroup matchedGroup = parsedRead.getGroupByName(groupName);
-        if (matchedGroup == null)
-            throw exitWithError("Group " + groupName + " not found in the input, available groups are "
-                    + parsedRead.getGroups().stream().map(MatchedGroup::getGroupName).collect(Collectors.toList()));
-        else
-            return matchedGroup;
+    @Override
+    public ParsedRead filter(ParsedRead parsedRead) {
+        if (groupNameOrAll.equals("*")) {
+            if (parsedRead.getNotDefaultGroups().stream()
+                    .allMatch(group -> group.getValue().getQuality().meanValue() >= avgQuality))
+                return parsedRead;
+            else
+                return notMatchedRead(parsedRead);
+        } else {
+            if (getGroupByName(parsedRead, groupNameOrAll).getValue().getQuality().meanValue() >= avgQuality)
+                return parsedRead;
+            else
+                return notMatchedRead(parsedRead);
+        }
     }
 }

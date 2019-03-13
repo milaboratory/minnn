@@ -31,21 +31,27 @@ package com.milaboratory.minnn.readfilter;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
 public final class LenReadFilter implements ReadFilter {
-    private final String groupName;
+    private final String groupNameOrAll;
     private final int valueLength;
 
-    public LenReadFilter(String groupName, int valueLength) {
-        this.groupName = groupName;
+    public LenReadFilter(String groupNameOrAll, int valueLength) {
+        this.groupNameOrAll = groupNameOrAll;
         this.valueLength = valueLength;
     }
 
     @Override
     public ParsedRead filter(ParsedRead parsedRead) {
-        if (parsedRead.getGroups().stream()
-                .anyMatch(group -> group.getGroupName().equals(groupName) && group.getValue().size() == valueLength))
-            return parsedRead;
-        else
-            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                    parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
+        if (groupNameOrAll.equals("*")) {
+            if (parsedRead.getNotDefaultGroups().stream()
+                    .allMatch(group -> group.getValue().size() == valueLength))
+                return parsedRead;
+            else
+                return notMatchedRead(parsedRead);
+        } else {
+            if (getGroupByName(parsedRead, groupNameOrAll).getValue().size() == valueLength)
+                return parsedRead;
+            else
+                return notMatchedRead(parsedRead);
+        }
     }
 }

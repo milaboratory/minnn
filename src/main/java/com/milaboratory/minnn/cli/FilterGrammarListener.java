@@ -138,16 +138,6 @@ public interface FilterGrammarListener extends ParseTreeListener {
 	 */
 	void exitGroupNFraction(FilterGrammarParser.GroupNFractionContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link FilterGrammarParser#minConsensusReads}.
-	 * @param ctx the parse tree
-	 */
-	void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FilterGrammarParser#minConsensusReads}.
-	 * @param ctx the parse tree
-	 */
-	void exitMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link FilterGrammarParser#len}.
 	 * @param ctx the parse tree
 	 */
@@ -157,6 +147,16 @@ public interface FilterGrammarListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitLen(FilterGrammarParser.LenContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#minConsensusReads}.
+	 * @param ctx the parse tree
+	 */
+	void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#minConsensusReads}.
+	 * @param ctx the parse tree
+	 */
+	void exitMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FilterGrammarParser#patternString}.
 	 * @param ctx the parse tree
@@ -208,6 +208,16 @@ public interface FilterGrammarListener extends ParseTreeListener {
 	 */
 	void exitGroupNFractionNum(FilterGrammarParser.GroupNFractionNumContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#groupLength}.
+	 * @param ctx the parse tree
+	 */
+	void enterGroupLength(FilterGrammarParser.GroupLengthContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#groupLength}.
+	 * @param ctx the parse tree
+	 */
+	void exitGroupLength(FilterGrammarParser.GroupLengthContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FilterGrammarParser#minConsensusReadsNum}.
 	 * @param ctx the parse tree
 	 */
@@ -237,14 +247,4 @@ public interface FilterGrammarListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitGroupNameOrAll(FilterGrammarParser.GroupNameOrAllContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link FilterGrammarParser#groupLength}.
-	 * @param ctx the parse tree
-	 */
-	void enterGroupLength(FilterGrammarParser.GroupLengthContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link FilterGrammarParser#groupLength}.
-	 * @param ctx the parse tree
-	 */
-	void exitGroupLength(FilterGrammarParser.GroupLengthContext ctx);
 }

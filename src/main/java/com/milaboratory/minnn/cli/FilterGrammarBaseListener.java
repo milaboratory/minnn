@@ -172,18 +172,6 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterLen(FilterGrammarParser.LenContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -191,6 +179,18 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitLen(FilterGrammarParser.LenContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -256,6 +256,18 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterGroupLength(FilterGrammarParser.GroupLengthContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGroupLength(FilterGrammarParser.GroupLengthContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterMinConsensusReadsNum(FilterGrammarParser.MinConsensusReadsNumContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -287,18 +299,6 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitGroupNameOrAll(FilterGrammarParser.GroupNameOrAllContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterGroupLength(FilterGrammarParser.GroupLengthContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitGroupLength(FilterGrammarParser.GroupLengthContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

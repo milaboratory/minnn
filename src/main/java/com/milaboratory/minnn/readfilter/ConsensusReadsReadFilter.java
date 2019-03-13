@@ -42,7 +42,6 @@ public final class ConsensusReadsReadFilter implements ReadFilter {
         if (parsedRead.getConsensusReads() >= minConsensusReads)
             return parsedRead;
         else
-            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                    parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
+            return notMatchedRead(parsedRead);
     }
 }

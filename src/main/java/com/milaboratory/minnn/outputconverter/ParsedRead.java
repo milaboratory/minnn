@@ -133,6 +133,21 @@ public final class ParsedRead {
         this.outputPortId = outputPortId;
     }
 
+    public Set<String> getDefaultGroupNames() {
+        if (defaultGroups == null)
+            calculateDefaultGroups(getOriginalRead().numberOfReads());
+        return Collections.unmodifiableSet(defaultGroups);
+    }
+
+    public List<MatchedGroup> getNotDefaultGroups() {
+        return getGroups().stream().filter(group -> !getDefaultGroupNames().contains(group.getGroupName()))
+                .collect(Collectors.toList());
+    }
+
+    public MatchedGroup getGroupByName(String groupName) {
+        return getGroups().stream().filter(group -> group.getGroupName().equals(groupName)).findFirst().orElse(null);
+    }
+
     /**
      * Fill inner groups cache: group edges and/or inner ranges based on specified flags. This function must be called
      * only when matchedGroups map is already initialized.

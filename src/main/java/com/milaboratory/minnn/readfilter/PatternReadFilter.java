@@ -71,7 +71,6 @@ public final class PatternReadFilter implements ReadFilter {
                         && (pattern.match(group.getValue()).getBestMatch(fairSorting) != null)))
             return parsedRead;
         else
-            return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                    parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
+            return notMatchedRead(parsedRead);
     }
 }
