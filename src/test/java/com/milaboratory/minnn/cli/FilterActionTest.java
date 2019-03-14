@@ -75,11 +75,12 @@ public class FilterActionTest {
 
     private String getRandomFilter() {
         String[] filters = {
-                "Len(G1) = 4", "Len(G2)=3", "Len(UMI) =8", "Len(G1) = 5 & Len(G2)=3", "Len(G1)=6|Len(G2)=4",
+                "Len(G1) = 4", "Len(G2)=3", "Len(*) =8", "Len(G1) = 5 & Len(G2)=3", "Len(G1)=6|Len(G2)=4",
                 "Len(G1)=5|Len(G1)=4&Len(G2)=3|Len(G1)=6", "Len(G1)=5|(Len(G1)=4&Len(G2)=3|Len(G1)=6)",
                 "G1~'TAACT' & Len(G2)=3", "G2~'T&nc'", "G1~'CT'&G1~'ta+[a&t]'", "G1~'~ta'",
                 "G2~'^TC||[n{2}]$'|(G1~'<{2}Taac'&G2~'*'| Len(G2)=5)", "G2~'AT && ~^GC'",
-                "MinConsensusReads=0", "MinConsensusReads = 5 & Len(G1) = 4"
+                "MinConsensusReads=0", "MinConsensusReads = 5 & Len(G1) = 4", "Len( * )=4", "Len(*)=5",
+                "MinGroupQuality(*)=5 & AvgGroupQuality(G1)=10", "GroupMaxNCount(G2)=0", "GroupMaxNFraction(*)=0.01"
         };
         return " \"" + filters[rg.nextInt(filters.length)] + "\"";
     }
@@ -103,5 +104,33 @@ public class FilterActionTest {
                 + inputFile + " G1~'A\\A'"));
         for (String fileName : new String[] { inputFile, outputFile1, outputFile2, outputFile3 })
             assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void groupFiltersTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        String outputFile1 = TEMP_DIR + "filterOutput1.mif";
+        String outputFile2 = TEMP_DIR + "filterOutput2.mif";
+        String outputFile3 = TEMP_DIR + "filterOutput3.mif";
+        String outputFile4 = TEMP_DIR + "filterOutput4.mif";
+        String outputFile5 = TEMP_DIR + "filterOutput5.mif";
+        exec("filter -f --input " + inputFile + " --output " + outputFile1
+                + " \"GroupMaxNCount(G3)=0\"");
+        assertMifNotEqualsAsFastq(inputFile, outputFile1, true);
+        exec("filter -f --input " + inputFile + " --output " + outputFile2
+                + " \"GroupMaxNFraction(*)=0.2\"");
+        assertMifNotEqualsAsFastq(inputFile, outputFile2, true);
+        exec("filter -f --input " + inputFile + " --output " + outputFile3
+                + " \"AvgGroupQuality(*)=7\"");
+        assertMifNotEqualsAsFastq(inputFile, outputFile3, true);
+        exec("filter -f --input " + outputFile3 + " --output " + outputFile4
+                + " \"MinGroupQuality(*)=7\"");
+        assertMifNotEqualsAsFastq(outputFile3, outputFile4, true);
+        exec("filter -f --input " + outputFile4 + " --output " + outputFile5
+                + " \"AvgGroupQuality(*)=7\"");
+        assertMifEqualsAsFastq(outputFile4, outputFile5, true);
+        assertTrue(new File(inputFile).delete());
+        for (int i = 1; i <= 5; i++)
+            assertTrue(new File(TEMP_DIR + "filterOutput" + i + ".mif").delete());
     }
 }

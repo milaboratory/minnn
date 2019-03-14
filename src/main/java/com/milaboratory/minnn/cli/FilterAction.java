@@ -167,17 +167,61 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         }
     }
 
-    private class LenListener extends AntlrFilterListener {
-        @Override
-        public void enterLen(FilterGrammarParser.LenContext ctx) {
-            filter = new LenReadFilter(ctx.groupName().getText(), Integer.parseInt(ctx.groupLength().getText()));
-        }
-    }
-
     private class MinConsensusReadsListener extends AntlrFilterListener {
         @Override
         public void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) {
             filter = new ConsensusReadsReadFilter(Integer.parseInt(ctx.minConsensusReadsNum().getText()));
+        }
+    }
+
+    private class LenListener extends AntlrFilterListener {
+        @Override
+        public void enterLen(FilterGrammarParser.LenContext ctx) {
+            filter = new LenReadFilter(ctx.groupNameOrAll().getText(), Integer.parseInt(ctx.groupLength().getText()));
+        }
+    }
+
+    private class GroupNFractionListener extends AntlrFilterListener {
+        @Override
+        public void enterGroupNFraction(FilterGrammarParser.GroupNFractionContext ctx) {
+            filter = new GroupNFractionFilter(ctx.groupNameOrAll().getText(),
+                    Float.parseFloat(ctx.groupNFractionNum().getText()));
+        }
+    }
+
+    private class GroupNCountListener extends AntlrFilterListener {
+        @Override
+        public void enterGroupNCount(FilterGrammarParser.GroupNCountContext ctx) {
+            filter = new GroupNCountFilter(ctx.groupNameOrAll().getText(),
+                    Integer.parseInt(ctx.groupNCountNum().getText()));
+        }
+    }
+
+    private class AvgGroupQualityListener extends AntlrFilterListener {
+        @Override
+        public void enterAvgGroupQuality(FilterGrammarParser.AvgGroupQualityContext ctx) {
+            filter = new AvgGroupQualityFilter(ctx.groupNameOrAll().getText(),
+                    Byte.parseByte(ctx.avgGroupQualityNum().getText()));
+        }
+    }
+
+    private class MinGroupQualityListener extends AntlrFilterListener {
+        @Override
+        public void enterMinGroupQuality(FilterGrammarParser.MinGroupQualityContext ctx) {
+            filter = new MinGroupQualityFilter(ctx.groupNameOrAll().getText(),
+                    Byte.parseByte(ctx.minGroupQualityNum().getText()));
+        }
+    }
+
+    private class SimpleFilterListener extends AntlrFilterListener {
+        @Override
+        public void enterSimpleFilter(FilterGrammarParser.SimpleFilterContext ctx) {
+            setIfNotNull(ctx.minGroupQuality(), new MinGroupQualityListener());
+            setIfNotNull(ctx.avgGroupQuality(), new AvgGroupQualityListener());
+            setIfNotNull(ctx.groupNCount(), new GroupNCountListener());
+            setIfNotNull(ctx.groupNFraction(), new GroupNFractionListener());
+            setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
+            setIfNotNull(ctx.len(), new LenListener());
         }
     }
 
@@ -198,8 +242,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         @Override
         public void enterAndOperand(FilterGrammarParser.AndOperandContext ctx) {
             setIfNotNull(ctx.pattern(), new PatternListener());
-            setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
-            setIfNotNull(ctx.len(), new LenListener());
+            setIfNotNull(ctx.simpleFilter(), new SimpleFilterListener());
             setIfNotNull(ctx.filterInParentheses(), new FilterInParenthesesListener());
             readFilters.add(filter);
         }
@@ -220,8 +263,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         @Override
         public void enterOrOperand(FilterGrammarParser.OrOperandContext ctx) {
             setIfNotNull(ctx.pattern(), new PatternListener());
-            setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
-            setIfNotNull(ctx.len(), new LenListener());
+            setIfNotNull(ctx.simpleFilter(), new SimpleFilterListener());
             setIfNotNull(ctx.and(), new AndListener());
             setIfNotNull(ctx.filterInParentheses(), new FilterInParenthesesListener());
             readFilters.add(filter);
@@ -240,9 +282,8 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
     private class AnySingleFilterListener extends AntlrFilterListener {
         @Override
         public void enterAnySingleFilter(FilterGrammarParser.AnySingleFilterContext ctx) {
+            setIfNotNull(ctx.simpleFilter(), new SimpleFilterListener());
             setIfNotNull(ctx.pattern(), new PatternListener());
-            setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
-            setIfNotNull(ctx.len(), new LenListener());
             setIfNotNull(ctx.and(), new AndListener());
             setIfNotNull(ctx.or(), new OrListener());
         }
