@@ -27,8 +27,11 @@ Examples for correct action:
 in the output file. Only barcodes with highest counts will be included; barcodes with low counts will be filtered out.
 This limit is the same for each group and calculated for each group separately. Reads that contain at least 1 filtered
 out barcode will not be included in the output. You can use :code:`--excluded-barcodes-output` argument if you want
-to write filtered out reads to the separate MIF file, or specify :code:`--max-unique-barcodes 0` to disable filtering
-barcodes by count completely.
+to write filtered out reads to the separate MIF file, or specify :code:`--max-unique-barcodes 0` to enable any amount
+of unique barcodes and disable this filtering feature.
+
+:code:`--min-count` argument allows to specify count threshold for barcodes directly. Barcodes with lower counts will
+be filtered out. Reads that contain at least 1 filtered out barcode will not be included in the output.
 
 Arguments :code:`--max-mismatches`, :code:`--max-indels` and :code:`--max-total-errors` specify how two barcodes can
 differ in the same cluster. Two barcodes for which at least one of these 3 restrictions is not met will never be
@@ -63,7 +66,8 @@ following sequence of commands:
    minnn sort --groups CB1 CB2 --input corrected-primary.mif --output sorted-primary.mif
    minnn correct --primary-groups CB1 CB2 --groups UMI --input sorted-primary.mif --output corrected-secondary.mif
 
-Note that :code:`--max-unique-barcodes` is counted separately for each cluster if :code:`--primary-groups` argument
-is present, so you may want to set lower value for :code:`--max-unique-barcodes` in this case.
+Note that :code:`--max-unique-barcodes` and :code:`--min-count` are counted separately for each cluster if
+:code:`--primary-groups` argument is present, so you may want to set lower values for :code:`--max-unique-barcodes` and
+:code:`--min-count` in this case.
 
 Command line arguments reference for correct action:
