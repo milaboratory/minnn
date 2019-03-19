@@ -48,6 +48,39 @@ where length of the specified group equals to the :code:`value` will be passed t
 
    minnn filter "Len(G1) = 3"
 
+Group quality filters are used to filter out reads with low quality barcodes. The syntax for these filters is
+:code:`MinGroupQuality(group_name)=value` and :code:`AvgGroupQuality(group_name)=value`. :code:`MinGroupQuality`
+will filter out reads where at least 1 nucleotide in the specified group has quality lower than the specified
+value. :code:`AvgGroupQuality` will filter out reads where average quality of all nucleotides in the specified group
+is lower than the specified value. Examples:
+
+.. code-block:: text
+
+   minnn filter "MinGroupQuality(G1) = 7"
+   minnn filter "AvgGroupQuality(UMI) = 20"
+
+N count filters can be used to filter out matched barcodes with too many :code:`N` letters.
+:code:`GroupMaxNCount(group_name)=value` excludes reads where the specified groups contains more :code:`N` letters
+than the specified value. :code:`GroupMaxNFraction(group_name)=value` allows to specify the maximal number of
+:code:`N` letters as a fraction of group length. Specified value in this filter must be floating point in range from
+:code:`0` to :code:`1`. Examples:
+
+.. code-block:: text
+
+   minnn filter "GroupMaxNCount(SB) = 3"
+   minnn filter "GroupMaxNFraction(UMI) = 0.1"
+
+All filters that have :code:`group_name` as argument allow to use :code:`*` instead of group name. This option allows
+to apply filter to all groups in the input (except built-in groups :code:`R1`, :code:`R2` etc). Examples:
+
+.. code-block:: text
+
+   minnn filter "Len(*) = 5"
+   minnn filter "MinGroupQuality(*) = 10"
+   minnn filter "AvgGroupQuality(*) = 15"
+   minnn filter "GroupMaxNCount(*) = 0"
+   minnn filter "GroupMaxNFraction(*) = 0.15"
+
 Consensus reads filter is used for filtering MIF files written by :ref:`consensus` and :ref:`consensus-dma` actions.
 The syntax is :code:`MinConsensusReads=value`. Only consensuses calculated from :code:`value` or more reads will be
 passed to the output. Example:
