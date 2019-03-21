@@ -112,7 +112,8 @@ public class ConsensusTestUtils {
                 return new ConsensusAlgorithmSingleCell(ConsensusTestUtils::displayTestWarning, numberOfTargets,
                         maxPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength, readsAvgQualityThreshold,
                         readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold, trimWindowSize,
-                        null, kmerLength, kmerOffset, kmerMaxErrors);
+                        false, null, (byte)0, null,
+                        kmerLength, kmerOffset, kmerMaxErrors);
             case RNA_SEQ:
                 throw new NotImplementedException();
         }

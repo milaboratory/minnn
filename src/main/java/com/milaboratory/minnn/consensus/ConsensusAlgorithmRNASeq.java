@@ -34,7 +34,8 @@ public class ConsensusAlgorithmRNASeq extends ConsensusAlgorithm {
     public ConsensusAlgorithmRNASeq() {
         super(null, 0, 0, 0,
                 0, 0, 0, 0,
-                0, 0, null);
+                0, 0, false, null, (byte)0,
+                null);
         throw new NotImplementedException();
     }
 

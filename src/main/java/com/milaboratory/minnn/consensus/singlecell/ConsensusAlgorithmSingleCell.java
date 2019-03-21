@@ -34,6 +34,7 @@ import com.milaboratory.minnn.consensus.*;
 import gnu.trove.map.hash.TLongIntHashMap;
 import gnu.trove.set.hash.TLongHashSet;
 
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -50,11 +51,13 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             Consumer<String> displayWarning, int numberOfTargets, int maxConsensusesPerCluster,
             float skippedFractionToRepeat, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
             int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
+            boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
             ConcurrentHashMap<Long, OriginalReadData> originalReadsData, int kmerLength, int kmerMaxOffset,
             int kmerMatchMaxErrors) {
         super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
                 Math.max(readsMinGoodSeqLength, kmerLength), readsAvgQualityThreshold, readsTrimWindowSize,
-                minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadsData);
+                minGoodSeqLength, avgQualityThreshold, trimWindowSize, toSeparateGroups, debugOutputStream,
+                debugQualityThreshold, originalReadsData);
         this.kmerLength = kmerLength;
         this.kmerMaxOffset = kmerMaxOffset;
         this.kmerMatchMaxErrors = kmerMatchMaxErrors;
@@ -81,16 +84,19 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 kmersNotFound = true;
             else {
                 Consensus consensus = calculateConsensus(offsetSearchResults);
-                remainingData = offsetSearchResults.remainingReads;
                 if (!consensus.isConsensus) {
                     displayWarning.accept("WARNING: consensus assembled from " + offsetSearchResults.usedReads.size()
                             + " reads discarded after quality trimming! Barcode values: "
                             + formatBarcodeValues(offsetSearchResults.barcodes) + ", original read ids: "
                             + Arrays.toString(offsetSearchResults.getUsedReadsIds()));
                 } else {
+                    if (toSeparateGroups)
+                        for (DataFromParsedRead usedRead : offsetSearchResults.usedReads)
+                            consensus.savedOriginalSequences.add((DataFromParsedReadWithAllGroups)usedRead);
                     calculatedConsensuses.consensuses.add(consensus);
                     numValidConsensuses++;
                 }
+                remainingData = offsetSearchResults.remainingReads;
             }
         }
 

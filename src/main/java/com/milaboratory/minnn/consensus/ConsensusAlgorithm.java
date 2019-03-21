@@ -32,8 +32,10 @@ import cc.redberry.pipe.Processor;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.sequence.Wildcard;
 
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -55,7 +57,11 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     protected final int minGoodSeqLength;
     protected final float avgQualityThreshold;
     protected final int trimWindowSize;
+    protected final boolean toSeparateGroups;
+    protected final PrintStream debugOutputStream;
+    protected final byte debugQualityThreshold;
     protected final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
+    protected final AtomicLong consensusCurrentTempId;
     private final int readsMinGoodSeqLength;
     private final float readsAvgQualityThreshold;
     private final int readsTrimWindowSize;
@@ -64,6 +70,7 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
             Consumer<String> displayWarning, int numberOfTargets, int maxConsensusesPerCluster,
             float skippedFractionToRepeat, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
             int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
+            boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
             ConcurrentHashMap<Long, OriginalReadData> originalReadsData) {
         this.displayWarning = displayWarning;
         this.numberOfTargets = numberOfTargets;
@@ -75,7 +82,11 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         this.minGoodSeqLength = minGoodSeqLength;
         this.avgQualityThreshold = avgQualityThreshold;
         this.trimWindowSize = trimWindowSize;
+        this.toSeparateGroups = toSeparateGroups;
+        this.debugOutputStream = debugOutputStream;
+        this.debugQualityThreshold = debugQualityThreshold;
         this.originalReadsData = originalReadsData;
+        this.consensusCurrentTempId = new AtomicLong(0);
     }
 
     /**

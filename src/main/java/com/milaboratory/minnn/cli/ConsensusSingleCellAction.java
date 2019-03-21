@@ -181,8 +181,7 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
     private String notUsedReadsOutputFileName = null;
 
     @Option(description = CONSENSUSES_TO_SEPARATE_GROUPS,
-            names = {"--consensuses-to-separate-groups"},
-            hidden = true)
+            names = {"--consensuses-to-separate-groups"})
     private boolean toSeparateGroups = false;
 
     @Option(description = NUMBER_OF_READS,

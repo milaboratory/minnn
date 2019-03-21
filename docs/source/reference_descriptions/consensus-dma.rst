@@ -37,14 +37,6 @@ length of single insertion or deletion, multiplied by 1.5.
 
 .. include:: reference_descriptions/consensus-common-arguments.rst
 
-:code:`--consensuses-to-separate-groups` parameter changes :code:`consensus-dma` action behavior significantly. If this
-parameter is not specified, output file will contain calculated consensuses. If it is specified, original sequences
-will be written to the output files, consensuses will be written as capture groups :code:`CR1`, :code:`CR2` etc, so it
-will be possible to cluster original reads by consensuses using :ref:`filter` / :ref:`demultiplex` actions, or export
-original reads and corresponding consensuses into separate reads using :ref:`mif2fastq` action. Note that input file
-must not contain any groups named :code:`CR1`, :code:`CR2` etc if you use :code:`--consensuses-to-separate-groups`
-parameter.
-
 :code:`--original-read-stats` parameter allows to write consensus calculation stats for each original read into
 separate file. This is text file in space separated format, and it contains the following information for each read:
 

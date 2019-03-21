@@ -20,3 +20,10 @@ Input reads are prepared with the same quality trimmer before calculating consen
 configured separately. Use :code:`--reads-trim-window-size` to set trim window size for input reads,
 :code:`--reads-avg-quality-threshold` for quality threshold and :code:`--reads-min-good-sequence-length` for minimum
 input read length after trimming. Too short reads will not be included in consensus calculation.
+
+:code:`--consensuses-to-separate-groups` parameter changes action behavior significantly. If this parameter is not
+specified, output file will contain calculated consensuses. If it is specified, original sequences will be written to
+the output files, consensuses will be written as capture groups :code:`CR1`, :code:`CR2` etc, so it will be possible to
+cluster original reads by consensuses using :ref:`filter` / :ref:`demultiplex` actions, or export original reads and
+corresponding consensuses into separate reads using :ref:`mif2fastq` action. Note that input file must not contain any
+groups named :code:`CR1`, :code:`CR2` etc if you use :code:`--consensuses-to-separate-groups` parameter.

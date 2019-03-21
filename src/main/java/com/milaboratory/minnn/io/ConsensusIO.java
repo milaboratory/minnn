@@ -164,7 +164,8 @@ public final class ConsensusIO {
                 consensusAlgorithm = new ConsensusAlgorithmSingleCell(this::displayWarning, numberOfTargets,
                         maxConsensusesPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength,
                         readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold,
-                        trimWindowSize, originalReadsData, kmerLength, kmerMaxOffset, kmerMatchMaxErrors);
+                        trimWindowSize, toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData,
+                        kmerLength, kmerMaxOffset, kmerMatchMaxErrors);
                 break;
         }
     }
