@@ -261,7 +261,7 @@ public final class ConsensusIO {
                             writer.write(consensus.toParsedRead());
                     }
                     if (debugOutputStream != null) {
-                        if (!consensus.finalConsensus)
+                        if ((consensusAlgorithmType != DOUBLE_MULTI_ALIGN) || !consensus.finalConsensus)
                             clusterIndex++;
                         consensus.debugData.writeDebugData(debugOutputStream, clusterIndex, i);
                     }

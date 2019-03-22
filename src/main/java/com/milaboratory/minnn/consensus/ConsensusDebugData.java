@@ -32,10 +32,13 @@ import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.*;
 
+import static com.milaboratory.minnn.consensus.ConsensusStageForDebug.*;
+
 public final class ConsensusDebugData {
     private final int numberOfTargets;
     private final byte debugQualityThreshold;
-    private final boolean stage2;
+    private final ConsensusStageForDebug stage;
+    private final boolean useAlignmentScores;
     // outer list - targetIndex, second - sequenceIndex, inner - positionIndex
     public List<ArrayList<ArrayList<SequenceWithAttributes>>> data;
     // outer list - targetIndex, inner - positionIndex
@@ -43,10 +46,12 @@ public final class ConsensusDebugData {
     // outer list - targetIndex, inner - sequenceIndex
     public List<ArrayList<Long>> alignmentScores;
 
-    public ConsensusDebugData(int numberOfTargets, byte debugQualityThreshold, boolean stage2) {
+    public ConsensusDebugData(int numberOfTargets, byte debugQualityThreshold, ConsensusStageForDebug stage,
+                              boolean useAlignmentScores) {
         this.numberOfTargets = numberOfTargets;
         this.debugQualityThreshold = debugQualityThreshold;
-        this.stage2 = stage2;
+        this.stage = stage;
+        this.useAlignmentScores = useAlignmentScores;
         this.data = IntStream.range(0, numberOfTargets)
                 .mapToObj(i -> new ArrayList<ArrayList<SequenceWithAttributes>>()).collect(Collectors.toList());
         this.consensusData = IntStream.range(0, numberOfTargets)
@@ -54,16 +59,21 @@ public final class ConsensusDebugData {
     }
 
     public void writeDebugData(PrintStream debugOutputStream, int clusterIndex, int consensusIndex) {
-        debugOutputStream.println("\n" + (stage2 ? "Stage 2, " : "Stage 1, ")
-                + "clusterIndex: " + clusterIndex + ", consensusIndex: " + consensusIndex);
+        String stagePrefix = "";
+        if (stage == STAGE1)
+            stagePrefix = "Stage 1, ";
+        else if (stage == STAGE2)
+            stagePrefix = "Stage 2, ";
+        debugOutputStream.println("\n" + stagePrefix + "clusterIndex: " + clusterIndex
+                + ", consensusIndex: " + consensusIndex);
         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
             debugOutputStream.println("targetIndex: " + targetIndex);
             ArrayList<ArrayList<SequenceWithAttributes>> targetData = data.get(targetIndex);
             ArrayList<SequenceWithAttributes> targetConsensus = consensusData.get(targetIndex);
-            ArrayList<Long> targetAlignmentScores = alignmentScores.get(targetIndex);
+            ArrayList<Long> targetAlignmentScores = useAlignmentScores ? alignmentScores.get(targetIndex) : null;
             for (int sequenceIndex = 0; sequenceIndex < targetData.size(); sequenceIndex++) {
                 ArrayList<SequenceWithAttributes> sequenceData = targetData.get(sequenceIndex);
-                long alignmentScore = targetAlignmentScores.get(sequenceIndex);
+                long alignmentScore = useAlignmentScores ? targetAlignmentScores.get(sequenceIndex) : 0;
                 StringBuilder sequenceString = new StringBuilder();
                 for (SequenceWithAttributes currentLetter : sequenceData) {
                     if (currentLetter.isNull())
@@ -79,7 +89,8 @@ public final class ConsensusDebugData {
                 }
                 if (sequenceData.size() > 0) {
                     sequenceString.append(" - originalReadId: ").append(sequenceData.get(0).getOriginalReadId());
-                    sequenceString.append(", alignmentScore: ").append(alignmentScore);
+                    if (useAlignmentScores)
+                        sequenceString.append(", alignmentScore: ").append(alignmentScore);
                 }
                 debugOutputStream.println(sequenceString.toString());
             }
