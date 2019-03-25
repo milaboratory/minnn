@@ -233,4 +233,26 @@ public class ConsensusActionTest {
                 consensusFastqFile })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void debugOutputTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        String correctedFile = TEMP_DIR + "corrected.mif";
+        String sortedFile = TEMP_DIR + "sorted.mif";
+        String consensusSCFile = TEMP_DIR + "consensusSC.mif";
+        String consensusDMAFile = TEMP_DIR + "consensusDMA.mif";
+        String debugSC = TEMP_DIR + "debugSC.txt";
+        String debugDMA = TEMP_DIR + "debugDMA.txt";
+        exec("correct -n 1000 -f --input " + inputFile + " --output " + correctedFile + " --groups G1 G2");
+        exec("sort -f --input " + correctedFile + " --output " + sortedFile + " --groups G1 G2");
+        exec("consensus -f --threads 1 --input " + sortedFile + " --output " + consensusSCFile
+                + " --debug-output " + debugSC + " --groups G1 G2");
+        exec("consensus-dma -f --threads 1 --input " + sortedFile + " --output " + consensusDMAFile
+                + " --debug-output " + debugDMA + " --groups G1 G2 --score-threshold -1000");
+        assertFalse(new File(debugSC).length() == 0);
+        assertFalse(new File(debugDMA).length() == 0);
+        for (String fileName : new String[] { inputFile, correctedFile, sortedFile, consensusSCFile, consensusDMAFile,
+                debugSC, debugDMA })
+            assertTrue(new File(fileName).delete());
+    }
 }

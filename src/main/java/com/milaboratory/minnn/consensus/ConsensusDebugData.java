@@ -56,6 +56,9 @@ public final class ConsensusDebugData {
                 .mapToObj(i -> new ArrayList<ArrayList<SequenceWithAttributes>>()).collect(Collectors.toList());
         this.consensusData = IntStream.range(0, numberOfTargets)
                 .mapToObj(i -> new ArrayList<SequenceWithAttributes>()).collect(Collectors.toList());
+        if (useAlignmentScores)
+            this.alignmentScores = IntStream.range(0, numberOfTargets)
+                    .mapToObj(i -> new ArrayList<Long>()).collect(Collectors.toList());
     }
 
     public void writeDebugData(PrintStream debugOutputStream, int clusterIndex, int consensusIndex) {
