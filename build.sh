@@ -2,11 +2,10 @@
 
 source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"/shell/common.sh
 
-if [[ ! -f ${dir}/milib/pom.xml ]];
-then
-  echo "Please init git submodules. Try:"
-  echo "git submodule update --init --recursive"
-  exit 1
+if [[ ! -f ${dir}/milib/pom.xml ]]; then
+    echo "Please init git submodules. Try:"
+    echo "git submodule update --init --recursive"
+    exit 1
 fi
 
 function error_exit {

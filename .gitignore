@@ -9,3 +9,5 @@ out
 classes/artifacts
 !.idea/codeStyleSettings.xml
 dependency-reduced-pom.xml
+test_target
+src/test/resources/big

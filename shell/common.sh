@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Linux readlink -f alternative for Mac OS X
 function readlinkUniversal() {
