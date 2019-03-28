@@ -22,30 +22,29 @@ fi
 function readlinkUniversal() {
     targetFile=$1
 
-    cd `dirname $targetFile`
-    targetFile=`basename $targetFile`
+    cd `dirname ${targetFile}`
+    targetFile=`basename ${targetFile}`
 
     # iterate down a (possible) chain of symlinks
-    while [ -L "$targetFile" ]
+    while [[ -L "$targetFile" ]]
     do
-        targetFile=`readlink $targetFile`
-        cd `dirname $targetFile`
-        targetFile=`basename $targetFile`
+        targetFile=`readlink ${targetFile}`
+        cd `dirname ${targetFile}`
+        targetFile=`basename ${targetFile}`
     done
 
-    # compute the canonicalized name by finding the physical path 
+    # compute the canonicalized name by finding the physical path
     # for the directory we're in and appending the target file.
     phys_dir=`pwd -P`
-    result=$phys_dir/$targetFile
-    echo $result
+    result=${phys_dir}/${targetFile}
+    echo ${result}
 }
 
 os=`uname`
 delta=100
-
 dir=""
 
-case $os in
+case ${os} in
     Darwin)
         freeBlocks=$(vm_stat | grep free | awk '{ print $3 }' | sed 's/\.//')
         inactiveBlocks=$(vm_stat | grep inactive | awk '{ print $3 }' | sed 's/\.//')
@@ -65,7 +64,7 @@ case $os in
         inactiveBlocks=$(vmstat -s | grep inactive | awk '{ print $1 }')
         freeMb=$(( ($freeBlocks+$inactiveBlocks)*4096/1048576 ))
         maxMb=$(($freeMb-$delta))
-        dir=$(dirname "$(readlinkUniversal "$0")")    
+        dir=$(dirname "$(readlinkUniversal "$0")")
     ;;
     *)
        echo "Unknown OS."
@@ -115,18 +114,18 @@ if [[ ${needXmxXms} == true ]]
 then
     targetXmx=4000
 
-    if [[ $targetXmx -gt $maxMb ]];
+    if [[ ${targetXmx} -gt ${maxMb} ]];
     then
-        targetXmx=$maxMb
+        targetXmx=${maxMb}
     fi
 
     javaArgs+=("-Xmx${targetXmx}m")
 
     targetXms=$((${targetXmx}*2/3))
 
-    if [[ $targetXms -lt 2000 ]];
+    if [[ ${targetXms} -lt 2000 ]];
     then
-        targetXms=$targetXmx
+        targetXms=${targetXmx}
     fi
 
     javaArgs+=("-Xms${targetXms}m")
@@ -161,5 +160,5 @@ then
     exit 1
 fi
 
-$java -Dminnn.path=$dir -Dminnn.command=minnn "${javaArgs[@]}" -jar $jar "${minnnArgs[@]}"
+${java} -Dminnn.path=$dir -Dminnn.command=minnn "${javaArgs[@]}" -jar $jar "${minnnArgs[@]}"
 exit $?
