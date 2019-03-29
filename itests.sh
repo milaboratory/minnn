@@ -6,7 +6,7 @@ source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"/shell/common.sh
 
 # "Integration" tests for MiNNN
 
-tests=("standard_pipeline" "pipes" "smart_overwrite")
+tests=("case_standard_pipeline" "case_pipes" "case_smart_overwrite")
 
 create_standard_results=false
 run_tests=false
@@ -30,6 +30,9 @@ done
 rm -rf ${dir}/test_target
 mkdir ${dir}/test_target
 cd ${dir}/test_target
+for file in $(ls -1 ../src/test/resources/ | grep fastq); do
+    ln -s ../src/test/resources/${file}
+done
 for file in $(ls -1 ../src/test/resources/big/); do
     ln -s ../src/test/resources/big/${file}
 done
