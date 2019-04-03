@@ -100,9 +100,9 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
 
     @Override
     public void handleExistenceOfOutputFile(String outFileName) {
-        // disable smart overwrite if extra output files are specified
-        if ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
-            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
+        // disable smart overwrite if input is from pipe or extra output files are specified
+        if ((inputFileName == null) || (originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
+            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
         else
             super.handleExistenceOfOutputFile(outFileName);
     }

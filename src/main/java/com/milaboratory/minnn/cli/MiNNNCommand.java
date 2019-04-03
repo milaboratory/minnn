@@ -61,8 +61,8 @@ public interface MiNNNCommand {
     default void handleExistenceOfOutputFile(String outFileName) {}
 
     /** Specifies behaviour in the case with output exists (default is to throw exception) */
-    default void handleExistenceOfOutputFile(String outFileName, boolean forceOverwrite) {
-        if (!forceOverwrite)
+    default void handleExistenceOfOutputFile(String outFileName, boolean overwrite) {
+        if (!overwrite)
             throwValidationException("File \"" + outFileName
                     + "\" already exists. Use -f / --force-overwrite option to overwrite it.", false);
     }

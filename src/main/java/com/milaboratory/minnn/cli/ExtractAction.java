@@ -121,9 +121,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
 
     @Override
     public void handleExistenceOfOutputFile(String outFileName) {
-        // disable smart overwrite if output file for not matched reads is specified
-        if (notMatchedOutputFileName != null)
-            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
+        // disable smart overwrite if input is from pipe or output file for not matched reads is specified
+        if ((inputFileNames == null) || (notMatchedOutputFileName != null))
+            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
         else
             super.handleExistenceOfOutputFile(outFileName);
     }

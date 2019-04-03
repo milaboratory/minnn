@@ -86,6 +86,15 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
     }
 
     @Override
+    public void handleExistenceOfOutputFile(String outFileName) {
+        // disable smart overwrite if input is from pipe
+        if (inputFileName == null)
+            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
+        else
+            super.handleExistenceOfOutputFile(outFileName);
+    }
+
+    @Override
     public ActionConfiguration getConfiguration() {
         return new SortActionConfiguration(new SortActionConfiguration.SortActionParameters(sortGroupNames,
                 chunkSize));

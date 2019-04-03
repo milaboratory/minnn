@@ -105,7 +105,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
 
     @Override
     public void handleExistenceOfOutputFile(String outFileName) {
-        MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
+        MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
     }
 
     @Override

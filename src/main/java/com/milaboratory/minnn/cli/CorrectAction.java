@@ -93,7 +93,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     public void handleExistenceOfOutputFile(String outFileName) {
         // disable smart overwrite if output file for reads with excluded barcodes is specified
         if (excludedBarcodesOutputFileName != null)
-            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite);
+            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
         else
             super.handleExistenceOfOutputFile(outFileName);
     }

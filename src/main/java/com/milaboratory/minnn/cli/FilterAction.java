@@ -100,6 +100,15 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
     }
 
     @Override
+    public void handleExistenceOfOutputFile(String outFileName) {
+        // disable smart overwrite if input is from pipe
+        if (inputFileName == null)
+            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
+        else
+            super.handleExistenceOfOutputFile(outFileName);
+    }
+
+    @Override
     public ActionConfiguration getConfiguration() {
         return new FilterActionConfiguration(new FilterActionConfiguration.FilterActionParameters(
                 String.join("", filterQueryList), fairSorting, inputReadsLimit));
