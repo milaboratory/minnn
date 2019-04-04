@@ -2,27 +2,29 @@
 
 set -euxo pipefail
 
+assert_return_1() {
+    if [[ $1 -ne 1 ]]; then
+        echo Return value 1 expected, got $1
+        exit 1
+    fi
+}
+
 prefix=smart_overwrite_test
 input="sample_r1.fastq.gz sample_r2.fastq.gz"
 pattern="^(UMI:NNNNNNNN)\*"
 minnn extract --pattern "$pattern" --input ${input} --output ${prefix}_extracted.mif
+minnn extract --pattern "$pattern" --input ${input} | minnn sort --groups UMI --output ${prefix}_sorted.mif
 set +eo pipefail
 minnn extract --pattern "$pattern" --input ${input} --output ${prefix}_extracted.mif
-return_value=$?
-echo ${return_value}
-if [[ ${return_value} -ne 1 ]]; then
-    echo Return value 1 expected, got ${return_value}
-    exit 1
-fi
+assert_return_1 $?
 minnn extract --pattern "$pattern" --mismatch-score -1 --input ${input} --output ${prefix}_extracted.mif
-return_value=$?
-echo ${return_value}
-if [[ ${return_value} -ne 1 ]]; then
-    echo Return value 1 expected, got ${return_value}
-    exit 1
-fi
+assert_return_1 $?
+minnn extract --pattern "$pattern" --input ${input} | minnn sort --groups UMI --output ${prefix}_sorted.mif
+assert_return_1 $?
 set -eo pipefail
 minnn extract --overwrite-if-required --pattern "$pattern" --input ${input} --output ${prefix}_extracted.mif
 minnn extract --overwrite-if-required --pattern "$pattern" --gap-score -2 --input ${input} \
     --output ${prefix}_extracted.mif
 minnn extract -f --pattern "$pattern" --gap-score -2 --input ${input} --output ${prefix}_extracted.mif
+minnn extract --pattern "$pattern" --input ${input} |
+    minnn sort --overwrite-if-required --groups UMI --output ${prefix}_sorted.mif
