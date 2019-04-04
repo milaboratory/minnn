@@ -87,7 +87,11 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
 
     private void readHeader() {
         byte[] magicBytes = new byte[BEGIN_MAGIC_LENGTH];
-        input.readFully(magicBytes);
+        try {
+            input.readFully(magicBytes);
+        } catch (RuntimeException e) {
+            throw exitWithError("Unsupported file format; error while reading file header: " + e.getMessage());
+        }
         String magicString = new String(magicBytes);
         if (!magicString.equals(BEGIN_MAGIC))
             throw exitWithError("Unsupported file format; .mif file of version " + magicString +
