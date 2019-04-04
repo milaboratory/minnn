@@ -2,7 +2,7 @@ package com.milaboratory.minnn.cli;
 
 import org.junit.*;
 
-import java.io.File;
+import java.io.*;
 
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
@@ -38,5 +38,30 @@ public class SpecialCasesTest {
         assertEquals(0, new File(diff_R2).length());
         for (String fileName : new String[] { inputFile, file1, file2, diff, diff_R1, diff_R2 })
             assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void pipeTest() throws Exception {
+        String inputFileR1 = TEST_RESOURCES_PATH + "sample_r1.fastq.gz";
+        String inputFileR2 = TEST_RESOURCES_PATH + "sample_r2.fastq.gz";
+        String outputFile = TEMP_DIR + "sortedUMI.mif";
+
+        InputStream previousIn = System.in;
+        PrintStream previousOut = System.out;
+        ByteArrayOutputStream savedStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(savedStream));
+
+        exec("extract -n 7 --input " + inputFileR1 + " " + inputFileR2
+                + " --pattern \"^(UMI:NNNNNNNN)\\*\"");
+
+        ByteArrayInputStream pipeInput = new ByteArrayInputStream(savedStream.toByteArray());
+        System.setIn(pipeInput);
+        System.setOut(previousOut);
+
+        exec("sort -f --groups UMI --output " + outputFile);
+
+        System.setIn(previousIn);
+
+        assertTrue(new File(outputFile).delete());
     }
 }

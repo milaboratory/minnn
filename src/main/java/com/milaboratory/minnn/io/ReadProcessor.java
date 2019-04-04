@@ -67,6 +67,7 @@ public final class ReadProcessor {
     private final int threads;
     private final MinnnDataFormat inputFormat;
     private final DescriptionGroups descriptionGroups;
+    private final AtomicLong totalReads = new AtomicLong(0);
     private int numberOfTargets;
 
     public ReadProcessor(PipelineConfiguration pipelineConfiguration, List<String> inputFileNames,
@@ -91,7 +92,6 @@ public final class ReadProcessor {
 
     public void processReadsParallel() {
         long startTime = System.currentTimeMillis();
-        long totalReads = 0;
         long matchedReads = 0;
         try (IndexedSequenceReader<?> reader = createReader();
              MifWriter writer = Objects.requireNonNull(createWriter(false));
@@ -109,11 +109,9 @@ public final class ReadProcessor {
                     matchedReads++;
                 } else if (mismatchedReadsWriter != null)
                     mismatchedReadsWriter.write(parsedRead);
-                if (++totalReads == inputReadsLimit)
-                    break;
             }
             reader.close();
-            long originalNumberOfReads = (inputFormat == MIF) ? reader.getOriginalNumberOfReads() : totalReads;
+            long originalNumberOfReads = (inputFormat == MIF) ? reader.getOriginalNumberOfReads() : totalReads.get();
             writer.setOriginalNumberOfReads(originalNumberOfReads);
             if (mismatchedReadsWriter != null)
                 mismatchedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
@@ -123,7 +121,7 @@ public final class ReadProcessor {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        float percent = (totalReads == 0) ? 0 : (float)matchedReads / totalReads * 100;
+        float percent = (totalReads.get() == 0) ? 0 : (float)matchedReads / totalReads.get() * 100;
         System.err.println("Matched reads: " + floatFormat.format(percent) + "%\n");
     }
 
@@ -203,7 +201,7 @@ public final class ReadProcessor {
         private final OutputPortCloseable<? extends T> innerReader;
         private final Function<T, SequenceRead> toSequenceRead;
         private final CanReportProgress progress;
-        private AtomicLong index = new AtomicLong(0);
+        private boolean finished = false;
 
         IndexedSequenceReader(OutputPortCloseable<? extends T> innerReader, Function<T, SequenceRead> toSequenceRead) {
             this.innerReader = innerReader;
@@ -214,15 +212,22 @@ public final class ReadProcessor {
         @Override
         public synchronized void close() {
             innerReader.close();
+            finished = true;
         }
 
         @Override
-        public IndexedSequenceRead take() {
-            T t = innerReader.take();
-            if (t == null)
+        public synchronized IndexedSequenceRead take() {
+            if (finished)
                 return null;
-            else
-                return new IndexedSequenceRead(toSequenceRead.apply(t), index.getAndIncrement());
+            T t = innerReader.take();
+            if (t == null) {
+                finished = true;
+                return null;
+            } else {
+                if (totalReads.incrementAndGet() == inputReadsLimit)
+                    finished = true;
+                return new IndexedSequenceRead(toSequenceRead.apply(t), totalReads.get() - 1);
+            }
         }
 
         @Override
