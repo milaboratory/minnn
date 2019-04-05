@@ -54,6 +54,7 @@ import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.io.MinnnDataFormat.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
+import static java.lang.Double.NaN;
 
 public final class ReadProcessor {
     private final PipelineConfiguration pipelineConfiguration;
@@ -232,15 +233,23 @@ public final class ReadProcessor {
 
         @Override
         public double getProgress() {
-            if (progress != null)
-                return progress.getProgress();
-            else
-                return Double.NaN;
+            if (inputReadsLimit < 1) {
+                if (progress != null)
+                    return progress.getProgress();
+                else
+                    return NaN;
+            } else {
+                double estimationByTakenReads = (double)totalReads.get() / inputReadsLimit;
+                if (progress != null)
+                    return Math.max(estimationByTakenReads, progress.getProgress());
+                else
+                    return estimationByTakenReads;
+            }
         }
 
         @Override
         public synchronized boolean isFinished() {
-            return (progress != null) && progress.isFinished();
+            return finished;
         }
 
         long getOriginalNumberOfReads() {
