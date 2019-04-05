@@ -31,7 +31,7 @@ jobs:
             - ~/.m2
           key: dependencies-{{ checksum "pom.xml" }}
 
-      - run: mvn package
+      - run: mvn package && ./build.sh && ./ensure-test-data.sh && ./itests.sh test
 
       - store_test_results:
           path: target/surefire-reports
