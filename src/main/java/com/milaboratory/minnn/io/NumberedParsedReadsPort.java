@@ -28,26 +28,42 @@
  */
 package com.milaboratory.minnn.io;
 
-import cc.redberry.pipe.OutputPort;
+import cc.redberry.pipe.OutputPortCloseable;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-final class NumberedParsedReadsPort implements OutputPort<ParsedRead> {
-    private final OutputPort<ParsedRead> port;
-    private AtomicLong readId = new AtomicLong(0);
+final class NumberedParsedReadsPort implements OutputPortCloseable<ParsedRead> {
+    private final OutputPortCloseable<ParsedRead> port;
+    private final long inputReadsLimit;
+    private final AtomicLong readsCounter;
+    private boolean finished = false;
 
-    NumberedParsedReadsPort(OutputPort<ParsedRead> port) {
+    NumberedParsedReadsPort(OutputPortCloseable<ParsedRead> port, long inputReadsLimit, AtomicLong readsCounter) {
         this.port = port;
+        this.inputReadsLimit = inputReadsLimit;
+        this.readsCounter = readsCounter;
+    }
+
+    @Override
+    public synchronized void close() {
+        port.close();
+        finished = true;
     }
 
     @Override
     public synchronized ParsedRead take() {
-        ParsedRead parsedRead = port.take();
-        if (parsedRead != null) {
-            parsedRead.setOutputPortId(readId.getAndIncrement());
-            return parsedRead;
-        } else
+        if (finished)
             return null;
+        ParsedRead parsedRead = port.take();
+        if (parsedRead == null) {
+            finished = true;
+            return null;
+        } else {
+            if (readsCounter.incrementAndGet() == inputReadsLimit)
+                finished = true;
+            parsedRead.setOutputPortId(readsCounter.get() - 1);
+            return parsedRead;
+        }
     }
 }

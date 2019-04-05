@@ -41,6 +41,7 @@ import com.milaboratory.minnn.readfilter.ReadFilter;
 import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
@@ -53,6 +54,7 @@ public final class FilterIO {
     private final String outputFileName;
     private final long inputReadsLimit;
     private final int threads;
+    private final AtomicLong totalReadsCounter = new AtomicLong(0);
 
     public FilterIO(PipelineConfiguration pipelineConfiguration, ReadFilter readFilter, String inputFileName,
                     String outputFileName, long inputReadsLimit, int threads) {
@@ -66,7 +68,6 @@ public final class FilterIO {
 
     public void go() {
         long startTime = System.currentTimeMillis();
-        long totalReads = 0;
         long matchedReads = 0;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(new MifHeader(pipelineConfiguration, reader.getNumberOfTargets(),
@@ -75,7 +76,8 @@ public final class FilterIO {
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Filtering reads", reader, System.err);
             Merger<Chunk<ParsedRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(
-                    new NumberedParsedReadsPort(reader), 4 * 64), 4 * 16);
+                    new NumberedParsedReadsPort(reader, inputReadsLimit, totalReadsCounter),
+                    4 * 64), 4 * 16);
             OutputPort<Chunk<ParsedRead>> filteredReadsPort = new ParallelProcessor<>(bufferedReaderPort,
                     CUtils.chunked(new FilterProcessor()), threads);
             OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(
@@ -85,8 +87,6 @@ public final class FilterIO {
                     writer.write(parsedRead);
                     matchedReads++;
                 }
-                if (++totalReads == inputReadsLimit)
-                    break;
             }
             reader.close();
             writer.setOriginalNumberOfReads(reader.getOriginalNumberOfReads());
@@ -96,8 +96,8 @@ public final class FilterIO {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        float percent = (totalReads == 0) ? 0 : (float)matchedReads / totalReads * 100;
-        System.err.println("Processed " + totalReads + " reads, matched " + matchedReads + " reads ("
+        float percent = (totalReadsCounter.get() == 0) ? 0 : (float)matchedReads / totalReadsCounter.get() * 100;
+        System.err.println("Processed " + totalReadsCounter + " reads, matched " + matchedReads + " reads ("
                 + floatFormat.format(percent) + "%)\n");
     }
 
