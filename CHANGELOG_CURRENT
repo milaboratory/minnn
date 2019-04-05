@@ -3,3 +3,4 @@
 -- --consensuses-to-separate-groups option implemented in Consensus (SingleCell algorithm) action
 -- --min-count option returned to Correct action
 -- Filtering by maximal number of unique barcodes is disabled by default in Correct action
+-- Bugfixes for -n and --overwrite-if-required arguments
