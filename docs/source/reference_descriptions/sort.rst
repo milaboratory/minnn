@@ -6,7 +6,7 @@ etc. The information about groups by which the sorting was performed is saved in
 displayed if :ref:`consensus` or :ref:`consensus-dma` action is used with unsorted groups.
 
 **Important:** sort action must be used before :ref:`consensus` or :ref:`consensus-dma` action with the same groups in
-:code:`--groups` argument as in consensus action, otherwise the results of consensus action will be wrong!
+:code:`--groups` argument as in consensus action, otherwise consensus calculation will consume much more memory!
 
 Sort action must be used after :ref:`correct` action, and not before it, because correcting barcodes will
 cause groups to be unsorted again. However, if correcting barcodes is not needed, sort action can be used right
