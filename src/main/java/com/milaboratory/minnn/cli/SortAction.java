@@ -128,6 +128,14 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
             names = {"--chunk-size"})
     private int chunkSize = -1;
 
+    @Option(description = REPORT,
+            names = "--report")
+    private String reportFileName = null;
+
+    @Option(description = JSON_REPORT,
+            names = "--json-report")
+    private String jsonReportFileName = null;
+
     @Option(description = "Custom temp file, used for debugging purposes.",
             names = {"--temp-file"},
             hidden = true)

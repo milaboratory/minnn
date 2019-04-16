@@ -92,4 +92,9 @@ class CommonDescriptions {
             "output file.";
     static final String NUMBER_OF_READS = "Number of reads to take; 0 value means to take the entire input file.";
     static final String MAX_WARNINGS = "Maximum allowed number of warnings; -1 means no limit.";
+    static final String REPORT = "File to write report in human readable form. If not specified, report is " +
+            "displayed on screen only.";
+    static final String STAT_REPORT = "File to write brief command execution stats in human readable form. If not " +
+            "specified, these stats are displayed on screen only.";
+    static final String JSON_REPORT = "File to write command execution stats in JSON format.";
 }

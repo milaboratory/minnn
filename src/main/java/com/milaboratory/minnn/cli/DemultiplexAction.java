@@ -39,6 +39,7 @@ import picocli.CommandLine.*;
 import java.io.*;
 import java.util.*;
 
+import static com.milaboratory.minnn.cli.CommonDescriptions.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
@@ -150,6 +151,14 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     @Option(description = "Number of reads to take; 0 value means to take the entire input file.",
             names = {"-n", "--number-of-reads"})
     private long inputReadsLimit = 0;
+
+    @Option(description = REPORT,
+            names = "--report")
+    private String reportFileName = null;
+
+    @Option(description = JSON_REPORT,
+            names = "--json-report")
+    private String jsonReportFileName = null;
 
     private static final class ParsedDemultiplexArguments {
         final String inputFileName;

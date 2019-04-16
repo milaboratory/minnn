@@ -34,6 +34,8 @@ extract
  --fair-sorting: Use fair sorting and fair best match by score for all patterns.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --threads: Number of threads for parsing reads.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
  --description-group: Description group names and regular expressions to parse expected nucleotide sequences for that groups from read description. Example: --description-group CID1='ATTA.{2-5}GACA' --description-group CID2='.{11}$'
 
 .. _filter:
@@ -49,6 +51,8 @@ filter
  --fair-sorting: Use fair sorting and fair best match by score for all patterns.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --threads: Number of threads for parsing reads.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _demultiplex:
 
@@ -62,6 +66,8 @@ demultiplex
  --demultiplex-log: Demultiplex log file name, to record names of generated files.
  --output-buffer-size: Write buffer size for each output file.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _mif2fastq:
 
@@ -75,6 +81,8 @@ mif2fastq
  --input: Input file in MIF format. If not specified, stdin will be used.
  --copy-original-headers: Copy original comments from initial fastq files to comments of output fastq files.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _correct:
 
@@ -99,6 +107,8 @@ correct
  --min-count: Barcodes with count less than specified will not be included in the output.
  --excluded-barcodes-output: Output file for reads with barcodes excluded by count. If not specified, reads with excluded barcodes will not be written anywhere.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _sort:
 
@@ -112,6 +122,8 @@ sort
  --input: Input file in MIF format. If not specified, stdin will be used.
  --output: Output file in MIF format. If not specified, stdout will be used.
  --chunk-size: Chunk size for sorter.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _consensus:
 
@@ -138,6 +150,8 @@ consensus
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --max-warnings: Maximum allowed number of warnings; -1 means no limit.
  --threads: Number of threads for calculating consensus sequences.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
  --kmer-length: K-mer length. Also affects --min-good-sequence-length because good sequence length must not be lower than k-mer length, so the biggest of --kmer-length and --min-good-sequence-length will be used as --min-good-sequence-length value.
  --kmer-offset: Max offset from the middle of the read when searching k-mers.
  --kmer-max-errors: Maximal allowed number of mismatches when searching k-mers in sequences.
@@ -174,6 +188,8 @@ consensus-dma
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --max-warnings: Maximum allowed number of warnings; -1 means no limit.
  --threads: Number of threads for calculating consensus sequences.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _stat-groups:
 
@@ -192,6 +208,8 @@ stat-groups
  --min-count-filter: Filter unique group values represented by less than specified number of reads.
  --min-frac-filter: Filter unique group values represented by less than specified fraction of reads.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
+ --report: File to write brief command execution stats in human readable form. If not specified, these stats are displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _stat-positions:
 
@@ -209,6 +227,8 @@ stat-positions
  --min-count-filter: Filter unique group values represented by less than specified number of reads.
  --min-frac-filter: Filter unique group values represented by less than specified fraction of reads.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
+ --report: File to write brief command execution stats in human readable form. If not specified, these stats are displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _report:
 

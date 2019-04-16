@@ -226,6 +226,14 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
             names = {"--threads"})
     private int threads = DEFAULT_THREADS;
 
+    @Option(description = REPORT,
+            names = "--report")
+    private String reportFileName = null;
+
+    @Option(description = JSON_REPORT,
+            names = "--json-report")
+    private String jsonReportFileName = null;
+
     @Option(description = CONSENSUS_DEBUG_OUTPUT,
             names = {"--debug-output"},
             hidden = true)

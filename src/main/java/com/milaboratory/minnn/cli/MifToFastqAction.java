@@ -99,4 +99,12 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
     @Option(description = NUMBER_OF_READS,
             names = {"-n", "--number-of-reads"})
     private long inputReadsLimit = 0;
+
+    @Option(description = REPORT,
+            names = "--report")
+    private String reportFileName = null;
+
+    @Option(description = JSON_REPORT,
+            names = "--json-report")
+    private String jsonReportFileName = null;
 }

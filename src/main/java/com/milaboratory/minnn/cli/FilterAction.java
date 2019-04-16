@@ -148,6 +148,14 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
             names = {"--threads"})
     private int threads = DEFAULT_THREADS;
 
+    @Option(description = REPORT,
+            names = "--report")
+    private String reportFileName = null;
+
+    @Option(description = JSON_REPORT,
+            names = "--json-report")
+    private String jsonReportFileName = null;
+
     private ReadFilter parseFilterQuery(String filterQuery) {
         CodePointCharStream charStream = CharStreams.fromString(filterQuery);
         FilterGrammarLexer lexer = new FilterGrammarLexer(charStream);

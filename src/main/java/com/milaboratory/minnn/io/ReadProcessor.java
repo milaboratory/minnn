@@ -52,6 +52,7 @@ import java.util.stream.StreamSupport;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.io.MinnnDataFormat.*;
+import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 import static java.lang.Double.NaN;
@@ -66,6 +67,8 @@ public final class ReadProcessor {
     private final boolean fairSorting;
     private final long inputReadsLimit;
     private final int threads;
+    private final String reportFileName;
+    private final String jsonReportFileName;
     private final MinnnDataFormat inputFormat;
     private final DescriptionGroups descriptionGroups;
     private final AtomicLong totalReads = new AtomicLong(0);
@@ -74,7 +77,8 @@ public final class ReadProcessor {
     public ReadProcessor(PipelineConfiguration pipelineConfiguration, List<String> inputFileNames,
                          String outputFileName, String notMatchedOutputFileName, Pattern pattern,
                          boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
-                         MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
+                         String reportFileName, String jsonReportFileName, MinnnDataFormat inputFormat,
+                         DescriptionGroups descriptionGroups) {
         if ((inputFormat == MIF) && (inputFileNames.size() > 1))
             throw exitWithError("Mif data format uses single file; specified " + inputFileNames.size()
                     + " input files!");
@@ -87,6 +91,8 @@ public final class ReadProcessor {
         this.fairSorting = fairSorting;
         this.inputReadsLimit = inputReadsLimit;
         this.threads = threads;
+        this.reportFileName = reportFileName;
+        this.jsonReportFileName = jsonReportFileName;
         this.inputFormat = inputFormat;
         this.descriptionGroups = descriptionGroups;
     }
@@ -120,10 +126,44 @@ public final class ReadProcessor {
             throw exitWithError(e.getMessage());
         }
 
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("Report for Extract command:\n");
+        switch (inputFileNames.size()) {
+            case 0:
+                reportFileHeader.append("Input is from stdin\n");
+                break;
+            case 1:
+                reportFileHeader.append("Input file name: ").append(inputFileNames.get(0)).append('\n');
+                break;
+            default:
+                reportFileHeader.append("Input files: ").append(inputFileNames).append('\n');
+        }
+        if (outputFileName == null)
+            reportFileHeader.append("Output is to stdout\n");
+        else
+            reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
+        if (notMatchedOutputFileName != null)
+            reportFileHeader.append("Output file for not matched reads: ").append(notMatchedOutputFileName)
+                    .append('\n');
+
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         float percent = (totalReads.get() == 0) ? 0 : (float)matchedReads / totalReads.get() * 100;
-        System.err.println("Matched reads: " + floatFormat.format(percent) + "%\n");
+        report.append("Matched reads: ").append(floatFormat.format(percent)).append("%\n");
+
+        jsonReportData.put("inputFileNames", inputFileNames);
+        jsonReportData.put("outputFileName", outputFileName);
+        jsonReportData.put("notMatchedOutputFileName", notMatchedOutputFileName);
+        jsonReportData.put("pattern", pattern.toString());
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("matchedReads", matchedReads);
+        jsonReportData.put("totalReads", totalReads.get());
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
     }
 
     private IndexedSequenceReader createReader() throws IOException {

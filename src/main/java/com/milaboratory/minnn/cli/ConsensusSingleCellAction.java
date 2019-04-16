@@ -196,6 +196,14 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
             names = {"--threads"})
     private int threads = DEFAULT_THREADS;
 
+    @Option(description = REPORT,
+            names = "--report")
+    private String reportFileName = null;
+
+    @Option(description = JSON_REPORT,
+            names = "--json-report")
+    private String jsonReportFileName = null;
+
     @Option(description = "K-mer length. Also affects --min-good-sequence-length because good sequence length must "
             + "not be lower than k-mer length, so the biggest of --kmer-length and --min-good-sequence-length "
             + "will be used as --min-good-sequence-length value.",

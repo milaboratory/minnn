@@ -121,4 +121,12 @@ public final class StatPositionsAction extends ACommandWithOutput implements MiN
     @Option(description = NUMBER_OF_READS,
             names = {"-n", "--number-of-reads"})
     private long inputReadsLimit = 0;
+
+    @Option(description = STAT_REPORT,
+            names = "--report")
+    private String reportFileName = null;
+
+    @Option(description = JSON_REPORT,
+            names = "--json-report")
+    private String jsonReportFileName = null;
 }
