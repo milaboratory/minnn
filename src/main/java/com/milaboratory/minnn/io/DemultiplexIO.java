@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -54,6 +55,8 @@ public final class DemultiplexIO {
     private final String logFileName;
     private final int outputBufferSize;
     private final long inputReadsLimit;
+    private final String reportFileName;
+    private final String jsonReportFileName;
     private final String prefix;
     private final LinkedHashMap<OutputFileIdentifier, OutputFileIdentifier> outputFileIdentifiers;
     private final HashSet<String> outputFileNames;
@@ -62,13 +65,15 @@ public final class DemultiplexIO {
 
     public DemultiplexIO(PipelineConfiguration pipelineConfiguration, String inputFileName,
                          List<DemultiplexArgument> demultiplexArguments, String logFileName, int outputBufferSize,
-                         long inputReadsLimit) {
+                         long inputReadsLimit, String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.demultiplexFilters = demultiplexArguments.stream().map(this::parseFilter).collect(Collectors.toList());
         this.logFileName = logFileName;
         this.outputBufferSize = outputBufferSize;
         this.inputReadsLimit = inputReadsLimit;
+        this.reportFileName = reportFileName;
+        this.jsonReportFileName = jsonReportFileName;
         this.prefix = ((inputFileName.length() > 4)
                 && inputFileName.substring(inputFileName.length() - 4).equals(".mif"))
                 ? inputFileName.substring(0, inputFileName.length() - 4) : inputFileName;
@@ -107,11 +112,32 @@ public final class DemultiplexIO {
             throw exitWithError(e.getMessage());
         }
 
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("Report for Demultiplex command:\n");
+        if (inputFileName == null)
+            reportFileHeader.append("Input is from stdin\n");
+        else
+            reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
+        reportFileHeader.append("Output files prefix: ").append(prefix).append('\n');
+
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         float percent = (totalReads == 0) ? 0 : (float)matchedReads / totalReads * 100;
-        System.err.println("Processed " + totalReads + " reads, matched " + matchedReads + " reads ("
-                + floatFormat.format(percent) + "%)\n");
+        report.append("Processed ").append(totalReads).append(" reads, matched ").append(matchedReads)
+                .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
+
+        jsonReportData.put("inputFileName", inputFileName);
+        jsonReportData.put("prefix", prefix);
+        jsonReportData.put("outputFilesNum", outputFileNames.size());
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("matchedReads", matchedReads);
+        jsonReportData.put("totalReads", totalReads);
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
     }
 
     private DemultiplexFilter parseFilter(DemultiplexArgument demultiplexArgument) {

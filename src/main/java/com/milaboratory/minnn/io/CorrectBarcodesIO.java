@@ -40,6 +40,7 @@ import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.correct.CorrectionAlgorithms.*;
+import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -55,12 +56,15 @@ public final class CorrectBarcodesIO {
     private final String excludedBarcodesOutputFileName;
     private final long inputReadsLimit;
     private final boolean suppressWarnings;
+    private final String reportFileName;
+    private final String jsonReportFileName;
 
     public CorrectBarcodesIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
                              int mismatches, int indels, int totalErrors, float threshold, List<String> groupNames,
                              List<String> primaryGroupNames, int maxClusterDepth, float singleSubstitutionProbability,
                              float singleIndelProbability, int maxUniqueBarcodes, int minCount,
-                             String excludedBarcodesOutputFileName, long inputReadsLimit, boolean suppressWarnings) {
+                             String excludedBarcodesOutputFileName, long inputReadsLimit, boolean suppressWarnings,
+                             String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -74,6 +78,8 @@ public final class CorrectBarcodesIO {
         this.excludedBarcodesOutputFileName = excludedBarcodesOutputFileName;
         this.inputReadsLimit = inputReadsLimit;
         this.suppressWarnings = suppressWarnings;
+        this.reportFileName = reportFileName;
+        this.jsonReportFileName = jsonReportFileName;
     }
 
     public void go() {
@@ -122,17 +128,44 @@ public final class CorrectBarcodesIO {
             throw exitWithError(e.getMessage());
         }
 
-        long elapsedTime = System.currentTimeMillis() - startTime;
-        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.err.println("Processed " + stats.totalReads + " reads");
-        float percent = (stats.totalReads == 0) ? 0 : (float)stats.correctedReads / stats.totalReads * 100;
-        System.err.println("Reads with corrected barcodes: " + stats.correctedReads
-                + " (" + floatFormat.format(percent) + "%)");
-        if (stats.excludedReads > 0)
-            System.err.println("Reads excluded by too low barcode count: " + stats.excludedReads
-                    + " (" + floatFormat.format((float)stats.excludedReads / stats.totalReads * 100) + "%)\n");
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("Report for Correct command:\n");
+        if (inputFileName == null)
+            reportFileHeader.append("Input is from stdin\n");
         else
-            System.err.println();
+            reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
+        if (outputFileName == null)
+            reportFileHeader.append("Output is to stdout\n");
+        else
+            reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
+        reportFileHeader.append("Corrected groups: ").append(groupNames).append('\n');
+        if (primaryGroups.size() > 0)
+            reportFileHeader.append("Primary groups: ").append(primaryGroups).append('\n');
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
+        float percent = (stats.totalReads == 0) ? 0 : (float)stats.correctedReads / stats.totalReads * 100;
+        report.append("Processed ").append(stats.totalReads).append(" reads").append('\n');
+        report.append("Reads with corrected barcodes: ").append(stats.correctedReads).append(" (")
+                .append(floatFormat.format(percent)).append("%)\n");
+        if (stats.excludedReads > 0)
+            report.append("Reads excluded by too low barcode count: ").append(stats.excludedReads).append(" (")
+                    .append(floatFormat.format((float)stats.excludedReads / stats.totalReads * 100)).append("%)\n");
+
+        jsonReportData.put("inputFileName", inputFileName);
+        jsonReportData.put("outputFileName", outputFileName);
+        jsonReportData.put("groupNames", groupNames);
+        jsonReportData.put("primaryGroups", primaryGroups);
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("correctedReads", stats.correctedReads);
+        jsonReportData.put("excludedReads", stats.excludedReads);
+        jsonReportData.put("totalReads", stats.totalReads);
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
     }
 
     private MifWriter createWriter(MifHeader inputHeader, boolean excludedBarcodes) throws IOException {

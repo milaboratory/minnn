@@ -64,7 +64,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         prepareDemultiplexArguments();
         DemultiplexIO demultiplexIO = new DemultiplexIO(getFullPipelineConfiguration(),
                 parsedDemultiplexArguments.inputFileName, parsedDemultiplexArguments.demultiplexArguments,
-                logFileName, outputBufferSize, inputReadsLimit);
+                logFileName, outputBufferSize, inputReadsLimit, reportFileName, jsonReportFileName);
         demultiplexIO.go();
     }
 

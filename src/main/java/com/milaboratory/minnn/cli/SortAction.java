@@ -55,7 +55,7 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
     @Override
     public void run1() {
         SorterIO sorterIO = new SorterIO(getFullPipelineConfiguration(), inputFileName, outputFileName,
-                sortGroupNames, chunkSize, quiet, tmpFile);
+                sortGroupNames, chunkSize, quiet, reportFileName, jsonReportFileName, tmpFile);
         sorterIO.go();
     }
 

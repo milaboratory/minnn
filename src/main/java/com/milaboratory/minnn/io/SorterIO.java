@@ -46,6 +46,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.Defaults.DEFAULT_SORT_CHUNK_SIZE;
+import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -56,16 +57,21 @@ public final class SorterIO {
     private final List<String> sortGroupNames;
     private final int chunkSize;
     private final boolean suppressWarnings;
+    private final String reportFileName;
+    private final String jsonReportFileName;
     private final File tmpFile;
 
     public SorterIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
-                    List<String> sortGroupNames, int chunkSize, boolean suppressWarnings, String tmpFile) {
+                    List<String> sortGroupNames, int chunkSize, boolean suppressWarnings,
+                    String reportFileName, String jsonReportFileName, String tmpFile) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.sortGroupNames = sortGroupNames;
         this.chunkSize = (chunkSize == -1) ? estimateChunkSize() : chunkSize;
         this.suppressWarnings = suppressWarnings;
+        this.reportFileName = reportFileName;
+        this.jsonReportFileName = jsonReportFileName;
         this.tmpFile = (tmpFile != null) ? new File(tmpFile) : TempFileManager.getTempFile((outputFileName == null)
                 ? null : Paths.get(new File(outputFileName).getAbsolutePath()).getParent());
     }
@@ -95,9 +101,34 @@ public final class SorterIO {
             throw exitWithError(e.getMessage());
         }
 
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("Report for Sort command:\n");
+        if (inputFileName == null)
+            reportFileHeader.append("Input is from stdin\n");
+        else
+            reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
+        if (outputFileName == null)
+            reportFileHeader.append("Output is to stdout\n");
+        else
+            reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
+        reportFileHeader.append("Sorted groups: ").append(sortGroupNames).append('\n');
+
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.err.println("Sorted " + totalReads + " reads\n");
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
+        report.append("Sorted ").append(totalReads).append(" reads\n");
+
+        jsonReportData.put("inputFileName", inputFileName);
+        jsonReportData.put("outputFileName", outputFileName);
+        jsonReportData.put("sortGroupNames", sortGroupNames);
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("totalReads", totalReads);
+        jsonReportData.put("chunkSize", chunkSize);
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
     }
 
     private MifReader createReader() throws IOException {

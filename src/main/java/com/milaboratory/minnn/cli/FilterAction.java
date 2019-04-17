@@ -66,8 +66,9 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         ReadFilter parsedReadFilter = parseFilterQuery(filterQuery);
         if (parsedReadFilter == null)
             throw exitWithError("Filter query not parsed: " + filterQuery);
-        FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), parsedReadFilter, inputFileName,
-                outputFileName, inputReadsLimit, threads);
+        FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), parsedReadFilter,
+                String.join("", filterQueryList), inputFileName, outputFileName, inputReadsLimit, threads,
+                reportFileName, jsonReportFileName);
         filterIO.go();
     }
 

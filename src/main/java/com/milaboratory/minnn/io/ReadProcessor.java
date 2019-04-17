@@ -63,6 +63,7 @@ public final class ReadProcessor {
     private final String outputFileName;
     private final String notMatchedOutputFileName;
     private final Pattern pattern;
+    private final String patternQuery;
     private final boolean orientedReads;
     private final boolean fairSorting;
     private final long inputReadsLimit;
@@ -75,7 +76,7 @@ public final class ReadProcessor {
     private int numberOfTargets;
 
     public ReadProcessor(PipelineConfiguration pipelineConfiguration, List<String> inputFileNames,
-                         String outputFileName, String notMatchedOutputFileName, Pattern pattern,
+                         String outputFileName, String notMatchedOutputFileName, Pattern pattern, String patternQuery,
                          boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
                          String reportFileName, String jsonReportFileName, MinnnDataFormat inputFormat,
                          DescriptionGroups descriptionGroups) {
@@ -87,6 +88,7 @@ public final class ReadProcessor {
         this.outputFileName = outputFileName;
         this.notMatchedOutputFileName = notMatchedOutputFileName;
         this.pattern = pattern;
+        this.patternQuery = patternQuery;
         this.orientedReads = orientedReads;
         this.fairSorting = fairSorting;
         this.inputReadsLimit = inputReadsLimit;
@@ -148,15 +150,18 @@ public final class ReadProcessor {
         if (notMatchedOutputFileName != null)
             reportFileHeader.append("Output file for not matched reads: ").append(notMatchedOutputFileName)
                     .append('\n');
+        reportFileHeader.append("Pattern: ").append(patternQuery).append('\n');
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         float percent = (totalReads.get() == 0) ? 0 : (float)matchedReads / totalReads.get() * 100;
-        report.append("Matched reads: ").append(floatFormat.format(percent)).append("%\n");
+        report.append("Processed ").append(totalReads).append(" reads, matched ").append(matchedReads)
+                .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
 
         jsonReportData.put("inputFileNames", inputFileNames);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("notMatchedOutputFileName", notMatchedOutputFileName);
+        jsonReportData.put("patternQuery", patternQuery);
         jsonReportData.put("pattern", pattern.toString());
         jsonReportData.put("elapsedTime", elapsedTime);
         jsonReportData.put("matchedReads", matchedReads);

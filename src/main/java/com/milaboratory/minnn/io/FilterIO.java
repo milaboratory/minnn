@@ -41,29 +41,38 @@ import com.milaboratory.minnn.readfilter.ReadFilter;
 import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class FilterIO {
     private final PipelineConfiguration pipelineConfiguration;
     private final ReadFilter readFilter;
+    private final String filterQuery;
     private final String inputFileName;
     private final String outputFileName;
     private final long inputReadsLimit;
     private final int threads;
+    private final String reportFileName;
+    private final String jsonReportFileName;
     private final AtomicLong totalReadsCounter = new AtomicLong(0);
 
-    public FilterIO(PipelineConfiguration pipelineConfiguration, ReadFilter readFilter, String inputFileName,
-                    String outputFileName, long inputReadsLimit, int threads) {
+    public FilterIO(PipelineConfiguration pipelineConfiguration, ReadFilter readFilter, String filterQuery,
+                    String inputFileName, String outputFileName, long inputReadsLimit, int threads,
+                    String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.readFilter = readFilter;
+        this.filterQuery = filterQuery;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.inputReadsLimit = inputReadsLimit;
         this.threads = threads;
+        this.reportFileName = reportFileName;
+        this.jsonReportFileName = jsonReportFileName;
     }
 
     public void go() {
@@ -94,11 +103,36 @@ public final class FilterIO {
             throw exitWithError(e.getMessage());
         }
 
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("Report for Filter command:\n");
+        if (inputFileName == null)
+            reportFileHeader.append("Input is from stdin\n");
+        else
+            reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
+        if (outputFileName == null)
+            reportFileHeader.append("Output is to stdout\n");
+        else
+            reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
+        reportFileHeader.append("Filter query: ").append(filterQuery).append('\n');
+
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         float percent = (totalReadsCounter.get() == 0) ? 0 : (float)matchedReads / totalReadsCounter.get() * 100;
-        System.err.println("Processed " + totalReadsCounter + " reads, matched " + matchedReads + " reads ("
-                + floatFormat.format(percent) + "%)\n");
+        report.append("Processed ").append(totalReadsCounter).append(" reads, matched ").append(matchedReads)
+                .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
+
+        jsonReportData.put("inputFileName", inputFileName);
+        jsonReportData.put("outputFileName", outputFileName);
+        jsonReportData.put("filterQuery", filterQuery);
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("matchedReads", matchedReads);
+        jsonReportData.put("totalReads", totalReadsCounter.get());
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
     }
 
     private MifReader createReader() throws IOException {
