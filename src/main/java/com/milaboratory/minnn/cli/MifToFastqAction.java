@@ -52,7 +52,8 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
 
     @Override
     public void run0() {
-        MifToFastqIO mifToFastqIO = new MifToFastqIO(inputFileName, groupsQuery, copyOriginalHeaders, inputReadsLimit);
+        MifToFastqIO mifToFastqIO = new MifToFastqIO(inputFileName, groupsQuery, copyOriginalHeaders, inputReadsLimit,
+                reportFileName, jsonReportFileName);
         mifToFastqIO.go();
     }
 

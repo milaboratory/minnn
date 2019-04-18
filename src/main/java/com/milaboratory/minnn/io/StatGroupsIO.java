@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -55,12 +56,14 @@ public final class StatGroupsIO {
     private final byte avgQualityFilter;
     private final int minCountFilter;
     private final float minFracFilter;
+    private final String reportFileName;
+    private final String jsonReportFileName;
     private final HashMap<StatGroupsKey, StatGroupsValue> statGroups = new HashMap<>();
     private long totalReads = 0;
 
     public StatGroupsIO(List<String> groupList, String inputFileName, String outputFileName, long inputReadsLimit,
                         byte readQualityFilter, byte minQualityFilter, byte avgQualityFilter, int minCountFilter,
-                        float minFracFilter) {
+                        float minFracFilter, String reportFileName, String jsonReportFileName) {
         this.groupList = new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -70,6 +73,8 @@ public final class StatGroupsIO {
         this.avgQualityFilter = avgQualityFilter;
         this.minCountFilter = minCountFilter;
         this.minFracFilter = minFracFilter;
+        this.reportFileName = reportFileName;
+        this.jsonReportFileName = jsonReportFileName;
     }
 
     public void go() {
@@ -125,21 +130,47 @@ public final class StatGroupsIO {
             throw exitWithError(e.getMessage());
         }
 
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("Report for StatGroups command:\n");
+        if (inputFileName == null)
+            reportFileHeader.append("Input is from stdin\n");
+        else
+            reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
+        if (outputFileName == null)
+            reportFileHeader.append("Output is to stdout\n");
+        else
+            reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
+
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         if (correctedGroups.size() == 0)
-            System.err.println("Input MIF file is not corrected");
+            report.append("Input MIF file is not corrected\n");
         else
-            System.err.println("Groups " + correctedGroups + " in input MIF file are corrected");
+            report.append("Groups ").append(correctedGroups).append(" in input MIF file are corrected\n");
         if (sortedGroups.size() == 0)
-            System.err.println("Input MIF file is not sorted");
+            report.append("Input MIF file is not sorted\n");
         else
-            System.err.println("Groups " + sortedGroups + " in input MIF file are sorted");
-        System.err.println("Checked " + totalReads + " reads");
-        if (totalReads > 0) {
-            float countedReadsPercent = (float)table.stream().mapToLong(line -> line.count).sum() / totalReads * 100;
-            System.err.println("Counted reads: " + floatFormat.format(countedReadsPercent) + "% of checked reads\n");
-        }
+            report.append("Groups ").append(sortedGroups).append(" in input MIF file are sorted\n");
+        report.append("Checked ").append(totalReads).append(" reads\n");
+        long countedReads = table.stream().mapToLong(line -> line.count).sum();
+        if (totalReads > 0)
+            report.append("Counted reads: ").append(countedReads).append(" (")
+                    .append(floatFormat.format((float)countedReads / totalReads * 100))
+                    .append("% of checked reads)\n");
+
+        jsonReportData.put("inputFileName", inputFileName);
+        jsonReportData.put("outputFileName", outputFileName);
+        jsonReportData.put("correctedGroups", correctedGroups);
+        jsonReportData.put("sortedGroups", sortedGroups);
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("countedReads", countedReads);
+        jsonReportData.put("totalReads", totalReads);
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
     }
 
     private MifReader createReader() throws IOException {

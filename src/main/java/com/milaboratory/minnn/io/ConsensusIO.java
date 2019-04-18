@@ -54,6 +54,7 @@ import java.util.stream.IntStream;
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.consensus.ConsensusAlgorithms.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
+import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -86,6 +87,9 @@ public final class ConsensusIO {
     private final int kmerLength;
     private final int kmerMaxOffset;
     private final int kmerMatchMaxErrors;
+    private final String reportFileName;
+    private final String jsonReportFileName;
+    private final StringBuilder reportedWarnings = new StringBuilder();
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
@@ -106,7 +110,8 @@ public final class ConsensusIO {
                        int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
                        String originalReadStatsFileName, String notUsedReadsOutputFileName, boolean toSeparateGroups,
                        long inputReadsLimit, int maxWarnings, int threads, int kmerLength, int kmerMaxOffset,
-                       int kmerMatchMaxErrors, String debugOutputFileName, byte debugQualityThreshold) {
+                       int kmerMatchMaxErrors, String reportFileName, String jsonReportFileName,
+                       String debugOutputFileName, byte debugQualityThreshold) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.consensusGroups = new LinkedHashSet<>(Objects.requireNonNull(groupList));
         this.inputFileName = inputFileName;
@@ -136,6 +141,8 @@ public final class ConsensusIO {
         this.kmerLength = kmerLength;
         this.kmerMaxOffset = kmerMaxOffset;
         this.kmerMatchMaxErrors = kmerMatchMaxErrors;
+        this.reportFileName = reportFileName;
+        this.jsonReportFileName = jsonReportFileName;
         try {
             debugOutputStream = (debugOutputFileName == null) ? null
                     : new PrintStream(new FileOutputStream(debugOutputFileName));
@@ -382,13 +389,41 @@ public final class ConsensusIO {
             }
         }
 
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("Report for Consensus command:\n");
+        if (inputFileName == null)
+            reportFileHeader.append("Input is from stdin\n");
+        else
+            reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
+        if (outputFileName == null)
+            reportFileHeader.append("Output is to stdout\n");
+        else
+            reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
+        reportFileHeader.append("Consensus assembled by groups: ").append(consensusGroups).append('\n');
+        reportFileHeader.append("Consensus algorithm: ").append(consensusAlgorithmType);
+        reportFileHeader.append(reportedWarnings);
+
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.err.println("Processed " + totalReads + " reads\n");
-        System.err.println("Calculated " + consensusReads + " consensuses\n");
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
+        report.append("Processed ").append(totalReads).append(" reads\n");
+        report.append("Calculated ").append(consensusReads).append(" consensuses\n");
         if (consensusReads > 0)
-            System.err.println("Average reads per consensus: " + floatFormat.format((float)totalReads.get()
-                    / consensusReads) + "\n");
+            report.append("Average reads per consensus: ")
+                    .append(floatFormat.format((float)totalReads.get() / consensusReads)).append("\n");
+
+        jsonReportData.put("inputFileName", inputFileName);
+        jsonReportData.put("outputFileName", outputFileName);
+        jsonReportData.put("consensusGroups", consensusGroups);
+        jsonReportData.put("consensusAlgorithmType", consensusAlgorithmType.toString());
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("consensusReads", consensusReads);
+        jsonReportData.put("totalReads", totalReads.get());
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
     }
 
     private MifReader createReader() throws IOException {
@@ -443,5 +478,7 @@ public final class ConsensusIO {
             if (warningsDisplayed == maxWarnings)
                 System.err.println("Warnings limit reached!");
         }
+        if (reportFileName != null)
+            reportedWarnings.append(text).append('\n');
     }
 }

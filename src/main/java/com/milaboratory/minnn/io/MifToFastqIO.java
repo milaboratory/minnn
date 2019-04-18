@@ -42,6 +42,7 @@ import com.milaboratory.util.SmartProgressReporter;
 import java.io.IOException;
 import java.util.*;
 
+import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
@@ -51,9 +52,11 @@ public final class MifToFastqIO {
     private final String[] outputFileNames;
     private final boolean copyOriginalHeaders;
     private final long inputReadsLimit;
+    private final String reportFileName;
+    private final String jsonReportFileName;
 
     public MifToFastqIO(String inputFileName, LinkedHashMap<String, String> outputGroups, boolean copyOriginalHeaders,
-                        long inputReadsLimit) {
+                        long inputReadsLimit, String reportFileName, String jsonReportFileName) {
         this.inputFileName = inputFileName;
         this.outputGroupNames = new String[outputGroups.size()];
         this.outputFileNames = new String[outputGroups.size()];
@@ -65,6 +68,8 @@ public final class MifToFastqIO {
         }
         this.copyOriginalHeaders = copyOriginalHeaders;
         this.inputReadsLimit = inputReadsLimit;
+        this.reportFileName = reportFileName;
+        this.jsonReportFileName = jsonReportFileName;
     }
 
     public void go() {
@@ -85,9 +90,31 @@ public final class MifToFastqIO {
             throw exitWithError(e.getMessage());
         }
 
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("Report for MifToFastq command:\n");
+        if (inputFileName == null)
+            reportFileHeader.append("Input is from stdin\n");
+        else
+            reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
+        reportFileHeader.append("Output group names: ").append(Arrays.toString(outputGroupNames)).append('\n');
+        reportFileHeader.append("Output file names: ").append(Arrays.toString(outputFileNames)).append('\n');
+
         long elapsedTime = System.currentTimeMillis() - startTime;
-        System.err.println("\nProcessing time: " + nanoTimeToString(elapsedTime * 1000000));
-        System.err.println("Processed " + totalReads + " reads\n");
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
+        report.append("Processed ").append(totalReads).append(" reads\n");
+
+        jsonReportData.put("inputFileName", inputFileName);
+        jsonReportData.put("outputGroupNames", Arrays.toString(outputGroupNames));
+        jsonReportData.put("outputFileNames", Arrays.toString(outputFileNames));
+        jsonReportData.put("copyOriginalHeaders", copyOriginalHeaders);
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("totalReads", totalReads);
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
     }
 
     private MifReader createReader() throws IOException {

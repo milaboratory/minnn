@@ -62,7 +62,8 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
                 maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
                 minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadStatsFileName,
                 notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
-                0, 0, 0, debugOutputFileName, debugQualityThreshold);
+                0, 0, 0, reportFileName, jsonReportFileName,
+                debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
 
     }
