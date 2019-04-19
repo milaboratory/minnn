@@ -403,7 +403,7 @@ public final class ConsensusIO {
         else
             reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
         reportFileHeader.append("Consensus assembled by groups: ").append(consensusGroups).append('\n');
-        reportFileHeader.append("Consensus algorithm: ").append(consensusAlgorithmType);
+        reportFileHeader.append("Consensus algorithm: ").append(consensusAlgorithmType).append('\n');
         reportFileHeader.append(reportedWarnings);
 
         long elapsedTime = System.currentTimeMillis() - startTime;

@@ -166,6 +166,7 @@ public final class StatGroupsIO {
         jsonReportData.put("correctedGroups", correctedGroups);
         jsonReportData.put("sortedGroups", sortedGroups);
         jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("groupList", groupList);
         jsonReportData.put("countedReads", countedReads);
         jsonReportData.put("totalReads", totalReads);
 
