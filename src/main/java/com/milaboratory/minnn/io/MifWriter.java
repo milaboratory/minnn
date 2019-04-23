@@ -31,71 +31,109 @@ package com.milaboratory.minnn.io;
 import com.milaboratory.cli.PipelineConfigurationWriter;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
-import com.milaboratory.primitivio.PrimitivO;
+import com.milaboratory.minnn.util.DebugUtils.*;
+import com.milaboratory.primitivio.PrimitivOState;
+import com.milaboratory.primitivio.blocks.PrimitivOBlocks;
 import com.milaboratory.util.CanReportProgress;
+import net.jpountz.lz4.LZ4Compressor;
+import net.jpountz.lz4.LZ4Factory;
 
 import java.io.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.milaboratory.minnn.cli.Magic.*;
+import static com.milaboratory.minnn.io.IODefaults.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static java.lang.Double.NaN;
 
 public final class MifWriter implements PipelineConfigurationWriter, AutoCloseable, CanReportProgress {
-    private static final int DEFAULT_BUFFER_SIZE = 1 << 20;
-    private final PrimitivO output;
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final PrimitivOBlocks<Object> primitivOBlocks;
+    private final PrimitivOBlocks<Object>.Writer writer;
     private boolean closed = false;
     private long estimatedNumberOfReads = -1;
     private long writtenReads = 0;
     private long originalNumberOfReads = -1;
 
     public MifWriter(OutputStream outputStream, MifHeader mifHeader) {
-        output = new PrimitivO(outputStream);
-        writeHeader(mifHeader);
+        this(outputStream, mifHeader, DEFAULT_CONCURRENCY, DEFAULT_BLOCK_SIZE, DEFAULT_COMPRESSION_TYPE);
     }
 
-    public MifWriter(String file, MifHeader mifHeader)
-            throws IOException {
-        output = new PrimitivO(new BufferedOutputStream(new FileOutputStream(file), DEFAULT_BUFFER_SIZE));
-        writeHeader(mifHeader);
+    public MifWriter(String fileName, MifHeader mifHeader) throws IOException {
+        this(fileName, mifHeader, DEFAULT_CONCURRENCY, DEFAULT_BLOCK_SIZE, DEFAULT_COMPRESSION_TYPE);
     }
 
-    public MifWriter(String file, MifHeader mifHeader, int bufferSize)
-            throws IOException {
-        output = new PrimitivO(new BufferedOutputStream(new FileOutputStream(file), bufferSize));
+    public MifWriter(String fileName, MifHeader mifHeader, int concurrency, int blockSize,
+                     CompressionType compressionType) throws IOException {
+        LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
+        LZ4Compressor compressor;
+        switch (compressionType) {
+            case FAST:
+                compressor = lz4Factory.fastCompressor();
+                break;
+            case HIGH:
+                compressor = lz4Factory.highCompressor();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected compression type: " + compressionType);
+        }
+        primitivOBlocks = new PrimitivOBlocks<>(executorService, concurrency, PrimitivOState.INITIAL, blockSize,
+                compressor);
+        writer = primitivOBlocks.newWriter(new File(fileName).toPath());
         writeHeader(mifHeader);
+        // this(new FileOutputStream(file), mifHeader, concurrency, blockSize, compressionType);
+    }
+
+    public MifWriter(OutputStream outputStream, MifHeader mifHeader, int concurrency, int blockSize,
+                     CompressionType compressionType) {
+        throw new NotImplementedException();
+//        LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
+//        LZ4Compressor compressor;
+//        switch (compressionType) {
+//            case FAST:
+//                compressor = lz4Factory.fastCompressor();
+//                break;
+//            case HIGH:
+//                compressor = lz4Factory.highCompressor();
+//                break;
+//            default:
+//                throw new IllegalStateException("Unexpected compression type: " + compressionType);
+//        }
+//        primitivOBlocks = new PrimitivOBlocks(executorService, concurrency, PrimitivOState.INITIAL, blockSize,
+//                compressor);
+//        writer = primitivOBlocks.newWriter(outputStream);
     }
 
     private void writeHeader(MifHeader mifHeader) {
-        output.write(getBeginMagicBytes());
-        output.writeUTF(getVersionString(VERSION_INFO_MIF));
-        output.writeObject(mifHeader.getPipelineConfiguration());
-        output.writeInt(mifHeader.getNumberOfTargets());
-        output.writeInt(mifHeader.getCorrectedGroups().size());
+        writer.write(getBeginMagicBytes());
+        writer.write(getVersionString(VERSION_INFO_MIF));
+        writer.write(mifHeader.getPipelineConfiguration());
+        writer.write(mifHeader.getNumberOfTargets());
+        writer.write(mifHeader.getCorrectedGroups().size());
         for (String correctedGroup : mifHeader.getCorrectedGroups())
-            output.writeObject(correctedGroup);
-        output.writeInt(mifHeader.getSortedGroups().size());
+            writer.write(correctedGroup);
+        writer.write(mifHeader.getSortedGroups().size());
         for (String sortedGroup : mifHeader.getSortedGroups())
-            output.writeObject(sortedGroup);
-        output.writeInt(mifHeader.getGroupEdges().size());
-        for (GroupEdge groupEdge : mifHeader.getGroupEdges()) {
-            output.writeObject(groupEdge);
-            output.putKnownObject(groupEdge);
-        }
+            writer.write(sortedGroup);
+        writer.write(mifHeader.getGroupEdges().size());
+        for (GroupEdge groupEdge : mifHeader.getGroupEdges())
+            writer.write(groupEdge);
     }
 
     public void write(ParsedRead parsedRead) {
-        output.writeObject(parsedRead);
+        writer.write(parsedRead);
         writtenReads++;
     }
 
     @Override
     public void close() {
         if (!closed) {
-            output.writeObject(null);
-            output.writeLong(originalNumberOfReads);
-            output.write(getEndMagicBytes());
-            output.close();
+            writer.write(null);
+            writer.write(originalNumberOfReads);
+            writer.write(getEndMagicBytes());
+            writer.close();
             closed = true;
         }
     }

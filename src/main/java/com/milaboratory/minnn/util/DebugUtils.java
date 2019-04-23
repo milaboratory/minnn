@@ -97,4 +97,6 @@ public final class DebugUtils {
     public static void resetEventCounter() {
         eventCounter = new HashMap<>();
     }
+
+    public static class NotImplementedException extends RuntimeException {}
 }
