@@ -32,11 +32,10 @@ import com.milaboratory.cli.PipelineConfigurationWriter;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.minnn.util.DebugUtils.*;
-import com.milaboratory.primitivio.PrimitivOState;
+import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.blocks.PrimitivOBlocks;
+import com.milaboratory.primitivio.blocks.PrimitivOHybrid;
 import com.milaboratory.util.CanReportProgress;
-import net.jpountz.lz4.LZ4Compressor;
-import net.jpountz.lz4.LZ4Factory;
 
 import java.io.*;
 import java.util.concurrent.ExecutorService;
@@ -49,45 +48,29 @@ import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static java.lang.Double.NaN;
 
 public final class MifWriter implements PipelineConfigurationWriter, AutoCloseable, CanReportProgress {
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
-    private final PrimitivOBlocks<Object> primitivOBlocks;
-    private final PrimitivOBlocks<Object>.Writer writer;
+    private final PrimitivOHybrid primitivOHybrid;
+    private final PrimitivOBlocks<ParsedRead>.Writer writer;
     private boolean closed = false;
     private long estimatedNumberOfReads = -1;
     private long writtenReads = 0;
     private long originalNumberOfReads = -1;
 
     public MifWriter(OutputStream outputStream, MifHeader mifHeader) {
-        this(outputStream, mifHeader, DEFAULT_CONCURRENCY, DEFAULT_BLOCK_SIZE, DEFAULT_COMPRESSION_TYPE);
+        this(outputStream, mifHeader, DEFAULT_CONCURRENCY, DEFAULT_BLOCK_SIZE);
     }
 
     public MifWriter(String fileName, MifHeader mifHeader) throws IOException {
-        this(fileName, mifHeader, DEFAULT_CONCURRENCY, DEFAULT_BLOCK_SIZE, DEFAULT_COMPRESSION_TYPE);
+        this(fileName, mifHeader, DEFAULT_CONCURRENCY, DEFAULT_BLOCK_SIZE);
     }
 
-    public MifWriter(String fileName, MifHeader mifHeader, int concurrency, int blockSize,
-                     CompressionType compressionType) throws IOException {
-        LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
-        LZ4Compressor compressor;
-        switch (compressionType) {
-            case FAST:
-                compressor = lz4Factory.fastCompressor();
-                break;
-            case HIGH:
-                compressor = lz4Factory.highCompressor();
-                break;
-            default:
-                throw new IllegalStateException("Unexpected compression type: " + compressionType);
-        }
-        primitivOBlocks = new PrimitivOBlocks<>(executorService, concurrency, PrimitivOState.INITIAL, blockSize,
-                compressor);
-        writer = primitivOBlocks.newWriter(new File(fileName).toPath());
+    public MifWriter(String fileName, MifHeader mifHeader, int concurrency, int blockSize) throws IOException {
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        primitivOHybrid = new PrimitivOHybrid(executorService, new File(fileName).toPath());
         writeHeader(mifHeader);
-        // this(new FileOutputStream(file), mifHeader, concurrency, blockSize, compressionType);
+        writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, blockSize);
     }
 
-    public MifWriter(OutputStream outputStream, MifHeader mifHeader, int concurrency, int blockSize,
-                     CompressionType compressionType) {
+    public MifWriter(OutputStream outputStream, MifHeader mifHeader, int concurrency, int blockSize) {
         throw new NotImplementedException();
 //        LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
 //        LZ4Compressor compressor;
@@ -101,20 +84,63 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
 //            default:
 //                throw new IllegalStateException("Unexpected compression type: " + compressionType);
 //        }
-//        primitivOBlocks = new PrimitivOBlocks(executorService, concurrency, PrimitivOState.INITIAL, blockSize,
-//                compressor);
+//        primitivOHybrid = new PrimitivOHybrid(executorService, new AsynchronousByteChannel() {
+//            WritableByteChannel writableByteChannel = newChannel(outputStream);
+//
+//            @Override
+//            public <A> void read(ByteBuffer byteBuffer, A a,
+//                                 CompletionHandler<Integer, ? super A> completionHandler) {
+//                throw new IllegalStateException("Read operation called for channel in MifWriter!");
+//            }
+//
+//            @Override
+//            public Future<Integer> read(ByteBuffer byteBuffer) {
+//                throw new IllegalStateException("Read operation called for channel in MifWriter!");
+//            }
+//
+//            @Override
+//            public <A> void write(ByteBuffer byteBuffer, A a,
+//                                  CompletionHandler<Integer, ? super A> completionHandler) {
+//                try {
+//                    writableByteChannel.write(byteBuffer);
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//
+//            @Override
+//            public Future<Integer> write(ByteBuffer byteBuffer) {
+//                try {
+//                    return writableByteChannel.write(byteBuffer);
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//
+//            @Override
+//            public void close() throws IOException {
+//
+//            }
+//
+//            @Override
+//            public boolean isOpen() {
+//                return false;
+//            }
+//        }, PrimitivOState.INITIAL);
+//
 //        writer = primitivOBlocks.newWriter(outputStream);
     }
 
     private void writeHeader(MifHeader mifHeader) {
-        writer.write(getBeginMagicBytes());
-        writer.write(getVersionString(VERSION_INFO_MIF));
-        writer.write(mifHeader.getPipelineConfiguration());
-        writer.write(mifHeader.getNumberOfTargets());
-        writer.write(mifHeader.getCorrectedGroups().size());
+        PrimitivO primitivO = primitivOHybrid.beginPrimitivO();
+        primitivO.write(getBeginMagicBytes());
+        primitivO.writeUTF(getVersionString(VERSION_INFO_MIF));
+        primitivO.writeObject(mifHeader.getPipelineConfiguration());
+        primitivO.writeInt(mifHeader.getNumberOfTargets());
+        primitivO.writeInt(mifHeader.getCorrectedGroups().size());
         for (String correctedGroup : mifHeader.getCorrectedGroups())
-            writer.write(correctedGroup);
-        writer.write(mifHeader.getSortedGroups().size());
+            primitivO.writeObject(correctedGroup);
+        primitivO.writeInt(mifHeader.getSortedGroups().size());
         for (String sortedGroup : mifHeader.getSortedGroups())
             writer.write(sortedGroup);
         writer.write(mifHeader.getGroupEdges().size());
@@ -123,17 +149,22 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     }
 
     public void write(ParsedRead parsedRead) {
+        if (closed)
+            throw new IllegalStateException("Attempt to write to closed MifWriter!");
         writer.write(parsedRead);
         writtenReads++;
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         if (!closed) {
-            writer.write(null);
-            writer.write(originalNumberOfReads);
-            writer.write(getEndMagicBytes());
-            writer.close();
+            primitivOHybrid.endPrimitivOBlocks();
+            PrimitivO primitivO = primitivOHybrid.beginPrimitivO();
+            primitivO.writeObject(null);
+            primitivO.writeLong(originalNumberOfReads);
+            primitivO.write(getEndMagicBytes());
+            primitivOHybrid.endPrimitivO();
+            primitivOHybrid.close();
             closed = true;
         }
     }

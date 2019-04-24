@@ -30,27 +30,30 @@ package com.milaboratory.minnn.io;
 
 import cc.redberry.pipe.OutputPortCloseable;
 import com.milaboratory.cli.PipelineConfiguration;
-import com.milaboratory.core.io.CompressionType;
 import com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
+import com.milaboratory.minnn.util.DebugUtils.*;
 import com.milaboratory.primitivio.PrimitivI;
 import com.milaboratory.primitivio.PrimitivO;
+import com.milaboratory.primitivio.blocks.PrimitivIBlocks;
+import com.milaboratory.primitivio.blocks.PrimitivIHybrid;
 import com.milaboratory.util.CanReportProgress;
-import com.milaboratory.util.CountingInputStream;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.milaboratory.minnn.cli.Magic.*;
+import static com.milaboratory.minnn.io.IODefaults.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static java.lang.Double.NaN;
 
 public final class MifReader extends PipelineConfigurationReaderMiNNN
         implements OutputPortCloseable<ParsedRead>, CanReportProgress {
-    private static final int DEFAULT_BUFFER_SIZE = 1 << 20;
-    private final PrimitivI input;
-    private final CountingInputStream countingInputStream;
+    private final PrimitivIHybrid primitivIHybrid;
+    private final PrimitivIBlocks<ParsedRead>.Reader reader;
     private final long size;
     private long parsedReadsLimit = -1;
     private long parsedReadsTaken = 0;
@@ -66,29 +69,30 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private String mifVersionInfo;
 
     public MifReader(InputStream stream) {
-        input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
-        readHeader();
-        size = -1;
+        throw new NotImplementedException();
+//        input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
+//        readHeader();
+//        size = -1;
     }
 
     public MifReader(String fileName) throws IOException {
+        this(fileName, DEFAULT_CONCURRENCY, DEFAULT_READ_AHEAD_BLOCKS);
+    }
+
+    public MifReader(String fileName, int concurrency, int readAheadBlocks) throws IOException {
+        ExecutorService executorService = Executors.newCachedThreadPool();
         File file = new File(fileName);
-        CompressionType ct = CompressionType.detectCompressionType(file);
-        this.countingInputStream = new CountingInputStream(new FileInputStream(file));
-        if (ct == CompressionType.None) {
-            input = new PrimitivI(new BufferedInputStream(this.countingInputStream, DEFAULT_BUFFER_SIZE));
-            size = file.length();
-        } else {
-            input = new PrimitivI(ct.createInputStream(this.countingInputStream, DEFAULT_BUFFER_SIZE));
-            size = -1;
-        }
+        size = file.length();
+        primitivIHybrid = new PrimitivIHybrid(executorService, file.toPath());
         readHeader();
+        reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, concurrency, readAheadBlocks);
     }
 
     private void readHeader() {
+        PrimitivI primitivI = primitivIHybrid.beginPrimitivI();
         byte[] magicBytes = new byte[BEGIN_MAGIC_LENGTH];
         try {
-            input.readFully(magicBytes);
+            primitivI.readFully(magicBytes);
         } catch (RuntimeException e) {
             throw exitWithError("Unsupported file format; error while reading file header: " + e.getMessage());
         }
@@ -96,28 +100,36 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         if (!magicString.equals(BEGIN_MAGIC))
             throw exitWithError("Unsupported file format; .mif file of version " + magicString +
                     " while you are running MiNNN " + BEGIN_MAGIC);
-        mifVersionInfo = input.readUTF();
-        pipelineConfiguration = input.readObject(PipelineConfiguration.class);
-        numberOfTargets = input.readInt();
-        int correctedGroupsNum = input.readInt();
+        mifVersionInfo = primitivI.readUTF();
+        pipelineConfiguration = primitivI.readObject(PipelineConfiguration.class);
+        numberOfTargets = primitivI.readInt();
+        int correctedGroupsNum = primitivI.readInt();
         for (int i = 0; i < correctedGroupsNum; i++)
-            correctedGroups.add(input.readObject(String.class));
-        int sortedGroupsNum = input.readInt();
+            correctedGroups.add(primitivI.readObject(String.class));
+        int sortedGroupsNum = primitivI.readInt();
         for (int i = 0; i < sortedGroupsNum; i++)
-            sortedGroups.add(input.readObject(String.class));
-        int groupEdgesNum = input.readInt();
+            sortedGroups.add(primitivI.readObject(String.class));
+        int groupEdgesNum = primitivI.readInt();
         for (int i = 0; i < groupEdgesNum; i++) {
-            GroupEdge groupEdge = input.readObject(GroupEdge.class);
-            input.putKnownObject(groupEdge);
+            GroupEdge groupEdge = primitivI.readObject(GroupEdge.class);
+            primitivI.putKnownObject(groupEdge);
             groupEdges.add(groupEdge);
         }
+        primitivIHybrid.endPrimitivI();
     }
 
     @Override
     public synchronized void close() {
         if (!closed) {
-            originalNumberOfReads = finished ? input.readLong() : parsedReadsTaken;
-            input.close();
+            primitivIHybrid.endPrimitivIBlocks();
+            PrimitivI primitivI = primitivIHybrid.beginPrimitivI();
+            originalNumberOfReads = finished ? PrimitivI.readLong() : parsedReadsTaken;
+            primitivIHybrid.endPrimitivI();
+            try {
+                primitivIHybrid.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             finished = true;
             closed = true;
         }
@@ -126,17 +138,12 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     @Override
     public double getProgress() {
         if (parsedReadsLimit == -1) {
-            if (size == -1)
+            if (size < 1)
                 return NaN;
             else
-                return (double)(countingInputStream.getBytesRead()) / size;
-        } else {
-            double estimationByTakenReads = (double)parsedReadsTaken / parsedReadsLimit;
-            if (size == -1)
-                return estimationByTakenReads;
-            else
-                return Math.max(estimationByTakenReads, (double)(countingInputStream.getBytesRead()) / size);
-        }
+                return (double)(parsedReadsTaken) * firstReadSerializedLength / size;
+        } else
+            return (double)parsedReadsTaken / parsedReadsLimit;
     }
 
     @Override
@@ -148,7 +155,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     public synchronized ParsedRead take() {
         if (finished)
             return null;
-        ParsedRead parsedRead = input.readObject(ParsedRead.class);
+        ParsedRead parsedRead = reader.take();
         if (parsedRead == null)
             finished = true;
         else {

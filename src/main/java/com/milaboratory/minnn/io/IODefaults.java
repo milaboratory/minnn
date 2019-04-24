@@ -28,14 +28,10 @@
  */
 package com.milaboratory.minnn.io;
 
-import static com.milaboratory.minnn.io.IODefaults.CompressionType.*;
-
 final class IODefaults {
     private IODefaults() {}
 
     final static int DEFAULT_CONCURRENCY = 4;
     final static int DEFAULT_BLOCK_SIZE = 1024;
-    final static CompressionType DEFAULT_COMPRESSION_TYPE = FAST;
-
-    enum CompressionType { FAST, HIGH }
+    final static int DEFAULT_READ_AHEAD_BLOCKS = 100;
 }
