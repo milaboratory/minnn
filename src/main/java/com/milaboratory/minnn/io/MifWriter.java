@@ -34,6 +34,7 @@ import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.minnn.util.DebugUtils.*;
 import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.blocks.PrimitivOBlocks;
+import com.milaboratory.primitivio.blocks.PrimitivOBlocksStats;
 import com.milaboratory.primitivio.blocks.PrimitivOHybrid;
 import com.milaboratory.util.CanReportProgress;
 
@@ -56,79 +57,23 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     private long originalNumberOfReads = -1;
 
     public MifWriter(OutputStream outputStream, MifHeader mifHeader) {
-        this(outputStream, mifHeader, DEFAULT_CONCURRENCY, DEFAULT_BLOCK_SIZE);
+        this(outputStream, mifHeader, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
+    }
+
+    public MifWriter(OutputStream outputStream, MifHeader mifHeader, ExecutorService executorService,
+                     int concurrency) {
+        throw new NotImplementedException();
     }
 
     public MifWriter(String fileName, MifHeader mifHeader) throws IOException {
-        this(fileName, mifHeader, DEFAULT_CONCURRENCY, DEFAULT_BLOCK_SIZE);
+        this(fileName, mifHeader, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
     }
 
-    public MifWriter(String fileName, MifHeader mifHeader, int concurrency, int blockSize) throws IOException {
-        ExecutorService executorService = Executors.newCachedThreadPool();
+    public MifWriter(String fileName, MifHeader mifHeader, ExecutorService executorService, int concurrency)
+            throws IOException {
         primitivOHybrid = new PrimitivOHybrid(executorService, new File(fileName).toPath());
         writeHeader(mifHeader);
-        writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, blockSize);
-    }
-
-    public MifWriter(OutputStream outputStream, MifHeader mifHeader, int concurrency, int blockSize) {
-        throw new NotImplementedException();
-//        LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
-//        LZ4Compressor compressor;
-//        switch (compressionType) {
-//            case FAST:
-//                compressor = lz4Factory.fastCompressor();
-//                break;
-//            case HIGH:
-//                compressor = lz4Factory.highCompressor();
-//                break;
-//            default:
-//                throw new IllegalStateException("Unexpected compression type: " + compressionType);
-//        }
-//        primitivOHybrid = new PrimitivOHybrid(executorService, new AsynchronousByteChannel() {
-//            WritableByteChannel writableByteChannel = newChannel(outputStream);
-//
-//            @Override
-//            public <A> void read(ByteBuffer byteBuffer, A a,
-//                                 CompletionHandler<Integer, ? super A> completionHandler) {
-//                throw new IllegalStateException("Read operation called for channel in MifWriter!");
-//            }
-//
-//            @Override
-//            public Future<Integer> read(ByteBuffer byteBuffer) {
-//                throw new IllegalStateException("Read operation called for channel in MifWriter!");
-//            }
-//
-//            @Override
-//            public <A> void write(ByteBuffer byteBuffer, A a,
-//                                  CompletionHandler<Integer, ? super A> completionHandler) {
-//                try {
-//                    writableByteChannel.write(byteBuffer);
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//
-//            @Override
-//            public Future<Integer> write(ByteBuffer byteBuffer) {
-//                try {
-//                    return writableByteChannel.write(byteBuffer);
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//
-//            @Override
-//            public void close() throws IOException {
-//
-//            }
-//
-//            @Override
-//            public boolean isOpen() {
-//                return false;
-//            }
-//        }, PrimitivOState.INITIAL);
-//
-//        writer = primitivOBlocks.newWriter(outputStream);
+        writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, DEFAULT_BLOCK_SIZE);
     }
 
     private void writeHeader(MifHeader mifHeader) {
@@ -148,6 +93,7 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
             writer.write(groupEdge);
     }
 
+    /** Thread unsafe: all writes must be in single thread and keep reads in order */
     public void write(ParsedRead parsedRead) {
         if (closed)
             throw new IllegalStateException("Attempt to write to closed MifWriter!");
@@ -167,6 +113,10 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
             primitivOHybrid.close();
             closed = true;
         }
+    }
+
+    public PrimitivOBlocksStats getStats() {
+        return writer.getParent().getStats();
     }
 
     public void setOriginalNumberOfReads(long originalNumberOfReads) {

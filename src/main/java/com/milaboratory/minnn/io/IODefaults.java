@@ -32,6 +32,6 @@ final class IODefaults {
     private IODefaults() {}
 
     final static int DEFAULT_CONCURRENCY = 4;
-    final static int DEFAULT_BLOCK_SIZE = 1024;
-    final static int DEFAULT_READ_AHEAD_BLOCKS = 100;
+    final static int DEFAULT_BLOCK_SIZE = 5000;
+    final static int DEFAULT_READ_AHEAD_BLOCKS = 5;
 }

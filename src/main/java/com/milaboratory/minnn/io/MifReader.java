@@ -37,6 +37,7 @@ import com.milaboratory.minnn.util.DebugUtils.*;
 import com.milaboratory.primitivio.PrimitivI;
 import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.blocks.PrimitivIBlocks;
+import com.milaboratory.primitivio.blocks.PrimitivIBlocksStats;
 import com.milaboratory.primitivio.blocks.PrimitivIHybrid;
 import com.milaboratory.util.CanReportProgress;
 
@@ -69,23 +70,23 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private String mifVersionInfo;
 
     public MifReader(InputStream stream) {
+        this(stream, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
+    }
+
+    public MifReader(InputStream stream, ExecutorService executorService, int concurrency) {
         throw new NotImplementedException();
-//        input = new PrimitivI(this.countingInputStream = new CountingInputStream(stream));
-//        readHeader();
-//        size = -1;
     }
 
     public MifReader(String fileName) throws IOException {
-        this(fileName, DEFAULT_CONCURRENCY, DEFAULT_READ_AHEAD_BLOCKS);
+        this(fileName, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
     }
 
-    public MifReader(String fileName, int concurrency, int readAheadBlocks) throws IOException {
-        ExecutorService executorService = Executors.newCachedThreadPool();
+    public MifReader(String fileName, ExecutorService executorService, int concurrency) throws IOException {
         File file = new File(fileName);
         size = file.length();
         primitivIHybrid = new PrimitivIHybrid(executorService, file.toPath());
         readHeader();
-        reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, concurrency, readAheadBlocks);
+        reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, concurrency, DEFAULT_READ_AHEAD_BLOCKS);
     }
 
     private void readHeader() {
@@ -220,6 +221,10 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
             return (parsedReadsLimit == -1) ? estimatedNumberOfReads
                     : Math.min(parsedReadsLimit, estimatedNumberOfReads);
         }
+    }
+
+    public PrimitivIBlocksStats getStats() {
+        return reader.getParent().getStats();
     }
 
     /**

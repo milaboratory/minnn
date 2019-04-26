@@ -65,13 +65,15 @@ public final class CorrectBarcodesIO {
     private final String reportFileName;
     private final String jsonReportFileName;
     private final AtomicLong totalReads = new AtomicLong(0);
+    private final boolean debugMode;
 
     public CorrectBarcodesIO(
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
             List<String> groupNames, List<String> primaryGroupNames,
             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, int maxUniqueBarcodes, int minCount,
             String excludedBarcodesOutputFileName, float wildcardsCollapsingMergeThreshold, long inputReadsLimit,
-            boolean suppressWarnings, int threads, String reportFileName, String jsonReportFileName) {
+            boolean suppressWarnings, int threads, String reportFileName, String jsonReportFileName,
+                             boolean debugMode) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.correctionAlgorithms = new CorrectionAlgorithms(barcodeClusteringStrategyFactory,
                 maxUniqueBarcodes, minCount, wildcardsCollapsingMergeThreshold);
@@ -89,6 +91,7 @@ public final class CorrectBarcodesIO {
         this.threads = threads;
         this.reportFileName = reportFileName;
         this.jsonReportFileName = jsonReportFileName;
+        this.debugMode = debugMode;
     }
 
     public void go() {
@@ -162,6 +165,11 @@ public final class CorrectBarcodesIO {
                         keyGroups, 0);
                 stats.add(correctionAlgorithms.correctAndWrite(correctionData, pass2RawReadsPort,
                         writer, excludedBarcodesWriter));
+            if (debugMode) {
+                pass1ReaderStats = pass1Reader.getStats().toString();
+                if (pass2Reader != null)
+                    pass2ReaderStats = pass2Reader.getStats().toString();
+                writerStats = writer.getStats().toString();
             }
             pass1Reader.close();
             writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
@@ -216,6 +224,13 @@ public final class CorrectBarcodesIO {
         reportFileHeader.append("Barcode clusters not merged by size threshold: ")
                 .append(stats.barcodeClusterNotAddedByThreshold).append(" (")
                 .append(floatFormat.format(barcodeClusterNotAddedByThresholdPercent)).append("%)\n");
+        if (debugMode) {
+            reportFileHeader.append("\n\nDebug information:\n\n");
+            reportFileHeader.append("Pass 1 reader stats:\n").append(pass1ReaderStats).append('\n');
+            if (pass2ReaderStats != null)
+                reportFileHeader.append("Pass 2 reader stats:\n").append(pass2ReaderStats).append('\n');
+            reportFileHeader.append("Writer stats:\n").append(writerStats).append("\n\n");
+        }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');

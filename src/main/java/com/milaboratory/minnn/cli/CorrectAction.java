@@ -65,7 +65,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, groupNames, primaryGroupNames, barcodeClusteringStrategyFactory, maxUniqueBarcodes,
                 minCount, excludedBarcodesOutputFileName, wildcardsCollapsingMergeThreshold,
-                inputReadsLimit, quiet, threads, reportFileName, jsonReportFileName);
+                inputReadsLimit, quiet, threads, reportFileName, jsonReportFileName, debugMode);
         correctBarcodesIO.go();
     }
 

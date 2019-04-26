@@ -118,7 +118,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
                 : barcodeWhitelistPatternFiles.toString();
         FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), finalReadFilter, filterQueryStr,
                 barcodeWhitelistFilesStr, barcodeWhitelistPatternFilesStr, inputFileName, outputFileName,
-                inputReadsLimit, threads, reportFileName, jsonReportFileName);
+                inputReadsLimit, threads, reportFileName, jsonReportFileName, debugMode);
         filterIO.go();
     }
 
