@@ -55,7 +55,7 @@ public final class StatGroupsAction extends ACommandWithOutput implements MiNNNC
     public void run0() {
         StatGroupsIO statGroupsIO = new StatGroupsIO(groupList, inputFileName, outputFileName, inputReadsLimit,
                 readQualityFilter, minQualityFilter, avgQualityFilter, minCountFilter, minFracFilter,
-                reportFileName, jsonReportFileName);
+                reportFileName, jsonReportFileName, debugMode);
         statGroupsIO.go();
     }
 

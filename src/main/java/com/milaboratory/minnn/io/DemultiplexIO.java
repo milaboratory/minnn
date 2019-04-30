@@ -61,6 +61,7 @@ public final class DemultiplexIO {
     private final long inputReadsLimit;
     private final String reportFileName;
     private final String jsonReportFileName;
+    private final boolean debugMode;
     private final String prefix;
     private final LinkedHashMap<OutputFileIdentifier, OutputFileIdentifier> outputFileIdentifiers;
     private final HashSet<String> outputFileNames;
@@ -69,7 +70,7 @@ public final class DemultiplexIO {
 
     public DemultiplexIO(
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFilesPath,
-            List<DemultiplexArgument> demultiplexArguments, String logFileName, boolean allowOverwriting, long inputReadsLimit, String reportFileName, String jsonReportFileName) {
+            List<DemultiplexArgument> demultiplexArguments, String logFileName, boolean allowOverwriting, long inputReadsLimit, String reportFileName, String jsonReportFileName, boolean debugMode) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFilesPath = outputFilesPath;
@@ -79,6 +80,7 @@ public final class DemultiplexIO {
         this.inputReadsLimit = inputReadsLimit;
         this.reportFileName = reportFileName;
         this.jsonReportFileName = jsonReportFileName;
+        this.debugMode = debugMode;
         this.prefix = ((inputFileName.length() > 4)
                 && inputFileName.substring(inputFileName.length() - 4).equals(".mif"))
                 ? inputFileName.substring(0, inputFileName.length() - 4) : inputFileName;
@@ -90,6 +92,7 @@ public final class DemultiplexIO {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
         long matchedReads = 0;
+        String readerStats = null;
         try (MifReader reader = new MifReader(inputFileName);
              PrintStream logWriter = new PrintStream(new FileOutputStream(logFileName))) {
             header = new MifHeader(pipelineConfiguration, reader.getNumberOfTargets(), reader.getCorrectedGroups(),
@@ -110,6 +113,8 @@ public final class DemultiplexIO {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
+            if (debugMode)
+                readerStats = reader.getStats().toString();
             reader.close();
             originalNumberOfReads = reader.getOriginalNumberOfReads();
             outputFileIdentifiers.keySet().forEach(OutputFileIdentifier::closeWriter);
@@ -128,6 +133,10 @@ public final class DemultiplexIO {
         else
             reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
         reportFileHeader.append("Output files prefix: ").append(prefix).append('\n');
+        if (debugMode) {
+            reportFileHeader.append("\n\nDebug information:\n\n");
+            reportFileHeader.append("Reader stats:\n").append(readerStats).append("\n\n");
+        }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');

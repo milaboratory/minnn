@@ -56,12 +56,13 @@ public final class StatPositionsIO {
     private final float minFracFilter;
     private final String reportFileName;
     private final String jsonReportFileName;
+    private final boolean debugMode;
     private final HashMap<StatGroupsKey, Long> statGroups = new HashMap<>();
     private long totalReads = 0;
 
     public StatPositionsIO(List<String> groupList, List<String> readIdList, boolean outputWithSeq,
                            String inputFileName, String outputFileName, long inputReadsLimit, int minCountFilter,
-                           float minFracFilter, String reportFileName, String jsonReportFileName) {
+                           float minFracFilter, String reportFileName, String jsonReportFileName, boolean debugMode) {
         this.groupList = new LinkedHashSet<>(groupList);
         this.readIdList = (readIdList == null) ? null : new LinkedHashSet<>(readIdList);
         this.outputWithSeq = outputWithSeq;
@@ -72,13 +73,14 @@ public final class StatPositionsIO {
         this.minFracFilter = minFracFilter;
         this.reportFileName = reportFileName;
         this.jsonReportFileName = jsonReportFileName;
+        this.debugMode = debugMode;
     }
 
     public void go() {
         long startTime = System.currentTimeMillis();
         ArrayList<String> correctedGroups;
         ArrayList<String> sortedGroups;
-
+        String readerStats = null;
         try (MifReader reader = createReader()) {
             validateInputGroups(reader, groupList, true, "--groups");
             correctedGroups = reader.getCorrectedGroups();
@@ -106,6 +108,8 @@ public final class StatPositionsIO {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
+            if (debugMode)
+                readerStats = reader.getStats().toString();
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -141,6 +145,10 @@ public final class StatPositionsIO {
             reportFileHeader.append("Output is to stdout\n");
         else
             reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
+        if (debugMode) {
+            reportFileHeader.append("\n\nDebug information:\n\n");
+            reportFileHeader.append("Reader stats:\n").append(readerStats).append("\n\n");
+        }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');

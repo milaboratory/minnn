@@ -63,7 +63,7 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
                 minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
                 trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName, toSeparateGroups,
                 inputReadsLimit, actualMaxWarnings, threads, kmerLength, kmerOffset, kmerMaxErrors,
-                reportFileName, jsonReportFileName, debugOutputFileName, debugQualityThreshold);
+                reportFileName, jsonReportFileName, debugMode, debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
     }
 

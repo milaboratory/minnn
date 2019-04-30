@@ -97,6 +97,7 @@ public final class ConsensusIO {
     private final int kmerMatchMaxErrors;
     private final PrintStream reportFileOutputStream;
     private final String jsonReportFileName;
+    private final boolean debugMode;
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
@@ -119,7 +120,7 @@ public final class ConsensusIO {
             float avgQualityThresholdForLowCoverage, int trimWindowSize, String originalReadStatsFileName,
             String notUsedReadsOutputFileName, boolean toSeparateGroups, long inputReadsLimit, int maxWarnings,
             int threads, int kmerLength, int kmerMaxOffset, int kmerMatchMaxErrors, String reportFileName,
-            String jsonReportFileName, String debugOutputFileName, byte debugQualityThreshold) {
+            String jsonReportFileName, boolean debugMode, String debugOutputFileName, byte debugQualityThreshold) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.consensusGroups = new LinkedHashSet<>(Objects.requireNonNull(groupList));
         this.inputFileName = inputFileName;
@@ -161,6 +162,7 @@ public final class ConsensusIO {
                 throw exitWithError(e.toString());
             }
         this.jsonReportFileName = jsonReportFileName;
+        this.debugMode = debugMode;
         try {
             debugOutputStream = (debugOutputFileName == null) ? null
                     : new PrintStream(new FileOutputStream(debugOutputFileName));
@@ -210,6 +212,8 @@ public final class ConsensusIO {
         long startTime = System.currentTimeMillis();
         MifHeader mifHeader;
         long originalNumberOfReads;
+        String readerStats = null;
+        String writerStats = null;
         if (reportFileOutputStream != null) {
             reportFileOutputStream.println("MiNNN v" + getVersionString(VERSION_INFO_SHORTEST));
             reportFileOutputStream.println("Report for Consensus command:");
@@ -349,6 +353,10 @@ public final class ConsensusIO {
                 if (saveNotUsedReads)
                     calculatedConsensuses.notUsedReads.forEach(notUsedReadsWriter::write);
             }
+            if (debugMode) {
+                readerStats = reader.getStats().toString();
+                writerStats = writer.getStats().toString();
+            }
             reader.close();
             originalNumberOfReads = reader.getOriginalNumberOfReads();
             writer.setOriginalNumberOfReads(originalNumberOfReads);
@@ -477,6 +485,11 @@ public final class ConsensusIO {
 
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+        if (debugMode) {
+            report.append("\n\nDebug information:\n\n");
+            report.append("Reader stats:\n").append(readerStats).append('\n');
+            report.append("Writer stats:\n").append(writerStats).append("\n\n");
+        }
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         report.append("Processed ").append(totalReads).append(" reads\n");

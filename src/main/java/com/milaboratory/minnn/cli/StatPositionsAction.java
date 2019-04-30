@@ -53,7 +53,8 @@ public final class StatPositionsAction extends ACommandWithOutput implements MiN
     @Override
     public void run0() {
         StatPositionsIO statPositionsIO = new StatPositionsIO(groupList, readIdList, outputWithSeq, inputFileName,
-                outputFileName, inputReadsLimit, minCountFilter, minFracFilter, reportFileName, jsonReportFileName);
+                outputFileName, inputReadsLimit, minCountFilter, minFracFilter, reportFileName, jsonReportFileName,
+                debugMode);
         statPositionsIO.go();
     }
 

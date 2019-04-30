@@ -67,7 +67,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
                 parsedDemultiplexArguments.inputFileName, outputFilesPath,
                 parsedDemultiplexArguments.demultiplexArguments, logFileName,
                 forceOverwrite || overwriteIfRequired, inputReadsLimit,
-                reportFileName, jsonReportFileName);
+                reportFileName, jsonReportFileName, debugMode);
         demultiplexIO.go();
     }
 
