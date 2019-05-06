@@ -116,4 +116,17 @@ public class SpecialCasesTest {
         for (String fileName : new String[] { extracted, output })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void numberOfReadsChangeTest() throws Exception {
+        String suffix = "-special-case-3.mif";
+        String inputFile = getExampleMif("twosided-raw");
+        String extracted = TEMP_DIR + "extracted" + suffix;
+        String corrected = TEMP_DIR + "corrected" + suffix;
+        exec("extract -f --input " + inputFile + " --output " + extracted + " --input-format MIF"
+                + " --pattern \"(BC:NNNNNNNN)(UMI:NNNNNNNN)\\(R1:*)\"");
+        exec("correct -f --input " + extracted + " --output " + corrected + " --groups BC UMI");
+        for (String fileName : new String[] { inputFile, extracted, corrected })
+            assertTrue(new File(fileName).delete());
+    }
 }

@@ -48,9 +48,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.io.MinnnDataFormat.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
@@ -73,7 +75,6 @@ public final class ReadProcessor {
     private final MinnnDataFormat inputFormat;
     private final DescriptionGroups descriptionGroups;
     private final AtomicLong totalReads = new AtomicLong(0);
-    private int numberOfTargets;
 
     public ReadProcessor(PipelineConfiguration pipelineConfiguration, List<String> inputFileNames,
                          String outputFileName, String notMatchedOutputFileName, Pattern pattern, String patternQuery,
@@ -173,6 +174,7 @@ public final class ReadProcessor {
 
     private IndexedSequenceReader createReader() throws IOException {
         IndexedSequenceReader reader;
+        int numberOfTargets;
         switch (inputFormat) {
             case FASTQ:
                 switch (inputFileNames.size()) {
@@ -224,13 +226,34 @@ public final class ReadProcessor {
     }
 
     private MifWriter createWriter(boolean mismatchedReads) throws IOException {
-        MifHeader mifHeader = new MifHeader(pipelineConfiguration, numberOfTargets, new ArrayList<>(),
+        MifHeader mifHeader = new MifHeader(pipelineConfiguration, calculateOutputNumberOfTargets(), new ArrayList<>(),
                 new ArrayList<>(), pattern.getGroupEdges());
         if (mismatchedReads)
             return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
         else
             return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
                     : new MifWriter(outputFileName, mifHeader);
+    }
+
+    private int calculateOutputNumberOfTargets() {
+        Set<String> outputGroupNames = pattern.getGroupEdges().stream().map(GroupEdge::getGroupName)
+                .collect(Collectors.toSet());
+        if (!outputGroupNames.contains("R1"))
+            throw exitWithError("Default groups overriding requires all output default groups to be specified; "
+                    + "group R1 not found in the pattern!");
+        int foundDefaultGroups = 1;
+        boolean lastGroupFound = false;
+        for (int i = 2; i < BUILTIN_READ_GROUPS_NUM; i++) {
+            String expectedGroupName = "R" + i;
+            if (lastGroupFound && outputGroupNames.contains(expectedGroupName))
+                throw exitWithError("Default groups overriding requires all output default groups to be specified; "
+                        + "group " + expectedGroupName + " is found, but group R" + (i - 1) + " is missing!");
+            if (outputGroupNames.contains(expectedGroupName))
+                foundDefaultGroups++;
+            else
+                lastGroupFound = true;
+        }
+        return foundDefaultGroups;
     }
 
     private class IndexedSequenceRead {
