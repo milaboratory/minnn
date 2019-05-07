@@ -138,7 +138,7 @@ final class SimplifiedParsers {
 
     static FullReadPattern parseFullReadPattern(PatternAligner patternAligner, ArrayList<Token> tokenizedSubstring)
             throws ParserException {
-        final int BUILTIN_READ_GROUPS_NUM = 256;
+        final int BUILTIN_READ_GROUPS_NUM = 127;
         boolean defaultGroupsOverride;
         if ((tokenizedSubstring.size() == 2) && tokenizedSubstring.get(0).isString()
                 && tokenizedSubstring.get(1).isPatternAndNotNull()) {

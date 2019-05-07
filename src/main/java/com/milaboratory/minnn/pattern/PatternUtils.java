@@ -33,11 +33,17 @@ import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static com.milaboratory.minnn.cli.Defaults.BUILTIN_READ_GROUPS_NUM;
 
 public final class PatternUtils {
     private PatternUtils() {}
+
+    private static final Map<String, Byte> defaultGroupIds = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
+            .mapToObj(i -> (byte)i).collect(Collectors.toMap(targetId -> "R" + targetId, Byte::new));
 
     public static int invertCoordinate(int x) {
         return -2 - x;
@@ -112,8 +118,11 @@ public final class PatternUtils {
         ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
 
         for (GroupEdgePosition groupEdgePosition : groupEdgePositions) {
+            // if this is overridden group R1, R2, R3 etc, also override targetId for it
+            byte matchedGroupTargetId = defaultGroupIds.getOrDefault(groupEdgePosition.getGroupEdge().getGroupName(),
+                    targetId);
             int foundGroupEdgePosition = toSeq2Position(alignment, groupEdgePosition.getPosition());
-            MatchedGroupEdge matchedGroupEdge = new MatchedGroupEdge(target, targetId, 0,
+            MatchedGroupEdge matchedGroupEdge = new MatchedGroupEdge(target, matchedGroupTargetId, 0,
                     groupEdgePosition.getGroupEdge(), foundGroupEdgePosition);
             matchedGroupEdges.add(matchedGroupEdge);
         }
