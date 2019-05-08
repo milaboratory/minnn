@@ -60,21 +60,23 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
 
     public RepeatPattern(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
                          int minRepeats, int maxRepeats, List<GroupEdgePosition> groupEdgePositions) {
-        this(patternAligner, patternSeq, minRepeats, maxRepeats, -1, -1, groupEdgePositions);
+        this(patternAligner, patternSeq, minRepeats, maxRepeats, -1, -1,
+                groupEdgePositions);
     }
 
     /**
      * Match several repeats of specified nucleotide or wildcard. Number of repeats specified as interval.
-     * Calls FuzzyMatchPattern to find matches for each number of repeats.
+     * Searching for longest available target section based on minRepeats and maxRepeats values.
      *
-     * @param patternAligner pattern aligner, for FuzzyMatchPattern
-     * @param patternSeq 1 character case sensitive nucleotide sequence to repeat
-     * @param minRepeats minimum number of repeats; minimum allowed value is 1
-     * @param maxRepeats maximum number of repeats; use Integer.MAX_VALUE to match without maximum limit of repeats
-     * @param fixedLeftBorder position in target where must be the left border, for FuzzyMatchPattern
-     * @param fixedRightBorder position in target where must be the right border, for FuzzyMatchPattern
-     * @param groupEdgePositions list of group edges and their positions, for FuzzyMatchPattern.
-     *                           Group edges beyond the right border of motif will be moved to the right border.
+     * @param patternAligner        pattern aligner
+     * @param patternSeq            1 character case sensitive nucleotide sequence to repeat
+     * @param minRepeats            minimal number of repeats; minimal allowed value is 1
+     * @param maxRepeats            maximal number of repeats; use Integer.MAX_VALUE to match
+     *                              without maximal limit of repeats
+     * @param fixedLeftBorder       position in target where must be the left border
+     * @param fixedRightBorder      position in target where must be the right border
+     * @param groupEdgePositions    list of group edges and their positions, can be only on the edges.
+     *                              Group edges beyond the right border of motif will be moved to the right border.
      */
     public RepeatPattern(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
                          int minRepeats, int maxRepeats, int fixedLeftBorder, int fixedRightBorder,
@@ -299,7 +301,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                                 pointToNextUnfairMatch();
                                 return generateMatch(alignment, target, targetId, firstUppercase, lastUppercase,
                                         fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
-                                        patternAligner.repeatsPenalty(patternSeq, repeats, maxRepeats));
+                                        patternAligner.repeatsPenalty(patternSeq, repeats, maxRepeats),
+                                        patternAligner.defaultGroupsOverride());
                             }
                         }
                     }
@@ -441,7 +444,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                         uniqueAlignedSequences.add(alignedSequence);
                         allMatchesList.add(generateMatch(alignment, target, targetId, firstUppercase, lastUppercase,
                                 fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
-                                        patternAligner.repeatsPenalty(patternSeq, repeats, maxRepeats)));
+                                patternAligner.repeatsPenalty(patternSeq, repeats, maxRepeats),
+                                patternAligner.defaultGroupsOverride()));
                     }
                 }
 

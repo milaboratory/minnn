@@ -249,13 +249,13 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
         }
 
         private class FuzzyMatchOutputPort implements OutputPort<MatchIntermediate> {
+            private final static int BITAP_MAX_LENGTH = 63;
             private final boolean fixedBorder;
             private final int maxErrors;
             private final boolean fairSorting;
             private final List<BitapPattern> bitapPatterns;
             private final List<BitapMatcherFilter> bitapMatcherFilters;
             private final ArrayList<Integer> bitapPositionCorrections;
-            private final int BITAP_MAX_LENGTH = 63;
 
             /* Current index in lists of sequences and bitap patterns.
              * Index represents combination of numbers of cut nucleotides on the left and right sides. */
@@ -346,7 +346,8 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                                 return generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
                                         fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                                currentSeq.size()), 0);
+                                                currentSeq.size()), 0,
+                                        patternAligner.defaultGroupsOverride());
                         }
                     }
                     currentIndex = 0;
@@ -412,7 +413,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                                 allMatchesList.add(generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
                                         fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                        currentSeq.size()), 0));
+                                        currentSeq.size()), 0, patternAligner.defaultGroupsOverride()));
                             }
                         }
                     } while (matchLastPosition != -1);
@@ -448,7 +449,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                                 allMatchesList.add(generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
                                         fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                        currentSeq.size()), 0));
+                                        currentSeq.size()), 0, patternAligner.defaultGroupsOverride()));
                             }
                         }
                 }
@@ -475,7 +476,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                         allMatchesList.add(generateMatch(alignment, target, targetId,
                                 firstUppercase(currentSeq), lastUppercase(currentSeq),
                                 fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                currentSeq.size()), 0));
+                                currentSeq.size()), 0, patternAligner.defaultGroupsOverride()));
                 }
 
                 allMatches = new MatchIntermediate[allMatchesList.size()];
