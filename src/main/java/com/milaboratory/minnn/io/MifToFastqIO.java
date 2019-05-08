@@ -41,6 +41,7 @@ import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
@@ -77,6 +78,12 @@ public final class MifToFastqIO {
         long totalReads = 0;
         try (MifReader reader = createReader();
              SequenceWriter writer = createWriter()) {
+            LinkedHashSet<String> availableGroupNames = reader.getGroupEdges().stream().map(GroupEdge::getGroupName)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            for (String groupName : outputGroupNames)
+                if (!availableGroupNames.contains(groupName))
+                    throw exitWithError("Group " + groupName + " not found in the input; available groups: "
+                            + availableGroupNames);
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
