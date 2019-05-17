@@ -28,52 +28,44 @@
  */
 package com.milaboratory.minnn.correct;
 
-import com.milaboratory.core.clustering.Cluster;
-import com.milaboratory.core.clustering.ClusteringStrategy;
-import com.milaboratory.core.mutations.Mutations;
-import com.milaboratory.core.sequence.NucleotideSequence;
-import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.TreeSearchParameters;
 import com.milaboratory.minnn.stat.MutationProbability;
 
-final class BarcodeClusteringStrategy implements ClusteringStrategy<SequenceCounter, NucleotideSequence> {
-    private final TreeSearchParameters treeSearchParameters;
+public final class BarcodeClusteringStrategyFactory {
+    private final float maxErrorsCountMultiplier;
+    private final float maxErrorsShare;
+    private final int maxErrors;
     private final float threshold;
     private final int maxClusterDepth;
     private final MutationProbability mutationProbability;
 
-    BarcodeClusteringStrategy(TreeSearchParameters treeSearchParameters, float threshold, int maxClusterDepth,
-                                     MutationProbability mutationProbability) {
-        this.treeSearchParameters = treeSearchParameters;
+    public BarcodeClusteringStrategyFactory(
+            float maxErrorsCountMultiplier, float maxErrorsShare, int maxErrors, float threshold, int maxClusterDepth,
+            MutationProbability mutationProbability) {
+        this.maxErrorsCountMultiplier = maxErrorsCountMultiplier;
+        this.maxErrorsShare = maxErrorsShare;
+        this.maxErrors = maxErrors;
         this.threshold = threshold;
         this.maxClusterDepth = maxClusterDepth;
         this.mutationProbability = mutationProbability;
     }
 
-    @Override
-    public boolean canAddToCluster(Cluster<SequenceCounter> cluster, SequenceCounter minorSequenceCounter,
-                                   NeighborhoodIterator<NucleotideSequence, SequenceCounter[]> iterator) {
-        Mutations<NucleotideSequence> currentMutations = iterator.getCurrentMutations();
-        long majorClusterCount = cluster.getHead().count;
-        long minorClusterCount = minorSequenceCounter.count;
-        float expected = majorClusterCount;
-        for (int mutationCode : currentMutations.getRAWMutations())
-            expected *= mutationProbability.mutationProbability(mutationCode);
-        return (minorClusterCount <= expected) && ((float)minorClusterCount / majorClusterCount < threshold);
+    boolean averageErrorProbabilityRequired() {
+        return maxErrorsCountMultiplier >= 0;
     }
 
-    @Override
-    public TreeSearchParameters getSearchParameters() {
-        return treeSearchParameters;
+    boolean averageBarcodeLengthRequired() {
+        return (maxErrorsCountMultiplier >= 0) || (maxErrorsShare >= 0);
     }
 
-    @Override
-    public int getMaxClusterDepth() {
-        return maxClusterDepth;
-    }
-
-    @Override
-    public int compare(SequenceCounter c1, SequenceCounter c2) {
-        return Long.compare(c1.count, c2.count);
+    BarcodeClusteringStrategy createStrategy(float averageErrorProbability, float averageBarcodeLength) {
+        int calculatedMaxErrors = (maxErrors >= 0) ? maxErrors : Integer.MAX_VALUE;
+        if (maxErrorsShare >= 0)
+            calculatedMaxErrors = Math.min(calculatedMaxErrors, (int)(maxErrorsShare * averageBarcodeLength));
+        if (maxErrorsCountMultiplier >= 0)
+            calculatedMaxErrors = Math.min(calculatedMaxErrors, (int)(maxErrorsCountMultiplier
+                    * averageErrorProbability * averageBarcodeLength));
+        return new BarcodeClusteringStrategy(new TreeSearchParameters(calculatedMaxErrors, calculatedMaxErrors,
+                calculatedMaxErrors, calculatedMaxErrors), threshold, maxClusterDepth, mutationProbability);
     }
 }

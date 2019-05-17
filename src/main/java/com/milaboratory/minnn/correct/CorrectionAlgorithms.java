@@ -54,8 +54,8 @@ public final class CorrectionAlgorithms {
 
     public static CorrectionStats fullFileCorrect(
             MifReader pass1Reader, MifReader pass2Reader, MifWriter writer, MifWriter excludedBarcodesWriter,
-            long inputReadsLimit, BarcodeClusteringStrategy barcodeClusteringStrategy, Set<String> defaultGroups,
-            LinkedHashSet<String> keyGroups, int maxUniqueBarcodes, int minCount) {
+            long inputReadsLimit, BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory,
+            Set<String> defaultGroups, LinkedHashSet<String> keyGroups, int maxUniqueBarcodes, int minCount) {
         Map<String, HashMap<NucleotideSequence, SequenceCounter>> sequenceMaps = keyGroups.stream()
                 .collect(Collectors.toMap(groupName -> groupName, groupName -> new HashMap<>()));
         boolean filterByCount = (maxUniqueBarcodes > 0) || (minCount > 1);
@@ -65,7 +65,7 @@ public final class CorrectionAlgorithms {
         long correctedReads = 0;
         long excludedReads = 0;
 
-        // 1st pass: counting barcodes
+        // 1st pass: counting barcodes and initializing clustering strategy
         SmartProgressReporter.startProgressReport("Counting sequences", pass1Reader, System.err);
         for (ParsedRead parsedRead : CUtils.it(pass1Reader)) {
             // get sequences from parsed read and fill sequence maps
@@ -105,7 +105,7 @@ public final class CorrectionAlgorithms {
 
     public static CorrectionStats sortedClustersCorrect(
             MifReader reader, MifWriter writer, MifWriter excludedBarcodesWriter, long inputReadsLimit,
-            BarcodeClusteringStrategy barcodeClusteringStrategy, Set<String> defaultGroups,
+            BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, Set<String> defaultGroups,
             LinkedHashSet<String> primaryGroups, LinkedHashSet<String> keyGroups, int maxUniqueBarcodes,
             int minCount) {
         AtomicLong totalReads = new AtomicLong(0);
@@ -167,7 +167,7 @@ public final class CorrectionAlgorithms {
 
     public static CorrectionStats unsortedClustersCorrect(
             MifReader reader, MifWriter writer, MifWriter excludedBarcodesWriter, long inputReadsLimit,
-            BarcodeClusteringStrategy barcodeClusteringStrategy, Set<String> defaultGroups,
+            BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, Set<String> defaultGroups,
             LinkedHashSet<String> primaryGroups, LinkedHashSet<String> keyGroups, int maxUniqueBarcodes,
             int minCount) {
         // keys: primary barcodes values; values: all reads that have this combination of barcodes values
@@ -451,7 +451,7 @@ public final class CorrectionAlgorithms {
         long correctedReads = 0;
         long excludedReads = 0;
 
-        // counting barcodes
+        // counting barcodes and initializing clustering strategy
         cluster.forEach(parsedRead -> pass1ProcessRead(parsedRead, sequenceMaps, notCorrectedBarcodeCounters));
 
         // clustering and filling barcode correction maps
@@ -475,6 +475,33 @@ public final class CorrectionAlgorithms {
         }
 
         return new ClusterStats(correctedReads, excludedReads);
+    }
+
+    private static class GroupData {
+        final boolean filterByCount;
+        final boolean averageErrorProbabilityRequired;
+        final boolean averageBarcodeLengthRequired;
+        final Map<NucleotideSequence, SequenceCounter> sequenceCounters = new HashMap<>();
+        float lengthSum = 0;
+        float averageQualitySum = 0;
+        int parsedReadsCount = 0;
+
+        GroupData(boolean filterByCount, boolean averageErrorProbabilityRequired,
+                  boolean averageBarcodeLengthRequired) {
+            this.filterByCount = filterByCount;
+            this.averageErrorProbabilityRequired = averageErrorProbabilityRequired;
+            this.averageBarcodeLengthRequired = averageBarcodeLengthRequired;
+        }
+
+        void processRead(ParsedRead parsedRead) {
+
+        }
+
+        TreeSet<SequenceCounter> getSortedSequences() {
+            return new TreeSet<>(sequenceCounters.values());
+        }
+
+
     }
 
     private static class ClusterStats {

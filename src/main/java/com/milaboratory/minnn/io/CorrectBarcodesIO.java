@@ -29,9 +29,8 @@
 package com.milaboratory.minnn.io;
 
 import com.milaboratory.cli.PipelineConfiguration;
-import com.milaboratory.minnn.correct.BarcodeClusteringStrategy;
+import com.milaboratory.minnn.correct.BarcodeClusteringStrategyFactory;
 import com.milaboratory.minnn.correct.CorrectionStats;
-import com.milaboratory.minnn.stat.SimpleMutationProbability;
 
 import java.io.IOException;
 import java.util.*;
@@ -50,7 +49,7 @@ public final class CorrectBarcodesIO {
     private final String outputFileName;
     private final List<String> groupNames;
     private final LinkedHashSet<String> primaryGroups;
-    private final BarcodeClusteringStrategy barcodeClusteringStrategy;
+    private final BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory;
     private final int maxUniqueBarcodes;
     private final int minCount;
     private final String excludedBarcodesOutputFileName;
@@ -60,19 +59,17 @@ public final class CorrectBarcodesIO {
     private final String jsonReportFileName;
 
     public CorrectBarcodesIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
-                             int mismatches, int indels, int totalErrors, float threshold, List<String> groupNames,
-                             List<String> primaryGroupNames, int maxClusterDepth, float singleSubstitutionProbability,
-                             float singleIndelProbability, int maxUniqueBarcodes, int minCount,
-                             String excludedBarcodesOutputFileName, long inputReadsLimit, boolean suppressWarnings,
-                             String reportFileName, String jsonReportFileName) {
+                             List<String> groupNames, List<String> primaryGroupNames,
+                             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, int maxUniqueBarcodes,
+                             int minCount, String excludedBarcodesOutputFileName, long inputReadsLimit,
+                             boolean suppressWarnings, String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.groupNames = groupNames;
         this.primaryGroups = (primaryGroupNames == null) ? new LinkedHashSet<>()
                 : new LinkedHashSet<>(primaryGroupNames);
-        this.barcodeClusteringStrategy = new BarcodeClusteringStrategy(mismatches, indels, totalErrors, threshold,
-                maxClusterDepth, new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability));
+        this.barcodeClusteringStrategyFactory = barcodeClusteringStrategyFactory;
         this.maxUniqueBarcodes = maxUniqueBarcodes;
         this.minCount = minCount;
         this.excludedBarcodesOutputFileName = excludedBarcodesOutputFileName;
@@ -113,14 +110,14 @@ public final class CorrectBarcodesIO {
                         "corrected again!");
             if (primaryGroups.size() == 0)
                 stats = fullFileCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategy, defaultGroups, keyGroups, maxUniqueBarcodes, minCount);
+                        barcodeClusteringStrategyFactory, defaultGroups, keyGroups, maxUniqueBarcodes, minCount);
             else if (unsortedPrimaryGroups.size() == 0)
                 stats = sortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes,
+                        barcodeClusteringStrategyFactory, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes,
                         minCount);
             else
                 stats = unsortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategy, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes,
+                        barcodeClusteringStrategyFactory, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes,
                         minCount);
             pass1Reader.close();
             writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());

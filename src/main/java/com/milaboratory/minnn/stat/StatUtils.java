@@ -26,35 +26,30 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.cli;
+package com.milaboratory.minnn.stat;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
+import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
 
-import java.nio.charset.StandardCharsets;
+public final class StatUtils {
+    private StatUtils() {}
 
-public final class Magic {
-    private Magic() {}
-
-    public static final int BEGIN_MAGIC_LENGTH = 14;
-    public static final int BEGIN_MAGIC_LENGTH_SHORT = 9;
-    public static final String BEGIN_MAGIC_MIF = "MiNNN.MIF";
-    private static final int MAGIC_VERSION = 6;
-    private static final TIntObjectHashMap<String> MAGIC_VERSIONS = new TIntObjectHashMap<>();
-    static {
-        for (int i = 1; i <= MAGIC_VERSION; i++)
-            MAGIC_VERSIONS.put(i, BEGIN_MAGIC_MIF + ".V" + String.format("%03d", i));
-    }
-    public static final String BEGIN_MAGIC = MAGIC_VERSIONS.get(MAGIC_VERSION);
-    public static final String END_MAGIC = "#MiNNN.File.End#";
-    private static final byte[] BEGIN_MAGIC_BYTES = BEGIN_MAGIC.getBytes(StandardCharsets.US_ASCII);
-    private static final byte[] END_MAGIC_BYTES = END_MAGIC.getBytes(StandardCharsets.US_ASCII);
-    public static final int END_MAGIC_LENGTH = END_MAGIC_BYTES.length;
-
-    public static byte[] getBeginMagicBytes() {
-        return BEGIN_MAGIC_BYTES.clone();
+    /**
+     * Calculate error probability by quality value.
+     *
+     * @param quality   quality, parameter is float to support average qualities of sequences
+     * @return          probability of error
+     */
+    public static float qualityToProbability(float quality) {
+        return (float)Math.pow(10.0, -quality / 10);
     }
 
-    public static byte[] getEndMagicBytes() {
-        return END_MAGIC_BYTES.clone();
+    public static byte probabilityToQuality(float probability) {
+        double calculatedValue = -10 * Math.log10(probability);
+        if (calculatedValue < 0)
+            return 0;
+        else if (calculatedValue > DEFAULT_MAX_QUALITY)
+            return DEFAULT_MAX_QUALITY;
+        else
+            return (byte)calculatedValue;
     }
 }

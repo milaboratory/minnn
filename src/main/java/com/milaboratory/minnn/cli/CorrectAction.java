@@ -32,7 +32,9 @@ import com.milaboratory.cli.ACommandWithSmartOverwrite;
 import com.milaboratory.cli.ActionConfiguration;
 import com.milaboratory.cli.AppVersionInfo;
 import com.milaboratory.cli.PipelineConfiguration;
+import com.milaboratory.minnn.correct.BarcodeClusteringStrategyFactory;
 import com.milaboratory.minnn.io.CorrectBarcodesIO;
+import com.milaboratory.minnn.stat.SimpleMutationProbability;
 import picocli.CommandLine.*;
 
 import java.util.*;
@@ -57,9 +59,11 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
 
     @Override
     public void run1() {
+        BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory = new BarcodeClusteringStrategyFactory(
+                maxErrorsCountMultiplier, maxErrorsShare, maxErrors, threshold, maxClusterDepth,
+                new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability));
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
-                outputFileName, mismatches, indels, totalErrors, threshold, groupNames, primaryGroupNames,
-                maxClusterDepth, singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes,
+                outputFileName, groupNames, primaryGroupNames, barcodeClusteringStrategyFactory, maxUniqueBarcodes,
                 minCount, excludedBarcodesOutputFileName, inputReadsLimit, quiet, reportFileName, jsonReportFileName);
         correctBarcodesIO.go();
     }
@@ -72,6 +76,9 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Override
     public void validate() {
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
+        if ((maxErrorsCountMultiplier < 0) && (maxErrorsShare < 0) && (maxErrors < 0))
+            throwValidationException("All 3 methods of calculating maximal number of errors for " +
+                    "barcodes clustering are disabled (set to negative); enable at least one!");
     }
 
     @Override
@@ -101,7 +108,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Override
     public ActionConfiguration getConfiguration() {
         return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
-                primaryGroupNames, mismatches, indels, totalErrors, threshold, maxClusterDepth,
+                primaryGroupNames, maxErrorsCountMultiplier, maxErrorsShare, maxErrors, threshold, maxClusterDepth,
                 singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes, minCount, inputReadsLimit));
     }
 
@@ -138,18 +145,23 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             names = {"--output"})
     private String outputFileName = null;
 
-    @Option(description = "Maximum number of mismatches between barcodes for which they are considered identical.",
-            names = {"--max-mismatches"})
-    private int mismatches = DEFAULT_CORRECT_MAX_MISMATCHES;
+    @Option(description = "Multiplier to count maximum Levenshtein distance between barcodes for which they are " +
+            "considered identical. It is multiplied on error probability based on average barcode quality and " +
+            "then multiplied on average barcode length. " + CORRECT_MAX_ERRORS_COMMON,
+            names = "--max-errors-count-multiplier")
+    private float maxErrorsCountMultiplier = DEFAULT_MAX_ERRORS_COUNT_MULTIPLIER;
 
-    @Option(description = "Maximum number of insertions or deletions between barcodes for which they are " +
-            "considered identical.",
-            names = {"--max-indels"})
-    private int indels = DEFAULT_CORRECT_MAX_INDELS;
+    @Option(description = "Relative maximal allowed number of errors (Levenshtein distance) between barcodes for " +
+            "which they are considered identical. It is multiplied on average barcode length to calculate maximal " +
+            "allowed number of errors. If this max errors calculation method is enabled, recommended value is 0.05. " +
+            CORRECT_MAX_ERRORS_COMMON,
+            names = "--max-errors-share")
+    private float maxErrorsShare = -1f;
 
-    @Option(description = "Maximum Levenshtein distance between barcodes for which they are considered identical.",
-            names = {"--max-total-errors"})
-    private int totalErrors = DEFAULT_CORRECT_MAX_TOTAL_ERRORS;
+    @Option(description = "Maximal Levenshtein distance between barcodes for which they are considered identical. " +
+            CORRECT_MAX_ERRORS_COMMON,
+            names = {"--max-errors"})
+    private int maxErrors = -1;
 
     @Option(description = "Threshold for barcode clustering: if smaller barcode count divided to larger barcode " +
             "count is below this threshold, barcode will be merged to the cluster. This feature is turned off " +
