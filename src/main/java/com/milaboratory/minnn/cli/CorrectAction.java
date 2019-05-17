@@ -152,7 +152,11 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     private int totalErrors = DEFAULT_CORRECT_MAX_TOTAL_ERRORS;
 
     @Option(description = "Threshold for barcode clustering: if smaller barcode count divided to larger barcode " +
-            "count is below this threshold, barcode will be merged to the cluster.",
+            "count is below this threshold, barcode will be merged to the cluster. This feature is turned off " +
+            "(set to 1) by default, because there is already filtering by --single-substitution-probability and " +
+            "--single-indel-probability enabled. You can turn on this filter (set the threshold) and set single " +
+            "error probabilities to 1; or you can use both filters (by cluster threshold and by single error " +
+            "probabilities) if you want.",
             names = {"--cluster-threshold"})
     private float threshold = DEFAULT_CORRECT_CLUSTER_THRESHOLD;
 

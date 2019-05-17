@@ -55,7 +55,7 @@ public final class Defaults {
     public final static int DEFAULT_CORRECT_MAX_MISMATCHES = 2;
     public final static int DEFAULT_CORRECT_MAX_INDELS = 2;
     public final static int DEFAULT_CORRECT_MAX_TOTAL_ERRORS = 3;
-    public final static float DEFAULT_CORRECT_CLUSTER_THRESHOLD = 0.03f;
+    public final static float DEFAULT_CORRECT_CLUSTER_THRESHOLD = 1f;
     public final static int DEFAULT_CORRECT_MAX_CLUSTER_DEPTH = 2;
     public final static float DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY = 0.3f;
     public final static float DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY = 0.1f;
