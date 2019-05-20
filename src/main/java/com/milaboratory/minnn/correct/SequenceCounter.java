@@ -36,7 +36,7 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
 
     SequenceCounter(NucleotideSequence sequence) {
         multiSequence = new MultiSequence(sequence);
-        count = 1;
+        count = 0;
     }
 
     @Override

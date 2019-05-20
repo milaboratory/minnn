@@ -38,7 +38,7 @@ final class RawSequenceCounter implements Comparable<RawSequenceCounter> {
 
     RawSequenceCounter(NucleotideSequence seq) {
         this.seq = Objects.requireNonNull(seq);
-        count = 1;
+        count = 0;
     }
 
     @Override
