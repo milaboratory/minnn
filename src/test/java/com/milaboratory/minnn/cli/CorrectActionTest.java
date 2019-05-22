@@ -56,8 +56,9 @@ public class CorrectActionTest {
             createRandomMifFile(startFile);
             exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
-            exec("correct -f --max-mismatches " + rg.nextInt(4) + " --max-indels " + rg.nextInt(4)
-                    + " --max-total-errors " + rg.nextInt(5) + " --max-unique-barcodes " + rg.nextInt(10)
+            exec("correct -f --max-errors-count-multiplier " + ((rg.nextInt(20) - 6) / 2f)
+                    + " --max-errors-share " + (rg.nextInt(10) / 10f)
+                    + " --max-errors " + (rg.nextInt(5) - 1) + " --max-unique-barcodes " + rg.nextInt(10)
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + inputFile + " --output " + outputFile + " --groups G1 G2");
             assertFileNotEquals(inputFile, outputFile);
@@ -76,21 +77,23 @@ public class CorrectActionTest {
         for (int i = 0; i <= 1; i++) {
             String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
+            assertOutputContains(true, "Error", () -> callableExec("correct -f --input " + inputFile
+                    + " --output " + currentOutput + " --max-errors-count-multiplier -1"));
             exec("correct -f --groups G1 G2 G3 G4 --input " + currentInput + " --output " + currentOutput
                     + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
-                    + " --single-indel-probability 0.001");
+                    + " --single-indel-probability 0.001 --max-errors 3 --max-errors-count-multiplier -1");
             assertFileNotEquals(currentInput, currentOutput);
             if (i == 0) {
                 assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
             } else
                 assertMifEqualsAsFastq(currentInput, currentOutput, true);
         }
-        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct3.mif --max-total-errors 0"
+        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct3.mif --max-errors 0"
                 + " --groups G1 G2 G3 G4");
         assertFileNotEquals(inputFile, TEMP_DIR + "correct3.mif");
         assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct3.mif", true);
-        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct4.mif --max-mismatches 0" +
-                " --max-indels 0 --groups G1 G2 G3 G4");
+        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct4.mif --max-errors 0" +
+                " --groups G1 G2 G3 G4 --max-errors-share 0.5");
         assertFileNotEquals(TEMP_DIR + "correct3.mif", TEMP_DIR + "correct4.mif");
         assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct4.mif", true);
         assertTrue(new File(inputFile).delete());
@@ -137,7 +140,7 @@ public class CorrectActionTest {
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
             if (i < 9) {
                 exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
-                        + " --max-total-errors 0 --min-count " + (int)Math.pow(i, 2));
+                        + " --min-count " + (int)Math.pow(i, 2));
                 assertFileNotEquals(currentInput, currentOutput);
                 if (i <= 1)
                     assertMifEqualsAsFastq(currentInput, currentOutput, true);
@@ -145,7 +148,7 @@ public class CorrectActionTest {
                     assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
             } else {
                 exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
-                        + " --max-total-errors 0 --min-count 1");
+                        + " --min-count 1");
                 assertFileNotEquals(currentInput, currentOutput);
                 assertMifEqualsAsFastq(currentInput, currentOutput, true);
             }
@@ -166,13 +169,15 @@ public class CorrectActionTest {
             createRandomMifFile(startFile);
             exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
-            exec("correct -f --max-mismatches " + rg.nextInt(4) + " --max-indels " + rg.nextInt(4)
-                    + " --max-total-errors " + rg.nextInt(5) + " --max-unique-barcodes " + rg.nextInt(10)
+            exec("correct -f --max-errors-count-multiplier " + ((rg.nextInt(20) - 6) / 2f)
+                    + " --max-errors-share " + (rg.nextInt(10) / 10f)
+                    + " --max-errors " + (rg.nextInt(5) - 1) + " --max-unique-barcodes " + rg.nextInt(10)
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + inputFile + " --output " + outputPrimary + " --groups G1");
             exec("sort -f --input " + outputPrimary + " --output " + outputSorted + " --groups G1");
-            exec("correct -f --max-mismatches " + rg.nextInt(4) + " --max-indels " + rg.nextInt(4)
-                    + " --max-total-errors " + rg.nextInt(5) + " --max-unique-barcodes " + rg.nextInt(10)
+            exec("correct -f --max-errors-count-multiplier " + ((rg.nextInt(20) - 6) / 2f)
+                    + " --max-errors-share " + (rg.nextInt(10) / 10f)
+                    + " --max-errors " + (rg.nextInt(5) - 1) + " --max-unique-barcodes " + rg.nextInt(10)
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + outputSorted + " --output " + outputSecondary
                     + " --primary-groups G1 --groups G2");

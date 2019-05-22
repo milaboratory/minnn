@@ -72,8 +72,9 @@ public class ConsensusActionTest {
             int gapScore = -rg.nextInt(10) - 1;
             exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
-            exec("correct -f --max-mismatches " + rg.nextInt(4) + " --max-indels " + rg.nextInt(4)
-                    + " --max-total-errors " + rg.nextInt(5) + " --input " + inputFile
+            exec("correct -f --max-errors-count-multiplier " + ((rg.nextInt(20) - 6) / 2f)
+                    + " --max-errors-share " + (rg.nextInt(10) / 10f)
+                    + " --max-errors " + (rg.nextInt(5) - 1) + " --input " + inputFile
                     + " --output " + correctedFile + " --groups " + consensusGroups);
             exec("sort -f --input " + correctedFile + " --output " + sortedFile + " --groups "
                     + consensusGroups);

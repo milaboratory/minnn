@@ -110,14 +110,14 @@ public final class CorrectBarcodesIO {
                         "corrected again!");
             if (primaryGroups.size() == 0)
                 stats = fullFileCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategyFactory, defaultGroups, keyGroups, maxUniqueBarcodes, minCount);
+                        barcodeClusteringStrategyFactory, keyGroups, maxUniqueBarcodes, minCount);
             else if (unsortedPrimaryGroups.size() == 0)
                 stats = sortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategyFactory, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes,
+                        barcodeClusteringStrategyFactory, primaryGroups, keyGroups, maxUniqueBarcodes,
                         minCount);
             else
                 stats = unsortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategyFactory, defaultGroups, primaryGroups, keyGroups, maxUniqueBarcodes,
+                        barcodeClusteringStrategyFactory, primaryGroups, keyGroups, maxUniqueBarcodes,
                         minCount);
             pass1Reader.close();
             writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
