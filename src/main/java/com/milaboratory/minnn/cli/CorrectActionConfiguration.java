@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
 
 public final class CorrectActionConfiguration implements ActionConfiguration {
-    private static final String CORRECT_ACTION_VERSION_ID = "1";
+    private static final String CORRECT_ACTION_VERSION_ID = "2";
     private final CorrectActionParameters correctParameters;
 
     @JsonCreator
@@ -78,6 +78,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
         private List<String> groupNames;
         private List<String> primaryGroupNames;
         private float maxErrorsCountMultiplier;
+        private float maxErrorsWorstBarcodesShare;
         private float maxErrorsShare;
         private int maxErrors;
         private float threshold;
@@ -93,6 +94,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                 @JsonProperty("groupNames") List<String> groupNames,
                 @JsonProperty("primaryGroupNames") List<String> primaryGroupNames,
                 @JsonProperty("maxErrorsCountMultiplier") float maxErrorsCountMultiplier,
+                @JsonProperty("maxErrorsWorstBarcodesShare") float maxErrorsWorstBarcodesShare,
                 @JsonProperty("maxErrorsShare") float maxErrorsShare,
                 @JsonProperty("maxErrors") int maxErrors,
                 @JsonProperty("threshold") float threshold,
@@ -105,6 +107,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.groupNames = groupNames;
             this.primaryGroupNames = primaryGroupNames;
             this.maxErrorsCountMultiplier = maxErrorsCountMultiplier;
+            this.maxErrorsWorstBarcodesShare = maxErrorsWorstBarcodesShare;
             this.maxErrorsShare = maxErrorsShare;
             this.maxErrors = maxErrors;
             this.threshold = threshold;
@@ -138,6 +141,14 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
 
         public void setMaxErrorsCountMultiplier(float maxErrorsCountMultiplier) {
             this.maxErrorsCountMultiplier = maxErrorsCountMultiplier;
+        }
+
+        public float getMaxErrorsWorstBarcodesShare() {
+            return maxErrorsWorstBarcodesShare;
+        }
+
+        public void setMaxErrorsWorstBarcodesShare(float maxErrorsWorstBarcodesShare) {
+            this.maxErrorsWorstBarcodesShare = maxErrorsWorstBarcodesShare;
         }
 
         public float getMaxErrorsShare() {
@@ -218,6 +229,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (o == null || getClass() != o.getClass()) return false;
             CorrectActionParameters that = (CorrectActionParameters)o;
             if (Float.compare(that.maxErrorsCountMultiplier, maxErrorsCountMultiplier) != 0) return false;
+            if (Float.compare(that.maxErrorsWorstBarcodesShare, maxErrorsWorstBarcodesShare) != 0) return false;
             if (Float.compare(that.maxErrorsShare, maxErrorsShare) != 0) return false;
             if (maxErrors != that.maxErrors) return false;
             if (Float.compare(that.threshold, threshold) != 0) return false;
@@ -237,6 +249,8 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             result = 31 * result + (primaryGroupNames != null ? primaryGroupNames.hashCode() : 0);
             result = 31 * result + (maxErrorsCountMultiplier != +0.0f
                     ? Float.floatToIntBits(maxErrorsCountMultiplier) : 0);
+            result = 31 * result + (maxErrorsWorstBarcodesShare != +0.0f
+                    ? Float.floatToIntBits(maxErrorsWorstBarcodesShare) : 0);
             result = 31 * result + (maxErrorsShare != +0.0f ? Float.floatToIntBits(maxErrorsShare) : 0);
             result = 31 * result + maxErrors;
             result = 31 * result + (threshold != +0.0f ? Float.floatToIntBits(threshold) : 0);

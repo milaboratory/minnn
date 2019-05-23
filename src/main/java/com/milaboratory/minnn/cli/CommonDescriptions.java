@@ -57,7 +57,7 @@ class CommonDescriptions {
     static final String MIN_FRAC_FILTER = "Filter unique group values represented by less than specified fraction " +
             "of reads.";
     static final String CORRECT_MAX_ERRORS_COMMON = "It is recommended to set only one of " +
-            "--max-errors-count-multiplier, --max-errors-share and --max-errors parameters, and set the other two " +
+            "--max-errors-share, --max-errors and --max-errors-count-multiplier parameters, and set the other two " +
             "to -1. Negative value means that this max errors calculation method is disabled. If multiple methods " +
             "are enabled, the lowest calculated value of max errors is used.";
     static final String CONSENSUS_GROUP_LIST = "List of groups that represent barcodes. All these groups must be " +

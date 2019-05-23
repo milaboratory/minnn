@@ -78,10 +78,10 @@ public class CorrectActionTest {
             String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
             assertOutputContains(true, "Error", () -> callableExec("correct -f --input " + inputFile
-                    + " --output " + currentOutput + " --max-errors-count-multiplier -1"));
+                    + " --output " + currentOutput + " --groups G1 --max-errors-share -1"));
             exec("correct -f --groups G1 G2 G3 G4 --input " + currentInput + " --output " + currentOutput
                     + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
-                    + " --single-indel-probability 0.001 --max-errors 3 --max-errors-count-multiplier -1");
+                    + " --single-indel-probability 0.001 --max-errors 3 --max-errors-share -1");
             assertFileNotEquals(currentInput, currentOutput);
             if (i == 0) {
                 assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
@@ -198,14 +198,14 @@ public class CorrectActionTest {
                 String currentSortedOutput = TEMP_DIR + "sortedPrimary" + (i + 1) + ".mif";
                 String currentSecondaryOutput = TEMP_DIR + "correctedSecondary" + (i + 1) + ".mif";
                 exec("correct -f --groups G1 G2 --input " + currentInput + " --output " + currentPrimaryOutput
-                        + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
+                        + " --max-errors-share 0.4 --cluster-threshold 0.4 --single-substitution-probability 0.002"
                         + " --single-indel-probability 0.001");
                 if (sorted)
                     exec("sort -f --groups G1 G2 --input " + currentPrimaryOutput
                             + " --output " + currentSortedOutput);
                 exec("correct -f --primary-groups G1 G2 --groups G3 G4 --input "
                         + (sorted ? currentSortedOutput : currentPrimaryOutput)
-                        + " --output " + currentSecondaryOutput + " --cluster-threshold 0.4"
+                        + " --output " + currentSecondaryOutput + " --max-errors-share 0.4 --cluster-threshold 0.4"
                         + " --single-substitution-probability 0.002 --single-indel-probability 0.001");
                 assertFileNotEquals(currentInput, currentSecondaryOutput);
                 if (i == 0) {

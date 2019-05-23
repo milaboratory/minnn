@@ -120,7 +120,8 @@ public class ConsensusActionTest {
         String notUsedReadsFile = TEMP_DIR + "not_used_reads.mif";
         String consensusFile2 = TEMP_DIR + "consensus2.mif";
         String consensusFile3 = TEMP_DIR + "consensus3.mif";
-        exec("correct -f --input " + inputFile + " --output " + correctedFile + " --groups G3 G4 G1 G2");
+        exec("correct -f --input " + inputFile + " --output " + correctedFile + " --groups G3 G4 G1 G2"
+                + " --max-errors-share 0.5");
         exec("sort -f --input " + correctedFile + " --output " + sortedFile + " --groups G3 G4 G1 G2 R1 R2");
         exec("consensus-dma -f --input " + sortedFile + " --output " + consensusFile + " --groups G3 G4 G1"
                 + " --threads 5 --score-threshold -1200 --width 30 --max-consensuses-per-cluster 5"

@@ -33,6 +33,7 @@ import com.milaboratory.minnn.stat.MutationProbability;
 
 public final class BarcodeClusteringStrategyFactory {
     private final float maxErrorsCountMultiplier;
+    private final float maxErrorsWorstBarcodesShare;
     private final float maxErrorsShare;
     private final int maxErrors;
     private final float threshold;
@@ -40,9 +41,10 @@ public final class BarcodeClusteringStrategyFactory {
     private final MutationProbability mutationProbability;
 
     public BarcodeClusteringStrategyFactory(
-            float maxErrorsCountMultiplier, float maxErrorsShare, int maxErrors, float threshold, int maxClusterDepth,
-            MutationProbability mutationProbability) {
+            float maxErrorsCountMultiplier, float maxErrorsWorstBarcodesShare, float maxErrorsShare, int maxErrors,
+            float threshold, int maxClusterDepth, MutationProbability mutationProbability) {
         this.maxErrorsCountMultiplier = maxErrorsCountMultiplier;
+        this.maxErrorsWorstBarcodesShare = maxErrorsWorstBarcodesShare;
         this.maxErrorsShare = maxErrorsShare;
         this.maxErrors = maxErrors;
         this.threshold = threshold;
@@ -50,20 +52,24 @@ public final class BarcodeClusteringStrategyFactory {
         this.mutationProbability = mutationProbability;
     }
 
+    boolean averageBarcodeLengthRequired() {
+        return (maxErrorsCountMultiplier >= 0) || (maxErrorsShare >= 0);
+    }
+
     boolean averageErrorProbabilityRequired() {
         return maxErrorsCountMultiplier >= 0;
     }
 
-    boolean averageBarcodeLengthRequired() {
-        return (maxErrorsCountMultiplier >= 0) || (maxErrorsShare >= 0);
+    float getMaxErrorsWorstBarcodesShare() {
+        return maxErrorsWorstBarcodesShare;
     }
 
     BarcodeClusteringStrategy createStrategy(float averageErrorProbability, float averageBarcodeLength) {
         int calculatedMaxErrors = (maxErrors >= 0) ? maxErrors : Integer.MAX_VALUE;
         if (maxErrorsShare >= 0)
-            calculatedMaxErrors = Math.min(calculatedMaxErrors, (int)(maxErrorsShare * averageBarcodeLength));
+            calculatedMaxErrors = Math.min(calculatedMaxErrors, Math.round(maxErrorsShare * averageBarcodeLength));
         if (maxErrorsCountMultiplier >= 0)
-            calculatedMaxErrors = Math.min(calculatedMaxErrors, (int)(maxErrorsCountMultiplier
+            calculatedMaxErrors = Math.min(calculatedMaxErrors, Math.round(maxErrorsCountMultiplier
                     * averageErrorProbability * averageBarcodeLength));
         return new BarcodeClusteringStrategy(new TreeSearchParameters(calculatedMaxErrors, calculatedMaxErrors,
                 calculatedMaxErrors, calculatedMaxErrors), threshold, maxClusterDepth, mutationProbability);

@@ -64,4 +64,24 @@ public class SpecialCasesTest {
 
         assertTrue(new File(outputFile).delete());
     }
+
+    @Test
+    public void correctionSpeedTest() throws Exception {
+        String smallR1 = TEST_RESOURCES_PATH + "sample_r1.fastq.gz";
+        String smallR2 = TEST_RESOURCES_PATH + "sample_r2.fastq.gz";
+        String bigR1 = TEST_RESOURCES_PATH + "big/kit_data_R1.fastq.gz";
+        String bigR2 = TEST_RESOURCES_PATH + "big/kit_data_R2.fastq.gz";
+        boolean bigFilesExist = new File(bigR1).exists() && new File(bigR2).exists();
+        String inputFileR1 = bigFilesExist ? bigR1 : smallR1;
+        String inputFileR2 = bigFilesExist ? bigR2 : smallR2;
+        String extractOutput = TEMP_DIR + "extracted.mif";
+        String correctOutput = TEMP_DIR + "corrected.mif";
+        exec("extract -f --input " + inputFileR1 + " " + inputFileR2 + " --output " + extractOutput
+                + " --score-threshold -25 --bitap-max-errors 5"
+                + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
+        exec("correct -f --groups UMI --input " + extractOutput + " --output " + correctOutput
+                + " --cluster-threshold 0.3");
+        for (String fileName : new String[] { extractOutput, correctOutput })
+            assertTrue(new File(fileName).delete());
+    }
 }
