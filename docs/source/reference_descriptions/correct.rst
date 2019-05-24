@@ -21,7 +21,7 @@ Examples for correct action:
 
    minnn correct --groups UMI --input extracted.mif --output corrected.mif --cluster-threshold 0.01
    minnn correct --groups G1 G3 G2 --max-unique-barcodes 7000 --input filtered.mif | xz > corrected.mif.xz
-   minnn correct --groups SB1 SB2 --max-total-errors 2 --input data.mif --output corrected.mif
+   minnn correct --groups SB1 SB2 --max-errors 2 --max-errors-share -1 --input data.mif --output corrected.mif
 
 :code:`--max-unique-barcodes` argument is useful for correction of cell barcodes in single cell sequencing: it sets
 maximal count of unique barcodes that will be included in the output file. Only barcodes with highest counts will be
@@ -35,24 +35,52 @@ is absent or set to :code:`0`, filtering by maximal number of unique barcodes wi
 :code:`--min-count` argument allows to specify count threshold for barcodes directly. Barcodes with lower counts will
 be filtered out. Reads that contain at least 1 filtered out barcode will not be included in the output.
 
-Arguments :code:`--max-mismatches`, :code:`--max-indels` and :code:`--max-total-errors` specify how two barcodes can
-differ in the same cluster. Two barcodes for which at least one of these 3 restrictions is not met will never be
-added to the same cluster. Therefore, barcodes with number of mutations that exceed these values will not be corrected.
+:code:`--max-errors-share` argument specifies how two barcodes can differ in the same cluster. This share is multiplied
+on average barcode length to calculate maximal allowed number of errors (Levenshtein distance) between barcodes.
+Barcodes with bigger number of errors will not be corrected. The maximal allowed number of errors is calculated
+separately for each group, for example, if there is short group :code:`CB` and long group :code:`UMI`, more errors
+will be allowed in :code:`UMI` group. Negative value after :code:`--max-errors-share` means that this max errors
+calculation method is disabled.
 
-:code:`--cluster-threshold` is frequency threshold that prevents two unique but similar barcodes from merging into
-one barcode. If this barcode count divided to cluster's largest barcode count is below this threshold, this barcode can
-be merged to the cluster, otherwise it will form a new cluster.
+You can also specify the maximal allowed number of errors directly, same value for all groups. :code:`--max-errors`
+argument can be used for this. It is disabled (set to :code:`-1`) by default.
+
+**Important:** If multiple methods to specify the maximal allowed number of errors are enabled, then the lowest value
+of max errors from these methods will be used. If you want, for example, to use only :code:`--max-errors` method, then
+disable (set to :code:`-1`) the :code:`--max-errors-share` argument.
+
+Also there is 3rd method to specify the maximal allowed number of errors in barcode.
+:code:`--max-errors-count-multiplier` argument, if enabled (set to positive value), is multiplied on error probability
+based on average of minimal barcode qualities from a share of barcodes with worst qualities; then multiplied on average
+barcode length. There are 5 steps of calculation max errors value in this case:
+
+1. A share of barcodes with worst qualities is extracted from the current group. Size of the share can be changed with
+   :code:`--max-errors-worst-barcodes-share` argument.
+2. Quality of the worst letter from each of barcodes in this share is taken.
+3. Average quality of these worst letters is calculated.
+4. Probability of error corresponding to this quality is calculated.
+5. The probability is multiplied on average barcode length and then on :code:`--max-errors-count-multiplier` value.
+
+This max errors calculation method is disabled (set to :code:`-1`) by default. If you want to enable it,
+the recommended value for :code:`--max-errors-count-multiplier` is :code:`1`.
+
+Clustering algorithm uses probabilities of substitutions and indels in sequence to check when barcode cannot be
+added to cluster; for example, if the barcode's count is big, and there is low probability that this barcode emerged
+because of errors. You can change the default values for these probabilities with
+:code:`--single-substitution-probability` and :code:`--single-indel-probability` arguments. If you don't need
+this feature, set both probabilities to :code:`1`.
+
+In addition to :code:`--single-substitution-probability` and :code:`--single-indel-probability` arguments, clustering
+algorithm also allows to directly specify the frequency threshold that prevents two unique but similar barcodes from
+merging into one barcode. :code:`--cluster-threshold` argument can be used for it. If the current barcode's count
+divided to cluster's largest barcode's count is below this threshold, the current barcode can be merged to the cluster,
+otherwise it will form a new cluster. This feature is turned off (set to :code:`1`) by default.
 
 Barcode clustering algorithm can use multiple layers: there is cluster head (the most frequent barcode in the
 cluster), then the layer contains barcodes clustered to the head, and there can be more layers of barcodes clustered
 to the previous layer. Maximum number of layers is specified by :code:`--max-cluster-depth` argument. If
 :code:`--max-cluster-depth` is :code:`1` then there will be only 1 layer below the head; if
 :code:`--max-cluster-depth` is :code:`2`, there will be second layer clustered to the first layer etc.
-
-In addition to :code:`--cluster-threshold`, clustering algorithm also uses probabilities of substitutions and indels
-in sequence for extra restrictions when barcode cannot be added to cluster. You can set these probabilities manually
-with :code:`--single-substitution-probability` and :code:`--single-indel-probability` arguments. If you don't need this
-feature, set both probabilities to :code:`1`.
 
 :code:`--primary-groups` argument means that barcodes must be corrected inside clusters that are formed from reads with
 the same values of the primary groups. Usage example is correcting UMI separately for each unique cell barcode. It is
