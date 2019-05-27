@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.consensus.ConsensusAlgorithms.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
@@ -186,6 +186,7 @@ public final class ConsensusIO {
              MifWriter writer = createWriter(mifHeader = reader.getHeader())) {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
+            validateInputGroups(reader, consensusGroups, false);
             LinkedHashSet<String> notCorrectedGroups = new LinkedHashSet<>(consensusGroups);
             notCorrectedGroups.removeAll(reader.getCorrectedGroups());
             LinkedHashSet<String> notSortedGroups = new LinkedHashSet<>(consensusGroups);

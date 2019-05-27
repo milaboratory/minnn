@@ -41,9 +41,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
+import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class StatGroupsIO {
@@ -83,6 +83,7 @@ public final class StatGroupsIO {
         ArrayList<String> sortedGroups;
 
         try (MifReader reader = createReader()) {
+            validateInputGroups(reader, groupList, true);
             correctedGroups = reader.getCorrectedGroups();
             sortedGroups = reader.getSortedGroups();
             if (inputReadsLimit > 0)
@@ -91,17 +92,15 @@ public final class StatGroupsIO {
             for (ParsedRead parsedRead : CUtils.it(reader)) {
                 Map<String, MatchedGroup> matchedGroups = parsedRead.getGroups().stream()
                         .collect(Collectors.toMap(MatchedGroup::getGroupName, mg -> mg));
-                if (groupList.stream().allMatch(matchedGroups::containsKey)) {
-                    List<NSequenceWithQuality> groupValues = groupList.stream()
-                            .map(groupName -> matchedGroups.get(groupName).getValue()).collect(Collectors.toList());
-                    if (groupValues.stream().allMatch(this::checkQuality)) {
-                        StatGroupsKey currentKey = new StatGroupsKey(groupValues);
-                        StatGroupsValue currentValue = statGroups.get(currentKey);
-                        if (currentValue == null)
-                            statGroups.put(currentKey, new StatGroupsValue(groupValues));
-                        else
-                            currentValue.countNewValue(groupValues);
-                    }
+                List<NSequenceWithQuality> groupValues = groupList.stream()
+                        .map(groupName -> matchedGroups.get(groupName).getValue()).collect(Collectors.toList());
+                if (groupValues.stream().allMatch(this::checkQuality)) {
+                    StatGroupsKey currentKey = new StatGroupsKey(groupValues);
+                    StatGroupsValue currentValue = statGroups.get(currentKey);
+                    if (currentValue == null)
+                        statGroups.put(currentKey, new StatGroupsValue(groupValues));
+                    else
+                        currentValue.countNewValue(groupValues);
                 }
                 if (++totalReads == inputReadsLimit)
                     break;

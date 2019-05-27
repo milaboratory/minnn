@@ -45,9 +45,10 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.cli.Defaults.DEFAULT_SORT_CHUNK_SIZE;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
+import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class SorterIO {
@@ -81,6 +82,7 @@ public final class SorterIO {
         long totalReads = 0;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
+            validateInputGroups(reader, sortGroupNames, true);
             SmartProgressReporter.startProgressReport("Reading", reader, System.err);
             List<String> notCorrectedGroups = sortGroupNames.stream().filter(gn -> reader.getCorrectedGroups().stream()
                     .noneMatch(gn::equals)).collect(Collectors.toList());

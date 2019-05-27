@@ -29,11 +29,17 @@
 package com.milaboratory.minnn.cli;
 
 import com.milaboratory.cli.ValidationException;
+import com.milaboratory.minnn.io.MifReader;
+import com.milaboratory.minnn.pattern.GroupEdge;
 import picocli.CommandLine;
 
 import java.text.DecimalFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
+import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 public final class CliUtils {
     private CliUtils() {}
@@ -44,5 +50,27 @@ public final class CliUtils {
         if ((quality < 0) || (quality > DEFAULT_MAX_QUALITY))
             throw new ValidationException(commandLine, quality + " is invalid value for quality! Valid values are "
                     + "from 0 to " + DEFAULT_MAX_QUALITY + ".", false);
+    }
+
+    public static void validateInputGroups(
+            MifReader mifReader, Collection<String> inputGroups, boolean defaultGroupsAllowed) {
+        if (!defaultGroupsAllowed) {
+            Set<String> defaultGroups = IntStream.rangeClosed(1, mifReader.getNumberOfTargets())
+                    .mapToObj(i -> "R" + i).collect(Collectors.toSet());
+            if (inputGroups.stream().anyMatch(defaultGroups::contains))
+                throw exitWithError("Default groups R1, R2 etc are not allowed in --groups argument!");
+        }
+        Set<String> existingGroups = mifReader.getGroupEdges().stream().map(GroupEdge::getGroupName)
+                .collect(Collectors.toSet());
+        LinkedHashSet<String> missingGroups = inputGroups.stream().filter(g -> !existingGroups.contains(g))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (missingGroups.size() > 0) {
+            Set<String> defaultGroups = IntStream.rangeClosed(1, mifReader.getNumberOfTargets())
+                    .mapToObj(i -> "R" + i).collect(Collectors.toSet());
+            LinkedHashSet<String> availableGroups = mifReader.getGroupEdges().stream().map(GroupEdge::getGroupName)
+                    .filter(g -> !defaultGroups.contains(g)).collect(Collectors.toCollection(LinkedHashSet::new));
+            throw exitWithError("Groups " + missingGroups + " not found in the input! Check whether these groups " +
+                    "were specified in extract pattern. Available groups in the input: " + availableGroups);
+        }
     }
 }

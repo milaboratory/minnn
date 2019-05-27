@@ -35,9 +35,8 @@ import com.milaboratory.minnn.correct.CorrectionStats;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.correct.CorrectionAlgorithms.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
@@ -91,10 +90,7 @@ public final class CorrectBarcodesIO {
                 if (primaryGroups.size() == 0)
                     Objects.requireNonNull(pass2Reader).setParsedReadsLimit(inputReadsLimit);
             }
-            Set<String> defaultGroups = IntStream.rangeClosed(1, pass1Reader.getNumberOfTargets())
-                    .mapToObj(i -> "R" + i).collect(Collectors.toSet());
-            if (groupNames.stream().anyMatch(defaultGroups::contains))
-                throw exitWithError("Default groups R1, R2, etc should not be specified for correction!");
+            validateInputGroups(pass1Reader, groupNames, false);
             LinkedHashSet<String> keyGroups = new LinkedHashSet<>(groupNames);
             if (!suppressWarnings && (pass1Reader.getSortedGroups().size() > 0) && (primaryGroups.size() == 0))
                 System.err.println("WARNING: correcting sorted MIF file; output file will be unsorted!");

@@ -38,10 +38,9 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
-import static com.milaboratory.minnn.io.ReportWriter.humanReadableReport;
-import static com.milaboratory.minnn.io.ReportWriter.jsonReport;
-import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
+import static com.milaboratory.minnn.cli.CliUtils.*;
+import static com.milaboratory.minnn.io.ReportWriter.*;
+import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.TimeUtils.nanoTimeToString;
 
 public final class StatPositionsIO {
@@ -79,6 +78,7 @@ public final class StatPositionsIO {
         ArrayList<String> sortedGroups;
 
         try (MifReader reader = createReader()) {
+            validateInputGroups(reader, groupList, true);
             correctedGroups = reader.getCorrectedGroups();
             sortedGroups = reader.getSortedGroups();
             if (inputReadsLimit > 0)
