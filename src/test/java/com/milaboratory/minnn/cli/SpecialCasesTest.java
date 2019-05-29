@@ -84,4 +84,36 @@ public class SpecialCasesTest {
         for (String fileName : new String[] { extractOutput, correctOutput })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void wrongGroupsTest() throws Exception {
+        String inputFileR1 = TEST_RESOURCES_PATH + "sample_r1.fastq.gz";
+        String inputFileR2 = TEST_RESOURCES_PATH + "sample_r2.fastq.gz";
+        String extracted = TEMP_DIR + "extracted.mif";
+        String output = TEMP_DIR + "output.mif";
+        exec("extract -f --input " + inputFileR1 + " " + inputFileR2 + " --output " + extracted
+                + " --pattern \"*\\*\"");
+        assertOutputContains(true, "not found", () -> callableExec("correct -f" +
+                " --input " + extracted + " --output " + output + " --groups G"));
+        assertOutputContains(true, "not allowed", () -> callableExec("correct -f" +
+                " --input " + extracted + " --output " + output + " --groups R1"));
+        assertOutputContains(true, "not found", () -> callableExec("sort -f" +
+                " --input " + extracted + " --output " + output + " --groups G"));
+        exec("sort -f --input " + extracted + " --output " + output + " --groups R1");
+        assertOutputContains(true, "not found", () -> callableExec("consensus -f" +
+                " --input " + extracted + " --output " + output + " --groups G"));
+        assertOutputContains(true, "not allowed", () -> callableExec("consensus -f" +
+                " --input " + extracted + " --output " + output + " --groups R1"));
+        assertOutputContains(true, "not found", () -> callableExec("stat-groups" +
+                " --input " + extracted + " --groups G"));
+        exec("stat-groups --input " + extracted + " --groups R1");
+        assertOutputContains(true, "not found", () -> callableExec("stat-positions" +
+                " --input " + extracted + " --groups G"));
+        exec("stat-positions --input " + extracted + " --groups R1");
+        assertOutputContains(true, "not found", () -> callableExec("filter -f" +
+                " --input " + extracted + " --output " + output + " \"Len(G)=3\""));
+        exec("filter -f --input " + extracted + " --output " + output + " \"Len(R1)=3\"");
+        for (String fileName : new String[] { extracted, output })
+            assertTrue(new File(fileName).delete());
+    }
 }
