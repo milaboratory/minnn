@@ -40,11 +40,10 @@ import static com.milaboratory.minnn.parser.BracketsType.*;
 import static com.milaboratory.minnn.parser.SimplifiedSyntaxStrings.*;
 
 public final class ParserUtils {
-    /**
-     * Saved default group names: they are ignored in validateGroupEdges().
-     * This set is left empty if there is default group name override.
-     */
-    private static HashSet<String> savedDefaultGroupNames = new HashSet<>();
+    private static final int BUILTIN_READ_GROUPS_NUM = 127;
+    /** Default group names: they are ignored in validateGroupEdges() if there is no default groups override. */
+    private static final Set<String> defaultGroupNamesCache = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
+            .mapToObj(i -> "R" + i).collect(Collectors.toSet());
 
     /**
      * Find all non-quoted positions of specified token in string.
@@ -205,11 +204,8 @@ public final class ParserUtils {
      * @return filtered group edges
      */
     static ArrayList<GroupEdge> filterGroupEdgesForValidation(ArrayList<GroupEdge> groupEdges) {
-        if (savedDefaultGroupNames.size() == 0)
-            return groupEdges;
-        else
-            return groupEdges.stream().filter(ge -> !savedDefaultGroupNames.contains(ge.getGroupName()))
-                    .collect(Collectors.toCollection(ArrayList::new));
+        return groupEdges.stream().filter(ge -> !defaultGroupNamesCache.contains(ge.getGroupName()))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
@@ -220,8 +216,12 @@ public final class ParserUtils {
      * @return filtered group edges
      */
     private static ArrayList<GroupEdge> getGroupEdgesForValidation(Pattern pattern) {
-        return filterGroupEdgesForValidation(pattern instanceof FullReadPattern
-                    ? ((FullReadPattern)pattern).getOperandGroupEdges() : pattern.getGroupEdges());
+        ArrayList<GroupEdge> groupEdges = pattern instanceof FullReadPattern
+                ? ((FullReadPattern)pattern).getOperandGroupEdges() : pattern.getGroupEdges();
+        if (pattern.getPatternAligner().defaultGroupsOverride())
+            return groupEdges;
+        else
+            return filterGroupEdgesForValidation(groupEdges);
     }
 
     /**
@@ -394,21 +394,5 @@ public final class ParserUtils {
      */
     static int countCharacters(String str, char c) {
         return str.length() - str.replace(Character.toString(c), "").length();
-    }
-
-    /**
-     * Check if any group name from query overrides standard group name (R1, R2 etc).
-     *
-     * @param numberOfPatterns number of patterns in multi-read pattern, or 1 if it is single-read pattern
-     * @param groupNames all group names in query
-     * @return true if there is group name override
-     */
-    static boolean defaultGroupsOverride(int numberOfPatterns, String... groupNames) {
-        HashSet<String> defaultGroupNames = IntStream.rangeClosed(1, numberOfPatterns).mapToObj(n -> "R" + n)
-                .collect(Collectors.toCollection(HashSet::new));
-        boolean defaultGroupsOverride = Arrays.stream(groupNames).anyMatch(defaultGroupNames::contains);
-        if (!defaultGroupsOverride)
-            savedDefaultGroupNames = defaultGroupNames;
-        return defaultGroupsOverride;
     }
 }

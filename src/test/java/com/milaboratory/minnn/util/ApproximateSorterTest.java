@@ -279,10 +279,10 @@ public class ApproximateSorterTest {
                 0, 0, 1);
         patternAligners[2] = new BasePatternAligner(new PatternAndTargetAlignmentScoring(0,
                 -1, -10, -1, (byte)34, (byte)0, -4),
-                -100, -10, 1, 2);
+                -100, -10, 1, 2, false);
         patternAligners[3] = new BasePatternAligner(new PatternAndTargetAlignmentScoring(0,
                 -7, -11, -7, (byte)34, (byte)0, -4),
-                -200, -10, 3, 2);
+                -200, -10, 3, 2, false);
 
         sequences[0] = "atgggcgcaaatatagggagctccgatcgacatcgggtatcgccctggtacgatcccg";
         sequences[1] = "ggcaaagt";

@@ -38,8 +38,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
-import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
+import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public final class CliUtils {
     private CliUtils() {}
@@ -72,5 +72,22 @@ public final class CliUtils {
             throw exitWithError("Groups " + missingGroups + " not found in the input! Check whether these groups " +
                     "were specified in extract pattern. Available groups in the input: " + availableGroups);
         }
+    }
+
+    /**
+     * Detect whether there is default group override in the pattern.
+     *
+     * @param query             pattern query
+     * @param simplifiedSyntax  true if it is simplified syntax, otherwise false
+     * @return                  true if there is default group override
+     */
+    public static boolean defaultGroupsOverride(String query, boolean simplifiedSyntax) {
+        String strippedQuery = query.replaceAll("\\s+", "");
+        return IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM).mapToObj(i -> "R" + i).anyMatch(groupName -> {
+            if (simplifiedSyntax)
+                return strippedQuery.contains("GroupEdge('" + groupName + "'");
+            else
+                return strippedQuery.contains("(" + groupName + ":");
+        });
     }
 }

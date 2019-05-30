@@ -34,6 +34,7 @@ import com.milaboratory.minnn.parser.Parser;
 import com.milaboratory.minnn.parser.ParserException;
 import com.milaboratory.minnn.pattern.*;
 
+import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
@@ -48,7 +49,7 @@ public final class PatternReadFilter implements ReadFilter {
                 -1, -1, DEFAULT_UPPERCASE_MISMATCH_SCORE,
                 DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
         PatternAligner patternAligner = new BasePatternAligner(scoring, 0, -1,
-                0, 0);
+                0, 0, defaultGroupsOverride(patternQuery, false));
         Parser patternParser = new Parser(patternAligner);
         Pattern pattern;
         try {

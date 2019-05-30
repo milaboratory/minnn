@@ -458,12 +458,10 @@ final class NormalParsers {
         ArrayList<FoundToken> foundTokens = new ArrayList<>();
         List<Token> patternTokens = tokenizedString.getTokens(0, tokenizedString.getFullLength()).stream()
                 .filter(Token::isPatternAndNotNull).collect(Collectors.toList());
-        boolean defaultGroupsOverride = defaultGroupsOverride(patternTokens.size(),
-                groupNames.stream().map(gn -> gn.name).toArray(String[]::new));
         for (Token token : patternTokens) {
             SinglePattern pattern = token.getSinglePattern();
-            foundTokens.add(new FoundToken(new FullReadPattern(patternAligner, defaultGroupsOverride, pattern),
-                    token.getStartCoordinate(), token.getStartCoordinate() + token.getLength()));
+            foundTokens.add(new FoundToken(new FullReadPattern(patternAligner, patternAligner.defaultGroupsOverride(),
+                    pattern), token.getStartCoordinate(), token.getStartCoordinate() + token.getLength()));
         }
 
         return foundTokens;

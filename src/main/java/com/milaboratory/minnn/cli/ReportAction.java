@@ -64,7 +64,7 @@ public final class ReportAction extends ACommand implements MiNNNCommand {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(matchScore, mismatchScore,
                 gapScore, uppercaseMismatchScore, goodQuality, badQuality, maxQualityPenalty);
         PatternAligner patternAligner = new BasePatternAligner(scoring, scoreThreshold, singleOverlapPenalty,
-                bitapMaxErrors, maxOverlap);
+                bitapMaxErrors, maxOverlap, defaultGroupsOverride(query, false));
         Parser patternParser = new Parser(patternAligner);
         Pattern pattern;
         try {

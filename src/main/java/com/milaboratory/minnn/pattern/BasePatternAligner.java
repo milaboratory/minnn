@@ -119,6 +119,11 @@ public class BasePatternAligner implements PatternAligner {
     }
 
     @Override
+    public boolean defaultGroupsOverride() {
+        return defaultGroupsOverride;
+    }
+
+    @Override
     public PatternAligner overridePenaltyThreshold(long newThresholdValue) {
         return new BasePatternAligner(scoring, newThresholdValue, singleOverlapPenalty, bitapMaxErrors, maxOverlap,
                 defaultGroupsOverride, leftBorder);
