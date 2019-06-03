@@ -31,7 +31,10 @@ package com.milaboratory.minnn.parser;
 import com.milaboratory.minnn.pattern.Pattern;
 import com.milaboratory.minnn.pattern.PatternAligner;
 
+import java.util.stream.IntStream;
+
 public final class Parser {
+    public final static int BUILTIN_READ_GROUPS_NUM = 127;
     private final PatternAligner patternAligner;
 
     public Parser(PatternAligner patternAligner) {
@@ -53,9 +56,27 @@ public final class Parser {
     public Pattern parseQuery(String query, ParserFormat format) throws ParserException {
         if (query.equals("")) throw new ParserException("Query is empty!");
         TokenizedString tokenizedString = new TokenizedString(query);
-        Tokenizer tokenizer = (format == ParserFormat.NORMAL) ? new NormalTokenizer(patternAligner)
-                : new SimplifiedTokenizer(patternAligner);
+        Tokenizer tokenizer = (format == ParserFormat.NORMAL)
+                ? new NormalTokenizer(patternAligner, defaultGroupsOverride(query, false))
+                : new SimplifiedTokenizer(patternAligner, defaultGroupsOverride(query, true));
         tokenizer.tokenize(tokenizedString);
         return tokenizedString.getFinalPattern();
+    }
+
+    /**
+     * Detect whether there is default group override in the pattern.
+     *
+     * @param query             pattern query
+     * @param simplifiedSyntax  true if it is simplified syntax, otherwise false
+     * @return                  true if there is default group override
+     */
+    static boolean defaultGroupsOverride(String query, boolean simplifiedSyntax) {
+        String strippedQuery = query.replaceAll("\\s+", "");
+        return IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM).mapToObj(i -> "R" + i).anyMatch(groupName -> {
+            if (simplifiedSyntax)
+                return strippedQuery.contains("GroupEdge('" + groupName + "'");
+            else
+                return strippedQuery.contains("(" + groupName + ":");
+        });
     }
 }

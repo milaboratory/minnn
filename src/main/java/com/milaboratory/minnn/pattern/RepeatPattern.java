@@ -47,21 +47,25 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
     private final int fixedRightBorder;
     private final List<GroupEdgePosition> groupEdgePositions;
 
-    public RepeatPattern(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
-                         int minRepeats, int maxRepeats) {
-        this(patternAligner, patternSeq, minRepeats, maxRepeats, new ArrayList<>());
+    public RepeatPattern(
+            PatternAligner patternAligner, boolean defaultGroupsOverride, NucleotideSequenceCaseSensitive patternSeq,
+            int minRepeats, int maxRepeats) {
+        this(patternAligner, defaultGroupsOverride, patternSeq, minRepeats, maxRepeats, new ArrayList<>());
     }
 
-    public RepeatPattern(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
-                         int minRepeats, int maxRepeats, int fixedLeftBorder, int fixedRightBorder) {
-        this(patternAligner, patternSeq, minRepeats, maxRepeats, fixedLeftBorder, fixedRightBorder, new ArrayList<>());
+    public RepeatPattern(
+            PatternAligner patternAligner, boolean defaultGroupsOverride, NucleotideSequenceCaseSensitive patternSeq,
+            int minRepeats, int maxRepeats, int fixedLeftBorder, int fixedRightBorder) {
+        this(patternAligner, defaultGroupsOverride, patternSeq, minRepeats, maxRepeats,
+                fixedLeftBorder, fixedRightBorder, new ArrayList<>());
 
     }
 
-    public RepeatPattern(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
-                         int minRepeats, int maxRepeats, List<GroupEdgePosition> groupEdgePositions) {
-        this(patternAligner, patternSeq, minRepeats, maxRepeats, -1, -1,
-                groupEdgePositions);
+    public RepeatPattern(
+            PatternAligner patternAligner, boolean defaultGroupsOverride, NucleotideSequenceCaseSensitive patternSeq,
+            int minRepeats, int maxRepeats, List<GroupEdgePosition> groupEdgePositions) {
+        this(patternAligner, defaultGroupsOverride, patternSeq, minRepeats, maxRepeats,
+                -1, -1, groupEdgePositions);
     }
 
     /**
@@ -69,6 +73,7 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
      * Searching for longest available target section based on minRepeats and maxRepeats values.
      *
      * @param patternAligner        pattern aligner
+     * @param defaultGroupsOverride true if there is default groups override in any pattern in the query
      * @param patternSeq            1 character case sensitive nucleotide sequence to repeat
      * @param minRepeats            minimal number of repeats; minimal allowed value is 1
      * @param maxRepeats            maximal number of repeats; use Integer.MAX_VALUE to match
@@ -78,10 +83,11 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
      * @param groupEdgePositions    list of group edges and their positions, can be only on the edges.
      *                              Group edges beyond the right border of motif will be moved to the right border.
      */
-    public RepeatPattern(PatternAligner patternAligner, NucleotideSequenceCaseSensitive patternSeq,
-                         int minRepeats, int maxRepeats, int fixedLeftBorder, int fixedRightBorder,
-                         List<GroupEdgePosition> groupEdgePositions) {
-        super(patternAligner);
+    public RepeatPattern(
+            PatternAligner patternAligner, boolean defaultGroupsOverride, NucleotideSequenceCaseSensitive patternSeq,
+            int minRepeats, int maxRepeats, int fixedLeftBorder, int fixedRightBorder,
+            List<GroupEdgePosition> groupEdgePositions) {
+        super(patternAligner, defaultGroupsOverride);
         this.patternSeq = patternSeq;
         if ((minRepeats < 1) || (maxRepeats < minRepeats))
             throw new IllegalArgumentException("Wrong arguments: minRepeats=" + minRepeats
@@ -176,8 +182,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                 throw new IllegalStateException(toString() + ": trying to set fixed right border to " + position
                         + " when it is already fixed at " + newRightBorder + "!");
         }
-        return new RepeatPattern(patternAligner, patternSeq, minRepeats, maxRepeats, newLeftBorder, newRightBorder,
-                groupEdgePositions);
+        return new RepeatPattern(patternAligner, defaultGroupsOverride, patternSeq, minRepeats, maxRepeats,
+                newLeftBorder, newRightBorder, groupEdgePositions);
     }
 
     private class RepeatPatternMatchingResult implements MatchingResult {
@@ -302,7 +308,7 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                                 return generateMatch(alignment, target, targetId, firstUppercase, lastUppercase,
                                         fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
                                         patternAligner.repeatsPenalty(patternSeq, repeats, maxRepeats),
-                                        patternAligner.defaultGroupsOverride());
+                                        defaultGroupsOverride);
                             }
                         }
                     }
@@ -445,7 +451,7 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                         allMatchesList.add(generateMatch(alignment, target, targetId, firstUppercase, lastUppercase,
                                 fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
                                 patternAligner.repeatsPenalty(patternSeq, repeats, maxRepeats),
-                                patternAligner.defaultGroupsOverride()));
+                                defaultGroupsOverride));
                     }
                 }
 

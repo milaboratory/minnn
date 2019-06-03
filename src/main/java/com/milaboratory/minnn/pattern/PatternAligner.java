@@ -116,14 +116,6 @@ public interface PatternAligner {
     default int leftBorder() { return -1; }
 
     /**
-     * Flag that must be set if there is default groups override anywhere in the pattern. It is important for
-     * setting correct targetIds for groups.
-     *
-     * @return true if there is default groups override anywhere in the pattern, otherwise false
-     */
-    default boolean defaultGroupsOverride() { return false; }
-
-    /**
      * Return new pattern with more strict penalty threshold.
      *
      * @return copy of this PatternAligner with more strict penalty threshold

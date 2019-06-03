@@ -38,8 +38,9 @@ import static com.milaboratory.minnn.pattern.MatchValidationType.LOGICAL_OR;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorterPortLimits;
 
 public final class OrOperator extends MultipleReadsOperator {
-    public OrOperator(PatternAligner patternAligner, MultipleReadsOperator... operandPatterns) {
-        super(patternAligner, operandPatterns);
+    public OrOperator(PatternAligner patternAligner, boolean defaultGroupsOverride,
+                      MultipleReadsOperator... operandPatterns) {
+        super(patternAligner, defaultGroupsOverride, operandPatterns);
     }
 
     @Override

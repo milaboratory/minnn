@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.parser.BracketsType.*;
+import static com.milaboratory.minnn.parser.Parser.defaultGroupsOverride;
 import static com.milaboratory.minnn.parser.ParserUtils.*;
 
 /**
@@ -45,6 +46,7 @@ import static com.milaboratory.minnn.parser.ParserUtils.*;
 final class NormalParsers {
     private final PatternAligner patternAligner;
     private final String query;
+    private final boolean defaultGroupsOverride;
     private final List<BracketsPair> squareBracketsPairs;
     private final ArrayList<Integer> startStickMarkers;
     private final ArrayList<Integer> endStickMarkers;
@@ -58,6 +60,7 @@ final class NormalParsers {
                   List<NormalSyntaxGroupName> groupNames) {
         this.patternAligner = patternAligner;
         this.query = query;
+        this.defaultGroupsOverride = defaultGroupsOverride(query, false);
         this.squareBracketsPairs = squareBracketsPairs;
         this.startStickMarkers = startStickMarkers;
         this.endStickMarkers = endStickMarkers;
@@ -123,7 +126,8 @@ final class NormalParsers {
                     .map(fe -> fe.groupEdgePosition).collect(Collectors.toCollection(ArrayList::new));
             validateGroupEdgePositions(groupEdgePositions);
 
-            foundTokens.add(new FoundToken(new RepeatPattern(getPatternAligner(bracesPair.start - 1, bracesPair.end + 1),
+            foundTokens.add(new FoundToken(new RepeatPattern(
+                    getPatternAligner(bracesPair.start - 1, bracesPair.end + 1), defaultGroupsOverride,
                     patternSeq, minRepeats, maxRepeats, fixedLeftBorder, fixedRightBorder, groupEdgePositions),
                     bracesPair.start - 1, bracesPair.end + 1));
         }
@@ -185,9 +189,9 @@ final class NormalParsers {
                     fixedRightBorder = -2;
                 }
 
-                foundTokens.add(new FoundToken(new FuzzyMatchPattern(getPatternAligner(start, end), patternSeq,
-                        foundLeftCut, foundRightCut, fixedLeftBorder, fixedRightBorder, groupEdgePositions),
-                        start, end));
+                foundTokens.add(new FoundToken(new FuzzyMatchPattern(getPatternAligner(start, end),
+                        defaultGroupsOverride, patternSeq, foundLeftCut, foundRightCut,
+                        fixedLeftBorder, fixedRightBorder, groupEdgePositions), start, end));
             }
         }
 
@@ -219,7 +223,8 @@ final class NormalParsers {
                 validateGroupEdges(groupEdges, true, false);
                 foundGroupEdgePositions.forEach(fe -> foundTokens.add(new FoundToken(null, fe.start, fe.end)));
 
-                foundTokens.add(new FoundToken(new AnyPattern(patternAligner, groupEdges), start, start + 1));
+                foundTokens.add(new FoundToken(new AnyPattern(patternAligner, defaultGroupsOverride, groupEdges),
+                        start, start + 1));
                 asteriskPosition = (asteriskPosition == currentString.length() - 1) ? -1
                         : currentString.indexOf("*", asteriskPosition + 1);
             }
@@ -343,9 +348,11 @@ final class NormalParsers {
                         int sequenceTokenStart = tokens.get(sequenceStart).getStartCoordinate();
                         int sequenceTokenEnd = (i == tokens.size()) ? tokenizedString.getFullLength()
                                 : tokens.get(i).getStartCoordinate();
-                        validateGroupEdges(false, false, true, operands);
-                        foundTokens.add(new FoundToken(new SequencePattern(getPatternAligner(sequenceTokenStart,
-                                sequenceTokenEnd), operands), sequenceTokenStart, sequenceTokenEnd));
+                        validateGroupEdges(false, false, true,
+                                defaultGroupsOverride, operands);
+                        foundTokens.add(new FoundToken(new SequencePattern(getPatternAligner(
+                                sequenceTokenStart, sequenceTokenEnd), defaultGroupsOverride, operands),
+                                sequenceTokenStart, sequenceTokenEnd));
                     }
                     sequenceStarted = false;
                 }
@@ -460,8 +467,8 @@ final class NormalParsers {
                 .filter(Token::isPatternAndNotNull).collect(Collectors.toList());
         for (Token token : patternTokens) {
             SinglePattern pattern = token.getSinglePattern();
-            foundTokens.add(new FoundToken(new FullReadPattern(patternAligner, patternAligner.defaultGroupsOverride(),
-                    pattern), token.getStartCoordinate(), token.getStartCoordinate() + token.getLength()));
+            foundTokens.add(new FoundToken(new FullReadPattern(patternAligner, defaultGroupsOverride, pattern),
+                    token.getStartCoordinate(), token.getStartCoordinate() + token.getLength()));
         }
 
         return foundTokens;
@@ -506,25 +513,33 @@ final class NormalParsers {
                                     + tokens.get(i - 1).getLength();
                             FoundToken foundToken;
                             if (operatorRegexp.contains("+")) {
-                                validateGroupEdges(false, false, true, operands);
-                                foundToken = new FoundToken(new PlusPattern(getPatternAligner(sequenceTokenStart,
-                                        sequenceTokenEnd), operands), sequenceTokenStart, sequenceTokenEnd);
+                                validateGroupEdges(false, false, true,
+                                        defaultGroupsOverride, operands);
+                                foundToken = new FoundToken(new PlusPattern(getPatternAligner(
+                                        sequenceTokenStart, sequenceTokenEnd), defaultGroupsOverride, operands),
+                                        sequenceTokenStart, sequenceTokenEnd);
                             } else if (operatorRegexp.contains("&")) {
-                                validateGroupEdges(true, false, true, operands);
-                                foundToken = new FoundToken(new AndPattern(getPatternAligner(sequenceTokenStart,
-                                        sequenceTokenEnd), operands), sequenceTokenStart, sequenceTokenEnd);
+                                validateGroupEdges(true, false, true,
+                                        defaultGroupsOverride, operands);
+                                foundToken = new FoundToken(new AndPattern(getPatternAligner(
+                                        sequenceTokenStart, sequenceTokenEnd), defaultGroupsOverride, operands),
+                                        sequenceTokenStart, sequenceTokenEnd);
                             } else if (operatorRegexp.contains("|")) {
-                                validateGroupEdges(true, true, true, operands);
-                                foundToken = new FoundToken(new OrPattern(getPatternAligner(sequenceTokenStart,
-                                        sequenceTokenEnd), operands), sequenceTokenStart, sequenceTokenEnd);
+                                validateGroupEdges(true, true, true,
+                                        defaultGroupsOverride, operands);
+                                foundToken = new FoundToken(new OrPattern(getPatternAligner(
+                                        sequenceTokenStart, sequenceTokenEnd), defaultGroupsOverride, operands),
+                                        sequenceTokenStart, sequenceTokenEnd);
                             } else if (operatorRegexp.contains("\\\\")) {
-                                validateGroupEdges(true, false, true, operands);
+                                validateGroupEdges(true, false, true,
+                                        defaultGroupsOverride, operands);
                                 if (Arrays.stream(operands).anyMatch(o -> !(o instanceof FullReadPattern)))
                                     throw new IllegalStateException(
                                             "MultiPattern argument not wrapped with FullReadPattern: "
                                                     + tokenizedString);
-                                foundToken = new FoundToken(new MultiPattern(getPatternAligner(sequenceTokenStart,
-                                        sequenceTokenEnd), operands), sequenceTokenStart, sequenceTokenEnd);
+                                foundToken = new FoundToken(new MultiPattern(getPatternAligner(
+                                        sequenceTokenStart, sequenceTokenEnd), defaultGroupsOverride, operands),
+                                        sequenceTokenStart, sequenceTokenEnd);
                             } else
                                 throw new IllegalArgumentException("Invalid operator regexp: " + operatorRegexp);
                             foundTokens.add(foundToken);
@@ -569,7 +584,7 @@ final class NormalParsers {
                 tokens.stream().filter(Token::isPatternAndNotNull).forEach(token -> foundTokens.add(
                         new FoundToken(new MultiPattern(getPatternAligner(
                                 token.getStartCoordinate(), token.getStartCoordinate() + token.getLength()),
-                                (SinglePattern)(token.getPattern())),
+                                defaultGroupsOverride, (SinglePattern)(token.getPattern())),
                                 token.getStartCoordinate(), token.getStartCoordinate() + token.getLength())));
             }
         } else if (tokens.size() == 1) {
@@ -622,9 +637,10 @@ final class NormalParsers {
                                         + operatorToken.getString().lastIndexOf("~");
                                 int tokenEnd = operandToken.getStartCoordinate() + operandToken.getLength();
                                 MultipleReadsOperator operand = operandToken.getMultipleReadsOperator();
-                                validateGroupEdges(false, true, false, operand);
+                                validateGroupEdges(false, true, false,
+                                        defaultGroupsOverride, operand);
                                 foundTokens.add(new FoundToken(new NotOperator(getPatternAligner(tokenStart, tokenEnd),
-                                        operand), tokenStart, tokenEnd));
+                                        defaultGroupsOverride, operand), tokenStart, tokenEnd));
                             }
                         } else if (sequenceStart < i - 2) {
                             int numOperands = (i - sequenceStart + 1) / 2;
@@ -636,13 +652,15 @@ final class NormalParsers {
                                     + tokens.get(i - 1).getLength();
                             MultipleReadsOperator multipleReadsOperator;
                             if (operatorRegexp.contains("&")) {
-                                validateGroupEdges(true, false, true, operands);
-                                multipleReadsOperator = new AndOperator(getPatternAligner(sequenceTokenStart,
-                                        sequenceTokenEnd), operands);
+                                validateGroupEdges(true, false, true,
+                                        defaultGroupsOverride, operands);
+                                multipleReadsOperator = new AndOperator(getPatternAligner(
+                                        sequenceTokenStart, sequenceTokenEnd), defaultGroupsOverride, operands);
                             } else if (operatorRegexp.contains("|")) {
-                                validateGroupEdges(true, true, true, operands);
-                                multipleReadsOperator = new OrOperator(getPatternAligner(sequenceTokenStart,
-                                        sequenceTokenEnd), operands);
+                                validateGroupEdges(true, true, true,
+                                        defaultGroupsOverride, operands);
+                                multipleReadsOperator = new OrOperator(getPatternAligner(
+                                        sequenceTokenStart, sequenceTokenEnd), defaultGroupsOverride, operands);
                             } else
                                 throw new IllegalArgumentException("Invalid operator regexp: " + operatorRegexp);
                             foundTokens.add(new FoundToken(multipleReadsOperator, sequenceTokenStart, sequenceTokenEnd));
@@ -939,11 +957,13 @@ final class NormalParsers {
     }
 
     private SinglePattern wrapWithScoreFilter(SinglePattern singlePattern, long scoreThreshold) {
-        return new FilterPattern(patternAligner, new ScoreFilter(scoreThreshold), singlePattern);
+        return new FilterPattern(patternAligner, defaultGroupsOverride, new ScoreFilter(scoreThreshold),
+                singlePattern);
     }
 
     private MultipleReadsOperator wrapWithScoreFilter(MultipleReadsOperator multiReadPattern, long scoreThreshold) {
-        return new MultipleReadsFilterPattern(patternAligner, new ScoreFilter(scoreThreshold), multiReadPattern);
+        return new MultipleReadsFilterPattern(patternAligner, defaultGroupsOverride, new ScoreFilter(scoreThreshold),
+                multiReadPattern);
     }
 
     private SinglePattern wrapWithStickFilter(SinglePattern singlePattern, boolean left, int position) {
@@ -951,7 +971,7 @@ final class NormalParsers {
         if (singlePattern instanceof FuzzyMatchPattern || singlePattern instanceof RepeatPattern) {
             wrappedPattern = ((CanFixBorders)singlePattern).fixBorder(left, position);
         } else if (singlePattern instanceof CanFixBorders) {
-            wrappedPattern = new FilterPattern(patternAligner, new StickFilter(left, position),
+            wrappedPattern = new FilterPattern(patternAligner, defaultGroupsOverride, new StickFilter(left, position),
                     ((CanFixBorders)singlePattern).fixBorder(left, position));
         } else
             wrappedPattern = singlePattern;

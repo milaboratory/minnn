@@ -38,8 +38,8 @@ import static com.milaboratory.minnn.pattern.MatchValidationType.INTERSECTION;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorterPortLimits;
 
 public final class AndPattern extends MultiplePatternsOperator {
-    public AndPattern(PatternAligner patternAligner, SinglePattern... operandPatterns) {
-        super(patternAligner, operandPatterns);
+    public AndPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, SinglePattern... operandPatterns) {
+        super(patternAligner, defaultGroupsOverride, operandPatterns);
     }
 
     @Override

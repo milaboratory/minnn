@@ -70,7 +70,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(matchScore, mismatchScore,
                 gapScore, uppercaseMismatchScore, goodQuality, badQuality, maxQualityPenalty);
         PatternAligner patternAligner = new BasePatternAligner(scoring, scoreThreshold, singleOverlapPenalty,
-                bitapMaxErrors, maxOverlap, defaultGroupsOverride(query, simplifiedSyntax));
+                bitapMaxErrors, maxOverlap);
         Parser patternParser = new Parser(patternAligner);
         Pattern pattern;
         try {

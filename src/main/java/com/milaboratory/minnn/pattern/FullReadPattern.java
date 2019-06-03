@@ -35,18 +35,17 @@ import java.util.ArrayList;
 
 public final class FullReadPattern extends SinglePattern {
     private final SinglePattern operandPattern;
-    private final boolean defaultGroupsOverride;
     private boolean targetIdInitialized = false;
 
-    public FullReadPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, SinglePattern operandPattern) {
-        super(patternAligner);
+    public FullReadPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
+                           SinglePattern operandPattern) {
+        super(patternAligner, defaultGroupsOverride);
         this.operandPattern = operandPattern;
-        this.defaultGroupsOverride = defaultGroupsOverride;
     }
 
     @Override
     public String toString() {
-        return "FullReadPattern(" + defaultGroupsOverride + ", " + operandPattern + ")";
+        return "FullReadPattern(" + operandPattern + ")";
     }
 
     @Override

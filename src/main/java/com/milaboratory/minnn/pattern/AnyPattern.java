@@ -38,8 +38,8 @@ import java.util.stream.Collectors;
 public final class AnyPattern extends SinglePattern {
     private final ArrayList<GroupEdge> groupEdges;
 
-    public AnyPattern(PatternAligner patternAligner, ArrayList<GroupEdge> groupEdges) {
-        super(patternAligner);
+    public AnyPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, ArrayList<GroupEdge> groupEdges) {
+        super(patternAligner, defaultGroupsOverride);
         this.groupEdges = groupEdges;
     }
 

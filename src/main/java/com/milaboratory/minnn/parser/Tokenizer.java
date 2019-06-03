@@ -32,9 +32,11 @@ import com.milaboratory.minnn.pattern.PatternAligner;
 
 abstract class Tokenizer {
     protected final PatternAligner patternAligner;
+    protected final boolean defaultGroupsOverride;
 
-    Tokenizer(PatternAligner patternAligner) {
+    Tokenizer(PatternAligner patternAligner, boolean defaultGroupsOverride) {
         this.patternAligner = patternAligner;
+        this.defaultGroupsOverride = defaultGroupsOverride;
     }
 
     abstract void tokenize(TokenizedString tokenizedString) throws ParserException;

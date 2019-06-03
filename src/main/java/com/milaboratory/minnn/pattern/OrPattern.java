@@ -42,8 +42,8 @@ import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorter
  * if all arguments didn't match.
  */
 public final class OrPattern extends MultiplePatternsOperator implements CanFixBorders {
-    public OrPattern(PatternAligner patternAligner, SinglePattern... operandPatterns) {
-        super(patternAligner, false, operandPatterns);
+    public OrPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, SinglePattern... operandPatterns) {
+        super(patternAligner, defaultGroupsOverride, false, operandPatterns);
     }
 
     @Override
@@ -82,7 +82,7 @@ public final class OrPattern extends MultiplePatternsOperator implements CanFixB
 
     @Override
     public SinglePattern fixBorder(boolean left, int position) {
-        return new OrPattern(patternAligner, Arrays.stream(operandPatterns)
+        return new OrPattern(patternAligner, defaultGroupsOverride, Arrays.stream(operandPatterns)
                 .map(p -> (p instanceof CanFixBorders ? ((CanFixBorders)p).fixBorder(left, position) : p))
                 .toArray(SinglePattern[]::new));
     }

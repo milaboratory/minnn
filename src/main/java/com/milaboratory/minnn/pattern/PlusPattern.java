@@ -39,8 +39,9 @@ import static com.milaboratory.minnn.pattern.MatchValidationType.ORDER;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorterPortLimits;
 
 public final class PlusPattern extends MultiplePatternsOperator implements CanFixBorders {
-    public PlusPattern(PatternAligner patternAligner, SinglePattern... operandPatterns) {
-        super(patternAligner, operandPatterns);
+    public PlusPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
+                       SinglePattern... operandPatterns) {
+        super(patternAligner, defaultGroupsOverride, operandPatterns);
     }
 
     @Override
@@ -64,7 +65,7 @@ public final class PlusPattern extends MultiplePatternsOperator implements CanFi
         if (operandPatterns[targetOperandIndex] instanceof CanFixBorders) {
             SinglePattern newOperand = ((CanFixBorders)(operandPatterns[targetOperandIndex]))
                     .fixBorder(left, position);
-            return new PlusPattern(patternAligner, IntStream.range(0, operandPatterns.length)
+            return new PlusPattern(patternAligner, defaultGroupsOverride, IntStream.range(0, operandPatterns.length)
                     .mapToObj((int i) -> (i == targetOperandIndex ? newOperand : operandPatterns[i]))
                     .toArray(SinglePattern[]::new));
         } else

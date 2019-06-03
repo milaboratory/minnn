@@ -37,7 +37,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.milaboratory.minnn.cli.Defaults.BUILTIN_READ_GROUPS_NUM;
+import static com.milaboratory.minnn.parser.Parser.BUILTIN_READ_GROUPS_NUM;
 
 public final class PatternUtils {
     private PatternUtils() {}

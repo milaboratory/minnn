@@ -39,7 +39,6 @@ public class BasePatternAligner implements PatternAligner {
     private final long singleOverlapPenalty;
     private final int bitapMaxErrors;
     private final int maxOverlap;
-    private final boolean defaultGroupsOverride;
     private final int leftBorder;
 
     /**
@@ -50,24 +49,21 @@ public class BasePatternAligner implements PatternAligner {
      * @param singleOverlapPenalty 0 or negative; this is penalty for 1 nucleotide overlap between 2 patterns
      * @param bitapMaxErrors 0 or positive; maximum allowed number of errors for bitap
      * @param maxOverlap 0 or positive; maximum allowed number of overlapped nucleotides between 2 patterns
-     * @param defaultGroupsOverride true if there is default groups override anywhere in the pattern, otherwise false
      */
     public BasePatternAligner(
             PatternAndTargetAlignmentScoring scoring, long penaltyThreshold, long singleOverlapPenalty,
-            int bitapMaxErrors, int maxOverlap, boolean defaultGroupsOverride) {
-        this(scoring, penaltyThreshold, singleOverlapPenalty, bitapMaxErrors, maxOverlap, defaultGroupsOverride,
-                -1);
+            int bitapMaxErrors, int maxOverlap) {
+        this(scoring, penaltyThreshold, singleOverlapPenalty, bitapMaxErrors, maxOverlap, -1);
     }
 
     private BasePatternAligner(
             PatternAndTargetAlignmentScoring scoring, long penaltyThreshold, long singleOverlapPenalty,
-            int bitapMaxErrors, int maxOverlap, boolean defaultGroupsOverride, int leftBorder) {
+            int bitapMaxErrors, int maxOverlap, int leftBorder) {
         this.scoring = scoring;
         this.penaltyThreshold = penaltyThreshold;
         this.singleOverlapPenalty = singleOverlapPenalty;
         this.bitapMaxErrors = bitapMaxErrors;
         this.maxOverlap = maxOverlap;
-        this.defaultGroupsOverride = defaultGroupsOverride;
         this.leftBorder = leftBorder;
     }
 
@@ -119,19 +115,14 @@ public class BasePatternAligner implements PatternAligner {
     }
 
     @Override
-    public boolean defaultGroupsOverride() {
-        return defaultGroupsOverride;
-    }
-
-    @Override
     public PatternAligner overridePenaltyThreshold(long newThresholdValue) {
         return new BasePatternAligner(scoring, newThresholdValue, singleOverlapPenalty, bitapMaxErrors, maxOverlap,
-                defaultGroupsOverride, leftBorder);
+                leftBorder);
     }
 
     @Override
     public PatternAligner setLeftBorder(int newLeftBorder) {
         return new BasePatternAligner(scoring, penaltyThreshold, singleOverlapPenalty, bitapMaxErrors, maxOverlap,
-                defaultGroupsOverride, newLeftBorder);
+                newLeftBorder);
     }
 }

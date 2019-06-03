@@ -38,8 +38,9 @@ import static com.milaboratory.minnn.pattern.MatchValidationType.LOGICAL_AND;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorterPortLimits;
 
 public final class AndOperator extends MultipleReadsOperator {
-    public AndOperator(PatternAligner patternAligner, MultipleReadsOperator... operandPatterns) {
-        super(patternAligner, operandPatterns);
+    public AndOperator(PatternAligner patternAligner, boolean defaultGroupsOverride,
+                       MultipleReadsOperator... operandPatterns) {
+        super(patternAligner, defaultGroupsOverride, operandPatterns);
     }
 
     @Override

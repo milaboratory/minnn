@@ -73,21 +73,4 @@ public final class CliUtils {
                     "were specified in extract pattern. Available groups in the input: " + availableGroups);
         }
     }
-
-    /**
-     * Detect whether there is default group override in the pattern.
-     *
-     * @param query             pattern query
-     * @param simplifiedSyntax  true if it is simplified syntax, otherwise false
-     * @return                  true if there is default group override
-     */
-    public static boolean defaultGroupsOverride(String query, boolean simplifiedSyntax) {
-        String strippedQuery = query.replaceAll("\\s+", "");
-        return IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM).mapToObj(i -> "R" + i).anyMatch(groupName -> {
-            if (simplifiedSyntax)
-                return strippedQuery.contains("GroupEdge('" + groupName + "'");
-            else
-                return strippedQuery.contains("(" + groupName + ":");
-        });
-    }
 }
