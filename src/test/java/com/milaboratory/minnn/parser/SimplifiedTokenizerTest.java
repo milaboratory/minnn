@@ -54,25 +54,33 @@ public class SimplifiedTokenizerTest {
             add(new GroupEdgePosition(new GroupEdge("GH", false), 11));
         }};
 
-        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("gtggttgtgttgt"), groups);
-        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("attg"));
-        AndPattern andPattern = new AndPattern(getTestPatternAligner(), fuzzyMatchPattern2, fuzzyMatchPattern2);
-        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(), andPattern, fuzzyMatchPattern2);
-        OrPattern orPattern = new OrPattern(getTestPatternAligner(), plusPattern, andPattern);
+        AndPattern andPattern = new AndPattern(getTestPatternAligner(), false,
+                fuzzyMatchPattern2, fuzzyMatchPattern2);
+        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(), false,
+                andPattern, fuzzyMatchPattern2);
+        OrPattern orPattern = new OrPattern(getTestPatternAligner(), false,
+                plusPattern, andPattern);
         ScoreFilter scoreFilter = new ScoreFilter(-3);
-        FilterPattern scoreFilterPatternS = new FilterPattern(getTestPatternAligner(), scoreFilter, plusPattern);
+        FilterPattern scoreFilterPatternS = new FilterPattern(getTestPatternAligner(), false,
+                scoreFilter, plusPattern);
         MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), true,
                 orPattern, scoreFilterPatternS, fuzzyMatchPattern1, andPattern);
         MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), false,
                 scoreFilterPatternS, fuzzyMatchPattern2, andPattern);
-        AndOperator andOperator1 = new AndOperator(getTestPatternAligner(), multiPattern1, multiPattern2);
-        AndOperator andOperator2 = new AndOperator(getTestPatternAligner(), multiPattern2, multiPattern2);
+        AndOperator andOperator1 = new AndOperator(getTestPatternAligner(), false,
+                multiPattern1, multiPattern2);
+        AndOperator andOperator2 = new AndOperator(getTestPatternAligner(), false,
+                multiPattern2, multiPattern2);
         MultipleReadsFilterPattern scoreFilterPatternM = new MultipleReadsFilterPattern(getTestPatternAligner(),
-                scoreFilter, andOperator2);
-        NotOperator notOperator = new NotOperator(getTestPatternAligner(), scoreFilterPatternM);
-        OrOperator orOperator = new OrOperator(getTestPatternAligner(), andOperator1, notOperator, scoreFilterPatternM);
+                false, scoreFilter, andOperator2);
+        NotOperator notOperator = new NotOperator(getTestPatternAligner(), false,
+                scoreFilterPatternM);
+        OrOperator orOperator = new OrOperator(getTestPatternAligner(), false,
+                andOperator1, notOperator, scoreFilterPatternM);
 
         Parser parser = new Parser(getTestPatternAligner());
         Pattern parseResult = parser.parseQuery(orOperator.toString(), SIMPLIFIED);

@@ -49,7 +49,7 @@ public class AnyPatternTest {
             int targetSize = rg.nextInt(1000) + 1;
             for (int j = 0; j < numGroupEdges; j++)
                 groupEdges.add(new GroupEdge("1", rg.nextBoolean()));
-            AnyPattern pattern = new AnyPattern(patternAligner, groupEdges);
+            AnyPattern pattern = new AnyPattern(patternAligner, false, groupEdges);
             NucleotideSequence targetSeq = TestUtil.randomSequence(NucleotideSequence.ALPHABET, targetSize, targetSize);
             NSequenceWithQuality target = new NSequenceWithQuality(targetSeq.toString());
             OutputPort<MatchIntermediate> port = pattern.match(target).getMatches(rg.nextBoolean());

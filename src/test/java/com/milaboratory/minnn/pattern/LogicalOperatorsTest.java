@@ -33,8 +33,7 @@ import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.test.TestUtil;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
@@ -48,13 +47,15 @@ public class LogicalOperatorsTest {
 
     @Test
     public void logicTest() throws Exception {
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("attagaca"));
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("gttattacca"));
-        AndPattern pattern3 = new AndPattern(getTestPatternAligner(),
-                new FuzzyMatchPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("at")),
-                new FuzzyMatchPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("gcat")));
+        AndPattern pattern3 = new AndPattern(getTestPatternAligner(), false,
+                new FuzzyMatchPattern(getTestPatternAligner(), false,
+                        new NucleotideSequenceCaseSensitive("at")),
+                new FuzzyMatchPattern(getTestPatternAligner(), false,
+                        new NucleotideSequenceCaseSensitive("gcat")));
         MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), pattern1, pattern2, pattern3);
         MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), pattern1, pattern3);
         MultiPattern multiPattern3 = createMultiPattern(getTestPatternAligner(), pattern3, pattern2);
@@ -71,22 +72,27 @@ public class LogicalOperatorsTest {
 
         MultiNSequenceWithQuality mseq3 = createMultiNSeq("ATTAGACA");
 
-        AndOperator andOperatorS1_1 = new AndOperator(getTestPatternAligner(), multiPattern1);
-        OrOperator orOperatorS1_1 = new OrOperator(getTestPatternAligner(), multiPattern1);
-        NotOperator notOperatorS1_1 = new NotOperator(getTestPatternAligner(), multiPattern1);
+        AndOperator andOperatorS1_1 = new AndOperator(getTestPatternAligner(), false,
+                multiPattern1);
+        OrOperator orOperatorS1_1 = new OrOperator(getTestPatternAligner(), false,
+                multiPattern1);
+        NotOperator notOperatorS1_1 = new NotOperator(getTestPatternAligner(), false,
+                multiPattern1);
 
         assertTrue(andOperatorS1_1.match(mseq1).isFound());
         assertTrue(orOperatorS1_1.match(mseq1).isFound());
         assertFalse(notOperatorS1_1.match(mseq1).isFound());
 
-        AndOperator andOperatorS1_2 = new AndOperator(getTestPatternAligner(), andOperatorS1_1, notOperatorS1_1);
-        AndOperator andOperatorS1_3 = new AndOperator(getTestPatternAligner(), new NotOperator(getTestPatternAligner(),
-                notOperatorS1_1), orOperatorS1_1);
-        OrOperator orOperatorS1_2 = new OrOperator(getTestPatternAligner(), andOperatorS1_1, notOperatorS1_1);
-        OrOperator orOperatorS1_3 = new OrOperator(getTestPatternAligner(), notOperatorS1_1, notOperatorS1_1,
-                orOperatorS1_1, notOperatorS1_1);
-        OrOperator orOperatorS1_4 = new OrOperator(getTestPatternAligner(), notOperatorS1_1,
-                new NotOperator(getTestPatternAligner(), andOperatorS1_1));
+        AndOperator andOperatorS1_2 = new AndOperator(getTestPatternAligner(), false,
+                andOperatorS1_1, notOperatorS1_1);
+        AndOperator andOperatorS1_3 = new AndOperator(getTestPatternAligner(), false,
+                new NotOperator(getTestPatternAligner(), false, notOperatorS1_1), orOperatorS1_1);
+        OrOperator orOperatorS1_2 = new OrOperator(getTestPatternAligner(), false,
+                andOperatorS1_1, notOperatorS1_1);
+        OrOperator orOperatorS1_3 = new OrOperator(getTestPatternAligner(), false,
+                notOperatorS1_1, notOperatorS1_1, orOperatorS1_1, notOperatorS1_1);
+        OrOperator orOperatorS1_4 = new OrOperator(getTestPatternAligner(), false,
+                notOperatorS1_1, new NotOperator(getTestPatternAligner(), false, andOperatorS1_1));
 
         assertFalse(andOperatorS1_2.match(mseq1).isFound());
         assertTrue(andOperatorS1_3.match(mseq1).isFound());
@@ -94,12 +100,14 @@ public class LogicalOperatorsTest {
         assertTrue(orOperatorS1_3.match(mseq1).isFound());
         assertFalse(orOperatorS1_4.match(mseq1).isFound());
 
-        AndOperator andOperatorS2_1 = new AndOperator(getTestPatternAligner(), multiPattern2, multiPattern3);
-        OrOperator orOperatorS2_1 = new OrOperator(getTestPatternAligner(), multiPattern2, multiPattern3);
-        AndOperator andOperatorS2_2 = new AndOperator(getTestPatternAligner(), new NotOperator(getTestPatternAligner(),
-                multiPattern2), multiPattern3);
-        OrOperator orOperatorS2_2 = new OrOperator(getTestPatternAligner(), new NotOperator(getTestPatternAligner(),
-                multiPattern2), multiPattern3);
+        AndOperator andOperatorS2_1 = new AndOperator(getTestPatternAligner(), false,
+                multiPattern2, multiPattern3);
+        OrOperator orOperatorS2_1 = new OrOperator(getTestPatternAligner(), false,
+                multiPattern2, multiPattern3);
+        AndOperator andOperatorS2_2 = new AndOperator(getTestPatternAligner(), false,
+                new NotOperator(getTestPatternAligner(), false, multiPattern2), multiPattern3);
+        OrOperator orOperatorS2_2 = new OrOperator(getTestPatternAligner(), false,
+                new NotOperator(getTestPatternAligner(), false, multiPattern2), multiPattern3);
 
         MatchingResult andResultS2_1 = andOperatorS2_1.match(mseq2);
         MatchingResult orResultS2_1 = orOperatorS2_1.match(mseq2);
@@ -111,24 +119,31 @@ public class LogicalOperatorsTest {
         assertTrue(andResultS2_2.isFound());
         assertTrue(orResultS2_2.isFound());
 
-        assertTrue(new AndOperator(getTestPatternAligner(), multiPattern4).match(mseq3).isFound());
-        assertTrue(new OrOperator(getTestPatternAligner(), multiPattern4).match(mseq3).isFound());
-        assertFalse(new NotOperator(getTestPatternAligner(), multiPattern4).match(mseq3).isFound());
-        assertFalse(new AndOperator(getTestPatternAligner(), new NotOperator(getTestPatternAligner(),
-                multiPattern4)).match(mseq3).isFound());
-        assertFalse(new OrOperator(getTestPatternAligner(), new NotOperator(getTestPatternAligner(),
-                multiPattern4)).match(mseq3).isFound());
+        assertTrue(new AndOperator(getTestPatternAligner(), false, multiPattern4)
+                .match(mseq3).isFound());
+        assertTrue(new OrOperator(getTestPatternAligner(), false, multiPattern4)
+                .match(mseq3).isFound());
+        assertFalse(new NotOperator(getTestPatternAligner(), false, multiPattern4)
+                .match(mseq3).isFound());
+        assertFalse(new AndOperator(getTestPatternAligner(), false,
+                new NotOperator(getTestPatternAligner(), false, multiPattern4))
+                .match(mseq3).isFound());
+        assertFalse(new OrOperator(getTestPatternAligner(), false,
+                new NotOperator(getTestPatternAligner(), false, multiPattern4))
+                .match(mseq3).isFound());
     }
 
     @Test
     public void simpleTest() throws Exception {
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("attagaca"));
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("gttattacca"));
-        AndPattern pattern3 = new AndPattern(getTestPatternAligner(),
-                new FuzzyMatchPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("at")),
-                new FuzzyMatchPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("gcat")));
+        AndPattern pattern3 = new AndPattern(getTestPatternAligner(), false,
+                new FuzzyMatchPattern(getTestPatternAligner(), false,
+                        new NucleotideSequenceCaseSensitive("at")),
+                new FuzzyMatchPattern(getTestPatternAligner(), false,
+                        new NucleotideSequenceCaseSensitive("gcat")));
         MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), pattern1, pattern2, pattern3);
 
         MultiNSequenceWithQuality mseq = new MultiNSequenceWithQualityImpl(
@@ -136,18 +151,22 @@ public class LogicalOperatorsTest {
                 new NSequenceWithQuality("GTTATTACCA"),
                 new NSequenceWithQuality("AACTTGCATAT"));
 
-        NotOperator notOperatorFalse = new NotOperator(getTestPatternAligner(), multiPattern);
-        OrOperator orOperatorTrue = new OrOperator(getTestPatternAligner(),
+        NotOperator notOperatorFalse = new NotOperator(getTestPatternAligner(), false,
+                multiPattern);
+        OrOperator orOperatorTrue = new OrOperator(getTestPatternAligner(), false,
                 notOperatorFalse, multiPattern, notOperatorFalse);
-        AndOperator andOperatorTrue = new AndOperator(getTestPatternAligner(),
+        AndOperator andOperatorTrue = new AndOperator(getTestPatternAligner(), false,
                 multiPattern, orOperatorTrue, multiPattern);
-        AndOperator andOperatorFalse = new AndOperator(getTestPatternAligner(),
+        AndOperator andOperatorFalse = new AndOperator(getTestPatternAligner(), false,
                 multiPattern, andOperatorTrue, orOperatorTrue, notOperatorFalse);
-        OrOperator orOperatorFalse = new OrOperator(getTestPatternAligner(),
+        OrOperator orOperatorFalse = new OrOperator(getTestPatternAligner(), false,
                 notOperatorFalse, notOperatorFalse, andOperatorFalse);
-        NotOperator notOperatorTrue = new NotOperator(getTestPatternAligner(), orOperatorFalse);
-        AndOperator andOperatorSingleFalse = new AndOperator(getTestPatternAligner(), orOperatorFalse);
-        OrOperator orOperatorSingleFalse = new OrOperator(getTestPatternAligner(), andOperatorSingleFalse);
+        NotOperator notOperatorTrue = new NotOperator(getTestPatternAligner(), false,
+                orOperatorFalse);
+        AndOperator andOperatorSingleFalse = new AndOperator(getTestPatternAligner(), false,
+                orOperatorFalse);
+        OrOperator orOperatorSingleFalse = new OrOperator(getTestPatternAligner(), false,
+                andOperatorSingleFalse);
 
         MatchingResult notFalseResult = notOperatorFalse.match(mseq);
         MatchingResult orFalseResult = orOperatorFalse.match(mseq);
@@ -190,7 +209,7 @@ public class LogicalOperatorsTest {
         assertEquals("GCATAT", testMatch.getMatchedRange(6).getValue().getSequence().toString());
 
         exception.expect(IllegalArgumentException.class);
-        new NotOperator(getTestPatternAligner(), orOperatorTrue, orOperatorFalse);
+        new NotOperator(getTestPatternAligner(), false, orOperatorTrue, orOperatorFalse);
     }
 
     @Test
@@ -224,16 +243,20 @@ public class LogicalOperatorsTest {
             add(new GroupEdgePosition(new GroupEdge("0", false), 5));
         }};
 
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), testSeq, groups1);
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), testSeq, groups2);
-        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternAligner(), testSeq, groups3);
-        FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(getTestPatternAligner(), testSeq, groups4);
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+                testSeq, groups1);
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+                testSeq, groups2);
+        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+                testSeq, groups3);
+        FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+                testSeq, groups4);
         MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), pattern1, pattern3);
         MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), pattern2, pattern4);
 
         // group edge validity now checked in parser; AndOperator must remove duplicate group edges
-        assertEquals(15,
-                new AndOperator(getTestPatternAligner(), multiPattern1, multiPattern2).getGroupEdges().size());
+        assertEquals(15, new AndOperator(getTestPatternAligner(), false,
+                multiPattern1, multiPattern2).getGroupEdges().size());
     }
 
     @Test
@@ -254,18 +277,21 @@ public class LogicalOperatorsTest {
             add(new GroupEdgePosition(new GroupEdge("5", false), 6));
         }};
 
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("tagcc"), groups1);
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("cagatgca"), groups2);
-        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("a"));
         MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), pattern1, pattern3);
         MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), pattern3, pattern2);
         MultiPattern multiPattern3 = createMultiPattern(getTestPatternAligner(), pattern3, pattern3);
-        NotOperator notOperator = new NotOperator(getTestPatternAligner(), multiPattern3);
-        OrOperator orOperator = new OrOperator(getTestPatternAligner(), notOperator, multiPattern1, notOperator);
-        AndOperator andOperator = new AndOperator(getTestPatternAligner(), multiPattern2, orOperator);
+        NotOperator notOperator = new NotOperator(getTestPatternAligner(), false,
+                multiPattern3);
+        OrOperator orOperator = new OrOperator(getTestPatternAligner(), false,
+                notOperator, multiPattern1, notOperator);
+        AndOperator andOperator = new AndOperator(getTestPatternAligner(), false,
+                multiPattern2, orOperator);
 
         MultiNSequenceWithQuality mseq = new MultiNSequenceWithQualityImpl(
                 new NSequenceWithQuality("ACAATTAGCCA"),
@@ -315,7 +341,7 @@ public class LogicalOperatorsTest {
     @Test
     public void alignmentTest() throws Exception {
         FuzzyMatchPattern fuzzyPattern = new FuzzyMatchPattern(getTestPatternAligner(2),
-                new NucleotideSequenceCaseSensitive("attagaca"));
+                false, new NucleotideSequenceCaseSensitive("attagaca"));
 
         NSequenceWithQuality[] sequences = {
                 new NSequenceWithQuality("ATTAGTTA"),
@@ -335,8 +361,10 @@ public class LogicalOperatorsTest {
         assertEquals(new NSequenceWithQuality("ATCTAGAA"), matchingResults[3].getBestMatch().getValue());
         assertEquals(new NSequenceWithQuality("ACAGACA"), matchingResults[4].getBestMatch().getValue());
 
-        AndPattern andPattern = new AndPattern(getTestPatternAligner(), fuzzyPattern, fuzzyPattern);
-        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(), fuzzyPattern, fuzzyPattern);
+        AndPattern andPattern = new AndPattern(getTestPatternAligner(), false,
+                fuzzyPattern, fuzzyPattern);
+        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(), false,
+                fuzzyPattern, fuzzyPattern);
 
         assertEquals(new NSequenceWithQuality("ACAGACATCTAGAA"),
                 andPattern.match(sequences[4]).getBestMatch().getValue());
@@ -348,9 +376,12 @@ public class LogicalOperatorsTest {
                 plusPattern.match(sequences[4]).getMatches().take().getValue());
 
         MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), fuzzyPattern, andPattern, plusPattern);
-        NotOperator notOperator = new NotOperator(getTestPatternAligner(), multiPattern);
-        OrOperator orOperator = new OrOperator(getTestPatternAligner(), multiPattern, notOperator, multiPattern);
-        AndOperator andOperator = new AndOperator(getTestPatternAligner(), orOperator, multiPattern, orOperator);
+        NotOperator notOperator = new NotOperator(getTestPatternAligner(), false,
+                multiPattern);
+        OrOperator orOperator = new OrOperator(getTestPatternAligner(), false,
+                multiPattern, notOperator, multiPattern);
+        AndOperator andOperator = new AndOperator(getTestPatternAligner(), false,
+                orOperator, multiPattern, orOperator);
 
         MultiNSequenceWithQuality mseq = new MultiNSequenceWithQualityImpl(sequences[1], sequences[4], sequences[4]);
 
@@ -374,15 +405,15 @@ public class LogicalOperatorsTest {
     @Test
     public void scoringRandomTest() throws Exception {
         for (int i = 0; i < 2000; i++) {
-            NucleotideSequenceCaseSensitive motifs[] = new NucleotideSequenceCaseSensitive[4];
-            FuzzyMatchPattern fuzzyPatterns[] = new FuzzyMatchPattern[4];
+            NucleotideSequenceCaseSensitive[] motifs = new NucleotideSequenceCaseSensitive[4];
+            FuzzyMatchPattern[] fuzzyPatterns = new FuzzyMatchPattern[4];
             for (int j = 0; j < 4; ++j) {
                 motifs[j] = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                         1, 10);
-                fuzzyPatterns[j] = new FuzzyMatchPattern(getTestPatternAligner(), motifs[j]);
+                fuzzyPatterns[j] = new FuzzyMatchPattern(getTestPatternAligner(), false, motifs[j]);
             }
-            MultiNSequenceWithQuality targets[] = new MultiNSequenceWithQuality[2];
-            MultiPattern multiPatterns[] = new MultiPattern[2];
+            MultiNSequenceWithQuality[] targets = new MultiNSequenceWithQuality[2];
+            MultiPattern[] multiPatterns = new MultiPattern[2];
             for (int j = 0; j < 2; j++) {
                 targets[j] = new MultiNSequenceWithQualityImpl(
                         new NSequenceWithQuality(motifs[j * 2].toString()),
@@ -391,11 +422,16 @@ public class LogicalOperatorsTest {
                         fuzzyPatterns[j * 2], fuzzyPatterns[j * 2 + 1]);
             }
 
-            NotOperator notOperator = new NotOperator(getTestPatternAligner(), multiPatterns[0]);
-            AndOperator andOperator0 = new AndOperator(getTestPatternAligner(), multiPatterns[0], multiPatterns[0]);
-            AndOperator andOperator1 = new AndOperator(getTestPatternAligner(), multiPatterns[0], multiPatterns[1]);
-            OrOperator orOperator0 = new OrOperator(getTestPatternAligner(), multiPatterns[0], multiPatterns[0]);
-            OrOperator orOperator1 = new OrOperator(getTestPatternAligner(), multiPatterns[0], multiPatterns[1]);
+            NotOperator notOperator = new NotOperator(getTestPatternAligner(), false,
+                    multiPatterns[0]);
+            AndOperator andOperator0 = new AndOperator(getTestPatternAligner(), false,
+                    multiPatterns[0], multiPatterns[0]);
+            AndOperator andOperator1 = new AndOperator(getTestPatternAligner(), false,
+                    multiPatterns[0], multiPatterns[1]);
+            OrOperator orOperator0 = new OrOperator(getTestPatternAligner(), false,
+                    multiPatterns[0], multiPatterns[0]);
+            OrOperator orOperator1 = new OrOperator(getTestPatternAligner(), false,
+                    multiPatterns[0], multiPatterns[1]);
 
             if (!multiPatterns[0].match(targets[1]).isFound())
                 assertEquals(getTestPatternAligner().notResultScore(),

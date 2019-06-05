@@ -50,11 +50,11 @@ public class FullReadPatternTest {
         groupEdgePositions3.add(new GroupEdgePosition(new GroupEdge("ABC", false), 2));
 
         NSequenceWithQuality target = new NSequenceWithQuality("AAAAA");
-        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("AAAAA"), groupEdgePositions1);
-        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("AAAAA"), groupEdgePositions2);
-        FuzzyMatchPattern fuzzyMatchPattern3 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern fuzzyMatchPattern3 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("AAAAA"), groupEdgePositions3);
         FullReadPattern fullReadPattern1a = new FullReadPattern(getTestPatternAligner(), true,
                 fuzzyMatchPattern1);

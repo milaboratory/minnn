@@ -44,7 +44,7 @@ import static org.junit.Assert.*;
 public class BasePatternAlignerTest {
     private BasePatternAligner getRandomAligner() {
         return new BasePatternAligner(getRandomScoring(), -rg.nextInt(100), -rg.nextInt(10),
-                rg.nextInt(4), rg.nextInt(4), rg.nextBoolean());
+                rg.nextInt(4), rg.nextInt(4));
     }
 
     @Test
@@ -75,7 +75,7 @@ public class BasePatternAlignerTest {
                 -9, -10, -9,
                 DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, -3);
         BasePatternAligner patternAligner = new BasePatternAligner(scoring, -30, -10,
-                2, 1, false);
+                2, 1);
         NucleotideSequenceCaseSensitive pattern = new NucleotideSequenceCaseSensitive("aTTAgaca");
         NSequenceWithQuality target = new NSequenceWithQuality("CCTTATTC");
         Alignment<NucleotideSequenceCaseSensitive> alignment = patternAligner.align(pattern, target, 7);

@@ -43,45 +43,58 @@ public class CommonPatternTests {
         PatternAligner patternAligner = getRandomPatternAligner();
 
         SinglePattern[] patterns = new SinglePattern[21];
-        patterns[0] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("ATTAGACA"));
-        patterns[1] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("CNNNC"),
-                2, 2, -1, -1,
+        patterns[0] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("ATTAGACA"));
+        patterns[1] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("CNNNC"), 2, 2, -1, -1,
                 getRandomGroupsForFuzzyMatch(5));
-        patterns[2] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("WWATTNB"),
-                0, 0, 1, -1);
-        patterns[3] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("NNNNTNNAN"),
-                1, 2, 1, 8);
-        patterns[4] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("NNN"),
-                1, 0, -1, -1);
-        patterns[5] = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("N"),
-                20, 20);
-        patterns[6] = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("A"),
-                4, 6);
-        patterns[7] = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("B"),
-                8, 10, 4, -1,
+        patterns[2] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("WWATTNB"), 0, 0, 1, -1);
+        patterns[3] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("NNNNTNNAN"), 1, 2, 1, 8);
+        patterns[4] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("NNN"), 1, 0, -1, -1);
+        patterns[5] = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("N"), 20, 20);
+        patterns[6] = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("A"), 4, 6);
+        patterns[7] = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("B"), 8, 10, 4, -1,
                 getRandomGroupsForFuzzyMatch(8));
-        patterns[8] = new SequencePattern(patternAligner, patterns[0], patterns[5]);
-        patterns[9] = new SequencePattern(patternAligner, patterns[7], patterns[1], patterns[0]);
-        patterns[10] = new PlusPattern(patternAligner, patterns[2], patterns[6]);
-        patterns[11] = new PlusPattern(patternAligner, patterns[0], patterns[0]);
-        patterns[12] = new SequencePattern(patternAligner, patterns[10], patterns[0]);
-        patterns[13] = new SequencePattern(patternAligner, patterns[5], patterns[11]);
-        patterns[14] = new OrPattern(patternAligner, patterns[7], patterns[11], patterns[12]);
-        patterns[15] = new AndPattern(patternAligner, patterns[1], patterns[11]);
-        patterns[16] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("attagaca"));
-        patterns[17] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("atTAGAca"));
-        patterns[18] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("WwATTnB"));
-        patterns[19] = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("a"),
-                4, 6);
-        patterns[20] = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("b"),
+        patterns[8] = new SequencePattern(patternAligner, false,
+                patterns[0], patterns[5]);
+        patterns[9] = new SequencePattern(patternAligner, false,
+                patterns[7], patterns[1], patterns[0]);
+        patterns[10] = new PlusPattern(patternAligner, false,
+                patterns[2], patterns[6]);
+        patterns[11] = new PlusPattern(patternAligner, false,
+                patterns[0], patterns[0]);
+        patterns[12] = new SequencePattern(patternAligner, false,
+                patterns[10], patterns[0]);
+        patterns[13] = new SequencePattern(patternAligner, false,
+                patterns[5], patterns[11]);
+        patterns[14] = new OrPattern(patternAligner, false,
+                patterns[7], patterns[11], patterns[12]);
+        patterns[15] = new AndPattern(patternAligner, false,
+                patterns[1], patterns[11]);
+        patterns[16] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("attagaca"));
+        patterns[17] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("atTAGAca"));
+        patterns[18] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("WwATTnB"));
+        patterns[19] = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("a"), 4, 6);
+        patterns[20] = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("b"),
                 8, 10, -1, -1,
                 getRandomGroupsForFuzzyMatch(8));
 
         MultipleReadsOperator[] mPatterns = new MultipleReadsOperator[4];
         mPatterns[0] = createMultiPattern(patternAligner, patterns[14], patterns[15]);
         mPatterns[1] = createMultiPattern(patternAligner, patterns[0], patterns[4]);
-        mPatterns[2] = new AndOperator(patternAligner, mPatterns[0], mPatterns[1]);
-        mPatterns[3] = new OrOperator(patternAligner, mPatterns[0], mPatterns[1]);
+        mPatterns[2] = new AndOperator(patternAligner, false, mPatterns[0], mPatterns[1]);
+        mPatterns[3] = new OrOperator(patternAligner, false, mPatterns[0], mPatterns[1]);
 
         long[] expected = new long[25];
         expected[0] = notFixedSequenceMinComplexity + singleNucleotideComplexity / 8;
@@ -128,11 +141,11 @@ public class CommonPatternTests {
             boolean hasGroups = rg.nextBoolean();
             SinglePattern pattern = getRandomBasicPattern(patternAligner, hasGroups);
             Filter filter = new ScoreFilter(-rg.nextInt(75));
-            FilterPattern filterPattern = new FilterPattern(patternAligner, filter, pattern);
-            NotOperator notOperator = hasGroups ? null
-                    : new NotOperator(patternAligner, createMultiPattern(patternAligner, pattern));
-            MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(patternAligner, filter,
-                    createMultiPattern(patternAligner, pattern));
+            FilterPattern filterPattern = new FilterPattern(patternAligner, false, filter, pattern);
+            NotOperator notOperator = hasGroups ? null : new NotOperator(patternAligner,
+                    false, createMultiPattern(patternAligner, pattern));
+            MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(patternAligner,
+                    false, filter, createMultiPattern(patternAligner, pattern));
 
             if (pattern instanceof CanFixBorders) {
                 boolean isBorderFixed = false;
@@ -203,11 +216,14 @@ public class CommonPatternTests {
                 -1, -1, -1, scorings[0]);
         sequences[0] = "t";
         targets[0] = new NSequenceWithQuality(sequences[0]);
-        patterns[0] = new RepeatPattern(patternAligners[1], new NucleotideSequenceCaseSensitive("c"),
+        patterns[0] = new RepeatPattern(patternAligners[1], false,
+                new NucleotideSequenceCaseSensitive("c"),
                 1, 1, -1, 45);
-        patterns[1] = new RepeatPattern(patternAligners[0], new NucleotideSequenceCaseSensitive(sequences[0]),
+        patterns[1] = new RepeatPattern(patternAligners[0], false,
+                new NucleotideSequenceCaseSensitive(sequences[0]),
                 4, 30, -1, -1);
-        patterns[2] = new SequencePattern(patternAligners[0], patterns[0], patterns[1]);
+        patterns[2] = new SequencePattern(patternAligners[0], false,
+                patterns[0], patterns[1]);
 
         MatchingResult matchingResult = patterns[2].match(targets[0]);
         matchingResult.getBestMatch();

@@ -48,8 +48,8 @@ import static org.junit.Assert.*;
 public class RepeatPatternTest {
     @Test
     public void bestMatchTest() throws Exception {
-        RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("t"),
-                3, 6);
+        RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), false,
+                new NucleotideSequenceCaseSensitive("t"), 3, 6);
         NSequenceWithQuality nseq = new NSequenceWithQuality("TTTATTTTTGTTATTTTTTTATGTTTATGTTTTATGTTA");
         MatchingResult[] results = {
                 pattern.match(nseq),
@@ -65,7 +65,7 @@ public class RepeatPatternTest {
                 assertEquals(expectedRange.getUpper(), results[i].getBestMatch(fairSorting).getRange().getUpper());
                 assertEquals((i < 3) ? "TTTTTT" : "TTTTT", bestToString(results[i], fairSorting));
                 assertEquals(nseq, results[i].getBestMatch(fairSorting).getMatchedRange().getTarget());
-                assertEquals(true, results[i].isFound());
+                assertTrue(results[i].isFound());
                 assertEquals((i < 3) ? 25 : 7, countMatches(results[i], true));
                 assertEquals(1, results[i].getBestMatch(fairSorting).getNumberOfPatterns());
                 assertEquals(1, results[i].getBestMatch(fairSorting).getMatchedRanges().length);
@@ -75,7 +75,7 @@ public class RepeatPatternTest {
 
     @Test
     public void noMatchesTest() throws Exception {
-        RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(),
+        RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("k"), 4, 5);
         NSequenceWithQuality nseq1 = new NSequenceWithQuality("TTTTATTATGTACA");
         NSequenceWithQuality nseq2 = new NSequenceWithQuality("ATTATTTATTAATGTATTATGCTATTATATAGACA");
@@ -85,9 +85,9 @@ public class RepeatPatternTest {
                 pattern.match(nseq2)
         };
         for (MatchingResult result : results) {
-            assertEquals(null, result.getBestMatch());
-            assertEquals(null, result.getMatches().take());
-            assertEquals(false, result.isFound());
+            assertNull(result.getBestMatch());
+            assertNull(result.getMatches().take());
+            assertFalse(result.isFound());
             assertEquals(0, countMatches(result, true));
         }
     }
@@ -96,10 +96,10 @@ public class RepeatPatternTest {
     public void uppercaseLettersTest() throws Exception {
         PatternAligner patternAligner = getTestPatternAligner(-30, 2,
                 0, -1);
-        RepeatPattern pattern1 = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("a"),
-                4, 4);
-        RepeatPattern pattern2 = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("A"),
-                4, 4);
+        RepeatPattern pattern1 = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("a"), 4, 4);
+        RepeatPattern pattern2 = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("A"), 4, 4);
         NSequenceWithQuality target = new NSequenceWithQuality("AATA");
         OutputPort<MatchIntermediate> matches1 = pattern1.match(target).getMatches(true);
         OutputPort<MatchIntermediate> matches2 = pattern2.match(target).getMatches(true);
@@ -138,7 +138,8 @@ public class RepeatPatternTest {
             NucleotideSequenceCaseSensitive fullSeq = SequencesUtils.concatenate(
                     seqL, SequencesUtils.concatenate(seqRepeats), seqR);
             NSequenceWithQuality target = new NSequenceWithQuality(fullSeq.toString());
-            RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), seqM, minRepeats, maxRepeats);
+            RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), false,
+                    seqM, minRepeats, maxRepeats);
             assertTrue(pattern.match(target).isFound());
             assertNotNull(pattern.match(target).getBestMatch(i % 50 == 0));
             assertNotNull(pattern.match(target).getMatches(i % 50 == 0).take());
@@ -155,7 +156,8 @@ public class RepeatPatternTest {
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     1, 1);
             NSequenceWithQuality targetQ = new NSequenceWithQuality(target.toString());
-            RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), motif, minRepeats, maxRepeats);
+            RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), false,
+                    motif, minRepeats, maxRepeats);
             boolean isMatching = target.toString().contains(repeatString(motif.toString().toUpperCase(), minRepeats));
             assertEquals(isMatching, pattern.match(targetQ).isFound());
             assertEquals(isMatching, pattern.match(targetQ).getBestMatch(i % 50 == 0) != null);
@@ -165,8 +167,8 @@ public class RepeatPatternTest {
 
     @Test
     public void multipleMatchesTest() throws Exception {
-        RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), new NucleotideSequenceCaseSensitive("c"),
-                2, 4);
+        RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), false,
+                new NucleotideSequenceCaseSensitive("c"), 2, 4);
         NSequenceWithQuality nseq = new NSequenceWithQuality(
                 "ATCGGAATGTTGTTGTTGTTGTGTATAAAGGACCCAGAGCCCCATGTTGTAGTGTC");
         MatchingResult result = pattern.match(nseq);
@@ -198,7 +200,8 @@ public class RepeatPatternTest {
             ArrayList<GroupEdgePosition> groups = getRandomGroupsForFuzzyMatch(100);
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     1, 1);
-            RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), motif, minRepeats, maxRepeats, groups);
+            RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), false,
+                    motif, minRepeats, maxRepeats, groups);
             Match match = pattern.match(new NSequenceWithQuality(repeatString(motif.toString(), targetRepeats)))
                     .getBestMatch();
             for (MatchedGroupEdge matchedGroupEdge : match.getMatchedGroupEdges())
@@ -217,7 +220,8 @@ public class RepeatPatternTest {
                     1, 1, false);
             NucleotideSequence repeatedMotif = new NucleotideSequence(repeatString(motif.toString(), minRepeats));
             NSequenceWithQuality targetQ = new NSequenceWithQuality(target.toString());
-            RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), motif, minRepeats, maxRepeats);
+            RepeatPattern pattern = new RepeatPattern(getTestPatternAligner(), false,
+                    motif, minRepeats, maxRepeats);
             BitapMatcher matcher = repeatedMotif.toMotif().getBitapPattern().exactMatcher(target.getSequence(),
                     0, target.size());
             boolean isMatching = (matcher.findNext() != -1);
@@ -228,12 +232,12 @@ public class RepeatPatternTest {
     @Test
     public void scoringTest() throws Exception {
         RepeatPattern[] patterns = {
-                new RepeatPattern(getTestPatternAligner(0), new NucleotideSequenceCaseSensitive("t"),
-                        3, 5),
-                new RepeatPattern(getTestPatternAligner(1), new NucleotideSequenceCaseSensitive("g"),
-                        3, 5),
-                new RepeatPattern(getTestPatternAligner(0), new NucleotideSequenceCaseSensitive("n"),
-                        1, 4)
+                new RepeatPattern(getTestPatternAligner(0), false,
+                        new NucleotideSequenceCaseSensitive("t"), 3, 5),
+                new RepeatPattern(getTestPatternAligner(1), false,
+                        new NucleotideSequenceCaseSensitive("g"), 3, 5),
+                new RepeatPattern(getTestPatternAligner(0), false,
+                        new NucleotideSequenceCaseSensitive("n"), 1, 4)
         };
         NSequenceWithQuality[] sequences = {
                 new NSequenceWithQuality("TTAGACTTACCAGGAGCAGTTTGCATGCATGCAAGA"),
@@ -270,14 +274,15 @@ public class RepeatPatternTest {
     @Test
     public void fixedBordersTest() throws Exception {
         PatternAligner patternAligner = getTestPatternAligner(1);
-        RepeatPattern pattern1 = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("t"),
-                8, 12, 2, -1,
+        RepeatPattern pattern1 = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("t"), 8, 12, 2, -1,
                 getRandomGroupsForFuzzyMatch(7));
-        RepeatPattern pattern2 = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("t"),
-                8, Integer.MAX_VALUE, -1, 11,
+        RepeatPattern pattern2 = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("t"), 8, Integer.MAX_VALUE,
+                -1, 11,
                 getRandomGroupsForFuzzyMatch(3));
-        RepeatPattern pattern3 = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("t"),
-                8, 16, 3, 9,
+        RepeatPattern pattern3 = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("t"), 8, 16, 3, 9,
                 getRandomGroupsForFuzzyMatch(9, 18));
         NSequenceWithQuality target1_1 = new NSequenceWithQuality("GTTTTTTTT");
         NSequenceWithQuality target1_2 = new NSequenceWithQuality("TTTTTTTT");

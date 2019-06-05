@@ -49,13 +49,15 @@ public class ScoreFilterTest {
             MultiNSequenceWithQuality multiTarget = createMultiNSeq(seq, 2);
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     1, 20);
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(rg.nextInt(5)), motif);
-            FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(),
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(rg.nextInt(5)),
+                    false, motif);
+            FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(), false,
                     new ScoreFilter(scoreThreshold), pattern);
             MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), pattern, filterPattern);
             MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(getTestPatternAligner(),
-                    new ScoreFilter(scoreThreshold * 2), multiPattern);
-            AndOperator andOperator = new AndOperator(getTestPatternAligner(), multiPattern, mFilterPattern);
+                    false, new ScoreFilter(scoreThreshold * 2), multiPattern);
+            AndOperator andOperator = new AndOperator(getTestPatternAligner(), false,
+                    multiPattern, mFilterPattern);
             Match patternBestMatch = pattern.match(target).getBestMatch(true);
             boolean isMatching = (patternBestMatch != null) && (patternBestMatch.getScore() >= scoreThreshold);
 

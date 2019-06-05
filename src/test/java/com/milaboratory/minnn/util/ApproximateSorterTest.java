@@ -34,7 +34,7 @@ import com.milaboratory.minnn.pattern.*;
 import com.milaboratory.test.TestUtil;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.stream.Stream;
 
 import static com.milaboratory.minnn.pattern.MatchValidationType.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
@@ -50,13 +50,18 @@ public class ApproximateSorterTest {
         MultiNSequenceWithQuality[] mTargets = new MultiNSequenceWithQuality[3];
         ApproximateSorterConfiguration[] configurations = new ApproximateSorterConfiguration[28];
 
-        patterns[0] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("attagaca"));
-        patterns[1] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("gt"));
-        patterns[2] = new RepeatPattern(patternAligner, new NucleotideSequenceCaseSensitive("t"),
-                2, 8);
-        patterns[3] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("a"));
-        patterns[4] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("att"));
-        patterns[5] = new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive("gcc"));
+        patterns[0] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("attagaca"));
+        patterns[1] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("gt"));
+        patterns[2] = new RepeatPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("t"), 2, 8);
+        patterns[3] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("a"));
+        patterns[4] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("att"));
+        patterns[5] = new FuzzyMatchPattern(patternAligner, false,
+                new NucleotideSequenceCaseSensitive("gcc"));
 
         mPatterns[0] = createMultiPattern(patternAligner, patterns[0], patterns[3]);
         mPatterns[1] = createMultiPattern(patternAligner, patterns[2], patterns[5]);
@@ -255,7 +260,7 @@ public class ApproximateSorterTest {
             }
             final NSequenceWithQuality finalTarget = new NSequenceWithQuality(target.toString());
 
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(patternAligner, fragment);
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(patternAligner, false, fragment);
 
             sorter = new ApproximateSorter(new ApproximateSorterConfiguration(finalTarget, 0, finalTarget.size(),
                     patternAligner, combineScoresBySum, fairSorting, matchValidationType,
@@ -279,29 +284,35 @@ public class ApproximateSorterTest {
                 0, 0, 1);
         patternAligners[2] = new BasePatternAligner(new PatternAndTargetAlignmentScoring(0,
                 -1, -10, -1, (byte)34, (byte)0, -4),
-                -100, -10, 1, 2, false);
+                -100, -10, 1, 2);
         patternAligners[3] = new BasePatternAligner(new PatternAndTargetAlignmentScoring(0,
                 -7, -11, -7, (byte)34, (byte)0, -4),
-                -200, -10, 3, 2, false);
+                -200, -10, 3, 2);
 
         sequences[0] = "atgggcgcaaatatagggagctccgatcgacatcgggtatcgccctggtacgatcccg";
         sequences[1] = "ggcaaagt";
 
-        patterns[0] = new FuzzyMatchPattern(patternAligners[0], new NucleotideSequenceCaseSensitive(sequences[0]));
-        patterns[1] = new FuzzyMatchPattern(patternAligners[1], new NucleotideSequenceCaseSensitive("ggca"));
-        patterns[2] = new FuzzyMatchPattern(patternAligners[1], new NucleotideSequenceCaseSensitive("aaagt"));
-        patterns[3] = new FuzzyMatchPattern(patternAligners[2], new NucleotideSequenceCaseSensitive("NN"));
-        patterns[4] = new RepeatPattern(patternAligners[2], new NucleotideSequenceCaseSensitive("N"),
-                12, 12);
-        patterns[5] = new RepeatPattern(patternAligners[2], new NucleotideSequenceCaseSensitive("N"),
-                22, 22);
-        patterns[6] = new FuzzyMatchPattern(patternAligners[2], new NucleotideSequenceCaseSensitive("TCAG"));
-        patterns[7] = new RepeatPattern(patternAligners[3], new NucleotideSequenceCaseSensitive("N"),
+        patterns[0] = new FuzzyMatchPattern(patternAligners[0], false,
+                new NucleotideSequenceCaseSensitive(sequences[0]));
+        patterns[1] = new FuzzyMatchPattern(patternAligners[1], false,
+                new NucleotideSequenceCaseSensitive("ggca"));
+        patterns[2] = new FuzzyMatchPattern(patternAligners[1], false,
+                new NucleotideSequenceCaseSensitive("aaagt"));
+        patterns[3] = new FuzzyMatchPattern(patternAligners[2], false,
+                new NucleotideSequenceCaseSensitive("NN"));
+        patterns[4] = new RepeatPattern(patternAligners[2], false,
+                new NucleotideSequenceCaseSensitive("N"), 12, 12);
+        patterns[5] = new RepeatPattern(patternAligners[2], false,
+                new NucleotideSequenceCaseSensitive("N"), 22, 22);
+        patterns[6] = new FuzzyMatchPattern(patternAligners[2], false,
+                new NucleotideSequenceCaseSensitive("TCAG"));
+        patterns[7] = new RepeatPattern(patternAligners[3], false,
+                new NucleotideSequenceCaseSensitive("N"),
                 14, 14, 0, -1);
-        patterns[8] = new RepeatPattern(patternAligners[3], new NucleotideSequenceCaseSensitive("n"),
-                22, 22);
-        patterns[9] = new RepeatPattern(patternAligners[3], new NucleotideSequenceCaseSensitive("N"),
-                4, 4);
+        patterns[8] = new RepeatPattern(patternAligners[3], false,
+                new NucleotideSequenceCaseSensitive("n"), 22, 22);
+        patterns[9] = new RepeatPattern(patternAligners[3], false,
+                new NucleotideSequenceCaseSensitive("N"), 4, 4);
 
         targets[0] = new NSequenceWithQuality(repeatString(sequences[0], 5));
         targets[1] = new NSequenceWithQuality(sequences[1]);
@@ -345,9 +356,9 @@ public class ApproximateSorterTest {
             for (int i = 0; i <= 1; i++) {
                 PatternAligner patternAligner = getTestPatternAligner(-100, 0,
                         0, 0, i);
-                FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternAligner,
+                FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternAligner, false,
                         new NucleotideSequenceCaseSensitive("ggca"));
-                FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternAligner,
+                FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternAligner, false,
                         new NucleotideSequenceCaseSensitive("aaagt"));
                 assertEquals(i, countPortValues(new ApproximateSorter(new ApproximateSorterConfiguration(seq,
                         0, seq.size(), patternAligner, true, fairSorting, ORDER,
@@ -370,18 +381,20 @@ public class ApproximateSorterTest {
         PatternAligner patternAligner = getTestPatternAligner();
         NSequenceWithQuality seq = new NSequenceWithQuality("ATTA");
         MultiNSequenceWithQuality mseq = new MultiNSequenceWithQualityImpl(seq, seq, seq);
-        FuzzyMatchPattern matchingPattern = new FuzzyMatchPattern(patternAligner,
+        FuzzyMatchPattern matchingPattern = new FuzzyMatchPattern(patternAligner, false,
                 new NucleotideSequenceCaseSensitive("a"));
-        FuzzyMatchPattern notMatchingPattern = new FuzzyMatchPattern(patternAligner,
+        FuzzyMatchPattern notMatchingPattern = new FuzzyMatchPattern(patternAligner, false,
                 new NucleotideSequenceCaseSensitive("ccc"));
         MultiPattern matchingMPattern = createMultiPattern(patternAligner,
                 matchingPattern, matchingPattern, matchingPattern);
         MultiPattern notMatchingMPattern = createMultiPattern(patternAligner,
                 matchingPattern, notMatchingPattern, matchingPattern);
-        NotOperator matchingNot = new NotOperator(patternAligner, notMatchingMPattern);
-        NotOperator notMatchingNot = new NotOperator(patternAligner, matchingMPattern);
-        AndOperator matchingAnd = new AndOperator(patternAligner, matchingMPattern, matchingNot);
-        AndOperator notMatchingAnd = new AndOperator(patternAligner, matchingAnd, notMatchingNot);
+        NotOperator matchingNot = new NotOperator(patternAligner, false, notMatchingMPattern);
+        NotOperator notMatchingNot = new NotOperator(patternAligner, false, matchingMPattern);
+        AndOperator matchingAnd = new AndOperator(patternAligner, false,
+                matchingMPattern, matchingNot);
+        AndOperator notMatchingAnd = new AndOperator(patternAligner, false,
+                matchingAnd, notMatchingNot);
         for (boolean fairSorting : new boolean[] {true, false}) {
             ApproximateSorterConfiguration conf = new ApproximateSorterConfiguration(mseq, patternAligner,
                     false, false, fairSorting, LOGICAL_OR, 100,
@@ -394,12 +407,10 @@ public class ApproximateSorterTest {
     public void uppercaseLettersTest() throws Exception {
         PatternAligner patternAligner = getTestPatternAligner(-100,
                 0, 0, -1, 1);
-        String[] sequences = new String[] { "aaa", "aaA", "aAa", "att", "Att", "aTt" };
-        FuzzyMatchPattern[] patterns = Arrays.stream(sequences)
-                .map(s -> new FuzzyMatchPattern(patternAligner, new NucleotideSequenceCaseSensitive(s)))
-                .toArray(FuzzyMatchPattern[]::new);
-        NSequenceWithQuality targets[] = new NSequenceWithQuality[]
-                { new NSequenceWithQuality("AAATT"), new NSequenceWithQuality("AAACATT") };
+        FuzzyMatchPattern[] patterns = Stream.of("aaa", "aaA", "aAa", "att", "Att", "aTt")
+                .map(s -> new FuzzyMatchPattern(patternAligner, false,
+                        new NucleotideSequenceCaseSensitive(s))).toArray(FuzzyMatchPattern[]::new);
+        Stream<NSequenceWithQuality> targets = Stream.of("AAATT", "AAACATT").map(NSequenceWithQuality::new);
         FuzzyMatchPattern[][] patternPairs = new FuzzyMatchPattern[][] {
                 { patterns[0], patterns[3] },   // 0
                 { patterns[1], patterns[3] },   // 1
@@ -414,10 +425,9 @@ public class ApproximateSorterTest {
         for (MatchValidationType matchValidationType : new MatchValidationType[] { INTERSECTION, ORDER, FOLLOWING })
             for (int i = 0; i < patternPairs.length; i++) {
                 final int pairNum = i;
-                ApproximateSorterConfiguration[] conf = Arrays.stream(targets)
-                        .map(t -> new ApproximateSorterConfiguration(t,
-                            0, t.size(), patternAligner, true, true,
-                            matchValidationType, 0, patternPairs[pairNum]))
+                ApproximateSorterConfiguration[] conf = targets.map(t -> new ApproximateSorterConfiguration(t,
+                        0, t.size(), patternAligner, true, true,
+                        matchValidationType, 0, patternPairs[pairNum]))
                         .toArray(ApproximateSorterConfiguration[]::new);
                 switch (pairNum) {
                     case 0:

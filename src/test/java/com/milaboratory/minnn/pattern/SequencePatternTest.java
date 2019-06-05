@@ -34,14 +34,12 @@ import com.milaboratory.core.sequence.*;
 import com.milaboratory.test.TestUtil;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive.fromNucleotideSequence;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.RangeTools.checkFullIntersection;
-import static com.milaboratory.minnn.util.RangeTools.getIntersectionLength;
+import static com.milaboratory.minnn.util.RangeTools.*;
 import static org.junit.Assert.*;
 
 public class SequencePatternTest {
@@ -60,20 +58,22 @@ public class SequencePatternTest {
             NucleotideSequenceCaseSensitive motif1WithErrors = toLowerCase(makeRandomErrors(motif1, maxErrors));
             NucleotideSequenceCaseSensitive motif2WithErrors = toLowerCase(makeRandomErrors(motif2, maxErrors));
             PatternAligner fuzzyPatternAligner = getTestPatternAligner(maxErrors);
-            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(fuzzyPatternAligner, motif1WithErrors);
-            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(fuzzyPatternAligner, motif2WithErrors);
+            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(fuzzyPatternAligner, false,
+                    motif1WithErrors);
+            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(fuzzyPatternAligner, false,
+                    motif2WithErrors);
             boolean targetContainsPattern1 = target.toString().contains(motif1.toString());
             boolean isMatchingPattern1 = pattern1.match(targetQ).isFound();
 
             if (targetContainsPattern1) {
                 assertTrue(pattern1.match(targetQ).isFound());
-                assertTrue(pattern1.match(targetQ).getBestMatch(rg.nextBoolean()) != null);
-                assertTrue(pattern1.match(targetQ).getMatches(rg.nextBoolean()).take() != null);
+                assertNotNull(pattern1.match(targetQ).getBestMatch(rg.nextBoolean()));
+                assertNotNull(pattern1.match(targetQ).getMatches(rg.nextBoolean()).take());
             }
 
             assertTrue(pattern2.match(targetQ).isFound());
-            assertTrue(pattern2.match(targetQ).getBestMatch(rg.nextBoolean()) != null);
-            assertTrue(pattern2.match(targetQ).getMatches(rg.nextBoolean()).take() != null);
+            assertNotNull(pattern2.match(targetQ).getBestMatch(rg.nextBoolean()));
+            assertNotNull(pattern2.match(targetQ).getMatches(rg.nextBoolean()).take());
 
             long errorScorePenalty = -rg.nextInt(50) - 1;
             int maxOverlap = rg.nextInt(5) - 1;
@@ -116,7 +116,7 @@ public class SequencePatternTest {
             }
 
             SequencePattern sequencePattern = new SequencePattern(getTestPatternAligner(penaltyThreshold,
-                    0, 0, errorScorePenalty, maxOverlap),
+                    0, 0, errorScorePenalty, maxOverlap), false,
                     pattern1, pattern2);
 
             assertEquals(entirePatternMustMatch, sequencePattern.match(targetQ)
@@ -151,23 +151,27 @@ public class SequencePatternTest {
             boolean middleLetterUppercase = Character.isUpperCase(middleLetter.symbolAt(0));
             boolean rightPartUppercaseStart = Character.isUpperCase(rightPart.symbolAt(0));
 
-            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), motif1);
-            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), motif2);
-            FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternAligner(), leftPart);
-            FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(getTestPatternAligner(), rightPart);
+            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+                    motif1);
+            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+                    motif2);
+            FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+                    leftPart);
+            FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+                    rightPart);
             SequencePattern sequencePattern1 = new SequencePattern(getTestPatternAligner(0,
-                    0, 0, overlapPenalty), pattern1, pattern2);
+                    0, 0, overlapPenalty), false, pattern1, pattern2);
             SequencePattern sequencePattern2 = new SequencePattern(getTestPatternAligner(0,
-                    0, 0, overlapPenalty), pattern2, pattern1);
+                    0, 0, overlapPenalty), false, pattern2, pattern1);
             SequencePattern sequencePattern3 = new SequencePattern(getTestPatternAligner(overlapPenalty,
-                    0, 0, overlapPenalty), pattern1, pattern2);
+                    0, 0, overlapPenalty), false, pattern1, pattern2);
             SequencePattern sequencePattern4 = new SequencePattern(getTestPatternAligner(overlapPenalty,
-                    0, 0, overlapPenalty), pattern2, pattern1);
+                    0, 0, overlapPenalty), false, pattern2, pattern1);
             SequencePattern sequencePattern5 = new SequencePattern(getTestPatternAligner(0,
-                    0, 0, overlapPenalty), pattern3, pattern4);
+                    0, 0, overlapPenalty), false, pattern3, pattern4);
             SequencePattern sequencePattern6 = new SequencePattern(getTestPatternAligner(
                     overlapPenalty * middleInsertionSize,
-                    0, 0, overlapPenalty), pattern3, pattern4);
+                    0, 0, overlapPenalty), false, pattern3, pattern4);
 
             assertNull(sequencePattern1.match(targetQ1).getBestMatch(true));
             assertNull(sequencePattern2.match(targetQ1).getBestMatch(true));
@@ -214,13 +218,13 @@ public class SequencePatternTest {
             add(new GroupEdgePosition(new GroupEdge("D", false), 5));
         }};
 
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("ataga"), groupsEdgePositions1);
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("gattc"), groupsEdgePositions2);
         SequencePattern sequencePattern = new SequencePattern(getTestPatternAligner(-10, 0,
                 0, -5, 2, -1, getTestScoring()),
-                pattern1, pattern2);
+                false, pattern1, pattern2);
         NSequenceWithQuality nseq = new NSequenceWithQuality("ATAGATTC");
         MatchingResult result = sequencePattern.match(nseq);
         OutputPort<MatchIntermediate> matchOutputPort = result.getMatches(true);

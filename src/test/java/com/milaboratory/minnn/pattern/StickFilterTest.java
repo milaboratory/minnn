@@ -48,8 +48,9 @@ public class StickFilterTest {
             NSequenceWithQuality target = new NSequenceWithQuality(seq);
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     1, 20);
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(rg.nextInt(5)), motif);
-            FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(),
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(rg.nextInt(5)),
+                    false, motif);
+            FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(), false,
                     new StickFilter(left, position), pattern);
             MatchIntermediate patternBestMatch = pattern.match(target).getBestMatch(true);
             boolean mustMatch = (patternBestMatch != null)

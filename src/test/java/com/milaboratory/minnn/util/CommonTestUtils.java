@@ -188,7 +188,8 @@ public class CommonTestUtils {
 
     public static PatternAligner getTestPatternAligner(long penaltyThreshold, int bitapMaxErrors, long notResultScore,
                                                        long singleOverlapPenalty) {
-        return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty, -1);
+        return getTestPatternAligner(penaltyThreshold, bitapMaxErrors, notResultScore, singleOverlapPenalty,
+                -1);
     }
 
     public static PatternAligner getTestPatternAligner(long penaltyThreshold, int bitapMaxErrors, long notResultScore,
@@ -346,7 +347,7 @@ public class CommonTestUtils {
         RandomCuts randomCuts = new RandomCuts(length);
         NucleotideSequenceCaseSensitive seq = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                 length, length);
-        return new FuzzyMatchPattern(patternAligner, seq, randomCuts.left, randomCuts.right,
+        return new FuzzyMatchPattern(patternAligner, false, seq, randomCuts.left, randomCuts.right,
                 randomBorders.left, randomBorders.right,
                 withGroups ? getRandomGroupsForFuzzyMatch(length) : new ArrayList<>());
     }
@@ -357,14 +358,16 @@ public class CommonTestUtils {
         RandomBorders randomBorders = new RandomBorders(maxRepeats);
         NucleotideSequenceCaseSensitive seq = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                 1, 1);
-        return new RepeatPattern(patternAligner, seq, minRepeats, maxRepeats, randomBorders.left, randomBorders.right,
+        return new RepeatPattern(patternAligner, false, seq, minRepeats, maxRepeats,
+                randomBorders.left, randomBorders.right,
                 withGroups ? getRandomGroupsForFuzzyMatch(maxRepeats) : new ArrayList<>());
     }
 
     public static AnyPattern getRandomAnyPattern(PatternAligner patternAligner, boolean withGroups) {
-        return new AnyPattern(patternAligner, withGroups ? getRandomGroupsForFuzzyMatch(1).stream()
-                .map(GroupEdgePosition::getGroupEdge).collect(Collectors.toCollection(ArrayList::new))
-                : new ArrayList<>());
+        return new AnyPattern(patternAligner, false,
+                withGroups ? getRandomGroupsForFuzzyMatch(1).stream()
+                        .map(GroupEdgePosition::getGroupEdge).collect(Collectors.toCollection(ArrayList::new))
+                        : new ArrayList<>());
     }
 
     public static SinglePattern getRandomBasicPattern() {
@@ -418,19 +421,21 @@ public class CommonTestUtils {
             case 0:
                 return patterns[0];
             case 1:
-                return new FilterPattern(patternAligner, new ScoreFilter(-rg.nextInt(75)), patterns[0]);
+                return new FilterPattern(patternAligner, false,
+                        new ScoreFilter(-rg.nextInt(75)), patterns[0]);
             case 2:
-                return new FilterPattern(patternAligner, new StickFilter(rg.nextBoolean(), rg.nextInt(30)),
+                return new FilterPattern(patternAligner, false,
+                        new StickFilter(rg.nextBoolean(), rg.nextInt(30)),
                         patterns[0]);
             case 3:
-                return new AndPattern(patternAligner, patterns);
+                return new AndPattern(patternAligner, false, patterns);
             case 4:
-                return new PlusPattern(patternAligner, patterns);
+                return new PlusPattern(patternAligner, false, patterns);
             case 5:
-                return new SequencePattern(patternAligner, patterns);
+                return new SequencePattern(patternAligner, false, patterns);
             case 6:
             default:
-                return new OrPattern(patternAligner, patterns);
+                return new OrPattern(patternAligner, false, patterns);
         }
     }
 
@@ -461,14 +466,14 @@ public class CommonTestUtils {
         } else {
             switch (rg.nextInt(4)) {
                 case 0:
-                    return new AndOperator(patternAligner, patterns);
+                    return new AndOperator(patternAligner, false, patterns);
                 case 1:
-                    return new OrOperator(patternAligner, patterns);
+                    return new OrOperator(patternAligner, false, patterns);
                 case 2:
-                    return new NotOperator(patternAligner, patterns[0]);
+                    return new NotOperator(patternAligner, false, patterns[0]);
                 case 3:
                 default:
-                    return new MultipleReadsFilterPattern(patternAligner,
+                    return new MultipleReadsFilterPattern(patternAligner, false,
                             new ScoreFilter(-rg.nextInt(75)), patterns[0]);
             }
         }
@@ -490,7 +495,7 @@ public class CommonTestUtils {
 
     public static MultiPattern createMultiPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
                                                   SinglePattern... singlePatterns) {
-        return new MultiPattern(patternAligner, Arrays.stream(singlePatterns)
+        return new MultiPattern(patternAligner, defaultGroupsOverride, Arrays.stream(singlePatterns)
                 .map(sp -> new FullReadPattern(patternAligner, defaultGroupsOverride, sp))
                 .toArray(SinglePattern[]::new));
     }

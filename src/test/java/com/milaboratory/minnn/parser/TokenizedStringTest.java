@@ -30,8 +30,7 @@ package com.milaboratory.minnn.parser;
 
 import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 import com.milaboratory.minnn.pattern.*;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
@@ -44,9 +43,9 @@ public class TokenizedStringTest {
     @Test
     public void simpleTest1() throws Exception {
         TokenizedString ts1 = new TokenizedString("AATTAA");
-        FuzzyMatchPattern testPattern1 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern testPattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("aa"));
-        FuzzyMatchPattern testPattern2 = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern testPattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("tt"));
         assertEquals("AATTAA", ts1.getOneString());
         ts1.tokenizeSubstring(testPattern1, 0, 2);
@@ -66,11 +65,13 @@ public class TokenizedStringTest {
 
     @Test
     public void simpleTest2() throws Exception {
-        FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(getTestPatternAligner(),
+        FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
                 new NucleotideSequenceCaseSensitive("atttgtg"));
-        AndPattern andPattern = new AndPattern(getTestPatternAligner(), fuzzyMatchPattern, fuzzyMatchPattern);
+        AndPattern andPattern = new AndPattern(getTestPatternAligner(), false,
+                fuzzyMatchPattern, fuzzyMatchPattern);
         ScoreFilter scoreFilter = new ScoreFilter(-1);
-        FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(), scoreFilter, fuzzyMatchPattern);
+        FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(), false,
+                scoreFilter, fuzzyMatchPattern);
         MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), andPattern, filterPattern);
         TokenizedString ts = new TokenizedString(multiPattern.toString());
         ts.tokenizeSubstring(fuzzyMatchPattern, 5, 10);
