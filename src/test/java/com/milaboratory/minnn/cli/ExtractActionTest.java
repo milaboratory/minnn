@@ -59,16 +59,16 @@ public class ExtractActionTest {
             String testOutput2Single = TEMP_DIR + "output2_single.mif";
 
             String[] args1 = {"extract", "-f", "--pattern",
-                    inQuotes("MultiPattern([FullReadPattern(false, FuzzyMatchPattern(GAAGCA, 1, 0, -1, -1, " +
+                    inQuotes("MultiPattern([FullReadPattern(FuzzyMatchPattern(GAAGCA, 1, 0, -1, -1, " +
                             "[GroupEdgePosition(GroupEdge('UMI', true), 2), " +
                             "GroupEdgePosition(GroupEdge('UMI', false), 4)])), " +
-                            "FullReadPattern(false, FuzzyMatchPattern(AA, 0, 0, -1, -1))])"),
+                            "FullReadPattern(FuzzyMatchPattern(AA, 0, 0, -1, -1))])"),
                     "--input", testInputR1, testInputR2, "--output", testOutput1Double,
                     "--devel-parser-syntax", "--score-threshold", "0"};
             main(args1);
 
             String[] args2 = {"extract", "-f", "--score-threshold", "0", "--devel-parser-syntax", "--match-score", "0",
-                    "--oriented", "--pattern", inQuotes("FullReadPattern(false, FuzzyMatchPattern(ATTAGACA, " +
+                    "--oriented", "--pattern", inQuotes("FullReadPattern(FuzzyMatchPattern(ATTAGACA, " +
                     "0, 0, -1, -1))"), "--input", testInputR1, "--output", testOutput1Single};
             main(args2);
 

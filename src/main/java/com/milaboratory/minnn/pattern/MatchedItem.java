@@ -38,6 +38,7 @@ public abstract class MatchedItem {
     /**
      * IDs start from 1.
      * 0 used only in NullMatchedRange (when there is actually no match).
+     * -1 used for non-default groups in matches with default groups override.
      */
     protected final byte targetId;
     protected final int patternIndex;

@@ -34,6 +34,8 @@ import com.milaboratory.minnn.pattern.*;
 import com.milaboratory.test.TestUtil;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.milaboratory.minnn.pattern.MatchValidationType.*;
@@ -410,7 +412,8 @@ public class ApproximateSorterTest {
         FuzzyMatchPattern[] patterns = Stream.of("aaa", "aaA", "aAa", "att", "Att", "aTt")
                 .map(s -> new FuzzyMatchPattern(patternAligner, false,
                         new NucleotideSequenceCaseSensitive(s))).toArray(FuzzyMatchPattern[]::new);
-        Stream<NSequenceWithQuality> targets = Stream.of("AAATT", "AAACATT").map(NSequenceWithQuality::new);
+        List<NSequenceWithQuality> targets = Stream.of("AAATT", "AAACATT").map(NSequenceWithQuality::new)
+                .collect(Collectors.toList());
         FuzzyMatchPattern[][] patternPairs = new FuzzyMatchPattern[][] {
                 { patterns[0], patterns[3] },   // 0
                 { patterns[1], patterns[3] },   // 1
@@ -425,7 +428,7 @@ public class ApproximateSorterTest {
         for (MatchValidationType matchValidationType : new MatchValidationType[] { INTERSECTION, ORDER, FOLLOWING })
             for (int i = 0; i < patternPairs.length; i++) {
                 final int pairNum = i;
-                ApproximateSorterConfiguration[] conf = targets.map(t -> new ApproximateSorterConfiguration(t,
+                ApproximateSorterConfiguration[] conf = targets.stream().map(t -> new ApproximateSorterConfiguration(t,
                         0, t.size(), patternAligner, true, true,
                         matchValidationType, 0, patternPairs[pairNum]))
                         .toArray(ApproximateSorterConfiguration[]::new);

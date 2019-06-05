@@ -36,6 +36,8 @@ import com.milaboratory.minnn.pattern.*;
 import com.milaboratory.primitivio.PrimitivI;
 import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.annotations.Serializable;
+import gnu.trove.list.TByteList;
+import gnu.trove.list.array.TByteArrayList;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,6 +58,7 @@ public final class ParsedRead {
     private HashMap<String, ArrayList<GroupEdgePosition>> innerGroupEdgesCache = null;
     private HashMap<String, HashMap<String, Range>> innerRangesCache = null;
     private HashMap<String, String> commentsCache = null;
+    private TByteList targetIdsCache = null;
     private static Set<String> defaultGroups = null;
     private static Set<String> groupsFromHeader = null;
 
@@ -148,6 +151,14 @@ public final class ParsedRead {
         return getGroups().stream().filter(group -> group.getGroupName().equals(groupName)).findFirst().orElse(null);
     }
 
+    public TByteList getAvailableTargetIds() {
+        if (targetIdsCache == null) {
+            targetIdsCache = new TByteArrayList();
+            getGroups().stream().map(MatchedItem::getTargetId).sorted().distinct().forEach(targetIdsCache::add);
+        }
+        return targetIdsCache;
+    }
+
     /**
      * Fill inner groups cache: group edges and/or inner ranges based on specified flags. This function must be called
      * only when matchedGroups map is already initialized.
@@ -163,29 +174,32 @@ public final class ParsedRead {
             innerRangesCache = new HashMap<>();
         for (Map.Entry<String, MatchedGroup> outerGroupEntry : matchedGroups.entrySet()) {
             byte currentTargetId = outerGroupEntry.getValue().getTargetId();
-            List<MatchedGroup> sameTargetGroups = getGroups().stream()
-                    .filter(mg -> mg.getTargetId() == currentTargetId).collect(Collectors.toList());
-            Range outerRange = outerGroupEntry.getValue().getRange();
-            if (outerRange != null) {
-                ArrayList<GroupEdgePosition> groupEdgePositions = new ArrayList<>();
-                HashMap<String, Range> innerRanges = new HashMap<>();
-                for (MatchedGroup innerGroup : sameTargetGroups) {
-                    Range innerRange = innerGroup.getRange();
-                    if ((innerRange != null) && outerRange.contains(innerRange)) {
-                        if (fillGroupEdges) {
-                            groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
-                                    true), innerRange.getLower() - outerRange.getLower()));
-                            groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
-                                    false), innerRange.getUpper() - outerRange.getLower()));
+            // targetId -1 is used in reads with default groups override; inner groups checking is skipped in this case
+            if (currentTargetId != -1) {
+                List<MatchedGroup> sameTargetGroups = getGroups().stream()
+                        .filter(mg -> mg.getTargetId() == currentTargetId).collect(Collectors.toList());
+                Range outerRange = outerGroupEntry.getValue().getRange();
+                if (outerRange != null) {
+                    ArrayList<GroupEdgePosition> groupEdgePositions = new ArrayList<>();
+                    HashMap<String, Range> innerRanges = new HashMap<>();
+                    for (MatchedGroup innerGroup : sameTargetGroups) {
+                        Range innerRange = innerGroup.getRange();
+                        if ((innerRange != null) && outerRange.contains(innerRange)) {
+                            if (fillGroupEdges) {
+                                groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
+                                        true), innerRange.getLower() - outerRange.getLower()));
+                                groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
+                                        false), innerRange.getUpper() - outerRange.getLower()));
+                            }
+                            if (fillRanges)
+                                innerRanges.put(innerGroup.getGroupName(), innerRange.move(-outerRange.getLower()));
                         }
-                        if (fillRanges)
-                            innerRanges.put(innerGroup.getGroupName(), innerRange.move(-outerRange.getLower()));
                     }
+                    if (fillGroupEdges)
+                        innerGroupEdgesCache.put(outerGroupEntry.getKey(), groupEdgePositions);
+                    if (fillRanges)
+                        innerRangesCache.put(outerGroupEntry.getKey(), innerRanges);
                 }
-                if (fillGroupEdges)
-                    innerGroupEdgesCache.put(outerGroupEntry.getKey(), groupEdgePositions);
-                if (fillRanges)
-                    innerRangesCache.put(outerGroupEntry.getKey(), innerRanges);
             }
         }
     }
