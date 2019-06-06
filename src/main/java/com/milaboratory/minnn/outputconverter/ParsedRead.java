@@ -36,8 +36,6 @@ import com.milaboratory.minnn.pattern.*;
 import com.milaboratory.primitivio.PrimitivI;
 import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.annotations.Serializable;
-import gnu.trove.list.TByteList;
-import gnu.trove.list.array.TByteArrayList;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -58,7 +56,7 @@ public final class ParsedRead {
     private HashMap<String, ArrayList<GroupEdgePosition>> innerGroupEdgesCache = null;
     private HashMap<String, HashMap<String, Range>> innerRangesCache = null;
     private HashMap<String, String> commentsCache = null;
-    private TByteList targetIdsCache = null;
+    private byte[] targetIdsCache = null;
     private static Set<String> defaultGroups = null;
     private static Set<String> groupsFromHeader = null;
 
@@ -151,10 +149,14 @@ public final class ParsedRead {
         return getGroups().stream().filter(group -> group.getGroupName().equals(groupName)).findFirst().orElse(null);
     }
 
-    public TByteList getAvailableTargetIds() {
+    public byte[] getAvailableTargetIds() {
         if (targetIdsCache == null) {
-            targetIdsCache = new TByteArrayList();
-            getGroups().stream().map(MatchedItem::getTargetId).sorted().distinct().forEach(targetIdsCache::add);
+            TreeSet<Byte> ids = getGroups().stream().map(MatchedItem::getTargetId)
+                    .collect(Collectors.toCollection(TreeSet::new));
+            targetIdsCache = new byte[ids.size()];
+            int i = 0;
+            for (byte id : ids)
+                targetIdsCache[i++] = id;
         }
         return targetIdsCache;
     }
@@ -175,38 +177,38 @@ public final class ParsedRead {
         for (Map.Entry<String, MatchedGroup> outerGroupEntry : matchedGroups.entrySet()) {
             byte currentTargetId = outerGroupEntry.getValue().getTargetId();
             // targetId -1 is used in reads with default groups override; inner groups checking is skipped in this case
-            if (currentTargetId != -1) {
-                List<MatchedGroup> sameTargetGroups = getGroups().stream()
-                        .filter(mg -> mg.getTargetId() == currentTargetId).collect(Collectors.toList());
-                Range outerRange = outerGroupEntry.getValue().getRange();
-                if (outerRange != null) {
-                    ArrayList<GroupEdgePosition> groupEdgePositions = new ArrayList<>();
-                    HashMap<String, Range> innerRanges = new HashMap<>();
-                    for (MatchedGroup innerGroup : sameTargetGroups) {
-                        Range innerRange = innerGroup.getRange();
-                        if ((innerRange != null) && outerRange.contains(innerRange)) {
-                            if (fillGroupEdges) {
-                                groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
-                                        true), innerRange.getLower() - outerRange.getLower()));
-                                groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
-                                        false), innerRange.getUpper() - outerRange.getLower()));
-                            }
-                            if (fillRanges)
-                                innerRanges.put(innerGroup.getGroupName(), innerRange.move(-outerRange.getLower()));
+            List<MatchedGroup> sameTargetGroups = (currentTargetId == -1)
+                    ? Collections.singletonList(outerGroupEntry.getValue())
+                    : getGroups().stream().filter(mg -> mg.getTargetId() == currentTargetId)
+                    .collect(Collectors.toList());
+            Range outerRange = outerGroupEntry.getValue().getRange();
+            if (outerRange != null) {
+                ArrayList<GroupEdgePosition> groupEdgePositions = new ArrayList<>();
+                HashMap<String, Range> innerRanges = new HashMap<>();
+                for (MatchedGroup innerGroup : sameTargetGroups) {
+                    Range innerRange = innerGroup.getRange();
+                    if ((innerRange != null) && outerRange.contains(innerRange)) {
+                        if (fillGroupEdges) {
+                            groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
+                                    true), innerRange.getLower() - outerRange.getLower()));
+                            groupEdgePositions.add(new GroupEdgePosition(new GroupEdge(innerGroup.getGroupName(),
+                                    false), innerRange.getUpper() - outerRange.getLower()));
                         }
+                        if (fillRanges)
+                            innerRanges.put(innerGroup.getGroupName(), innerRange.move(-outerRange.getLower()));
                     }
-                    if (fillGroupEdges)
-                        innerGroupEdgesCache.put(outerGroupEntry.getKey(), groupEdgePositions);
-                    if (fillRanges)
-                        innerRangesCache.put(outerGroupEntry.getKey(), innerRanges);
                 }
+                if (fillGroupEdges)
+                    innerGroupEdgesCache.put(outerGroupEntry.getKey(), groupEdgePositions);
+                if (fillRanges)
+                    innerRangesCache.put(outerGroupEntry.getKey(), innerRanges);
             }
         }
     }
 
     /**
-     * Calculate built-in group names that will not be included in comments for FASTQ file. This cache is static because
-     * it depends only on number of reads, and it's the same for all reads.
+     * Calculate built-in group names that will not be included in comments for FASTQ file. This cache is static
+     * because it depends only on number of reads, and it's the same for all reads.
      *
      * @param numberOfReads number of reads in input
      */
@@ -234,6 +236,7 @@ public final class ParsedRead {
             throw new IllegalArgumentException("Basic groups for output parsed read are not specified!");
 
         ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
+        HashSet<String> usedGroupNames = new HashSet<>();
         if (matchedGroups == null)
             matchedGroups = getGroups().stream().collect(Collectors.toMap(MatchedGroup::getGroupName, mg -> mg));
         if (innerGroupEdgesCache == null)
@@ -245,20 +248,20 @@ public final class ParsedRead {
                 throw new IllegalArgumentException("Group " + outputGroupName
                         + " not found in this ParsedRead; available groups: " + matchedGroups.keySet());
             NSequenceWithQuality target = getGroupValue(outputGroupName);
-            for (GroupEdgePosition groupEdgePosition : innerGroupEdgesCache.get(outputGroupName))
+            for (GroupEdgePosition groupEdgePosition : innerGroupEdgesCache.get(outputGroupName)) {
                 matchedGroupEdges.add(new MatchedGroupEdge(target, targetId, groupEdgePosition.getGroupEdge(),
                         groupEdgePosition.getPosition()));
-            List<String> otherGroupNames = matchedGroups.keySet().stream()
-                    .filter(name -> !innerGroupEdgesCache.get(outputGroupName).stream()
-                            .map(groupEdgePosition -> groupEdgePosition.getGroupEdge().getGroupName())
-                            .collect(Collectors.toSet()).contains(name))
-                    .collect(Collectors.toList());
-            for (String groupName : otherGroupNames) {
-                matchedGroupEdges.add(new MatchedGroupEdge(target, targetId, new GroupEdge(groupName, true),
-                        getGroupValue(groupName)));
-                matchedGroupEdges.add(new MatchedGroupEdge(null, targetId, new GroupEdge(groupName, false),
-                        null));
+                usedGroupNames.add(groupEdgePosition.getGroupEdge().getGroupName());
             }
+        }
+        LinkedHashSet<String> otherGroupNames = matchedGroups.keySet().stream()
+                .filter(name -> !usedGroupNames.contains(name)).collect(Collectors.toCollection(LinkedHashSet::new));
+        for (String groupName : otherGroupNames) {
+            NSequenceWithQuality target = getGroupValue(groupName);
+            matchedGroupEdges.add(new MatchedGroupEdge(target, (byte)-1, new GroupEdge(groupName, true),
+                    target));
+            matchedGroupEdges.add(new MatchedGroupEdge(null, (byte)-1, new GroupEdge(groupName, false),
+                    null));
         }
 
         Match targetMatch = new Match(groupNames.length, getBestMatchScore(), matchedGroupEdges);
