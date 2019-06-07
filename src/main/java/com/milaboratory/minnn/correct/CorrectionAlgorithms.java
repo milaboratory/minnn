@@ -39,7 +39,6 @@ import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.Match;
 import com.milaboratory.minnn.pattern.MatchedGroupEdge;
-import com.milaboratory.minnn.pattern.MatchedItem;
 import com.milaboratory.util.SmartProgressReporter;
 import gnu.trove.map.hash.TByteIntHashMap;
 import gnu.trove.map.hash.TByteObjectHashMap;
@@ -328,8 +327,7 @@ public final class CorrectionAlgorithms {
         else {
             newGroupEdges = new ArrayList<>();
             Set<String> keyGroups = groupsData.stream().map(data -> data.groupName).collect(Collectors.toSet());
-            for (byte targetId : parsedRead.getGroups().stream().map(MatchedItem::getTargetId)
-                    .collect(Collectors.toCollection(LinkedHashSet::new))) {
+            for (byte targetId : parsedRead.getAvailableTargetIds()) {
                 ArrayList<CorrectedGroup> currentCorrectedGroups = correctedGroups.get(targetId);
                 if (currentCorrectedGroups == null)
                     parsedRead.getMatchedGroupEdges().stream()

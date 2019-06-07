@@ -345,8 +345,9 @@ public final class ParsedRead {
                     commentsTargetId = 1;
             }
 
-            readDescription = generateComments(commentGroups, reverseMatch,
-                    copyOriginalHeaders ? originalRead.getRead(commentsTargetId - 1).getDescription() : "");
+            String oldComments = (copyOriginalHeaders && (commentsTargetId != -1))
+                    ? originalRead.getRead(commentsTargetId - 1).getDescription() : "";
+            readDescription = generateComments(commentGroups, reverseMatch, oldComments);
         }
 
         commentsCache.put(outputGroupName, readDescription);

@@ -37,6 +37,7 @@ public abstract class SinglePattern extends Pattern {
      * Number of read where sequence is matched; numbers start from 1.
      * IDs from here go to MatchedRange/MatchedGroupEdge objects used in MatchIntermediate objects.
      * 0 value used only in NullMatchedRange that is used in matches for NotOperator and OrOperator.
+     * -1 used for non-default groups in matches with default groups override.
      */
     protected byte targetId = 1;
 
@@ -99,9 +100,14 @@ public abstract class SinglePattern extends Pattern {
         return -1;
     }
 
+    /**
+     * This function sets targetId for SinglePattern from MultiPattern. Values 0 and -1 are not allowed here.
+     *
+     * @param targetId target id
+     */
     void setTargetId(byte targetId) {
         if (targetId < 1)
-            throw new IllegalArgumentException("targetId must be positive; found " + targetId);
+            throw new IllegalArgumentException("targetId of SinglePattern must be positive; found " + targetId);
         this.targetId = targetId;
     }
 }

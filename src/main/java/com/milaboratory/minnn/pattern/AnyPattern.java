@@ -35,6 +35,8 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import static com.milaboratory.minnn.pattern.PatternUtils.defaultGroupIds;
+
 public final class AnyPattern extends SinglePattern {
     private final ArrayList<GroupEdge> groupEdges;
 
@@ -96,10 +98,12 @@ public final class AnyPattern extends SinglePattern {
                 firstTake = false;
 
                 MatchedRange matchedRange = new MatchedRange(target, targetId, 0, new Range(from, to));
-                ArrayList<MatchedGroupEdge> matchedGroupEdges = groupEdges.stream()
-                        .map(ge -> new MatchedGroupEdge(target, targetId, 0, ge,
-                                ge.isStart() ? 0 : target.size()))
-                        .collect(Collectors.toCollection(ArrayList::new));
+                ArrayList<MatchedGroupEdge> matchedGroupEdges = groupEdges.stream().map(ge -> {
+                    byte matchedGroupTargetId = defaultGroupsOverride
+                            ? defaultGroupIds.getOrDefault(ge.getGroupName(), (byte)-1) : targetId;
+                    return new MatchedGroupEdge(target, matchedGroupTargetId, 0, ge,
+                            ge.isStart() ? 0 : target.size());
+                }).collect(Collectors.toCollection(ArrayList::new));
                 return new MatchIntermediate(1, 0, -1, -1,
                         matchedGroupEdges, matchedRange);
             }

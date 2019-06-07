@@ -42,7 +42,7 @@ import static com.milaboratory.minnn.parser.Parser.BUILTIN_READ_GROUPS_NUM;
 public final class PatternUtils {
     private PatternUtils() {}
 
-    private static final Map<String, Byte> defaultGroupIds = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
+    static final Map<String, Byte> defaultGroupIds = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
             .mapToObj(i -> (byte)i).collect(Collectors.toMap(targetId -> "R" + targetId, Byte::new));
 
     public static int invertCoordinate(int x) {
