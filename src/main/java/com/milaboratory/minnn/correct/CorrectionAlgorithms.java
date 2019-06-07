@@ -41,7 +41,6 @@ import com.milaboratory.minnn.pattern.Match;
 import com.milaboratory.minnn.pattern.MatchedGroupEdge;
 import com.milaboratory.util.SmartProgressReporter;
 import gnu.trove.map.hash.TByteIntHashMap;
-import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -303,20 +302,18 @@ public final class CorrectionAlgorithms {
      *                      (which is true if any of barcodes in this parsed read was filtered out by count)
      */
     private static CorrectBarcodesResult correctBarcodes(ParsedRead parsedRead, Set<GroupData> groupsData) {
-        TByteObjectHashMap<ArrayList<CorrectedGroup>> correctedGroups = new TByteObjectHashMap<>();
+        ArrayList<CorrectedGroup> correctedGroups = new ArrayList<>();
         boolean isCorrection = false;
         int numCorrectedBarcodes = 0;
         boolean excluded = false;
         for (GroupData groupData : groupsData) {
             MatchedGroup matchedGroup = parsedRead.getGroupByName(groupData.groupName);
-            byte targetId = matchedGroup.getTargetId();
             NucleotideSequence oldValue = matchedGroup.getValue().getSequence();
             NucleotideSequence correctValue = groupData.correctionMap.get(oldValue);
             if (correctValue == null)
                 correctValue = oldValue;
             isCorrection |= !correctValue.equals(oldValue);
-            correctedGroups.putIfAbsent(targetId, new ArrayList<>());
-            correctedGroups.get(targetId).add(new CorrectedGroup(groupData.groupName, correctValue));
+            correctedGroups.add(new CorrectedGroup(groupData.groupName, correctValue));
             if (groupData.filterByCount)
                 excluded |= !groupData.includedBarcodes.contains(correctValue);
         }
@@ -327,26 +324,17 @@ public final class CorrectionAlgorithms {
         else {
             newGroupEdges = new ArrayList<>();
             Set<String> keyGroups = groupsData.stream().map(data -> data.groupName).collect(Collectors.toSet());
-            for (byte targetId : parsedRead.getAvailableTargetIds()) {
-                ArrayList<CorrectedGroup> currentCorrectedGroups = correctedGroups.get(targetId);
-                if (currentCorrectedGroups == null)
-                    parsedRead.getMatchedGroupEdges().stream()
-                            .filter(mge -> mge.getTargetId() == targetId).forEach(newGroupEdges::add);
+            Map<String, CorrectedGroup> correctedGroupsMap = correctedGroups.stream()
+                    .collect(Collectors.toMap(cg -> cg.groupName, cg -> cg));
+            for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges()) {
+                String currentGroupName = matchedGroupEdge.getGroupEdge().getGroupName();
+                if (!keyGroups.contains(currentGroupName))
+                    newGroupEdges.add(matchedGroupEdge);
                 else {
-                    Map<String, CorrectedGroup> currentCorrectedGroupsMap = currentCorrectedGroups.stream()
-                            .collect(Collectors.toMap(cg -> cg.groupName, cg -> cg));
-                    for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges().stream()
-                            .filter(mge -> mge.getTargetId() == targetId).collect(Collectors.toList())) {
-                        String currentGroupName = matchedGroupEdge.getGroupEdge().getGroupName();
-                        if (!keyGroups.contains(currentGroupName))
-                            newGroupEdges.add(matchedGroupEdge);
-                        else {
-                            CorrectedGroup currentCorrectedGroup = currentCorrectedGroupsMap.get(currentGroupName);
-                            newGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
-                                    matchedGroupEdge.getTargetId(), matchedGroupEdge.getGroupEdge(),
-                                    new NSequenceWithQuality(currentCorrectedGroup.correctedValue)));
-                        }
-                    }
+                    CorrectedGroup correctedGroup = correctedGroupsMap.get(currentGroupName);
+                    newGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
+                            matchedGroupEdge.getTargetId(), matchedGroupEdge.getGroupEdge(),
+                            new NSequenceWithQuality(correctedGroup.correctedValue)));
                 }
             }
             numCorrectedBarcodes++;
