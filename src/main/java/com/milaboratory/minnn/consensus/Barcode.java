@@ -28,17 +28,19 @@
  */
 package com.milaboratory.minnn.consensus;
 
-final class Barcode {
+public final class Barcode {
     final String groupName;
     final SequenceWithAttributes value;
+    final byte targetId;
 
-    Barcode(String groupName, SequenceWithAttributes value) {
+    Barcode(String groupName, SequenceWithAttributes value, byte targetId) {
         this.groupName = groupName;
         this.value = value;
+        this.targetId = targetId;
     }
 
     @Override
     public String toString() {
-        return "Barcode{" + "groupName='" + groupName + '\'' + ", value=" + value + '}';
+        return "Barcode{" + "groupName='" + groupName + '\'' + ", value=" + value + ", targetId=" + targetId + '}';
     }
 }

@@ -5,10 +5,12 @@ import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.sequence.SequenceQuality;
 import com.milaboratory.minnn.consensus.doublemultialign.ConsensusAlgorithmDoubleMultiAlign;
 import com.milaboratory.minnn.consensus.singlecell.ConsensusAlgorithmSingleCell;
+import gnu.trove.map.hash.TByteObjectHashMap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static org.junit.Assert.*;
@@ -127,21 +129,20 @@ public class ConsensusTestUtils {
         testSequences.forEach(readSeqs -> assertEquals(numberOfTargets, readSeqs.size()));
         assertEquals(numberOfTargets, barcodeValues.size());
 
-        TargetBarcodes[] targetBarcodes = new TargetBarcodes[numberOfTargets];
-        for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-            ArrayList<Barcode> currentTargetBarcodes = new ArrayList<>();
-            for (HashMap.Entry<String, String> currentRawBarcode : barcodeValues.get(targetIndex).entrySet())
-                currentTargetBarcodes.add(new Barcode(currentRawBarcode.getKey(),
-                        toSeqWithAttributes(currentRawBarcode.getValue(), 0)));
-            targetBarcodes[targetIndex] = new TargetBarcodes(currentTargetBarcodes);
+        List<Barcode> barcodes = new ArrayList<>();
+        for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
+            for (HashMap.Entry<String, String> currentRawBarcode : barcodeValues.get(targetId - 1).entrySet())
+                barcodes.add(new Barcode(currentRawBarcode.getKey(),
+                        toSeqWithAttributes(currentRawBarcode.getValue(), 0), targetId));
         }
 
         Cluster cluster = new Cluster(0);
         for (int readIndex = 0; readIndex < numberOfReads; readIndex++) {
-            SequenceWithAttributes[] sequences = new SequenceWithAttributes[numberOfTargets];
-            for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++)
-                sequences[targetIndex] = toSeqWithAttributes(testSequences.get(readIndex).get(targetIndex), readIndex);
-            cluster.data.add(new BasicDataFromParsedRead(sequences, targetBarcodes, readIndex));
+            TByteObjectHashMap<SequenceWithAttributes> sequences = new TByteObjectHashMap<>();
+            for (byte targetId = 1; targetId <= numberOfTargets; targetId++)
+                sequences.put(targetId,
+                        toSeqWithAttributes(testSequences.get(readIndex).get(targetId - 1), readIndex));
+            cluster.data.add(new BasicDataFromParsedRead(sequences, barcodes, readIndex));
         }
 
         return cluster;
@@ -152,10 +153,12 @@ public class ConsensusTestUtils {
         List<List<String>> outputSequences = new ArrayList<>();
         for (Consensus consensus : calculatedConsensuses.consensuses)
             if (withQuality)
-                outputSequences.add(Arrays.stream(consensus.sequences).map(seq -> seq.toString()
+                outputSequences.add(IntStream.rangeClosed(1, consensus.sequences.size())
+                        .mapToObj(targetId -> consensus.sequences.get((byte)targetId).toString()
                         .replace(" ", "\n")).collect(Collectors.toList()));
             else
-                outputSequences.add(Arrays.stream(consensus.sequences).map(seq -> seq.getSeq().toString())
+                outputSequences.add(IntStream.rangeClosed(1, consensus.sequences.size())
+                        .mapToObj(targetId -> consensus.sequences.get((byte)targetId).getSeq().toString())
                         .collect(Collectors.toList()));
         return outputSequences;
     }

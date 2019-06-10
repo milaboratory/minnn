@@ -28,28 +28,28 @@
  */
 package com.milaboratory.minnn.consensus.singlecell;
 
+import com.milaboratory.minnn.consensus.Barcode;
 import com.milaboratory.minnn.consensus.DataFromParsedRead;
-import com.milaboratory.minnn.consensus.TargetBarcodes;
+import gnu.trove.map.hash.TByteObjectHashMap;
 import gnu.trove.map.hash.TLongIntHashMap;
 
 import java.util.*;
 
 final class OffsetSearchResults {
-    final TLongIntHashMap[] kmerOffsetsForTargets;
+    final TByteObjectHashMap<TLongIntHashMap> kmerOffsetsForTargets;
     final List<DataFromParsedRead> usedReads;
     final List<DataFromParsedRead> remainingReads;
-    final TargetBarcodes[] barcodes;
+    final List<Barcode> barcodes;
 
-    OffsetSearchResults(TLongIntHashMap[] kmerOffsetsForTargets, List<DataFromParsedRead> usedReads,
-                        List<DataFromParsedRead> remainingReads, TargetBarcodes[] barcodes) {
+    OffsetSearchResults(TByteObjectHashMap<TLongIntHashMap> kmerOffsetsForTargets, List<DataFromParsedRead> usedReads,
+                        List<DataFromParsedRead> remainingReads, List<Barcode> barcodes) {
         this.kmerOffsetsForTargets = kmerOffsetsForTargets;
         if (usedReads.size() < 1)
-            throw new IllegalArgumentException("kmerOffsetsForTargets: " + Arrays.toString(kmerOffsetsForTargets)
-                    + ", usedReads: " + usedReads + ", remainingReads: " + remainingReads + ", barcodes: "
-                    + Arrays.toString(barcodes));
+            throw new IllegalArgumentException("kmerOffsetsForTargets: " + kmerOffsetsForTargets
+                    + ", usedReads: " + usedReads + ", remainingReads: " + remainingReads + ", barcodes: " + barcodes);
         this.usedReads = Collections.unmodifiableList(usedReads);
         this.remainingReads = Collections.unmodifiableList(remainingReads);
-        this.barcodes = barcodes.clone();
+        this.barcodes = barcodes;
     }
 
     long[] getUsedReadsIds() {

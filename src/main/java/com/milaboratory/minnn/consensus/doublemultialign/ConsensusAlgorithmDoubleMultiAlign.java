@@ -31,6 +31,7 @@ package com.milaboratory.minnn.consensus.doublemultialign;
 import com.milaboratory.core.alignment.*;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.consensus.*;
+import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.io.PrintStream;
 import java.util.*;
@@ -91,7 +92,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             long bestSumQuality = Long.MIN_VALUE;
             int bestDataIndex = -1;
             for (int i = 0; i < data.size(); i++) {
-                long sumQuality = Arrays.stream(data.get(i).getSequences())
+                long sumQuality = data.get(i).getSequences().valueCollection().stream()
                         .mapToLong(SequenceWithAttributes::calculateQualityOfSequence).sum();
                 if (sumQuality > bestSumQuality) {
                     bestSumQuality = sumQuality;
@@ -167,13 +168,13 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
      * @param data              data from cluster of parsed reads with same barcodes
      * @param filteredOutReads  mutable set of filtered out reads: this function will add to this set
      *                          indexes of all reads that didn't fit score threshold
-     * @param bestSequences     best array of sequences: 1 sequence in array corresponding to 1 target
+     * @param bestSequences     best sequences map with targetIds as keys
      * @param bestSeqIndex      index of best sequences in cluster; or -1 if they are not from cluster
      * @return                  list of aligned subsequences for generateConsensus() function
      */
     private ArrayList<AlignedSubsequences> getAlignedSubsequencesList(
-            List<DataFromParsedRead> data, HashSet<Integer> filteredOutReads, SequenceWithAttributes[] bestSequences,
-            int bestSeqIndex) {
+            List<DataFromParsedRead> data, HashSet<Integer> filteredOutReads,
+            TByteObjectHashMap<SequenceWithAttributes> bestSequences, int bestSeqIndex) {
         ArrayList<AlignedSubsequences> subsequencesList = new ArrayList<>();
         for (int i = 0; i < data.size(); i++) {
             if (i != bestSeqIndex) {
@@ -182,9 +183,12 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                     long sumScore = 0;
                     ArrayList<Alignment<NucleotideSequence>> alignments = new ArrayList<>();
                     long[] alignmentScores = new long[numberOfTargets];
+                    // targetIndex is targetId - 1
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                        NSequenceWithQuality seq1 = bestSequences[targetIndex].toNSequenceWithQuality();
-                        NSequenceWithQuality seq2 = currentData.getSequences()[targetIndex].toNSequenceWithQuality();
+                        NSequenceWithQuality seq1 = bestSequences.get((byte)(targetIndex + 1))
+                                .toNSequenceWithQuality();
+                        NSequenceWithQuality seq2 = currentData.getSequences().get((byte)(targetIndex + 1))
+                                .toNSequenceWithQuality();
                         Alignment<NucleotideSequence> alignment = alignLocalGlobal(scoring, seq1, seq2,
                                 alignerWidth);
                         alignments.add(alignment);
@@ -196,11 +200,15 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                     if (sumScore < scoreThreshold)
                         filteredOutReads.add(i);
                     else {
-                        AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences,
+                        AlignedSubsequences currentSubsequences = new AlignedSubsequences(
+                                IntStream.rangeClosed(1, numberOfTargets).mapToObj(targetId ->
+                                        bestSequences.get((byte)targetId)).toArray(SequenceWithAttributes[]::new),
                                 currentData.getOriginalReadId(), alignmentScores);
                         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                            SequenceWithAttributes currentSequence = currentData.getSequences()[targetIndex];
-                            SequenceWithAttributes alignedBestSequence = bestSequences[targetIndex];
+                            SequenceWithAttributes currentSequence = currentData.getSequences()
+                                    .get((byte)(targetIndex + 1));
+                            SequenceWithAttributes alignedBestSequence = bestSequences
+                                    .get((byte)(targetIndex + 1));
                             int previousSeqPosition = -1;
                             for (int position = 0; position < alignedBestSequence.size(); position++) {
                                 Alignment<NucleotideSequence> alignment = alignments.get(targetIndex);
@@ -237,12 +245,14 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                     }
                 }
             } else {
-                long[] alignmentScores = Arrays.stream(bestSequences)
-                        .mapToLong(s -> s.size() * scoring.getMaximalMatchScore()).toArray();
-                AlignedSubsequences currentSubsequences = new AlignedSubsequences(bestSequences,
+                long[] alignmentScores = IntStream.rangeClosed(1, numberOfTargets).mapToLong(targetId ->
+                        bestSequences.get((byte)targetId).size() * scoring.getMaximalMatchScore()).toArray();
+                AlignedSubsequences currentSubsequences = new AlignedSubsequences(
+                        IntStream.rangeClosed(1, numberOfTargets).mapToObj(targetId ->
+                                bestSequences.get((byte)targetId)).toArray(SequenceWithAttributes[]::new),
                         data.get(i).getOriginalReadId(), alignmentScores);
                 for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
-                    SequenceWithAttributes currentSequence = bestSequences[targetIndex];
+                    SequenceWithAttributes currentSequence = bestSequences.get((byte)(targetIndex + 1));
                     for (int position = 0; position < currentSequence.size(); position++)
                         currentSubsequences.set(targetIndex, position, currentSequence.letterAt(position));
                 }
@@ -259,25 +269,23 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
      * @param subsequencesList  1 element of this list corresponding to 1 read; AlignedSubsequences structure
      *                          contains sequences from cluster splitted by coordinates that came from alignment
      *                          of sequences from this array to sequences from best array
-     * @param bestSequences     best array of sequences: 1 sequence in array corresponding to 1 target
+     * @param bestSequences     best sequences map with targetIds as keys
      * @param barcodes          barcodes from best sequences
      * @param stage2            true if this is 2nd stage (best sequences are consensuses from stage1),
      *                          or false if this is 1nd stage
      * @return                  consensus: array of sequences (1 sequence for 1 target) and consensus score
      */
     private Consensus generateConsensus(
-            ArrayList<AlignedSubsequences> subsequencesList, SequenceWithAttributes[] bestSequences,
-            TargetBarcodes[] barcodes, boolean stage2) {
+            ArrayList<AlignedSubsequences> subsequencesList, TByteObjectHashMap<SequenceWithAttributes> bestSequences,
+            List<Barcode> barcodes, boolean stage2) {
         ConsensusDebugData debugData = (debugOutputStream == null) ? null
                 : new ConsensusDebugData(numberOfTargets, debugQualityThreshold, stage2 ? STAGE2 : STAGE1,
                 true);
         int consensusReadsNum = subsequencesList.size();
-        long bestSeqReadId = bestSequences[0].getOriginalReadId();
-        SequenceWithAttributes[] sequences = new SequenceWithAttributes[numberOfTargets];
+        long bestSeqReadId = bestSequences.get((byte)1).getOriginalReadId();
+        TByteObjectHashMap<SequenceWithAttributes> sequences = new TByteObjectHashMap<>();
         List<LettersWithPositions> lettersList = IntStream.range(0, consensusReadsNum)
                 .mapToObj(i -> new LettersWithPositions()).collect(Collectors.toList());
-        TargetBarcodes[] consensusBarcodes = IntStream.range(0, numberOfTargets)
-                .mapToObj(i -> new TargetBarcodes(new ArrayList<>())).toArray(TargetBarcodes[]::new);
         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
             ArrayList<ArrayList<SequenceWithAttributes>> debugDataForThisTarget = (debugData == null) ? null
                     : debugData.data.get(targetIndex);
@@ -285,10 +293,9 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                     : debugData.consensusData.get(targetIndex);
             ArrayList<Long> alignmentScoresDebugForThisTarget = (debugData == null) ? null
                     : debugData.alignmentScores.get(targetIndex);
-            consensusBarcodes[targetIndex].targetBarcodes.addAll(barcodes[targetIndex].targetBarcodes);
             List<ArrayList<SequenceWithAttributes>> lettersMatrixList = IntStream.range(0, consensusReadsNum)
                     .mapToObj(i -> new ArrayList<SequenceWithAttributes>()).collect(Collectors.toList());
-            for (int position = 0; position < bestSequences[targetIndex].size(); position++) {
+            for (int position = 0; position < bestSequences.get((byte)(targetIndex + 1)).size(); position++) {
                 ArrayList<SequenceWithAttributes> currentPositionSequences = new ArrayList<>();
                 int bestQualityIndex = -1;
                 byte bestQuality = -1;
@@ -382,10 +389,10 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                 return new Consensus(debugData, numberOfTargets, stage2);
             }
             consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
-            sequences[targetIndex] = consensusSequence;
+            sequences.put((byte)(targetIndex + 1), consensusSequence);
         }
 
-        Consensus consensus = new Consensus(sequences, consensusBarcodes, consensusReadsNum, debugData,
+        Consensus consensus = new Consensus(sequences, barcodes, consensusReadsNum, debugData,
                 numberOfTargets, stage2, consensusCurrentTempId.getAndIncrement());
         storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus, stage2);
         return consensus;

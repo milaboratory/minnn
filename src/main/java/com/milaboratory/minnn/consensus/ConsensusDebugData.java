@@ -39,6 +39,7 @@ public final class ConsensusDebugData {
     private final byte debugQualityThreshold;
     private final ConsensusStageForDebug stage;
     private final boolean useAlignmentScores;
+    // targetIndex is always targetId - 1; targetId -1 is not used because these ids are only for target sequences
     // outer list - targetIndex, second - sequenceIndex, inner - positionIndex
     public List<ArrayList<ArrayList<SequenceWithAttributes>>> data;
     // outer list - targetIndex, inner - positionIndex

@@ -98,7 +98,6 @@ public final class ConsensusIO {
     private ConsensusAlgorithm consensusAlgorithm;
     private long consensusReads = 0;
     private int warningsDisplayed = 0;
-    private DefaultGroups defaultGroups;
     private LinkedHashSet<String> consensusGroups;
     private int numberOfTargets;
 
@@ -239,9 +238,8 @@ public final class ConsensusIO {
                             ParsedRead parsedRead = ((inputReadsLimit == 0) || (totalReads.get() < inputReadsLimit))
                                     ? reader.take() : null;
                             if (parsedRead != null) {
-                                Set<String> allGroups = parsedRead.getGroups().stream().map(MatchedGroup::getGroupName)
-                                        .filter(groupName -> !defaultGroups.get().contains(groupName))
-                                        .collect(Collectors.toSet());
+                                Set<String> allGroups = parsedRead.getNotDefaultGroups().stream()
+                                        .map(MatchedGroup::getGroupName).collect(Collectors.toSet());
                                 for (String groupName : consensusGroups)
                                     if (!allGroups.contains(groupName))
                                         throw exitWithError("Group " + groupName + " not found in the input!");
@@ -306,8 +304,10 @@ public final class ConsensusIO {
             System.err.println("Writing file with stats for original reads...");
             try (PrintStream originalReadsDataWriter = new PrintStream(
                     new FileOutputStream(originalReadStatsFileName))) {
+                List<String> defaultGroups = IntStream.rangeClosed(1, numberOfTargets).mapToObj(i -> "R" + i)
+                        .collect(Collectors.toList());
                 StringBuilder header = new StringBuilder("read.id consensus.id status consensus.best.id reads.num");
-                for (String groupName : defaultGroups.get()) {
+                for (String groupName : defaultGroups) {
                     header.append(' ').append(groupName).append(".seq ");
                     header.append(groupName).append(".qual ");
                     header.append(groupName).append(".consensus.seq ");
@@ -333,8 +333,10 @@ public final class ConsensusIO {
                         line.append(finalId).append(' ');
                     }
                     line.append(status.name()).append(' ');
-                    line.append((consensus == null) ? -1 : consensus.sequences[0].getOriginalReadId()).append(' ');
+                    line.append((consensus == null) ? -1 : consensus.sequences.get((byte)1).getOriginalReadId())
+                            .append(' ');
                     line.append((consensus == null) ? 0 : consensus.consensusReadsNum);
+                    // targetIndex is targetId - 1
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                         long alignmentScoreStage1 = Long.MIN_VALUE;
                         long alignmentScoreStage2 = Long.MIN_VALUE;
@@ -352,15 +354,23 @@ public final class ConsensusIO {
                         if (currentReadData == null)
                             line.append(" - -");
                         else {
-                            NSequenceWithQuality currentOriginalRead = currentReadData.read
-                                    .getGroupValue("R" + (targetIndex + 1));
+                            ParsedRead parsedRead = currentReadData.read;
+                            int originalTargetIndex = targetIndex;
+                            if (parsedRead.isReverseMatch()) {
+                                if (originalTargetIndex == 0)
+                                    originalTargetIndex = 1;
+                                else if (originalTargetIndex == 1)
+                                    originalTargetIndex = 0;
+                            }
+                            NSequenceWithQuality currentOriginalRead = parsedRead.getOriginalRead()
+                                    .getRead(originalTargetIndex).getData();
                             line.append(' ').append(currentOriginalRead.getSequence());
                             line.append(' ').append(currentOriginalRead.getQuality());
                         }
                         if (consensus == null) {
                             line.append(" - - ").append(Long.MIN_VALUE).append(' ').append(Long.MIN_VALUE);
                         } else {
-                            SequenceWithAttributes currentSeq = consensus.sequences[targetIndex];
+                            SequenceWithAttributes currentSeq = consensus.sequences.get((byte)(targetIndex + 1));
                             line.append(' ').append(currentSeq.getSeq());
                             line.append(' ').append(currentSeq.getQual());
                             line.append(' ').append(alignmentScoreStage1);
@@ -434,7 +444,6 @@ public final class ConsensusIO {
     private MifWriter createWriter(MifHeader mifHeader) throws IOException {
         ArrayList<GroupEdge> groupEdges = mifHeader.getGroupEdges();
         numberOfTargets = mifHeader.getNumberOfTargets();
-        defaultGroups = new DefaultGroups(numberOfTargets);
         MifHeader newHeader;
         if (toSeparateGroups) {
             Set<String> defaultSeparateGroups = IntStream.rangeClosed(1, numberOfTargets)
@@ -461,8 +470,8 @@ public final class ConsensusIO {
     }
 
     private DataFromParsedRead extractData(ParsedRead parsedRead) {
-        return toSeparateGroups ? new DataFromParsedReadWithAllGroups(parsedRead, defaultGroups, consensusGroups)
-                : new BasicDataFromParsedRead(parsedRead, defaultGroups, consensusGroups);
+        return toSeparateGroups ? new DataFromParsedReadWithAllGroups(parsedRead, consensusGroups)
+                : new BasicDataFromParsedRead(parsedRead, consensusGroups);
     }
 
     private void saveOriginalReadsData(ParsedRead parsedRead) {

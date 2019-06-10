@@ -31,6 +31,7 @@ package com.milaboratory.minnn.consensus;
 import cc.redberry.pipe.Processor;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.sequence.Wildcard;
+import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.io.PrintStream;
 import java.util.*;
@@ -170,11 +171,11 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     protected List<DataFromParsedRead> trimBadQualityTails(List<DataFromParsedRead> data) {
         List<DataFromParsedRead> processedData = new ArrayList<>();
         for (DataFromParsedRead dataFromParsedRead : data) {
-            SequenceWithAttributes[] sequences = dataFromParsedRead.getSequences();
-            SequenceWithAttributes[] processedSequences = new SequenceWithAttributes[numberOfTargets];
+            TByteObjectHashMap<SequenceWithAttributes> sequences = dataFromParsedRead.getSequences();
+            TByteObjectHashMap<SequenceWithAttributes> processedSequences = new TByteObjectHashMap<>();
             boolean allSequencesAreGood = true;
-            for (int i = 0; i < numberOfTargets; i++) {
-                SequenceWithAttributes sequence = sequences[i];
+            for (byte targetId : sequences.keys()) {
+                SequenceWithAttributes sequence = sequences.get(targetId);
                 int trimResultLeft = trim(sequence.getQual(), 0, sequence.size(), 1,
                         true, readsAvgQualityThreshold, readsTrimWindowSize);
                 if (trimResultLeft < -1) {
@@ -189,7 +190,7 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
                     allSequencesAreGood = false;
                     break;
                 } else
-                    processedSequences[i] = sequence.getSubSequence(trimResultLeft + 1, trimResultRight);
+                    processedSequences.put(targetId, sequence.getSubSequence(trimResultLeft + 1, trimResultRight));
             }
 
             if (allSequencesAreGood) {
@@ -207,13 +208,12 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         return processedData;
     }
 
-    protected String formatBarcodeValues(TargetBarcodes[] targetBarcodes) {
-        ArrayList<Barcode> barcodes = new ArrayList<>();
-        Arrays.stream(targetBarcodes).forEach(tb -> barcodes.addAll(tb.targetBarcodes));
-        barcodes.sort(Comparator.comparing(b -> b.groupName));
+    protected String formatBarcodeValues(List<Barcode> barcodes) {
+        List<Barcode> sortedBarcodes = new ArrayList<>(barcodes);
+        sortedBarcodes.sort(Comparator.comparing(b -> b.groupName));
         StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < barcodes.size(); i++) {
-            Barcode barcode = barcodes.get(i);
+        for (int i = 0; i < sortedBarcodes.size(); i++) {
+            Barcode barcode = sortedBarcodes.get(i);
             if (i > 0)
                 builder.append(", ");
             builder.append(barcode.groupName).append('=').append(barcode.value.getSeq().toString());

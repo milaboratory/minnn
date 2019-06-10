@@ -32,14 +32,15 @@ import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.outputconverter.*;
 import com.milaboratory.minnn.pattern.*;
+import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.util.*;
 
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public final class Consensus {
-    public final SequenceWithAttributes[] sequences;
-    public final TargetBarcodes[] barcodes;
+    public final TByteObjectHashMap<SequenceWithAttributes> sequences;
+    public final List<Barcode> barcodes;
     public final int consensusReadsNum;
     public final ConsensusDebugData debugData;
     public final boolean isConsensus;
@@ -48,8 +49,9 @@ public final class Consensus {
     public final ArrayList<DataFromParsedReadWithAllGroups> savedOriginalSequences = new ArrayList<>();
     private final int numberOfTargets;
 
-    public Consensus(SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, int consensusReadsNum,
-                     ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus, long tempId) {
+    public Consensus(TByteObjectHashMap<SequenceWithAttributes> sequences, List<Barcode> barcodes,
+                     int consensusReadsNum, ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus,
+                     long tempId) {
         this.sequences = sequences;
         this.barcodes = barcodes;
         this.consensusReadsNum = consensusReadsNum;
@@ -78,14 +80,16 @@ public final class Consensus {
         SingleRead[] reads = new SingleRead[numberOfTargets];
         ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
         for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
-            SequenceWithAttributes currentSequence = sequences[targetId - 1];
-            TargetBarcodes targetBarcodes = barcodes[targetId - 1];
+            SequenceWithAttributes currentSequence = sequences.get(targetId);
             reads[targetId - 1] = new SingleReadImpl(currentSequence.getOriginalReadId(),
                     currentSequence.toNSequenceWithQuality(), "Consensus");
             addReadGroupEdges(matchedGroupEdges, targetId, currentSequence.toNSequenceWithQuality());
-            for (Barcode barcode : targetBarcodes.targetBarcodes)
-                addGroupEdges(matchedGroupEdges, targetId, barcode.groupName,
-                        currentSequence.toNSequenceWithQuality(), barcode.value.toNSequenceWithQuality());
+        }
+        for (Barcode barcode : barcodes) {
+            NSequenceWithQuality targetSequence = (barcode.targetId == -1) ? barcode.value.toNSequenceWithQuality()
+                    : sequences.get(barcode.targetId).toNSequenceWithQuality();
+            addGroupEdges(matchedGroupEdges, barcode.targetId, barcode.groupName, targetSequence,
+                    barcode.value.toNSequenceWithQuality());
         }
         if (numberOfTargets == 1)
             originalRead = reads[0];
@@ -107,9 +111,8 @@ public final class Consensus {
             ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
             SingleRead[] reads = new SingleRead[numberOfTargets];
             for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
-                SequenceWithAttributes currentOriginalSequence = currentOriginalData.getSequences()[targetId - 1];
-                SequenceWithAttributes currentConsensusSequence = sequences[targetId - 1];
-                TargetBarcodes targetBarcodes = barcodes[targetId - 1];
+                SequenceWithAttributes currentOriginalSequence = currentOriginalData.getSequences().get(targetId);
+                SequenceWithAttributes currentConsensusSequence = sequences.get(targetId);
                 reads[targetId - 1] = new SingleReadImpl(currentOriginalSequence.getOriginalReadId(),
                         currentOriginalSequence.toNSequenceWithQuality(), "");
                 addReadGroupEdges(matchedGroupEdges, targetId,
@@ -117,15 +120,17 @@ public final class Consensus {
                 addGroupEdges(matchedGroupEdges, targetId, "CR" + targetId,
                         currentOriginalSequence.toNSequenceWithQuality(),
                         currentConsensusSequence.toNSequenceWithQuality());
-                for (Barcode barcode : targetBarcodes.targetBarcodes)
-                    addGroupEdges(matchedGroupEdges, targetId, barcode.groupName,
-                            currentOriginalSequence.toNSequenceWithQuality(),
-                            barcode.value.toNSequenceWithQuality());
                 for (HashMap.Entry<String, SequenceWithAttributes> entry
                         : currentOriginalData.getOtherGroups().entrySet())
                     addGroupEdges(matchedGroupEdges, targetId, entry.getKey(),
                             currentOriginalSequence.toNSequenceWithQuality(),
                             entry.getValue().toNSequenceWithQuality());
+            }
+            for (Barcode barcode : barcodes) {
+                NSequenceWithQuality targetSequence = (barcode.targetId == -1) ? barcode.value.toNSequenceWithQuality()
+                        : currentOriginalData.getSequences().get(barcode.targetId).toNSequenceWithQuality();
+                addGroupEdges(matchedGroupEdges, barcode.targetId, barcode.groupName, targetSequence,
+                        barcode.value.toNSequenceWithQuality());
             }
 
             SequenceRead originalRead;

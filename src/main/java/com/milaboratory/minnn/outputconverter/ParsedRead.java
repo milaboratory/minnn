@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.outputconverter.GroupUtils.*;
+import static com.milaboratory.minnn.parser.Parser.BUILTIN_READ_GROUPS_NUM;
 
 @Serializable(by = IO.ParsedReadSerializer.class)
 public final class ParsedRead {
@@ -56,8 +57,7 @@ public final class ParsedRead {
     private HashMap<String, ArrayList<GroupEdgePosition>> innerGroupEdgesCache = null;
     private HashMap<String, HashMap<String, Range>> innerRangesCache = null;
     private HashMap<String, String> commentsCache = null;
-    private byte[] targetIdsCache = null;
-    private static Set<String> defaultGroups = null;
+    private static LinkedHashSet<String> defaultGroups = null;
     private static Set<String> groupsFromHeader = null;
 
     public ParsedRead(SequenceRead originalRead, boolean reverseMatch, Match bestMatch, int consensusReads) {
@@ -108,21 +108,9 @@ public final class ParsedRead {
     }
 
     public NSequenceWithQuality getGroupValue(String groupName) {
-        if (bestMatch == null) {
-            if (defaultGroups == null)
-                calculateDefaultGroups(originalRead.numberOfReads());
-            if (defaultGroups.contains(groupName)) {
-                byte targetId = Byte.parseByte(groupName.substring(1));
-                if (reverseMatch) {
-                    if (targetId == 1)
-                        targetId = 2;
-                    else if (targetId == 2)
-                        targetId = 1;
-                }
-                return originalRead.getRead(targetId - 1).getData();
-            } else
-                return NSequenceWithQuality.EMPTY;
-        } else
+        if (bestMatch == null)
+            throw new IllegalStateException("getGroupValue(" + groupName + ") called for read with null bestMatch!");
+        else
             return bestMatch.getGroupValue(groupName);
     }
 
@@ -134,10 +122,10 @@ public final class ParsedRead {
         this.outputPortId = outputPortId;
     }
 
-    public Set<String> getDefaultGroupNames() {
+    public LinkedHashSet<String> getDefaultGroupNames() {
         if (defaultGroups == null)
-            calculateDefaultGroups(getOriginalRead().numberOfReads());
-        return Collections.unmodifiableSet(defaultGroups);
+            calculateDefaultGroups(Objects.requireNonNull(bestMatch));
+        return new LinkedHashSet<>(defaultGroups);
     }
 
     public List<MatchedGroup> getNotDefaultGroups() {
@@ -147,18 +135,6 @@ public final class ParsedRead {
 
     public MatchedGroup getGroupByName(String groupName) {
         return getGroups().stream().filter(group -> group.getGroupName().equals(groupName)).findFirst().orElse(null);
-    }
-
-    public byte[] getAvailableTargetIds() {
-        if (targetIdsCache == null) {
-            TreeSet<Byte> ids = getGroups().stream().map(MatchedItem::getTargetId)
-                    .collect(Collectors.toCollection(TreeSet::new));
-            targetIdsCache = new byte[ids.size()];
-            int i = 0;
-            for (byte id : ids)
-                targetIdsCache[i++] = id;
-        }
-        return targetIdsCache;
     }
 
     /**
@@ -208,12 +184,15 @@ public final class ParsedRead {
 
     /**
      * Calculate built-in group names that will not be included in comments for FASTQ file. This cache is static
-     * because it depends only on number of reads, and it's the same for all reads.
+     * because it's the same for all reads and can be calculated once from 1st read.
      *
-     * @param numberOfReads number of reads in input
+     * @param bestMatch best match
      */
-    private static void calculateDefaultGroups(int numberOfReads) {
-        defaultGroups = IntStream.rangeClosed(1, numberOfReads).mapToObj(i -> "R" + i).collect(Collectors.toSet());
+    private static void calculateDefaultGroups(Match bestMatch) {
+        List<String> allDefaultGroupNames = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
+                .mapToObj(i -> "R" + i).collect(Collectors.toList());
+        defaultGroups = bestMatch.getGroups().stream().map(MatchedGroup::getGroupName).sorted()
+                .filter(allDefaultGroupNames::contains).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
@@ -274,7 +253,7 @@ public final class ParsedRead {
             throw new IllegalArgumentException("Basic groups for output sequence read are not specified!");
 
         if (defaultGroups == null) {
-            calculateDefaultGroups(originalRead.numberOfReads());
+            calculateDefaultGroups(Objects.requireNonNull(bestMatch));
             collectGroupNamesFromHeader(allGroupEdges);
         }
         if (commentsCache == null)

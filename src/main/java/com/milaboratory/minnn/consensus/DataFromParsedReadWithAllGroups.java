@@ -30,26 +30,26 @@ package com.milaboratory.minnn.consensus;
 
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
+import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.util.*;
 
 public final class DataFromParsedReadWithAllGroups extends BasicDataFromParsedRead {
     private final LinkedHashMap<String, SequenceWithAttributes> otherGroups;
 
-    public DataFromParsedReadWithAllGroups(
-            ParsedRead parsedRead, DefaultGroups defaultGroups, LinkedHashSet<String> consensusGroups) {
-        super(parsedRead, defaultGroups, consensusGroups);
+    public DataFromParsedReadWithAllGroups(ParsedRead parsedRead, LinkedHashSet<String> consensusGroups) {
+        super(parsedRead, consensusGroups);
         otherGroups = new LinkedHashMap<>();
         for (MatchedGroup matchedGroup : parsedRead.getGroups()) {
             String groupName = matchedGroup.getGroupName();
-            if (!defaultGroups.get().contains(groupName) && !consensusGroups.contains(groupName))
+            if (!parsedRead.getDefaultGroupNames().contains(groupName) && !consensusGroups.contains(groupName))
                 otherGroups.put(groupName, new SequenceWithAttributes(
                         matchedGroup.getValue().getSequence(), matchedGroup.getValue().getQuality(), originalReadId));
         }
     }
 
     public DataFromParsedReadWithAllGroups(
-            SequenceWithAttributes[] sequences, TargetBarcodes[] barcodes, long originalReadId,
+            TByteObjectHashMap<SequenceWithAttributes> sequences, List<Barcode> barcodes, long originalReadId,
             LinkedHashMap<String, SequenceWithAttributes> otherGroups) {
         super(sequences, barcodes, originalReadId);
         this.otherGroups = new LinkedHashMap<>(otherGroups);
