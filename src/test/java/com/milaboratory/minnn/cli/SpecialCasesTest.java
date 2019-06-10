@@ -123,13 +123,64 @@ public class SpecialCasesTest {
         String inputFile = getExampleMif("twosided-raw");
         String extracted = TEMP_DIR + "extracted" + suffix;
         String corrected = TEMP_DIR + "corrected" + suffix;
+        String fastqR1 = TEMP_DIR + "R1.fastq";
+        String fastqR2 = TEMP_DIR + "R2.fastq";
         exec("extract -f --input " + inputFile + " --output " + extracted + " --input-format MIF"
                 + " --pattern \"(BC:NNNNNNNN)(UMI:NNNNNNNN)\\(R1:*)\"");
         exec("correct -f --input " + extracted + " --output " + corrected + " --groups BC UMI");
         assertOutputContains(true, "Group R2 not found", () -> callableExec("mif2fastq -f " +
-                "--input " + corrected + " --group R1=" + TEMP_DIR + "/R1.fastq R2=" + TEMP_DIR + "R2.fastq"));
-        exec("mif2fastq -f --input " + corrected + " --group R1=" + TEMP_DIR + "/R1.fastq");
-        for (String fileName : new String[] { inputFile, extracted, corrected })
+                "--input " + corrected + " --group R1=" + fastqR1 + " R2=" + fastqR2));
+        exec("mif2fastq -f --input " + corrected + " --group R1=" + fastqR1);
+        for (String fileName : new String[] { inputFile, extracted, corrected, fastqR1, fastqR2 })
             assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void readsNestedOverrideTest() throws Exception {
+        String suffix = "-special-case-4.mif";
+        String inputFile = getExampleMif("twosided-raw");
+        String extracted = TEMP_DIR + "extracted" + suffix;
+        String corrected = TEMP_DIR + "corrected" + suffix;
+        String sorted = TEMP_DIR + "sorted" + suffix;
+        String consensus = TEMP_DIR + "consensus" + suffix;
+        String consensusOrig = TEMP_DIR + "consensusOrig" + suffix;
+        String consensusDMA = TEMP_DIR + "consensusDMA" + suffix;
+        String fastqR1 = TEMP_DIR + "R1.fastq";
+        String fastqR4 = TEMP_DIR + "R4.fastq";
+        String fastqR5 = TEMP_DIR + "R5.fastq";
+        String fastqUMI = TEMP_DIR + "UMI.fastq";
+        exec("extract -f --input " + inputFile + " --output " + extracted + " --input-format MIF"
+                + " --pattern \"(UMI:NNNNNNNN)\\gaca(R1:n(R2:nn(R3:nn(R4:(R5:nnnntn)nn)))na)\"");
+        exec("correct -f --input " + extracted + " --output " + corrected + " --groups UMI"
+                + " --max-errors-share 0.4");
+        exec("sort -f --input " + extracted + " --output " + sorted + " --groups R5 R3 UMI");
+        exec("consensus -f --input " + sorted + " --output " + consensus + " --groups UMI --kmer-length 4");
+        exec("mif2fastq -f --input " + consensus + " --group R5=" + fastqR5 + " R1=" + fastqR1
+                + " UMI=" + fastqUMI + " R4=" + fastqR4);
+        exec("consensus -f --consensuses-to-separate-groups --input " + sorted
+                + " --output " + consensusOrig + " --groups UMI --kmer-length 4");
+        exec("mif2fastq -f --input " + consensusOrig + " --group R5=" + fastqR5 + " R1=" + fastqR1
+                + " UMI=" + fastqUMI + " CR4=" + fastqR4);
+        exec("consensus-dma -f --input " + sorted + " --output " + consensusDMA + " --groups UMI");
+        exec("mif2fastq -f --input " + consensusDMA + " --group R5=" + fastqR5 + " R1=" + fastqR1
+                + " UMI=" + fastqUMI + " R4=" + fastqR4);
+        for (String fileName : new String[] { inputFile, extracted, corrected, sorted, consensus, consensusOrig,
+                consensusDMA, fastqR1, fastqR4, fastqR5, fastqUMI })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void wrongOverrideTest() throws Exception {
+        String inputFile = getExampleMif("twosided-raw");
+        assertOutputContains(true, "patterns (3) and target reads (2)", () -> callableExec(
+                "extract -f --input " + inputFile + " --output " + inputFile + " --input-format MIF"
+                        + " --pattern \"(UMI:NNNNNNNN)\\atta(R1:gaca)(R2:nnn)\\*\""));
+        assertOutputContains(true, "R1 not found", () -> callableExec(
+                "extract -f --input " + inputFile + " --output " + inputFile + " --input-format MIF"
+                        + " --pattern \"(UMI:NNNNNNNN)\\atta(R2:nnn)\""));
+        assertOutputContains(true, "R16 is found, but group R15 is missing", () -> callableExec(
+                "extract -f --input " + inputFile + " --output " + inputFile + " --input-format MIF"
+                        + " --pattern \"(UMI:NNNNNNNN)(R1:gaca)\\atta(R16:nnn)\""));
+        assertTrue(new File(inputFile).delete());
     }
 }
