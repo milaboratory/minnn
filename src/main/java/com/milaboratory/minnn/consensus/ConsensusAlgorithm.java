@@ -63,6 +63,8 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     protected final byte debugQualityThreshold;
     protected final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
     protected final AtomicLong consensusCurrentTempId;
+    // this flag must be set after reading 1st cluster in process() function
+    protected final AtomicBoolean defaultGroupsOverride = new AtomicBoolean(false);
     private final int readsMinGoodSeqLength;
     private final float readsAvgQualityThreshold;
     private final int readsTrimWindowSize;
@@ -197,10 +199,11 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
                 if (dataFromParsedRead instanceof DataFromParsedReadWithAllGroups)
                     processedData.add(new DataFromParsedReadWithAllGroups(processedSequences,
                             dataFromParsedRead.getBarcodes(), dataFromParsedRead.getOriginalReadId(),
+                            dataFromParsedRead.isDefaultGroupsOverride(),
                             ((DataFromParsedReadWithAllGroups)dataFromParsedRead).getOtherGroups()));
                 else
                     processedData.add(new BasicDataFromParsedRead(processedSequences, dataFromParsedRead.getBarcodes(),
-                            dataFromParsedRead.getOriginalReadId()));
+                            dataFromParsedRead.getOriginalReadId(), dataFromParsedRead.isDefaultGroupsOverride()));
             } else if (originalReadsData != null)
                 originalReadsData.get(dataFromParsedRead.getOriginalReadId()).status = READ_DISCARDED_TRIM;
         }

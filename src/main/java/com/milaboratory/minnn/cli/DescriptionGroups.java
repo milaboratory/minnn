@@ -50,8 +50,8 @@ public final class DescriptionGroups {
             regexPatterns.put(entry.getKey(), new GroupPattern(entry.getValue()));
     }
 
-    Set<String> getGroupNames() {
-        return regexPatterns.keySet();
+    public LinkedHashSet<String> getGroupNames() {
+        return new LinkedHashSet<>(regexPatterns.keySet());
     }
 
     public Match addDescriptionGroups(Match oldBestMatch, SequenceRead originalRead) {
@@ -61,7 +61,6 @@ public final class DescriptionGroups {
         }
         ArrayList<MatchedGroupEdge> matchedGroupEdges = oldBestMatch.getMatchedGroupEdges();
         int numberOfTargets = oldBestMatch.getNumberOfPatterns();
-        NSequenceWithQuality target = oldBestMatch.getMatchedGroupEdge("R1", true).getTarget();
         for (HashMap.Entry<String, GroupPattern> entry : regexPatterns.entrySet()) {
             String groupName = entry.getKey();
             NSequenceWithQuality seq = null;
@@ -90,9 +89,9 @@ public final class DescriptionGroups {
                 }
                 readId++;
             }
-            matchedGroupEdges.add(new MatchedGroupEdge(target, (byte)1,
+            matchedGroupEdges.add(new MatchedGroupEdge(seq, (byte)-1,
                     new GroupEdge(groupName, true), seq));
-            matchedGroupEdges.add(new MatchedGroupEdge(null, (byte)1,
+            matchedGroupEdges.add(new MatchedGroupEdge(null, (byte)-1,
                     new GroupEdge(groupName, false), null));
         }
         Match newBestMatch = new Match(numberOfTargets, oldBestMatch.getScore(), matchedGroupEdges);

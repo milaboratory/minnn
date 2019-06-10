@@ -42,15 +42,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.outputconverter.GroupUtils.*;
-import static com.milaboratory.minnn.parser.Parser.BUILTIN_READ_GROUPS_NUM;
 
 @Serializable(by = IO.ParsedReadSerializer.class)
 public final class ParsedRead {
     private final SequenceRead originalRead;
     private final boolean reverseMatch;
+    /* positive value if there was default groups override in the pattern, otherwise -1
+     * (number of targets can be determined by originalRead) */
+    private final int numberOfTargetsOverride;
     private final Match bestMatch;
     /* number of reads used to calculate this consensus: used for consensuses and for reads that contain consensuses
-       as groups (--consensuses-to-separate-groups argument in consensus); in other cases it must be 0 */
+     * as groups (--consensuses-to-separate-groups argument in consensus); in other cases it must be 0 */
     private final int consensusReads;
     private long outputPortId;
     private Map<String, MatchedGroup> matchedGroups = null;
@@ -58,16 +60,19 @@ public final class ParsedRead {
     private HashMap<String, HashMap<String, Range>> innerRangesCache = null;
     private HashMap<String, String> commentsCache = null;
     private static LinkedHashSet<String> defaultGroups = null;
-    private static Set<String> groupsFromHeader = null;
+    private static LinkedHashSet<String> originalDefaultGroups = null;
+    private static LinkedHashSet<String> notDefaultGroupsFromHeader = null;
 
-    public ParsedRead(SequenceRead originalRead, boolean reverseMatch, Match bestMatch, int consensusReads) {
-        this(originalRead, reverseMatch, bestMatch, consensusReads, -1);
+    public ParsedRead(SequenceRead originalRead, boolean reverseMatch, int numberOfTargetsOverride, Match bestMatch,
+                      int consensusReads) {
+        this(originalRead, reverseMatch, numberOfTargetsOverride, bestMatch, consensusReads, -1);
     }
 
-    public ParsedRead(SequenceRead originalRead, boolean reverseMatch, Match bestMatch, int consensusReads,
-                      long outputPortId) {
+    public ParsedRead(SequenceRead originalRead, boolean reverseMatch, int numberOfTargetsOverride, Match bestMatch,
+                      int consensusReads, long outputPortId) {
         this.originalRead = originalRead;
         this.reverseMatch = reverseMatch;
+        this.numberOfTargetsOverride = numberOfTargetsOverride;
         this.bestMatch = bestMatch;
         this.consensusReads = consensusReads;
         this.outputPortId = outputPortId;
@@ -79,6 +84,18 @@ public final class ParsedRead {
 
     public boolean isReverseMatch() {
         return reverseMatch;
+    }
+
+    public boolean isNumberOfTargetsOverride() {
+        return numberOfTargetsOverride > 0;
+    }
+
+    public int getNumberOfTargets() {
+        return isNumberOfTargetsOverride() ? numberOfTargetsOverride : originalRead.numberOfReads();
+    }
+
+    public int getRawNumberOfTargetsOverride() {
+        return numberOfTargetsOverride;
     }
 
     public Match getBestMatch() {
@@ -108,9 +125,22 @@ public final class ParsedRead {
     }
 
     public NSequenceWithQuality getGroupValue(String groupName) {
-        if (bestMatch == null)
-            throw new IllegalStateException("getGroupValue(" + groupName + ") called for read with null bestMatch!");
-        else
+        if (bestMatch == null) {
+            // this is used when mif2fastq called on file with mismatched reads from extract
+            if (originalDefaultGroups == null)
+                calculateOriginalDefaultGroups(originalRead.numberOfReads());
+            if (originalDefaultGroups.contains(groupName)) {
+                byte targetId = Byte.parseByte(groupName.substring(1));
+                if (reverseMatch) {
+                    if (targetId == 1)
+                        targetId = 2;
+                    else if (targetId == 2)
+                        targetId = 1;
+                }
+                return originalRead.getRead(targetId - 1).getData();
+            } else
+                return NSequenceWithQuality.EMPTY;
+        } else
             return bestMatch.getGroupValue(groupName);
     }
 
@@ -124,7 +154,7 @@ public final class ParsedRead {
 
     public LinkedHashSet<String> getDefaultGroupNames() {
         if (defaultGroups == null)
-            calculateDefaultGroups(Objects.requireNonNull(bestMatch));
+            calculateDefaultGroups(getNumberOfTargets());
         return new LinkedHashSet<>(defaultGroups);
     }
 
@@ -183,31 +213,39 @@ public final class ParsedRead {
     }
 
     /**
-     * Calculate built-in group names that will not be included in comments for FASTQ file. This cache is static
-     * because it's the same for all reads and can be calculated once from 1st read.
+     * Calculate built-in group names. This cache is static because it's the same for all reads.
      *
-     * @param bestMatch best match
+     * @param numberOfTargets number of targets
      */
-    private static void calculateDefaultGroups(Match bestMatch) {
-        List<String> allDefaultGroupNames = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
-                .mapToObj(i -> "R" + i).collect(Collectors.toList());
-        defaultGroups = bestMatch.getGroups().stream().map(MatchedGroup::getGroupName).sorted()
-                .filter(allDefaultGroupNames::contains).collect(Collectors.toCollection(LinkedHashSet::new));
+    private static void calculateDefaultGroups(int numberOfTargets) {
+        defaultGroups = IntStream.rangeClosed(1, numberOfTargets).mapToObj(i -> "R" + i)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
-     * Fill cache for group names from input MIF header; and don't include built-in groups R1, R2 etc.
+     * Original default groups are used when converting mismatched reads from extract to FASTQ.
+     *
+     * @param originalNumberOfTargets number of targets in original reads
+     */
+    private static void calculateOriginalDefaultGroups(int originalNumberOfTargets) {
+        originalDefaultGroups = IntStream.rangeClosed(1, originalNumberOfTargets).mapToObj(i -> "R" + i)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
+     * Fill not default group names from input MIF header.
      *
      * @param allGroupEdges all group edges from input MIF header
      */
-    private static void collectGroupNamesFromHeader(ArrayList<GroupEdge> allGroupEdges) {
-        groupsFromHeader = allGroupEdges.stream().filter(GroupEdge::isStart).map(GroupEdge::getGroupName)
-                .filter(gn -> !defaultGroups.contains(gn)).collect(Collectors.toSet());
+    private static void calculateNotDefaultGroups(ArrayList<GroupEdge> allGroupEdges) {
+        notDefaultGroupsFromHeader = allGroupEdges.stream().map(GroupEdge::getGroupName)
+                .filter(gn -> !defaultGroups.contains(gn)).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public static void clearStaticCache() {
         defaultGroups = null;
-        groupsFromHeader = null;
+        originalDefaultGroups = null;
+        notDefaultGroupsFromHeader = null;
     }
 
     public ParsedRead retarget(String... groupNames) {
@@ -244,7 +282,8 @@ public final class ParsedRead {
         }
 
         Match targetMatch = new Match(groupNames.length, getBestMatchScore(), matchedGroupEdges);
-        return new ParsedRead(originalRead, reverseMatch, targetMatch, consensusReads, outputPortId);
+        return new ParsedRead(originalRead, reverseMatch, groupNames.length, targetMatch, consensusReads,
+                outputPortId);
     }
 
     public SequenceRead toSequenceRead(boolean copyOriginalHeaders, ArrayList<GroupEdge> allGroupEdges,
@@ -252,10 +291,10 @@ public final class ParsedRead {
         if (groupNames.length == 0)
             throw new IllegalArgumentException("Basic groups for output sequence read are not specified!");
 
-        if (defaultGroups == null) {
-            calculateDefaultGroups(Objects.requireNonNull(bestMatch));
-            collectGroupNamesFromHeader(allGroupEdges);
-        }
+        if (defaultGroups == null)
+            calculateDefaultGroups(getNumberOfTargets());
+        if (notDefaultGroupsFromHeader == null)
+            calculateNotDefaultGroups(allGroupEdges);
         if (commentsCache == null)
             commentsCache = new HashMap<>();
         if (matchedGroups == null)
@@ -288,7 +327,8 @@ public final class ParsedRead {
                 .forEachRemaining(singleRead -> minnnComments.add(extractMinnnComments(singleRead.getDescription())));
         Match targetMatch = new Match(sequenceRead.numberOfReads(), 0,
                 parseGroupEdgesFromComments(minnnComments));
-        return new ParsedRead(sequenceRead, parseReverseMatchFlag(minnnComments.get(0)), targetMatch, 0);
+        return new ParsedRead(sequenceRead, parseReverseMatchFlag(minnnComments.get(0)), -1,
+                targetMatch, 0);
     }
 
     private String generateReadDescription(boolean copyOriginalHeaders, String outputGroupName) {
@@ -301,7 +341,7 @@ public final class ParsedRead {
             readDescription = originalRead.getRead(targetIndex).getDescription();
         } else {
             TreeSet<FastqCommentGroup> commentGroups = new TreeSet<>();
-            for (String groupName : groupsFromHeader) {
+            for (String groupName : notDefaultGroupsFromHeader) {
                 if (innerRangesCache.containsKey(groupName)) {
                     HashMap<String, Range> innerRanges = innerRangesCache.get(outputGroupName);
                     if (innerRanges.containsKey(groupName))
@@ -336,14 +376,16 @@ public final class ParsedRead {
     public static ParsedRead read(PrimitivI input) {
         SequenceRead originalRead = input.readObject(SequenceRead.class);
         boolean reverseMatch = input.readBoolean();
+        int numberOfTargetsOverride = input.readVarIntZigZag();
         Match bestMatch = input.readObject(Match.class);
         int consensusReads = input.readVarIntZigZag();
-        return new ParsedRead(originalRead, reverseMatch, bestMatch, consensusReads);
+        return new ParsedRead(originalRead, reverseMatch, numberOfTargetsOverride, bestMatch, consensusReads);
     }
 
     public static void write(PrimitivO output, ParsedRead object) {
         output.writeObject(object.getOriginalRead());
         output.writeBoolean(object.isReverseMatch());
+        output.writeVarIntZigZag(object.getRawNumberOfTargetsOverride());
         output.writeObject(object.getBestMatch());
         output.writeVarIntZigZag(object.getConsensusReads());
     }

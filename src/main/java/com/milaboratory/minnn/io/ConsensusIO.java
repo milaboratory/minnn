@@ -355,15 +355,20 @@ public final class ConsensusIO {
                             line.append(" - -");
                         else {
                             ParsedRead parsedRead = currentReadData.read;
-                            int originalTargetIndex = targetIndex;
-                            if (parsedRead.isReverseMatch()) {
-                                if (originalTargetIndex == 0)
-                                    originalTargetIndex = 1;
-                                else if (originalTargetIndex == 1)
-                                    originalTargetIndex = 0;
+                            NSequenceWithQuality currentOriginalRead;
+                            if (parsedRead.isNumberOfTargetsOverride()) {
+                                currentOriginalRead = parsedRead.getGroupValue("R" + (targetIndex + 1));
+                            } else {
+                                int originalTargetIndex = targetIndex;
+                                if (parsedRead.isReverseMatch()) {
+                                    if (originalTargetIndex == 0)
+                                        originalTargetIndex = 1;
+                                    else if (originalTargetIndex == 1)
+                                        originalTargetIndex = 0;
+                                }
+                                currentOriginalRead = parsedRead.getOriginalRead().getRead(originalTargetIndex)
+                                        .getData();
                             }
-                            NSequenceWithQuality currentOriginalRead = parsedRead.getOriginalRead()
-                                    .getRead(originalTargetIndex).getData();
                             line.append(' ').append(currentOriginalRead.getSequence());
                             line.append(' ').append(currentOriginalRead.getQuality());
                         }

@@ -224,7 +224,8 @@ public class GroupUtilsTest {
             add(new MatchedGroupEdge(read2Value, (byte)2, new GroupEdge("G3", false), 8));
         }};
         Match match = new Match(2, 0, matchedGroupEdges);
-        ParsedRead parsedRead = new ParsedRead(pairedRead, true, match, 0);
+        ParsedRead parsedRead = new ParsedRead(pairedRead, true, -1,
+                match, 0);
         ArrayList<GroupEdge> allGroupEdges = new ArrayList<GroupEdge>() {{
             for (int i = 0; i <= 4; i++) {
                 add(new GroupEdge("G" + i, true));

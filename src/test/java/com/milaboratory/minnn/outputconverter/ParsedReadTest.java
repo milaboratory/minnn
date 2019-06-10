@@ -70,7 +70,8 @@ public class ParsedReadTest {
     }};
     private long testScore = -5;
     private Match testMatch = new Match(3, testScore, testMatchedGroupEdges);
-    private ParsedRead testParsedRead = new ParsedRead(testMultiRead, false, testMatch, 0);
+    private ParsedRead testParsedRead = new ParsedRead(testMultiRead, false, -1,
+            testMatch, 0);
     private ArrayList<GroupEdge> testGroupEdges = new ArrayList<GroupEdge>() {{
         for (int i = 1; i <= 6; i++) {
             add(new GroupEdge("G" + i, true));

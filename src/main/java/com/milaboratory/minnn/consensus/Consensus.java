@@ -44,22 +44,24 @@ public final class Consensus {
     public final int consensusReadsNum;
     public final ConsensusDebugData debugData;
     public final boolean isConsensus;
-    public final boolean finalConsensus;
-    public final long tempId;
     public final ArrayList<DataFromParsedReadWithAllGroups> savedOriginalSequences = new ArrayList<>();
     private final int numberOfTargets;
+    public final boolean finalConsensus;
+    public final long tempId;
+    private final boolean defaultGroupsOverride;
 
     public Consensus(TByteObjectHashMap<SequenceWithAttributes> sequences, List<Barcode> barcodes,
                      int consensusReadsNum, ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus,
-                     long tempId) {
+                     long tempId, boolean defaultGroupsOverride) {
         this.sequences = sequences;
         this.barcodes = barcodes;
         this.consensusReadsNum = consensusReadsNum;
         this.debugData = debugData;
         this.isConsensus = true;
+        this.numberOfTargets = numberOfTargets;
         this.finalConsensus = finalConsensus;
         this.tempId = tempId;
-        this.numberOfTargets = numberOfTargets;
+        this.defaultGroupsOverride = defaultGroupsOverride;
     }
 
     public Consensus(ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus) {
@@ -68,9 +70,10 @@ public final class Consensus {
         this.consensusReadsNum = 0;
         this.debugData = debugData;
         this.isConsensus = false;
+        this.numberOfTargets = numberOfTargets;
         this.finalConsensus = finalConsensus;
         this.tempId = -1;
-        this.numberOfTargets = numberOfTargets;
+        this.defaultGroupsOverride = false;
     }
 
     public ParsedRead toParsedRead() {
@@ -99,7 +102,8 @@ public final class Consensus {
             originalRead = new MultiRead(reads);
 
         Match bestMatch = new Match(numberOfTargets, 0, matchedGroupEdges);
-        return new ParsedRead(originalRead, false, bestMatch, consensusReadsNum);
+        return new ParsedRead(originalRead, false, defaultGroupsOverride ? numberOfTargets : -1,
+                bestMatch, consensusReadsNum);
     }
 
     /** Used only with --consensuses-to-separate-groups flag */
@@ -142,7 +146,8 @@ public final class Consensus {
                 originalRead = new MultiRead(reads);
 
             Match bestMatch = new Match(numberOfTargets, 0, matchedGroupEdges);
-            generatedReads.add(new ParsedRead(originalRead, false, bestMatch, consensusReadsNum));
+            generatedReads.add(new ParsedRead(originalRead, false,
+                    defaultGroupsOverride ? numberOfTargets : -1, bestMatch, consensusReadsNum));
         }
         return generatedReads;
     }

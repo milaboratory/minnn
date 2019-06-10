@@ -66,6 +66,7 @@ public final class ReadProcessor {
     private final String notMatchedOutputFileName;
     private final Pattern pattern;
     private final String patternQuery;
+    private final int outputNumberOfTargets;
     private final boolean orientedReads;
     private final boolean fairSorting;
     private final long inputReadsLimit;
@@ -90,6 +91,7 @@ public final class ReadProcessor {
         this.notMatchedOutputFileName = notMatchedOutputFileName;
         this.pattern = pattern;
         this.patternQuery = patternQuery;
+        this.outputNumberOfTargets = calculateOutputNumberOfTargets();
         this.orientedReads = orientedReads;
         this.fairSorting = fairSorting;
         this.inputReadsLimit = inputReadsLimit;
@@ -226,8 +228,13 @@ public final class ReadProcessor {
     }
 
     private MifWriter createWriter(boolean mismatchedReads) throws IOException {
-        MifHeader mifHeader = new MifHeader(pipelineConfiguration, calculateOutputNumberOfTargets(), new ArrayList<>(),
-                new ArrayList<>(), pattern.getGroupEdges());
+        ArrayList<GroupEdge> outputGroupEdges = new ArrayList<>(pattern.getGroupEdges());
+        descriptionGroups.getGroupNames().forEach(groupName -> {
+            outputGroupEdges.add(new GroupEdge(groupName, true));
+            outputGroupEdges.add(new GroupEdge(groupName, false));
+        });
+        MifHeader mifHeader = new MifHeader(pipelineConfiguration, outputNumberOfTargets, new ArrayList<>(),
+                new ArrayList<>(), outputGroupEdges);
         if (mismatchedReads)
             return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
         else
@@ -376,8 +383,9 @@ public final class ReadProcessor {
                 }
             }
 
-            return new ParsedRead(input.sequenceRead, reverseMatch, (bestMatch == null) ? null
-                    : descriptionGroups.addDescriptionGroups(bestMatch, input.sequenceRead),
+            int numberOfTargetsOverride = (pattern.isDefaultGroupsOverride()) ? outputNumberOfTargets : -1;
+            return new ParsedRead(input.sequenceRead, reverseMatch, numberOfTargetsOverride,
+                    (bestMatch == null) ? null : descriptionGroups.addDescriptionGroups(bestMatch, input.sequenceRead),
                     0, input.index);
         }
     }

@@ -142,7 +142,7 @@ public class ConsensusTestUtils {
             for (byte targetId = 1; targetId <= numberOfTargets; targetId++)
                 sequences.put(targetId,
                         toSeqWithAttributes(testSequences.get(readIndex).get(targetId - 1), readIndex));
-            cluster.data.add(new BasicDataFromParsedRead(sequences, barcodes, readIndex));
+            cluster.data.add(new BasicDataFromParsedRead(sequences, barcodes, readIndex, false));
         }
 
         return cluster;

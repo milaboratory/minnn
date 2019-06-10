@@ -36,4 +36,5 @@ public interface DataFromParsedRead {
     TByteObjectHashMap<SequenceWithAttributes> getSequences();
     List<Barcode> getBarcodes();
     long getOriginalReadId();
+    boolean isDefaultGroupsOverride();
 }

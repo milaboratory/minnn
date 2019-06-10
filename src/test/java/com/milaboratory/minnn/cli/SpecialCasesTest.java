@@ -126,6 +126,9 @@ public class SpecialCasesTest {
         exec("extract -f --input " + inputFile + " --output " + extracted + " --input-format MIF"
                 + " --pattern \"(BC:NNNNNNNN)(UMI:NNNNNNNN)\\(R1:*)\"");
         exec("correct -f --input " + extracted + " --output " + corrected + " --groups BC UMI");
+        assertOutputContains(true, "Group R2 not found", () -> callableExec("mif2fastq -f " +
+                "--input " + corrected + " --group R1=" + TEMP_DIR + "/R1.fastq R2=" + TEMP_DIR + "R2.fastq"));
+        exec("mif2fastq -f --input " + corrected + " --group R1=" + TEMP_DIR + "/R1.fastq");
         for (String fileName : new String[] { inputFile, extracted, corrected })
             assertTrue(new File(fileName).delete());
     }

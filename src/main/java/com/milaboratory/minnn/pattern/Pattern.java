@@ -60,6 +60,10 @@ public abstract class Pattern {
         return patternAligner;
     }
 
+    public boolean isDefaultGroupsOverride() {
+        return defaultGroupsOverride;
+    }
+
     /**
      * Estimate computational complexity of this pattern for unfair sorter.
      *

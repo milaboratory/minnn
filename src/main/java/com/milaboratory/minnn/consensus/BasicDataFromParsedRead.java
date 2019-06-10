@@ -39,6 +39,7 @@ public class BasicDataFromParsedRead implements DataFromParsedRead {
     protected final TByteObjectHashMap<SequenceWithAttributes> sequences;
     protected final List<Barcode> barcodes;
     protected final long originalReadId;
+    protected final boolean defaultGroupsOverride;
 
     public BasicDataFromParsedRead(ParsedRead parsedRead, LinkedHashSet<String> consensusGroups) {
         LinkedHashSet<String> defaultGroupNames = parsedRead.getDefaultGroupNames();
@@ -56,13 +57,15 @@ public class BasicDataFromParsedRead implements DataFromParsedRead {
             if (consensusGroups.contains(group.getGroupName()))
                 barcodes.add(new Barcode(group.getGroupName(), sequenceWithAttributes, group.getTargetId()));
         });
+        defaultGroupsOverride = parsedRead.isNumberOfTargetsOverride();
     }
 
     public BasicDataFromParsedRead(TByteObjectHashMap<SequenceWithAttributes> sequences, List<Barcode> barcodes,
-                                   long originalReadId) {
+                                   long originalReadId, boolean defaultGroupsOverride) {
         this.sequences = sequences;
         this.barcodes = barcodes;
         this.originalReadId = originalReadId;
+        this.defaultGroupsOverride = defaultGroupsOverride;
     }
 
     @Override
@@ -78,5 +81,10 @@ public class BasicDataFromParsedRead implements DataFromParsedRead {
     @Override
     public long getOriginalReadId() {
         return originalReadId;
+    }
+
+    @Override
+    public boolean isDefaultGroupsOverride() {
+        return defaultGroupsOverride;
     }
 }

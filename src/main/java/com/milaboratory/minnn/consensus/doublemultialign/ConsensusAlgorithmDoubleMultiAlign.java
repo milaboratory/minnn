@@ -74,6 +74,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
 
     @Override
     public CalculatedConsensuses process(Cluster cluster) {
+        defaultGroupsOverride.set(cluster.data.get(0).isDefaultGroupsOverride());
         CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex);
         List<DataFromParsedRead> data = trimBadQualityTails(cluster.data);
         if (data.size() == 0) {
@@ -393,7 +394,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         }
 
         Consensus consensus = new Consensus(sequences, barcodes, consensusReadsNum, debugData,
-                numberOfTargets, stage2, consensusCurrentTempId.getAndIncrement());
+                numberOfTargets, stage2, consensusCurrentTempId.getAndIncrement(), defaultGroupsOverride.get());
         storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus, stage2);
         return consensus;
     }

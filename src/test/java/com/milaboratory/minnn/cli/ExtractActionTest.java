@@ -182,13 +182,26 @@ public class ExtractActionTest {
         String inputFile = getExampleMif("twosided");
         String fastqR1 = TEMP_DIR + "desc_group_test_R1.fastq";
         String fastqR2 = TEMP_DIR + "desc_group_test_R2.fastq";
-        String outputFile = TEMP_DIR + "desc_group_test_out.mif";
+        String extracted = TEMP_DIR + "desc_group_test_extracted.mif";
+        String corrected = TEMP_DIR + "desc_group_test_corrected.mif";
+        String consensus = TEMP_DIR + "desc_group_test_consensus.mif";
+        String extractToFastqR1 = TEMP_DIR + "desc_group_test_extracted_R1.fastq";
+        String extractToFastqR2 = TEMP_DIR + "desc_group_test_extracted_R2.fastq";
+        String consensusToFastqR1 = TEMP_DIR + "desc_group_test_consensus_R1.fastq";
+        String consensusToFastqR2 = TEMP_DIR + "desc_group_test_consensus_R2.fastq";
         exec("mif2fastq -f --copy-original-headers --input " + inputFile + " --group R1=" + fastqR1
                 + " --group R2=" + fastqR2);
-        exec("extract -f --input " + fastqR1 + " " + fastqR2 + " --output " + outputFile
+        exec("extract -f --input " + fastqR1 + " " + fastqR2 + " --output " + extracted
                 + " --description-group DG1='(?<=G1~)[a-zA-Z]*(?=~)' --pattern \"(G1:cccnn)\\*\""
                 + " --description-group DG4='G4~(?<seq>[a-zA-Z]*)~(?<qual>.*?)\\{' --score-threshold 0");
-        for (String fileName : new String[] { inputFile, fastqR1, fastqR2, outputFile })
+        exec("correct -f --input " + extracted + " --output " + corrected + " --groups G1 DG4");
+        exec("consensus -f --input " + corrected + " --output " + consensus + " --groups DG1 G1 DG4");
+        exec("mif2fastq -f --input " + extracted
+                + " --group R1=" + extractToFastqR1 + " R2=" + extractToFastqR2);
+        exec("mif2fastq -f --input " + consensus
+                + " --group R1=" + consensusToFastqR1 + " --group R2=" + consensusToFastqR2);
+        for (String fileName : new String[] { inputFile, fastqR1, fastqR2, extracted, corrected, consensus,
+                extractToFastqR1, extractToFastqR2, consensusToFastqR1, consensusToFastqR2 })
             assertTrue(new File(fileName).delete());
     }
 

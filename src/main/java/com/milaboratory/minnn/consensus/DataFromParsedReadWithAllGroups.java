@@ -50,8 +50,8 @@ public final class DataFromParsedReadWithAllGroups extends BasicDataFromParsedRe
 
     public DataFromParsedReadWithAllGroups(
             TByteObjectHashMap<SequenceWithAttributes> sequences, List<Barcode> barcodes, long originalReadId,
-            LinkedHashMap<String, SequenceWithAttributes> otherGroups) {
-        super(sequences, barcodes, originalReadId);
+            boolean defaultGroupsOverride, LinkedHashMap<String, SequenceWithAttributes> otherGroups) {
+        super(sequences, barcodes, originalReadId, defaultGroupsOverride);
         this.otherGroups = new LinkedHashMap<>(otherGroups);
     }
 

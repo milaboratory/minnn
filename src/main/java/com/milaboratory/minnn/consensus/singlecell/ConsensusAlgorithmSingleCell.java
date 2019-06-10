@@ -67,6 +67,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
 
     @Override
     public CalculatedConsensuses process(Cluster cluster) {
+        defaultGroupsOverride.set(cluster.data.get(0).isDefaultGroupsOverride());
         CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex);
         List<DataFromParsedRead> remainingData = trimBadQualityTails(cluster.data);
         int clusterSize = cluster.data.size();
@@ -296,7 +297,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
         }
 
         Consensus consensus = new Consensus(sequences, offsetSearchResults.barcodes,
-                offsetSearchResults.usedReads.size(), debugData, numberOfTargets, true, -1);
+                offsetSearchResults.usedReads.size(), debugData, numberOfTargets, true, -1,
+                defaultGroupsOverride.get());
         setUsedReadsStatus(usedReadIds, USED_IN_CONSENSUS);
         if (originalReadsData != null)
             Arrays.stream(usedReadIds).forEach(readId -> originalReadsData.get(readId).consensus = consensus);

@@ -349,7 +349,7 @@ public final class CorrectionAlgorithms {
                     + ", got " + newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
                     .filter(defaultGroups::contains).collect(Collectors.toList()));
         return new CorrectBarcodesResult(new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(),
-                newMatch, 0), numCorrectedBarcodes, excluded);
+                parsedRead.getRawNumberOfTargetsOverride(), newMatch, 0), numCorrectedBarcodes, excluded);
     }
 
     /**

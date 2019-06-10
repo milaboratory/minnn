@@ -39,8 +39,9 @@ public interface ReadFilter {
     ParsedRead filter(ParsedRead parsedRead);
 
     default ParsedRead notMatchedRead(ParsedRead parsedRead) {
-        return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(), null,
-                parsedRead.getConsensusReads(), parsedRead.getOutputPortId());
+        return new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(),
+                parsedRead.getRawNumberOfTargetsOverride(), null, parsedRead.getConsensusReads(),
+                parsedRead.getOutputPortId());
     }
 
     default MatchedGroup getGroupByName(ParsedRead parsedRead, String groupName) {
