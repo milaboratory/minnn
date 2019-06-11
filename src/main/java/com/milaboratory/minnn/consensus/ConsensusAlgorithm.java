@@ -46,8 +46,6 @@ import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
 public abstract class ConsensusAlgorithm implements Processor<Cluster, CalculatedConsensuses> {
-    private static final double OVERFLOW_PROTECTION_MIN = 1E-100D;
-    private static final double OVERFLOW_PROTECTION_MAX = 1E100D;
     private static final NucleotideSequence[] consensusMajorBases = new NucleotideSequence[] {
             sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
             sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")) };

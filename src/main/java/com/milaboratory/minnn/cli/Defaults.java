@@ -76,4 +76,6 @@ public final class Defaults {
     public final static int DEFAULT_CONSENSUS_KMER_OFFSET = 15;
     public final static int DEFAULT_CONSENSUS_KMER_MAX_ERRORS = 3;
     public final static int DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE = 1 << 16;
+    public final static double OVERFLOW_PROTECTION_MIN = 1E-100D;
+    public final static double OVERFLOW_PROTECTION_MAX = 1E100D;
 }
