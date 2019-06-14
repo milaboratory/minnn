@@ -54,7 +54,7 @@ final class CorrectionUtils {
                 if (sequence.size() > positionIndex) {
                     NSequenceWithQuality currentLetter = sequence.getRange(positionIndex, positionIndex + 1);
                     NucleotideSequence currentLetterSequence = sequencesCache.get(currentLetter.getSequence());
-                    byte currentLetterQuality = currentLetter.getQuality().value(0);
+                    byte currentLetterQuality = getLetterQuality(currentLetter);
                     if (currentLetterSequence.containsWildcards()) {
                         Wildcard wildcard = wildcards.get(currentLetterSequence);
                         for (int i = 0; i < wildcard.basicSize(); i++) {
@@ -89,7 +89,7 @@ final class CorrectionUtils {
                     NucleotideSequence letterOption = letterOptions[i];     // don't count for empty option
                     double product = Math.pow(gamma, -letterCounts.get(letterOption));
                     for (NSequenceWithQuality currentLetter : currentPositionLetters) {
-                        double errorProbability = Math.pow(10.0, -currentLetter.getQuality().value(0) / 10.0);
+                        double errorProbability = Math.pow(10.0, -getLetterQuality(currentLetter) / 10.0);
                         if (currentLetter.getSequence().equals(letterOption))
                             product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
                         else
@@ -111,5 +111,10 @@ final class CorrectionUtils {
         }
 
         return builder.createAndDestroy();
+    }
+
+    private static byte getLetterQuality(NSequenceWithQuality letter) {
+        return (letter == NSequenceWithQuality.EMPTY) ? DEFAULT_BAD_QUALITY :
+                (byte)Math.min(DEFAULT_MAX_QUALITY, letter.getQuality().value(0));
     }
 }
