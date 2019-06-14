@@ -28,40 +28,43 @@
  */
 package com.milaboratory.minnn.correct;
 
-import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.Wildcard;
 
 import java.util.*;
 
+import static com.milaboratory.minnn.correct.CorrectionUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
 final class MultiSequence {
-    final HashMap<NucleotideSequence, Long> sequences = new HashMap<>();
+    private final HashSet<NSequenceWithQuality> sequences = new HashSet<>();
+    private NSequenceWithQuality cachedSequence = null;
 
-    MultiSequence(NucleotideSequence seq) {
-        long variability = 1;
-        for (int i = 0; i < seq.size(); i++)
-            variability *= charToWildcard.get(seq.symbolAt(i)).basicSize();
-        sequences.put(seq, variability);
+    MultiSequence(NSequenceWithQuality seq) {
+        sequences.add(seq);
+    }
+
+    Set<NSequenceWithQuality> getSequences() {
+        return Collections.unmodifiableSet(sequences);
     }
 
     /**
-     * @return sequence with smallest variability by wildcards
+     * @return consensus sequence with quality
      */
-    NucleotideSequence getBestSequence() {
-        Map.Entry<NucleotideSequence, Long> bestEntry = null;
-        for (Map.Entry<NucleotideSequence, Long> entry : sequences.entrySet())
-            if ((bestEntry == null) || (bestEntry.getValue() > entry.getValue()))
-                bestEntry = entry;
-        return Objects.requireNonNull(bestEntry).getKey();
+    NSequenceWithQuality getSequence() {
+        if (cachedSequence == null)
+            cachedSequence = (sequences.size() == 1)
+                    ? sequences.stream().findFirst().orElseThrow(IllegalStateException::new)
+                    : multipleSequencesMerged(new ArrayList<>(sequences));
+        return cachedSequence;
     }
 
-    private boolean equalByWildcards(NucleotideSequence seq1, NucleotideSequence seq2) {
+    private boolean equalByWildcards(NSequenceWithQuality seq1, NSequenceWithQuality seq2) {
         if (seq1.size() != seq2.size())
             return false;
         for (int i = 0; i < seq1.size(); i++) {
-            Wildcard wildcard1 = charToWildcard.get(seq1.symbolAt(i));
-            Wildcard wildcard2 = charToWildcard.get(seq2.symbolAt(i));
+            Wildcard wildcard1 = charToWildcard.get(seq1.getSequence().symbolAt(i));
+            Wildcard wildcard2 = charToWildcard.get(seq2.getSequence().symbolAt(i));
             if ((wildcard1.getBasicMask() & wildcard2.getBasicMask()) == 0)
                 return false;
         }
@@ -79,10 +82,12 @@ final class MultiSequence {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MultiSequence that = (MultiSequence)o;
-        if (sequences.keySet().parallelStream().allMatch(seq1 -> that.sequences.keySet().stream()
+        if (sequences.parallelStream().allMatch(seq1 -> that.sequences.stream()
                 .allMatch(seq2 -> equalByWildcards(seq1, seq2)))) {
-            sequences.putAll(that.sequences);
-            that.sequences.putAll(sequences);
+            sequences.addAll(that.sequences);
+            that.sequences.addAll(sequences);
+            cachedSequence = null;
+            that.cachedSequence = null;
             return true;
         } else
             return false;

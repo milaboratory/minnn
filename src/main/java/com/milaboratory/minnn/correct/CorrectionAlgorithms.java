@@ -245,10 +245,11 @@ public final class CorrectionAlgorithms {
                     SmartProgressReporter.startProgressReport("Clustering barcodes in group "
                                     + groupData.groupName, clustering, System.err);
                 clustering.performClustering().forEach(cluster -> {
-                    NucleotideSequence headSequence = cluster.getHead().multiSequence.getBestSequence();
+                    NSequenceWithQuality headSequence = cluster.getHead().multiSequence.getSequence();
                     cluster.processAllChildren(child -> {
-                        child.getHead().multiSequence.sequences.keySet()
-                                .forEach(seq -> groupData.correctionMap.put(seq, headSequence));
+                        child.getHead().multiSequence.getSequences()
+                                .forEach(seq -> groupData.correctionMap.put(seq.getSequence(),
+                                        headSequence.getSequence()));
                         return true;
                     });
                 });
@@ -349,7 +350,8 @@ public final class CorrectionAlgorithms {
                     + ", got " + newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
                     .filter(defaultGroups::contains).collect(Collectors.toList()));
         return new CorrectBarcodesResult(new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(),
-                parsedRead.getRawNumberOfTargetsOverride(), newMatch, 0), numCorrectedBarcodes, excluded);
+                parsedRead.getRawNumberOfTargetsOverride(), newMatch, 0), numCorrectedBarcodes,
+                excluded);
     }
 
     /**
@@ -433,7 +435,7 @@ public final class CorrectionAlgorithms {
         void processSequence(NSequenceWithQuality seqWithQuality) {
             // creating multi-sequence counters, without merging multi-sequences on this stage
             NucleotideSequence seq = seqWithQuality.getSequence();
-            sequenceCounters.putIfAbsent(seq, new SequenceCounter(seq));
+            sequenceCounters.putIfAbsent(seq, new SequenceCounter(seqWithQuality));
             sequenceCounters.get(seq).count++;
 
             // counting raw barcode sequences if filtering by count is enabled

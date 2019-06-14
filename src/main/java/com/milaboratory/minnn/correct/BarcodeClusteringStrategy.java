@@ -43,7 +43,7 @@ final class BarcodeClusteringStrategy implements ClusteringStrategy<SequenceCoun
     private final MutationProbability mutationProbability;
 
     BarcodeClusteringStrategy(TreeSearchParameters treeSearchParameters, float threshold, int maxClusterDepth,
-                                     MutationProbability mutationProbability) {
+                              MutationProbability mutationProbability) {
         this.treeSearchParameters = treeSearchParameters;
         this.threshold = threshold;
         this.maxClusterDepth = maxClusterDepth;

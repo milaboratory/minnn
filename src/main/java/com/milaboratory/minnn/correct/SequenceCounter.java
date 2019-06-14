@@ -28,13 +28,13 @@
  */
 package com.milaboratory.minnn.correct;
 
-import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.NSequenceWithQuality;
 
 final class SequenceCounter implements Comparable<SequenceCounter> {
     final MultiSequence multiSequence;
     long count;
 
-    SequenceCounter(NucleotideSequence sequence) {
+    SequenceCounter(NSequenceWithQuality sequence) {
         multiSequence = new MultiSequence(sequence);
         count = 0;
     }
@@ -44,7 +44,7 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SequenceCounter that = (SequenceCounter)o;
-        // MultiSequence objects will perform mutual merge if equal
+        // MultiSequence objects will perform mutual merge if equal by wildcards
         return multiSequence.equals(that.multiSequence);
     }
 

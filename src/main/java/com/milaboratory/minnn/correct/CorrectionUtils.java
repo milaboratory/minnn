@@ -44,7 +44,7 @@ final class CorrectionUtils {
             sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")),
             NucleotideSequence.EMPTY };
 
-    NSequenceWithQuality multipleSequencesMerged(List<NSequenceWithQuality> sequences) {
+    static NSequenceWithQuality multipleSequencesMerged(List<NSequenceWithQuality> sequences) {
         int maxLength = sequences.stream().mapToInt(SequenceWithQuality::size).max()
                 .orElseThrow(IllegalArgumentException::new);
         NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
