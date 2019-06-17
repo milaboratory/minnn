@@ -29,11 +29,10 @@
 package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.clustering.SequenceExtractor;
-import com.milaboratory.core.sequence.NucleotideSequence;
 
-final class SequenceCounterExtractor implements SequenceExtractor<SequenceCounter, NucleotideSequence> {
+final class SequenceCounterExtractor implements SequenceExtractor<SequenceCounter, SequenceWithQualityForClustering> {
     @Override
-    public NucleotideSequence getSequence(SequenceCounter sequenceCounter) {
-        return sequenceCounter.multiSequence.getSequence().getSequence();
+    public SequenceWithQualityForClustering getSequence(SequenceCounter sequenceCounter) {
+        return new SequenceWithQualityForClustering(sequenceCounter.multiSequence.getSequence());
     }
 }

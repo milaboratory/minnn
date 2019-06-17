@@ -26,30 +26,34 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.stat;
+package com.milaboratory.minnn.correct;
 
-import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
+import com.milaboratory.core.sequence.*;
 
-public final class StatUtils {
-    private StatUtils() {}
+class SequenceWithQualityForClustering extends Sequence<SequenceWithQualityForClustering> {
+    final NSequenceWithQuality nSequenceWithQuality;
 
-    /**
-     * Calculate error probability by quality value.
-     *
-     * @param quality   quality, parameter is double to support average qualities of sequences
-     * @return          probability of error
-     */
-    public static double qualityToProbability(double quality) {
-        return Math.pow(10.0, -quality / 10);
+    SequenceWithQualityForClustering(NSequenceWithQuality nSequenceWithQuality) {
+        this.nSequenceWithQuality = nSequenceWithQuality;
     }
 
-    public static byte probabilityToQuality(double probability) {
-        double calculatedValue = -10 * Math.log10(probability);
-        if (calculatedValue < 0)
-            return 0;
-        else if (calculatedValue > DEFAULT_MAX_QUALITY)
-            return DEFAULT_MAX_QUALITY;
-        else
-            return (byte)calculatedValue;
+    @Override
+    public byte codeAt(int position) {
+        return nSequenceWithQuality.getSequence().codeAt(position);
+    }
+
+    @Override
+    public Alphabet<SequenceWithQualityForClustering> getAlphabet() {
+        return (Alphabet)(NucleotideSequence.ALPHABET);
+    }
+
+    @Override
+    public SequenceWithQualityForClustering getRange(int from, int to) {
+        return new SequenceWithQualityForClustering(nSequenceWithQuality.getRange(from, to));
+    }
+
+    @Override
+    public int size() {
+        return nSequenceWithQuality.size();
     }
 }

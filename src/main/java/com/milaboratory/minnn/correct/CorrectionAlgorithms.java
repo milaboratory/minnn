@@ -236,11 +236,12 @@ public final class CorrectionAlgorithms {
         SequenceCounterExtractor sequenceCounterExtractor = new SequenceCounterExtractor();
         for (GroupData groupData : groupsData) {
             if (groupData.parsedReadsCount > 0) {
-                Clustering<SequenceCounter, NucleotideSequence> clustering = new Clustering<>(
+                Clustering<SequenceCounter, SequenceWithQualityForClustering> clustering = new Clustering<>(
                         groupData.getSortedSequences(), sequenceCounterExtractor,
                         barcodeClusteringStrategyFactory.createStrategy(groupData.calculateErrorProbability(
                                 barcodeClusteringStrategyFactory.getMaxErrorsWorstBarcodesShare()),
-                                (float)(groupData.lengthSum) / groupData.parsedReadsCount));
+                                (float)(groupData.lengthSum) / groupData.parsedReadsCount),
+                        MutationGuideForClustering.INSTANCE);
                 if (reportProgress)
                     SmartProgressReporter.startProgressReport("Clustering barcodes in group "
                                     + groupData.groupName, clustering, System.err);
@@ -478,7 +479,7 @@ public final class CorrectionAlgorithms {
                     break;
                 }
             }
-            return qualityToProbability(sumQuality / totalWorstBarcodes);
+            return (float)qualityToProbability(sumQuality / totalWorstBarcodes);
         }
 
         @Override

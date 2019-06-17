@@ -26,30 +26,21 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.stat;
+package com.milaboratory.minnn.correct;
 
-import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
+import com.milaboratory.core.tree.MutationGuide;
 
-public final class StatUtils {
-    private StatUtils() {}
+import static com.milaboratory.core.mutations.MutationType.*;
+import static com.milaboratory.minnn.cli.Defaults.DEFAULT_VERY_GOOD_QUALITY;
 
-    /**
-     * Calculate error probability by quality value.
-     *
-     * @param quality   quality, parameter is double to support average qualities of sequences
-     * @return          probability of error
-     */
-    public static double qualityToProbability(double quality) {
-        return Math.pow(10.0, -quality / 10);
-    }
+class MutationGuideForClustering implements MutationGuide<SequenceWithQualityForClustering> {
+    static MutationGuideForClustering INSTANCE = new MutationGuideForClustering();
 
-    public static byte probabilityToQuality(double probability) {
-        double calculatedValue = -10 * Math.log10(probability);
-        if (calculatedValue < 0)
-            return 0;
-        else if (calculatedValue > DEFAULT_MAX_QUALITY)
-            return DEFAULT_MAX_QUALITY;
-        else
-            return (byte)calculatedValue;
+    private MutationGuideForClustering() {}
+
+    @Override
+    public boolean allowMutation(SequenceWithQualityForClustering reference, int position, byte type, byte to) {
+        return (getType(type) == Insertion)
+                || (reference.nSequenceWithQuality.getQuality().value(position) < DEFAULT_VERY_GOOD_QUALITY);
     }
 }

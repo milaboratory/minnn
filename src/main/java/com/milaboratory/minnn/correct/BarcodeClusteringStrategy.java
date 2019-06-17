@@ -31,12 +31,12 @@ package com.milaboratory.minnn.correct;
 import com.milaboratory.core.clustering.Cluster;
 import com.milaboratory.core.clustering.ClusteringStrategy;
 import com.milaboratory.core.mutations.Mutations;
-import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.TreeSearchParameters;
 import com.milaboratory.minnn.stat.MutationProbability;
 
-final class BarcodeClusteringStrategy implements ClusteringStrategy<SequenceCounter, NucleotideSequence> {
+final class BarcodeClusteringStrategy
+        implements ClusteringStrategy<SequenceCounter, SequenceWithQualityForClustering> {
     private final TreeSearchParameters treeSearchParameters;
     private final float threshold;
     private final int maxClusterDepth;
@@ -51,9 +51,10 @@ final class BarcodeClusteringStrategy implements ClusteringStrategy<SequenceCoun
     }
 
     @Override
-    public boolean canAddToCluster(Cluster<SequenceCounter> cluster, SequenceCounter minorSequenceCounter,
-                                   NeighborhoodIterator<NucleotideSequence, SequenceCounter[]> iterator) {
-        Mutations<NucleotideSequence> currentMutations = iterator.getCurrentMutations();
+    public boolean canAddToCluster(
+            Cluster<SequenceCounter> cluster, SequenceCounter minorSequenceCounter,
+            NeighborhoodIterator<SequenceWithQualityForClustering, SequenceCounter[]> iterator) {
+        Mutations<SequenceWithQualityForClustering> currentMutations = iterator.getCurrentMutations();
         long majorClusterCount = cluster.getHead().count;
         long minorClusterCount = minorSequenceCounter.count;
         float expected = majorClusterCount;

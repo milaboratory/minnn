@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.stat.StatUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
 final class CorrectionUtils {
@@ -83,13 +84,13 @@ final class CorrectionUtils {
                                         .map(SequenceWithQuality::getSequence).filter(majorBase::equals).count())));
                 double gamma = 1.0 / (letterOptions.length - 1);
                 NucleotideSequence bestLetterSequence = null;
-                double bestLetterQuality = -1;
+                byte bestLetterQuality = -1;
 
                 for (int i = 0; i < 4; i++) {
                     NucleotideSequence letterOption = letterOptions[i];     // don't count for empty option
                     double product = Math.pow(gamma, -letterCounts.get(letterOption));
                     for (NSequenceWithQuality currentLetter : currentPositionLetters) {
-                        double errorProbability = Math.pow(10.0, -getLetterQuality(currentLetter) / 10.0);
+                        double errorProbability = qualityToProbability(getLetterQuality(currentLetter));
                         if (currentLetter.getSequence().equals(letterOption))
                             product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
                         else
@@ -99,7 +100,7 @@ final class CorrectionUtils {
                     }
 
                     double errorProbability = 1.0 / (1 + product);
-                    double quality = -10 * Math.log10(errorProbability);
+                    byte quality = probabilityToQuality(errorProbability);
                     if (quality > bestLetterQuality) {
                         bestLetterSequence = letterOption;
                         bestLetterQuality = quality;
