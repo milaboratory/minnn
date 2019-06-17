@@ -43,13 +43,13 @@ public final class StatUtils {
         return Math.pow(10.0, -quality / 10);
     }
 
-    public static byte probabilityToQuality(double probability) {
+    public static double probabilityToQuality(double probability) {
         double calculatedValue = -10 * Math.log10(probability);
         if (calculatedValue < 0)
             return 0;
         else if (calculatedValue > DEFAULT_MAX_QUALITY)
             return DEFAULT_MAX_QUALITY;
         else
-            return (byte)calculatedValue;
+            return calculatedValue;
     }
 }

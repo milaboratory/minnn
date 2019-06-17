@@ -84,7 +84,7 @@ final class CorrectionUtils {
                                         .map(SequenceWithQuality::getSequence).filter(majorBase::equals).count())));
                 double gamma = 1.0 / (letterOptions.length - 1);
                 NucleotideSequence bestLetterSequence = null;
-                byte bestLetterQuality = -1;
+                double bestLetterQuality = -1;
 
                 for (int i = 0; i < 4; i++) {
                     NucleotideSequence letterOption = letterOptions[i];     // don't count for empty option
@@ -100,7 +100,7 @@ final class CorrectionUtils {
                     }
 
                     double errorProbability = 1.0 / (1 + product);
-                    byte quality = probabilityToQuality(errorProbability);
+                    double quality = probabilityToQuality(errorProbability);
                     if (quality > bestLetterQuality) {
                         bestLetterSequence = letterOption;
                         bestLetterQuality = quality;
