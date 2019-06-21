@@ -33,6 +33,7 @@ import com.milaboratory.core.sequence.SequenceQuality;
 import com.milaboratory.core.sequence.Wildcard;
 import gnu.trove.map.hash.TByteObjectHashMap;
 import gnu.trove.map.hash.TCharObjectHashMap;
+import gnu.trove.map.hash.TObjectLongHashMap;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,6 +48,7 @@ public final class SequencesCache {
     public static final HashMap<NucleotideSequence, Wildcard> wildcards = new HashMap<>();
     public static final TByteObjectHashMap<NucleotideSequence> wildcardCodeToSequence = new TByteObjectHashMap<>();
     public static final TCharObjectHashMap<Wildcard> charToWildcard = new TCharObjectHashMap<>();
+    public static final TObjectLongHashMap<NucleotideSequence> basicLettersMasks = new TObjectLongHashMap<>();
 
     static {
         List<String> alphabet = NucleotideSequence.ALPHABET.getAllWildcards().stream()
@@ -65,5 +67,7 @@ public final class SequencesCache {
         });
         for (byte quality = 0; quality <= DEFAULT_MAX_QUALITY; quality++)
             qualityCache.put(quality, new SequenceQuality(new byte[] { quality }));
+        NucleotideSequence.ALPHABET.getAllWildcards().stream().filter(Wildcard::isBasic).forEach(wildcard ->
+                basicLettersMasks.put(wildcardCodeToSequence.get(wildcard.getCode()), wildcard.getBasicMask()));
     }
 }

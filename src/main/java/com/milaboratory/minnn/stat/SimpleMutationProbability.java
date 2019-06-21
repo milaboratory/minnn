@@ -28,15 +28,12 @@
  */
 package com.milaboratory.minnn.stat;
 
-import com.milaboratory.core.sequence.NSequenceWithQuality;
-import com.milaboratory.core.sequence.NucleotideSequence;
-import com.milaboratory.core.sequence.Wildcard;
+import com.milaboratory.core.sequence.*;
+import gnu.trove.map.hash.TObjectDoubleHashMap;
 
-import static com.milaboratory.core.mutations.Mutation.getFromSymbol;
-import static com.milaboratory.core.mutations.Mutation.getToSymbol;
-import static com.milaboratory.core.mutations.Mutation.isInDel;
-import static com.milaboratory.minnn.util.SequencesCache.charToWildcard;
-import static com.milaboratory.minnn.util.SequencesCache.wildcards;
+import static com.milaboratory.core.mutations.Mutation.*;
+import static com.milaboratory.minnn.stat.StatUtils.*;
+import static com.milaboratory.minnn.util.SequencesCache.*;
 
 public final class SimpleMutationProbability implements MutationProbability {
     private final float basicSubstitutionProbability;
@@ -49,28 +46,25 @@ public final class SimpleMutationProbability implements MutationProbability {
 
     @Override
     public float mutationProbability(NSequenceWithQuality seq, int position, NSequenceWithQuality newLetter) {
-        return mutationProbability(seq.getSequence(), position, newLetter.getSequence());
-    }
-
-    @Override
-    public float mutationProbability(NucleotideSequence seq, int position, NucleotideSequence newLetter) {
-        if ((position < 0) && (newLetter == NucleotideSequence.EMPTY))
+        if ((position < 0) && (newLetter == NSequenceWithQuality.EMPTY))
             throw new IllegalArgumentException("Mutation must not be insertion and deletion in the same time: "
                     + "seq=" + seq + ", position=" + position + ", newLetter is empty");
-        else if ((position < 0) || (newLetter == NucleotideSequence.EMPTY))
+        else if ((position < 0) || (newLetter == NSequenceWithQuality.EMPTY))
             return indelProbability;
         else {
-            Wildcard wildcardFrom = wildcards.get(seq.getRange(position, position + 1));
-            Wildcard wildcardTo = wildcards.get(newLetter);
-            if ((wildcardFrom.getBasicMask() & wildcardTo.getBasicMask()) == 0)
-                return basicSubstitutionProbability;
-            else
-                return 1;
+            ProbabilityDistribution from = new ProbabilityDistribution(seq.getRange(position, position + 1));
+            ProbabilityDistribution to = new ProbabilityDistribution(newLetter);
+            return calculateSubstitutionProbability(from, to);
         }
     }
 
     @Override
-    public float mutationProbability(int mutationCode) {
+    public float mutationProbability(NucleotideSequence seq, int position, NucleotideSequence newLetter) {
+        throw new IllegalStateException("Mutation probability with quality must be used!");
+    }
+
+    @Override
+    public float mutationProbability(int mutationCode, byte originalLetterQuality) {
         if (isInDel(mutationCode))
             return indelProbability;
         else {
@@ -80,6 +74,50 @@ public final class SimpleMutationProbability implements MutationProbability {
                 return basicSubstitutionProbability;
             else
                 return 1;
+        }
+    }
+
+    @Override
+    public float mutationProbability(int mutationCode) {
+        throw new IllegalStateException("Mutation probability with quality must be used!");
+    }
+
+    private float calculateSubstitutionProbability(ProbabilityDistribution from, ProbabilityDistribution to) {
+        MutableDouble substitutionProbability = new MutableDouble(0);
+        from.basicLettersProbabilities.forEachEntry((fromLetter, fromProbability) -> {
+            to.basicLettersProbabilities.forEachEntry((toLetter, toProbability) -> {
+                double combinationProbability = fromProbability * toProbability;
+                if (fromLetter == toLetter)
+                    substitutionProbability.value += combinationProbability;
+                else
+                    substitutionProbability.value += combinationProbability * basicSubstitutionProbability;
+                return true;
+            });
+            return true;
+        });
+        return (float)(substitutionProbability.value);
+    }
+
+    private class MutableDouble {
+        double value;
+
+        MutableDouble(double value) {
+            this.value = value;
+        }
+    }
+
+    private class ProbabilityDistribution {
+        TObjectDoubleHashMap<NucleotideSequence> basicLettersProbabilities = new TObjectDoubleHashMap<>();
+
+        ProbabilityDistribution(NSequenceWithQuality letter) {
+            Wildcard wildcard = wildcards.get(letter.getSequence());
+            double letterProbability = qualityToProbability(letter.getQuality().value(0));
+            basicLettersMasks.forEachEntry((basicLetter, mask) -> {
+                basicLettersProbabilities.put(basicLetter, ((mask & wildcard.getBasicMask()) == 0)
+                        ? (1 - letterProbability) / (basicLettersMasks.size() - wildcard.basicSize())
+                        : letterProbability / wildcard.basicSize());
+                return true;
+            });
         }
     }
 }

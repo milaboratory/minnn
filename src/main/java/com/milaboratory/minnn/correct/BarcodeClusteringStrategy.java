@@ -28,12 +28,16 @@
  */
 package com.milaboratory.minnn.correct;
 
+import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.clustering.Cluster;
 import com.milaboratory.core.clustering.ClusteringStrategy;
 import com.milaboratory.core.mutations.Mutations;
+import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.TreeSearchParameters;
 import com.milaboratory.minnn.stat.MutationProbability;
+
+import static com.milaboratory.minnn.cli.Defaults.*;
 
 final class BarcodeClusteringStrategy
         implements ClusteringStrategy<SequenceCounter, SequenceWithQualityForClustering> {
@@ -54,12 +58,18 @@ final class BarcodeClusteringStrategy
     public boolean canAddToCluster(
             Cluster<SequenceCounter> cluster, SequenceCounter minorSequenceCounter,
             NeighborhoodIterator<SequenceWithQualityForClustering, SequenceCounter[]> iterator) {
-        Mutations<SequenceWithQualityForClustering> currentMutations = iterator.getCurrentMutations();
+        Alignment<SequenceWithQualityForClustering> currentAlignment = iterator.getCurrentAlignment();
+        Mutations<SequenceWithQualityForClustering> currentMutations = currentAlignment.getAbsoluteMutations();
+        NSequenceWithQuality seq = currentAlignment.getSequence1().nSequenceWithQuality;
         long majorClusterCount = cluster.getHead().count;
         long minorClusterCount = minorSequenceCounter.count;
         float expected = majorClusterCount;
-        for (int mutationCode : currentMutations.getRAWMutations())
-            expected *= mutationProbability.mutationProbability(mutationCode);
+        for (int i = 0; i < currentMutations.size(); i++) {
+            int position = currentMutations.getPositionByIndex(i);
+            byte quality = (position < 0) || (position >= seq.size())
+                    ? DEFAULT_MAX_QUALITY : seq.getQuality().value(position);
+            expected *= mutationProbability.mutationProbability(currentMutations.getMutation(i), quality);
+        }
         return (minorClusterCount <= expected) && ((float)minorClusterCount / majorClusterCount < threshold);
     }
 
