@@ -60,8 +60,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Override
     public void run1() {
         BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory = new BarcodeClusteringStrategyFactory(
-                maxErrorsCountMultiplier, maxErrorsWorstBarcodesShare, maxErrorsShare, maxErrors,
-                threshold, maxClusterDepth,
+                maxErrorsShare, maxErrors, threshold, maxClusterDepth,
                 new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability));
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, groupNames, primaryGroupNames, barcodeClusteringStrategyFactory, maxUniqueBarcodes,
@@ -77,9 +76,9 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Override
     public void validate() {
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
-        if ((maxErrorsCountMultiplier < 0) && (maxErrorsShare < 0) && (maxErrors < 0))
-            throwValidationException("All 3 methods of calculating maximal number of errors for " +
-                    "barcodes clustering are disabled (set to negative); enable at least one!");
+        if ((maxErrorsShare < 0) && (maxErrors < 0))
+            throwValidationException("Both --max-errors and --max-errors-share are disabled (set to negative); " +
+                    "enable at least one!");
     }
 
     @Override
@@ -109,9 +108,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Override
     public ActionConfiguration getConfiguration() {
         return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
-                primaryGroupNames, maxErrorsCountMultiplier, maxErrorsWorstBarcodesShare, maxErrorsShare, maxErrors,
-                threshold, maxClusterDepth, singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes,
-                minCount, inputReadsLimit));
+                primaryGroupNames, maxErrorsShare, maxErrors, threshold, maxClusterDepth,
+                singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes, minCount, inputReadsLimit));
     }
 
     @Override
@@ -149,7 +147,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
 
     @Option(description = "Relative maximal allowed number of errors (Levenshtein distance) between barcodes for " +
             "which they are considered identical. It is multiplied on average barcode length to calculate maximal " +
-            "allowed number of errors. This max errors calculation method is enabled by default. " +
+            "allowed number of errors; if result is less than 1, it rounds up to 1. This max errors calculation " +
+            "method is enabled by default. " +
             CORRECT_MAX_ERRORS_COMMON,
             names = "--max-errors-share")
     private float maxErrorsShare = DEFAULT_MAX_ERRORS_SHARE;
@@ -158,19 +157,6 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             CORRECT_MAX_ERRORS_COMMON,
             names = {"--max-errors"})
     private int maxErrors = -1;
-
-    @Option(description = "Multiplier to count maximum Levenshtein distance between barcodes for which they are " +
-            "considered identical. It is multiplied on error probability based on average of minimal barcode " +
-            "qualities from a share of barcodes with worst qualities; then multiplied on average barcode length. " +
-            "If this max errors calculation method is enabled, recommended value is 1. " +
-            CORRECT_MAX_ERRORS_COMMON,
-            names = "--max-errors-count-multiplier")
-    private float maxErrorsCountMultiplier = -1f;
-
-    @Option(description = "Share of barcodes with worst qualities that is used to calculate error probability " +
-            "if --max-errors-count-multiplier option is used.",
-            names = "--max-errors-worst-barcodes-share")
-    private float maxErrorsWorstBarcodesShare = DEFAULT_MAX_ERRORS_WORST_BARCODES_SHARE;
 
     @Option(description = "Threshold for barcode clustering: if smaller barcode count divided to larger barcode " +
             "count is below this threshold, barcode will be merged to the cluster. This feature is turned off " +

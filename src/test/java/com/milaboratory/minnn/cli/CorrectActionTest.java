@@ -56,8 +56,7 @@ public class CorrectActionTest {
             createRandomMifFile(startFile);
             exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
-            exec("correct -f --max-errors-count-multiplier " + ((rg.nextInt(20) - 6) / 2f)
-                    + " --max-errors-share " + (rg.nextInt(10) / 10f)
+            exec("correct -f --max-errors-share " + (rg.nextInt(10) / 10f)
                     + " --max-errors " + (rg.nextInt(5) - 1) + " --max-unique-barcodes " + rg.nextInt(10)
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + inputFile + " --output " + outputFile + " --groups G1 G2");
@@ -140,7 +139,7 @@ public class CorrectActionTest {
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
             if (i < 9) {
                 exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
-                        + " --min-count " + (int)Math.pow(i, 2));
+                        + " --max-errors 0 --min-count " + (int)Math.pow(i, 2));
                 assertFileNotEquals(currentInput, currentOutput);
                 if (i <= 1)
                     assertMifEqualsAsFastq(currentInput, currentOutput, true);
@@ -148,7 +147,7 @@ public class CorrectActionTest {
                     assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
             } else {
                 exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
-                        + " --min-count 1");
+                        + " --max-errors 0 --min-count 1");
                 assertFileNotEquals(currentInput, currentOutput);
                 assertMifEqualsAsFastq(currentInput, currentOutput, true);
             }
@@ -169,8 +168,7 @@ public class CorrectActionTest {
             createRandomMifFile(startFile);
             exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
-            exec("correct -f --max-errors-count-multiplier " + ((rg.nextInt(20) - 6) / 2f)
-                    + " --max-errors-share " + (rg.nextInt(10) / 10f)
+            exec("correct -f --max-errors-share " + (rg.nextInt(10) / 10f)
                     + " --max-errors " + (rg.nextInt(5) - 1) + " --max-unique-barcodes " + rg.nextInt(10)
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + inputFile + " --output " + outputPrimary + " --groups G1");

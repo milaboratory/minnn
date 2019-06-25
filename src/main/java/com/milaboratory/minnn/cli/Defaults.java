@@ -55,7 +55,6 @@ public final class Defaults {
     public final static int DEFAULT_SORT_MIN_CHUNK_SIZE = 16384;
     public final static float DEFAULT_SORT_CHUNK_MEMORY_SHARE = 0.01f;
     public final static float DEFAULT_MAX_ERRORS_SHARE = 0.1f;
-    public final static float DEFAULT_MAX_ERRORS_WORST_BARCODES_SHARE = 0.05f;
     public final static float DEFAULT_CORRECT_CLUSTER_THRESHOLD = 1f;
     public final static int DEFAULT_CORRECT_MAX_CLUSTER_DEPTH = 2;
     public final static float DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY = 0.1f;
