@@ -36,33 +36,19 @@ is absent or set to :code:`0`, filtering by maximal number of unique barcodes wi
 be filtered out. Reads that contain at least 1 filtered out barcode will not be included in the output.
 
 :code:`--max-errors-share` argument specifies how two barcodes can differ in the same cluster. This share is multiplied
-on average barcode length to calculate maximal allowed number of errors (Levenshtein distance) between barcodes.
-Barcodes with bigger number of errors will not be corrected. The maximal allowed number of errors is calculated
-separately for each group, for example, if there is short group :code:`CB` and long group :code:`UMI`, more errors
-will be allowed in :code:`UMI` group. Negative value after :code:`--max-errors-share` means that this max errors
-calculation method is disabled.
+on average barcode length to calculate maximal allowed number of errors (Levenshtein distance) between barcodes;
+but if result is less than 1, it rounds up to 1. Barcodes with bigger number of errors will not be corrected.
+The maximal allowed number of errors is calculated separately for each group, for example, if there is short
+group :code:`CB` and long group :code:`UMI`, more errors will be allowed in :code:`UMI` group. Negative value
+after :code:`--max-errors-share` means that :code:`--max-errors-share` argument is disabled and you must set the
+:code:`--max-errors` argument.
 
-You can also specify the maximal allowed number of errors directly, same value for all groups. :code:`--max-errors`
+You can specify the maximal allowed number of errors directly, same value for all groups. :code:`--max-errors`
 argument can be used for this. It is disabled (set to :code:`-1`) by default.
 
-**Important:** If multiple methods to specify the maximal allowed number of errors are enabled, then the lowest value
-of max errors from these methods will be used. If you want, for example, to use only :code:`--max-errors` method, then
+**Important:** If both :code:`--max-errors-share` and :code:`max-errors` arguments are enabled, then the lowest value
+of max errors from these arguments will be used. If you want, for example, to use only :code:`--max-errors`, then
 disable (set to :code:`-1`) the :code:`--max-errors-share` argument.
-
-Also there is 3rd method to specify the maximal allowed number of errors in barcode.
-:code:`--max-errors-count-multiplier` argument, if enabled (set to positive value), is multiplied on error probability
-based on average of minimal barcode qualities from a share of barcodes with worst qualities; then multiplied on average
-barcode length. There are 5 steps of calculation max errors value in this case:
-
-1. A share of barcodes with worst qualities is extracted from the current group. Size of the share can be changed with
-   :code:`--max-errors-worst-barcodes-share` argument.
-2. Quality of the worst letter from each of barcodes in this share is taken.
-3. Average quality of these worst letters is calculated.
-4. Probability of error corresponding to this quality is calculated.
-5. The probability is multiplied on average barcode length and then on :code:`--max-errors-count-multiplier` value.
-
-This max errors calculation method is disabled (set to :code:`-1`) by default. If you want to enable it,
-the recommended value for :code:`--max-errors-count-multiplier` is :code:`1`.
 
 Clustering algorithm uses probabilities of substitutions and indels in sequence to check when barcode cannot be
 added to cluster; for example, if the barcode's count is big, and there is low probability that this barcode emerged
