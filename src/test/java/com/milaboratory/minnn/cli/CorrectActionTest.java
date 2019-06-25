@@ -173,8 +173,7 @@ public class CorrectActionTest {
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + inputFile + " --output " + outputPrimary + " --groups G1");
             exec("sort -f --input " + outputPrimary + " --output " + outputSorted + " --groups G1");
-            exec("correct -f --max-errors-count-multiplier " + ((rg.nextInt(20) - 6) / 2f)
-                    + " --max-errors-share " + (rg.nextInt(10) / 10f)
+            exec("correct -f --max-errors-share " + (rg.nextInt(10) / 10f)
                     + " --max-errors " + (rg.nextInt(5) - 1) + " --max-unique-barcodes " + rg.nextInt(10)
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
                     + " --input " + outputSorted + " --output " + outputSecondary
