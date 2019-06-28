@@ -32,6 +32,7 @@ import com.milaboratory.core.sequence.*;
 import gnu.trove.map.hash.TObjectDoubleHashMap;
 
 import static com.milaboratory.core.mutations.Mutation.*;
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.stat.StatUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
@@ -68,12 +69,12 @@ public final class SimpleMutationProbability implements MutationProbability {
         if (isInDel(mutationCode))
             return indelProbability;
         else {
-            Wildcard wildcardFrom = charToWildcard.get(getFromSymbol(mutationCode, NucleotideSequence.ALPHABET));
-            Wildcard wildcardTo = charToWildcard.get(getToSymbol(mutationCode, NucleotideSequence.ALPHABET));
-            if ((wildcardFrom.getBasicMask() & wildcardTo.getBasicMask()) == 0)
-                return basicSubstitutionProbability;
-            else
-                return 1;
+            ProbabilityDistribution from = new ProbabilityDistribution(getFromSymbol(mutationCode,
+                    NucleotideSequence.ALPHABET), originalLetterQuality);
+            // TODO: implement saving target letter quality in the tree
+            ProbabilityDistribution to = new ProbabilityDistribution(getToSymbol(mutationCode,
+                    NucleotideSequence.ALPHABET), DEFAULT_MAX_QUALITY);
+            return calculateSubstitutionProbability(from, to);
         }
     }
 
@@ -109,9 +110,13 @@ public final class SimpleMutationProbability implements MutationProbability {
     private class ProbabilityDistribution {
         TObjectDoubleHashMap<NucleotideSequence> basicLettersProbabilities = new TObjectDoubleHashMap<>();
 
-        ProbabilityDistribution(NSequenceWithQuality letter) {
-            Wildcard wildcard = wildcards.get(letter.getSequence());
-            double letterProbability = qualityToProbability(letter.getQuality().value(0));
+        ProbabilityDistribution(NSequenceWithQuality seq) {
+            this(seq.getSequence().symbolAt(0), seq.getQuality().value(0));
+        }
+
+        ProbabilityDistribution(char letter, byte letterQuality) {
+            Wildcard wildcard = charToWildcard.get(letter);
+            double letterProbability = qualityToProbability(letterQuality);
             basicLettersMasks.forEachEntry((basicLetter, mask) -> {
                 basicLettersProbabilities.put(basicLetter, ((mask & wildcard.getBasicMask()) == 0)
                         ? (1 - letterProbability) / (basicLettersMasks.size() - wildcard.basicSize())
