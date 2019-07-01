@@ -29,35 +29,72 @@
 package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.Wildcard;
+
+import java.util.*;
+
+import static com.milaboratory.minnn.correct.CorrectionUtils.*;
+import static com.milaboratory.minnn.util.SequencesCache.*;
 
 final class SequenceCounter implements Comparable<SequenceCounter> {
-    final MultiSequence multiSequence;
-    long count;
+    private final List<NSequenceWithQuality> sequences = new ArrayList<>();
+    private NSequenceWithQuality cachedSequence = null;
 
     SequenceCounter(NSequenceWithQuality sequence) {
-        multiSequence = new MultiSequence(sequence);
-        count = 0;
+        sequences.add(sequence);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SequenceCounter that = (SequenceCounter)o;
-        // MultiSequence objects will perform mutual merge if equal by wildcards
-        return multiSequence.equals(that.multiSequence);
+    List<NSequenceWithQuality> getSequences() {
+        return Collections.unmodifiableList(sequences);
     }
 
-    @Override
-    public int hashCode() {
-        return 0;
+    /**
+     * @return consensus sequence with quality
+     */
+    NSequenceWithQuality getSequence() {
+        if (cachedSequence == null)
+            cachedSequence = (sequences.size() == 1) ? sequences.get(0) : multipleSequencesMerged(sequences);
+        return cachedSequence;
     }
 
-    // compareTo is reversed to start from bigger counts
+    /**
+     * Add other sequence to this counter if other sequence equals by wildcards, otherwise return false.
+     *
+     * @param other other sequence
+     * @return      true if other sequence was added, otherwise false
+     */
+    boolean add(NSequenceWithQuality other) {
+        if (sequences.parallelStream().allMatch(seq -> equalByWildcards(seq, other))) {
+            sequences.add(other);
+            cachedSequence = null;
+            return true;
+        } else
+            return false;
+    }
+
+    long getCount() {
+        return sequences.size();
+    }
+
     @Override
     public int compareTo(SequenceCounter other) {
-        int comparisonResult = -Long.compare(count, other.count);
-        // disable equal counts because they lead to objects loss
-        return (comparisonResult == 0) ? 1 : comparisonResult;
+        return Long.compare(sequences.size(), other.sequences.size());
+    }
+
+    private boolean equalByWildcards(NSequenceWithQuality seq1, NSequenceWithQuality seq2) {
+        if (seq1.size() != seq2.size())
+            return false;
+        NucleotideSequence s1 = seq1.getSequence();
+        NucleotideSequence s2 = seq2.getSequence();
+        if (s1.equals(s2))
+            return true;
+        for (int i = 0; i < seq1.size(); i++) {
+            Wildcard wildcard1 = charToWildcard.get(s1.symbolAt(i));
+            Wildcard wildcard2 = charToWildcard.get(s2.symbolAt(i));
+            if ((wildcard1.getBasicMask() & wildcard2.getBasicMask()) == 0)
+                return false;
+        }
+        return true;
     }
 }

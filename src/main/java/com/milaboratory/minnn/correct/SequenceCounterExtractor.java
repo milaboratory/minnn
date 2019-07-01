@@ -33,6 +33,6 @@ import com.milaboratory.core.clustering.SequenceExtractor;
 final class SequenceCounterExtractor implements SequenceExtractor<SequenceCounter, SequenceWithQualityForClustering> {
     @Override
     public SequenceWithQualityForClustering getSequence(SequenceCounter sequenceCounter) {
-        return new SequenceWithQualityForClustering(sequenceCounter.multiSequence.getSequence());
+        return new SequenceWithQualityForClustering(sequenceCounter.getSequence());
     }
 }

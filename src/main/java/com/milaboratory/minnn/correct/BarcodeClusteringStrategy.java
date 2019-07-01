@@ -61,8 +61,8 @@ final class BarcodeClusteringStrategy
         Alignment<SequenceWithQualityForClustering> currentAlignment = iterator.getCurrentAlignment();
         Mutations<SequenceWithQualityForClustering> currentMutations = currentAlignment.getAbsoluteMutations();
         NSequenceWithQuality seq = currentAlignment.getSequence1().nSequenceWithQuality;
-        long majorClusterCount = cluster.getHead().count;
-        long minorClusterCount = minorSequenceCounter.count;
+        long majorClusterCount = cluster.getHead().getCount();
+        long minorClusterCount = minorSequenceCounter.getCount();
         float expected = majorClusterCount;
         for (int i = 0; i < currentMutations.size(); i++) {
             int position = currentMutations.getPositionByIndex(i);
@@ -85,6 +85,6 @@ final class BarcodeClusteringStrategy
 
     @Override
     public int compare(SequenceCounter c1, SequenceCounter c2) {
-        return Long.compare(c1.count, c2.count);
+        return c1.compareTo(c2);
     }
 }
