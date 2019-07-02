@@ -39,10 +39,12 @@ import static com.milaboratory.minnn.util.SequencesCache.*;
 
 final class SequenceCounter implements Comparable<SequenceCounter> {
     private final List<NSequenceWithQuality> sequences = new ArrayList<>();
+    private final int index;
     private NSequenceWithQuality cachedSequence = null;
 
-    SequenceCounter(NSequenceWithQuality sequence) {
+    SequenceCounter(NSequenceWithQuality sequence, int index) {
         sequences.add(sequence);
+        this.index = index;
     }
 
     List<NSequenceWithQuality> getSequences() {
@@ -78,8 +80,26 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SequenceCounter that = (SequenceCounter)o;
+        return index == that.index;
+    }
+
+    @Override
+    public int hashCode() {
+        return index;
+    }
+
+    @Override
     public int compareTo(SequenceCounter other) {
         return Long.compare(sequences.size(), other.sequences.size());
+    }
+
+    int compareForTreeSet(SequenceCounter other) {
+        int comparisonResult = -compareTo(other);
+        return (comparisonResult == 0) ? Integer.compare(index, other.index) : comparisonResult;
     }
 
     private boolean equalByWildcards(NSequenceWithQuality seq1, NSequenceWithQuality seq2) {
