@@ -46,21 +46,18 @@ public final class SimpleMutationProbability implements MutationProbability {
     }
 
     @Override
-    public float mutationProbability(NSequenceWithQuality seq, int position, NSequenceWithQuality newLetter) {
-        if ((position < 0) && (newLetter == NSequenceWithQuality.EMPTY))
-            throw new IllegalArgumentException("Mutation must not be insertion and deletion in the same time: "
-                    + "seq=" + seq + ", position=" + position + ", newLetter is empty");
-        else if ((position < 0) || (newLetter == NSequenceWithQuality.EMPTY))
+    public float mutationProbability(NSequenceWithQuality from, NSequenceWithQuality to) {
+        if ((from == NSequenceWithQuality.EMPTY) && (to == NSequenceWithQuality.EMPTY))
+            throw new IllegalArgumentException("Mutation must not be insertion and deletion in the same time!");
+        else if ((from == NSequenceWithQuality.EMPTY) || (to == NSequenceWithQuality.EMPTY))
             return indelProbability;
-        else {
-            ProbabilityDistribution from = new ProbabilityDistribution(seq.getRange(position, position + 1));
-            ProbabilityDistribution to = new ProbabilityDistribution(newLetter);
-            return calculateSubstitutionProbability(from, to);
-        }
+        else
+            return calculateSubstitutionProbability(new ProbabilityDistribution(from),
+                    new ProbabilityDistribution(to));
     }
 
     @Override
-    public float mutationProbability(NucleotideSequence seq, int position, NucleotideSequence newLetter) {
+    public float mutationProbability(NucleotideSequence from, NucleotideSequence to) {
         throw new IllegalStateException("Mutation probability with quality must be used!");
     }
 
@@ -71,7 +68,6 @@ public final class SimpleMutationProbability implements MutationProbability {
         else {
             ProbabilityDistribution from = new ProbabilityDistribution(getFromSymbol(mutationCode,
                     NucleotideSequence.ALPHABET), originalLetterQuality);
-            // TODO: implement saving target letter quality in the tree
             ProbabilityDistribution to = new ProbabilityDistribution(getToSymbol(mutationCode,
                     NucleotideSequence.ALPHABET), DEFAULT_MAX_QUALITY);
             return calculateSubstitutionProbability(from, to);

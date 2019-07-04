@@ -32,9 +32,9 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 
 public interface MutationProbability {
-    // position can be -1-position, it means insertion; newLetter can be EMPTY, it means deletion
-    float mutationProbability(NSequenceWithQuality seq, int position, NSequenceWithQuality newLetter);
-    float mutationProbability(NucleotideSequence seq, int position, NucleotideSequence newLetter);
+    // from can be EMPTY, it means insertion; to can be EMPTY, it means deletion
+    float mutationProbability(NSequenceWithQuality from, NSequenceWithQuality to);
+    float mutationProbability(NucleotideSequence from, NucleotideSequence to);
     float mutationProbability(int mutationCode, byte originalLetterQuality);
     float mutationProbability(int mutationCode);
 }

@@ -31,13 +31,16 @@ package com.milaboratory.minnn.correct;
 import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.clustering.Cluster;
 import com.milaboratory.core.clustering.ClusteringStrategy;
+import com.milaboratory.core.mutations.Mutation;
+import com.milaboratory.core.mutations.MutationType;
 import com.milaboratory.core.mutations.Mutations;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.TreeSearchParameters;
 import com.milaboratory.minnn.stat.MutationProbability;
 
-import static com.milaboratory.minnn.cli.Defaults.*;
+import java.util.Objects;
 
 final class BarcodeClusteringStrategy
         implements ClusteringStrategy<SequenceCounter, SequenceWithQualityForClustering> {
@@ -60,15 +63,39 @@ final class BarcodeClusteringStrategy
             NeighborhoodIterator<SequenceWithQualityForClustering, SequenceCounter[]> iterator) {
         Alignment<SequenceWithQualityForClustering> currentAlignment = iterator.getCurrentAlignment();
         Mutations<SequenceWithQualityForClustering> currentMutations = currentAlignment.getAbsoluteMutations();
-        NSequenceWithQuality seq = currentAlignment.getSequence1().nSequenceWithQuality;
+        NSequenceWithQuality seq1 = currentAlignment.getSequence1().nSequenceWithQuality;
+        NSequenceWithQuality seq2 = minorSequenceCounter.getSequence();
         long majorClusterCount = cluster.getHead().getCount();
         long minorClusterCount = minorSequenceCounter.getCount();
         float expected = majorClusterCount;
         for (int i = 0; i < currentMutations.size(); i++) {
-            int position = currentMutations.getPositionByIndex(i);
-            byte quality = (position < 0) || (position >= seq.size())
-                    ? DEFAULT_MAX_QUALITY : seq.getQuality().value(position);
-            expected *= mutationProbability.mutationProbability(currentMutations.getMutation(i), quality);
+            int position1;
+            int position2;
+            NSequenceWithQuality from;
+            NSequenceWithQuality to;
+            MutationType mutationType = Objects.requireNonNull(Mutation.getType(currentMutations.getMutation(i)));
+            switch (mutationType) {
+                case Substitution:
+                    position1 = currentMutations.getPositionByIndex(i);
+                    position2 = currentMutations.convertToSeq2Position(position1);
+                    from = seq1.getRange(position1, position1 + 1);
+                    to = seq2.getRange(position2, position2 + 1);
+                    break;
+                case Insertion:
+                    position1 = currentMutations.getPositionByIndex(i);
+                    position2 = currentMutations.convertToSeq2Position(position1) - 1;
+                    from = NSequenceWithQuality.EMPTY;
+                    to = seq2.getRange(position2, position2 + 1);
+                    break;
+                case Deletion:
+                    position1 = currentMutations.getPositionByIndex(i);
+                    from = seq1.getRange(position1, position1 + 1);
+                    to = NSequenceWithQuality.EMPTY;
+                    break;
+                default:
+                    throw new IllegalStateException("Wrong mutation type: " + mutationType);
+            }
+            expected *= mutationProbability.mutationProbability(from, to);
         }
         return (minorClusterCount <= expected) && ((float)minorClusterCount / majorClusterCount < threshold);
     }
