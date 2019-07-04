@@ -54,11 +54,11 @@ public final class Defaults {
     public final static MinnnDataFormat DEFAULT_INPUT_FORMAT = FASTQ;
     public final static int DEFAULT_SORT_MIN_CHUNK_SIZE = 16384;
     public final static float DEFAULT_SORT_CHUNK_MEMORY_SHARE = 0.01f;
-    public final static float DEFAULT_MAX_ERRORS_SHARE = 0.1f;
+    public final static float DEFAULT_MAX_ERRORS_SHARE = 0.2f;
     public final static float DEFAULT_CORRECT_CLUSTER_THRESHOLD = 1f;
     public final static int DEFAULT_CORRECT_MAX_CLUSTER_DEPTH = 2;
     public final static float DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY = 0.1f;
-    public final static float DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY = 0.03f;
+    public final static float DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY = 0.02f;
     public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 20;
     public final static int DEFAULT_CONSENSUS_SCORE_THRESHOLD = -100;
     public final static float DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT = 0.05f;
