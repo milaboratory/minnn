@@ -40,10 +40,12 @@ import static com.milaboratory.minnn.util.SequencesCache.*;
 final class SequenceCounter implements Comparable<SequenceCounter> {
     private final List<NSequenceWithQuality> sequences = new ArrayList<>();
     private final int index;
+    private boolean containsWildcards;
     private NSequenceWithQuality cachedSequence = null;
 
     SequenceCounter(NSequenceWithQuality sequence, int index) {
         sequences.add(sequence);
+        this.containsWildcards = sequence.getSequence().containsWildcards();
         this.index = index;
     }
 
@@ -67,12 +69,23 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
      * @return      true if other sequence was added, otherwise false
      */
     boolean add(NSequenceWithQuality other) {
-        if (sequences.parallelStream().allMatch(seq -> equalByWildcards(seq, other))) {
-            sequences.add(other);
-            cachedSequence = null;
-            return true;
-        } else
-            return false;
+        boolean otherContainsWildcards = other.getSequence().containsWildcards();
+        if (containsWildcards || otherContainsWildcards) {
+            if (sequences.stream().allMatch(seq -> equalByWildcards(seq, other))) {
+                sequences.add(other);
+                containsWildcards = true;
+                cachedSequence = null;
+                return true;
+            } else
+                return false;
+        } else {
+            if (sequences.get(0).getSequence().equals(other.getSequence())) {
+                sequences.add(other);
+                cachedSequence = null;
+                return true;
+            } else
+                return false;
+        }
     }
 
     long getCount() {
