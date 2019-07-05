@@ -38,28 +38,29 @@ import static com.milaboratory.minnn.correct.CorrectionUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
 final class SequenceCounter implements Comparable<SequenceCounter> {
-    private final List<NSequenceWithQuality> sequences = new ArrayList<>();
+    private NSequenceWithQuality consensusSequence;
+    private final Set<NucleotideSequence> uniqueOriginalSequences = new HashSet<>();
     private final int index;
+    private long count;
     private boolean containsWildcards;
-    private NSequenceWithQuality cachedSequence = null;
 
     SequenceCounter(NSequenceWithQuality sequence, int index) {
-        sequences.add(sequence);
+        this.consensusSequence = sequence;
+        uniqueOriginalSequences.add(sequence.getSequence());
         this.containsWildcards = sequence.getSequence().containsWildcards();
         this.index = index;
+        this.count = 1;
     }
 
-    List<NSequenceWithQuality> getSequences() {
-        return Collections.unmodifiableList(sequences);
+    Set<NucleotideSequence> getOriginalSequences() {
+        return Collections.unmodifiableSet(uniqueOriginalSequences);
     }
 
     /**
      * @return consensus sequence with quality
      */
     NSequenceWithQuality getSequence() {
-        if (cachedSequence == null)
-            cachedSequence = (sequences.size() == 1) ? sequences.get(0) : multipleSequencesMerged(sequences);
-        return cachedSequence;
+        return consensusSequence;
     }
 
     /**
@@ -71,17 +72,18 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
     boolean add(NSequenceWithQuality other) {
         boolean otherContainsWildcards = other.getSequence().containsWildcards();
         if (containsWildcards || otherContainsWildcards) {
-            if (sequences.stream().allMatch(seq -> equalByWildcards(seq, other))) {
-                sequences.add(other);
-                containsWildcards = true;
-                cachedSequence = null;
+            if (equalByWildcards(consensusSequence, other)) {
+                consensusSequence = multipleSequencesMerged(Arrays.asList(consensusSequence, other));
+                uniqueOriginalSequences.add(other.getSequence());
+                containsWildcards = false;
+                count++;
                 return true;
             } else
                 return false;
         } else {
-            if (sequences.get(0).getSequence().equals(other.getSequence())) {
-                sequences.add(other);
-                cachedSequence = null;
+            if (consensusSequence.getSequence().equals(other.getSequence())) {
+                consensusSequence = multipleSequencesMerged(Arrays.asList(consensusSequence, other));
+                count++;
                 return true;
             } else
                 return false;
@@ -89,7 +91,7 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
     }
 
     long getCount() {
-        return sequences.size();
+        return count;
     }
 
     @Override
@@ -107,7 +109,7 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
 
     @Override
     public int compareTo(SequenceCounter other) {
-        return Long.compare(sequences.size(), other.sequences.size());
+        return Long.compare(count, other.count);
     }
 
     int compareForTreeSet(SequenceCounter other) {

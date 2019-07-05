@@ -243,8 +243,8 @@ public final class CorrectionAlgorithms {
                 clustering.performClustering().forEach(cluster -> {
                     NSequenceWithQuality headSequence = cluster.getHead().getSequence();
                     cluster.processAllChildren(child -> {
-                        child.getHead().getSequences().forEach(seq ->
-                                groupData.correctionMap.put(seq.getSequence(), headSequence.getSequence()));
+                        child.getHead().getOriginalSequences().forEach(seq ->
+                                groupData.correctionMap.put(seq, headSequence.getSequence()));
                         return true;
                     });
                 });
@@ -430,7 +430,8 @@ public final class CorrectionAlgorithms {
             if (cachedCounter != null) {
                 if (!cachedCounter.add(seqWithQuality))
                     throw new IllegalStateException("Failed to add sequence " + seq + " to counter "
-                            + cachedCounter.getSequences());
+                            + cachedCounter.getOriginalSequences() + " (count " + cachedCounter.getCount()
+                            + ", consensus sequence " + cachedCounter.getSequence() + ")!");
             } else {
                 boolean matchingCounterFound = false;
                 for (SequenceCounter counter : sequenceCounters)
