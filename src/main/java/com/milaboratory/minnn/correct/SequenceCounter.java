@@ -34,6 +34,7 @@ import com.milaboratory.core.sequence.Wildcard;
 
 import java.util.*;
 
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.correct.CorrectionUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
@@ -43,11 +44,13 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
     private final int index;
     private long count;
     private boolean containsWildcards;
+    private boolean maxQuality;
 
     SequenceCounter(NSequenceWithQuality sequence, int index) {
         this.consensusSequence = sequence;
         uniqueOriginalSequences.add(sequence.getSequence());
         this.containsWildcards = sequence.getSequence().containsWildcards();
+        this.maxQuality = !containsWildcards && (sequence.getQuality().minValue() == DEFAULT_MAX_QUALITY);
         this.index = index;
         this.count = 1;
     }
@@ -74,6 +77,7 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
         if (containsWildcards || otherContainsWildcards) {
             if (equalByWildcards(consensusSequence, other)) {
                 consensusSequence = multipleSequencesMerged(Arrays.asList(consensusSequence, other));
+                maxQuality = false;
                 uniqueOriginalSequences.add(other.getSequence());
                 containsWildcards = false;
                 count++;
@@ -82,7 +86,10 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
                 return false;
         } else {
             if (consensusSequence.getSequence().equals(other.getSequence())) {
-                consensusSequence = multipleSequencesMerged(Arrays.asList(consensusSequence, other));
+                if (!maxQuality) {
+                    consensusSequence = multipleSequencesMerged(Arrays.asList(consensusSequence, other));
+                    maxQuality = (consensusSequence.getQuality().minValue() == DEFAULT_MAX_QUALITY);
+                }
                 count++;
                 return true;
             } else
