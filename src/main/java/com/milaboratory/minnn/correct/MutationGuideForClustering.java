@@ -30,9 +30,6 @@ package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.tree.MutationGuide;
 
-import static com.milaboratory.core.mutations.MutationType.*;
-import static com.milaboratory.minnn.cli.Defaults.DEFAULT_VERY_GOOD_QUALITY;
-
 class MutationGuideForClustering implements MutationGuide<SequenceWithQualityForClustering> {
     static MutationGuideForClustering INSTANCE = new MutationGuideForClustering();
 
@@ -40,7 +37,6 @@ class MutationGuideForClustering implements MutationGuide<SequenceWithQualityFor
 
     @Override
     public boolean allowMutation(SequenceWithQualityForClustering reference, int position, byte type, byte to) {
-        return (getType(type) == Insertion)
-                || (reference.nSequenceWithQuality.getQuality().value(position) < DEFAULT_VERY_GOOD_QUALITY);
+        return true;
     }
 }
