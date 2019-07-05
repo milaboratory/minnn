@@ -112,11 +112,14 @@ public final class SimpleMutationProbability implements MutationProbability {
 
         ProbabilityDistribution(char letter, byte letterQuality) {
             Wildcard wildcard = charToWildcard.get(letter);
-            double letterProbability = qualityToProbability(letterQuality);
+            double letterProbability = 1 - qualityToProbability(letterQuality);
             basicLettersMasks.forEachEntry((basicLetter, mask) -> {
-                basicLettersProbabilities.put(basicLetter, ((mask & wildcard.getBasicMask()) == 0)
-                        ? (1 - letterProbability) / (basicLettersMasks.size() - wildcard.basicSize())
-                        : letterProbability / wildcard.basicSize());
+                if (letterProbability < 1.0 / basicLettersMasks.size())
+                    basicLettersProbabilities.put(basicLetter, 1.0 / basicLettersMasks.size());
+                else
+                    basicLettersProbabilities.put(basicLetter, ((mask & wildcard.getBasicMask()) == 0)
+                            ? (1 - letterProbability) / (basicLettersMasks.size() - wildcard.basicSize())
+                            : letterProbability / wildcard.basicSize());
                 return true;
             });
         }
