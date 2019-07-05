@@ -18,7 +18,7 @@ public class CorrectionUtilsTest {
                 new NSequenceWithQuality("AAA", "###"),
                 new NSequenceWithQuality("ATA", "3C3"),
                 new NSequenceWithQuality("GTC", "111")),
-                new NSequenceWithQuality("ATA", ",[,"));
+                new NSequenceWithQuality("ATA", "8U8"));
         testData.put(Arrays.asList(
                 new NSequenceWithQuality(new NucleotideSequence("ATTAGACA"), DEFAULT_MAX_QUALITY),
                 new NSequenceWithQuality(new NucleotideSequence("ATTAGACA"), DEFAULT_MAX_QUALITY)),
@@ -27,7 +27,7 @@ public class CorrectionUtilsTest {
                 new NSequenceWithQuality("WDNNNGWCCCAGTBAAAAGCA"),
                 new NSequenceWithQuality("ATTCCCGKNNNNNNNNNNNNN"),
                 new NSequenceWithQuality("NNNNNNAAAABBBGGGGGGTT")),
-                new NSequenceWithQuality("ATTCCGAAAAAGTGAAAAGTA", "D9444\"-!\"\"\"999\"\"\"\"[\"\""));
+                new NSequenceWithQuality("ATTCCGAAAAAGTGAAAAGTA", "@5---!-!!!!555!!!![!!"));
         testData.put(Collections.singletonList(
                 new NSequenceWithQuality("ATTAGACA", "12345678")),
                 new NSequenceWithQuality("ATTAGACA", "12345678"));
@@ -42,8 +42,12 @@ public class CorrectionUtilsTest {
                 new NSequenceWithQuality("AHABATYABGBHTRAGBDGRADAGAABDA",
                         "597349AA8FNW54#%^385703583476"),
                 new NSequenceWithQuality("ATA", ",[,")),
-                new NSequenceWithQuality("ATACATTAAGGATAAATTGAAAAGAATAA",
-                        "S&G&-G![!(!!.E-!!!8!8!.$3)!!/"));
+                new NSequenceWithQuality("ATACATTAAGGATAAGTTGAAAAGAATAA",
+                        "D\"G!\";![!(!#)EB!!!/!-!&$3)!!/"));
+        testData.put(Arrays.asList(
+                new NSequenceWithQuality("ATA", "[[["),
+                new NSequenceWithQuality("NTA", "###")),
+                new NSequenceWithQuality("ATA", "R[["));
         for (HashMap.Entry<List<NSequenceWithQuality>, NSequenceWithQuality> currentTestData : testData.entrySet())
             assertEquals(currentTestData.getValue(), multipleSequencesMerged(currentTestData.getKey()));
     }

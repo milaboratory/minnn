@@ -114,7 +114,8 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
             double product = Math.pow(gamma, -letterCounts.get(majorBase));
             for (SequenceWithAttributes currentLetter : baseLetters)
                 if (!currentLetter.isEmpty()) {
-                    double errorProbability = qualityToProbability(currentLetter.getQual().value(0));
+                    double errorProbability = qualityToProbability(Math.max(DEFAULT_BAD_QUALITY,
+                            currentLetter.getQual().value(0)));
                     if (currentLetter.getSeq().equals(majorBase))
                         product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
                     else

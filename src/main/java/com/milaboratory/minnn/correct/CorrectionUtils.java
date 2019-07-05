@@ -61,8 +61,8 @@ final class CorrectionUtils {
                         for (int i = 0; i < wildcard.basicSize(); i++) {
                             NucleotideSequence currentBasicLetter = wildcardCodeToSequence
                                     .get(wildcard.getMatchingCode(i));
-                            currentPositionLetters.add(new NSequenceWithQuality(currentBasicLetter, qualityCache
-                                    .get((byte)(currentLetterQuality / wildcard.basicSize()))));
+                            currentPositionLetters.add(new NSequenceWithQuality(currentBasicLetter,
+                                    qualityCache.get((byte)(currentLetterQuality / wildcard.basicSize()))));
                         }
                     } else {
                         currentPositionLetters.add(new NSequenceWithQuality(currentLetterSequence,
@@ -90,7 +90,8 @@ final class CorrectionUtils {
                     NucleotideSequence letterOption = letterOptions[i];     // don't count for empty option
                     double product = Math.pow(gamma, -letterCounts.get(letterOption));
                     for (NSequenceWithQuality currentLetter : currentPositionLetters) {
-                        double errorProbability = qualityToProbability(getLetterQuality(currentLetter));
+                        double errorProbability = qualityToProbability(Math.max(DEFAULT_BAD_QUALITY,
+                                getLetterQuality(currentLetter)));
                         if (currentLetter.getSequence().equals(letterOption))
                             product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
                         else
