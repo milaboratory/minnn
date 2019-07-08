@@ -148,18 +148,15 @@ public final class SorterIO {
     }
 
     private int estimateChunkSize() {
-        int defaultChunkSize = (int)Math.max(DEFAULT_SORT_MIN_CHUNK_SIZE,
-                Runtime.getRuntime().freeMemory() * DEFAULT_SORT_CHUNK_MEMORY_SHARE);
-        if (inputFileName == null)
-            return defaultChunkSize;
-        else {
+        float chunkSize = Runtime.getRuntime().freeMemory() * DEFAULT_SORT_CHUNK_MEMORY_SHARE;
+        if (inputFileName != null) {
             // heuristic to auto-determine chunk size by input file size
             File inputFile = new File(inputFileName);
             CompressionType ct = CompressionType.detectCompressionType(inputFile);
             int averageBytesPerParsedRead = (ct == CompressionType.None) ? 50 : 15;
-            return (int)Math.min(Math.max(DEFAULT_SORT_MIN_CHUNK_SIZE,
-                    inputFile.length() / averageBytesPerParsedRead / 8), defaultChunkSize);
+            chunkSize = Math.min((float)inputFile.length() / averageBytesPerParsedRead / 8, chunkSize);
         }
+        return (int)(Math.max(DEFAULT_SORT_MIN_CHUNK_SIZE, Math.min(DEFAULT_SORT_MAX_CHUNK_SIZE, chunkSize)));
     }
 
     private class ParsedReadComparator implements Comparator<ParsedRead> {
