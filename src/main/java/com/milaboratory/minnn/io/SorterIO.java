@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -107,6 +108,7 @@ public final class SorterIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
+        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
         reportFileHeader.append("Report for Sort command:\n");
         if (inputFileName == null)
             reportFileHeader.append("Input is from stdin\n");
@@ -122,6 +124,7 @@ public final class SorterIO {
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         report.append("Sorted ").append(totalReads).append(" reads\n");
 
+        jsonReportData.put("version", getShortestVersionString());
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("sortGroupNames", sortGroupNames);

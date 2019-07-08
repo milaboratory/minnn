@@ -55,6 +55,7 @@ import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.io.MinnnDataFormat.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.parser.Parser.BUILTIN_READ_GROUPS_NUM;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 import static java.lang.Double.NaN;
@@ -135,6 +136,7 @@ public final class ReadProcessor {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
+        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
         reportFileHeader.append("Report for Extract command:\n");
         switch (inputFileNames.size()) {
             case 0:
@@ -161,6 +163,7 @@ public final class ReadProcessor {
         report.append("Processed ").append(totalReads).append(" reads, matched ").append(matchedReads)
                 .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
 
+        jsonReportData.put("version", getShortestVersionString());
         jsonReportData.put("inputFileNames", inputFileNames);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("notMatchedOutputFileName", notMatchedOutputFileName);

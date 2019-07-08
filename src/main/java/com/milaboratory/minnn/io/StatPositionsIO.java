@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -129,6 +130,7 @@ public final class StatPositionsIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
+        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
         reportFileHeader.append("Report for StatPositions command:\n");
         if (inputFileName == null)
             reportFileHeader.append("Input is from stdin\n");
@@ -157,6 +159,7 @@ public final class StatPositionsIO {
                     .append(floatFormat.format((float)countedGroups / totalReads / groupList.size() * 100))
                     .append("% of checked groups)\n");
 
+        jsonReportData.put("version", getShortestVersionString());
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("correctedGroups", correctedGroups);

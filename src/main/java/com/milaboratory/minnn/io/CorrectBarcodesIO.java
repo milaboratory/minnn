@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.correct.CorrectionAlgorithms.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -125,6 +126,7 @@ public final class CorrectBarcodesIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
+        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
         reportFileHeader.append("Report for Correct command:\n");
         if (inputFileName == null)
             reportFileHeader.append("Input is from stdin\n");
@@ -148,6 +150,7 @@ public final class CorrectBarcodesIO {
             report.append("Reads excluded by too low barcode count: ").append(stats.excludedReads).append(" (")
                     .append(floatFormat.format((float)stats.excludedReads / stats.totalReads * 100)).append("%)\n");
 
+        jsonReportData.put("version", getShortestVersionString());
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("groupNames", groupNames);

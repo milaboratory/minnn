@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.io.ReportWriter.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -107,6 +108,7 @@ public final class FilterIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
+        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
         reportFileHeader.append("Report for Filter command:\n");
         if (inputFileName == null)
             reportFileHeader.append("Input is from stdin\n");
@@ -124,6 +126,7 @@ public final class FilterIO {
         report.append("Processed ").append(totalReadsCounter).append(" reads, matched ").append(matchedReads)
                 .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
 
+        jsonReportData.put("version", getShortestVersionString());
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("filterQuery", filterQuery);
