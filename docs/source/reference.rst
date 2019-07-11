@@ -71,7 +71,6 @@ demultiplex
  Filter Options: Barcodes and sample configuration files that specify sequences for demultiplexing. At least 1 barcode or 1 sample file must be specified. Syntax example: minnn demultiplex --by-barcode UID --by-sample samples.txt input.mif
  --demultiplex-log: Demultiplex log file name, to record names of generated files.
  --output-path: Path to write output files. If not specified, output files will be written to the same directory as input file. This option does not affect demultiplex log file; you can specify the path for demultiplex log file in --demultiplex-log argument.
- --output-buffer-size: Write buffer size for each output file.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --report: File to write report in human readable form. If not specified, report is displayed on screen only.
  --json-report: File to write command execution stats in JSON format.

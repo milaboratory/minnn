@@ -34,6 +34,7 @@ import com.milaboratory.core.sequence.SequenceQuality;
 import com.milaboratory.minnn.consensus.doublemultialign.ConsensusAlgorithmDoubleMultiAlign;
 import com.milaboratory.minnn.consensus.singlecell.ConsensusAlgorithmSingleCell;
 import com.milaboratory.minnn.util.DebugUtils.*;
+import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.util.*;
 import java.util.stream.Collectors;

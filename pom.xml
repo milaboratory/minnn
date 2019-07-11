@@ -103,7 +103,6 @@
             <groupId>org.lz4</groupId>
             <artifactId>lz4-java</artifactId>
             <version>1.5.1</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 

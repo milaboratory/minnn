@@ -90,42 +90,42 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     }
 
     private void readHeader() {
-        PrimitivI primitivI = primitivIHybrid.beginPrimitivI();
-        byte[] magicBytes = new byte[BEGIN_MAGIC_LENGTH];
-        try {
-            primitivI.readFully(magicBytes);
-        } catch (RuntimeException e) {
-            throw exitWithError("Unsupported file format; error while reading file header: " + e.getMessage());
+        try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
+            byte[] magicBytes = new byte[BEGIN_MAGIC_LENGTH];
+            try {
+                primitivI.readFully(magicBytes);
+            } catch (RuntimeException e) {
+                throw exitWithError("Unsupported file format; error while reading file header: " + e.getMessage());
+            }
+            String magicString = new String(magicBytes);
+            if (!magicString.equals(BEGIN_MAGIC))
+                throw exitWithError("Unsupported file format; .mif file of version " + magicString +
+                        " while you are running MiNNN " + BEGIN_MAGIC);
+            mifVersionInfo = primitivI.readUTF();
+            pipelineConfiguration = primitivI.readObject(PipelineConfiguration.class);
+            numberOfTargets = primitivI.readInt();
+            int correctedGroupsNum = primitivI.readInt();
+            for (int i = 0; i < correctedGroupsNum; i++)
+                correctedGroups.add(primitivI.readObject(String.class));
+            int sortedGroupsNum = primitivI.readInt();
+            for (int i = 0; i < sortedGroupsNum; i++)
+                sortedGroups.add(primitivI.readObject(String.class));
+            int groupEdgesNum = primitivI.readInt();
+            for (int i = 0; i < groupEdgesNum; i++) {
+                GroupEdge groupEdge = primitivI.readObject(GroupEdge.class);
+                primitivI.putKnownObject(groupEdge);
+                groupEdges.add(groupEdge);
+            }
         }
-        String magicString = new String(magicBytes);
-        if (!magicString.equals(BEGIN_MAGIC))
-            throw exitWithError("Unsupported file format; .mif file of version " + magicString +
-                    " while you are running MiNNN " + BEGIN_MAGIC);
-        mifVersionInfo = primitivI.readUTF();
-        pipelineConfiguration = primitivI.readObject(PipelineConfiguration.class);
-        numberOfTargets = primitivI.readInt();
-        int correctedGroupsNum = primitivI.readInt();
-        for (int i = 0; i < correctedGroupsNum; i++)
-            correctedGroups.add(primitivI.readObject(String.class));
-        int sortedGroupsNum = primitivI.readInt();
-        for (int i = 0; i < sortedGroupsNum; i++)
-            sortedGroups.add(primitivI.readObject(String.class));
-        int groupEdgesNum = primitivI.readInt();
-        for (int i = 0; i < groupEdgesNum; i++) {
-            GroupEdge groupEdge = primitivI.readObject(GroupEdge.class);
-            primitivI.putKnownObject(groupEdge);
-            groupEdges.add(groupEdge);
-        }
-        primitivIHybrid.endPrimitivI();
     }
 
     @Override
     public synchronized void close() {
         if (!closed) {
-            primitivIHybrid.endPrimitivIBlocks();
-            PrimitivI primitivI = primitivIHybrid.beginPrimitivI();
-            originalNumberOfReads = finished ? PrimitivI.readLong() : parsedReadsTaken;
-            primitivIHybrid.endPrimitivI();
+            reader.close();
+            try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
+                originalNumberOfReads = finished ? PrimitivI.readLong() : parsedReadsTaken;
+            }
             try {
                 primitivIHybrid.close();
             } catch (IOException e) {
@@ -139,7 +139,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     @Override
     public double getProgress() {
         if (parsedReadsLimit == -1) {
-            if (size < 1)
+            if ((size < 1) || (firstReadSerializedLength == -1))
                 return NaN;
             else
                 return (double)(parsedReadsTaken) * firstReadSerializedLength / size;

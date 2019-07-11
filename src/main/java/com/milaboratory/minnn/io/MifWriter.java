@@ -77,20 +77,23 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     }
 
     private void writeHeader(MifHeader mifHeader) {
-        PrimitivO primitivO = primitivOHybrid.beginPrimitivO();
-        primitivO.write(getBeginMagicBytes());
-        primitivO.writeUTF(getVersionString(VERSION_INFO_MIF));
-        primitivO.writeObject(mifHeader.getPipelineConfiguration());
-        primitivO.writeInt(mifHeader.getNumberOfTargets());
-        primitivO.writeInt(mifHeader.getCorrectedGroups().size());
-        for (String correctedGroup : mifHeader.getCorrectedGroups())
-            primitivO.writeObject(correctedGroup);
-        primitivO.writeInt(mifHeader.getSortedGroups().size());
-        for (String sortedGroup : mifHeader.getSortedGroups())
-            writer.write(sortedGroup);
-        writer.write(mifHeader.getGroupEdges().size());
-        for (GroupEdge groupEdge : mifHeader.getGroupEdges())
-            writer.write(groupEdge);
+        try (PrimitivO primitivO = primitivOHybrid.beginPrimitivO()) {
+            primitivO.write(getBeginMagicBytes());
+            primitivO.writeUTF(getVersionString(VERSION_INFO_MIF));
+            primitivO.writeObject(mifHeader.getPipelineConfiguration());
+            primitivO.writeInt(mifHeader.getNumberOfTargets());
+            primitivO.writeInt(mifHeader.getCorrectedGroups().size());
+            for (String correctedGroup : mifHeader.getCorrectedGroups())
+                primitivO.writeObject(correctedGroup);
+            primitivO.writeInt(mifHeader.getSortedGroups().size());
+            for (String sortedGroup : mifHeader.getSortedGroups())
+                primitivO.writeObject(sortedGroup);
+            primitivO.writeInt(mifHeader.getGroupEdges().size());
+            for (GroupEdge groupEdge : mifHeader.getGroupEdges()) {
+                primitivO.writeObject(groupEdge);
+                primitivO.putKnownObject(groupEdge);
+            }
+        }
     }
 
     /** Thread unsafe: all writes must be in single thread and keep reads in order */
@@ -104,12 +107,12 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     @Override
     public void close() throws IOException {
         if (!closed) {
-            primitivOHybrid.endPrimitivOBlocks();
-            PrimitivO primitivO = primitivOHybrid.beginPrimitivO();
-            primitivO.writeObject(null);
-            primitivO.writeLong(originalNumberOfReads);
-            primitivO.write(getEndMagicBytes());
-            primitivOHybrid.endPrimitivO();
+            writer.close();
+            try (PrimitivO primitivO = primitivOHybrid.beginPrimitivO()) {
+                primitivO.writeObject(null);
+                primitivO.writeLong(originalNumberOfReads);
+                primitivO.write(getEndMagicBytes());
+            }
             primitivOHybrid.close();
             closed = true;
         }
