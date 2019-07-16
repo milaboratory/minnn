@@ -26,41 +26,22 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.pattern;
+package com.milaboratory.minnn.parser;
 
-import java.util.*;
+public class ParserConfiguration {
+    private Boolean defaultGroupsOverride = null;
 
-public abstract class MultipleReadsOperator extends Pattern {
-    protected final MultipleReadsOperator[] operandPatterns;
-    protected final SinglePattern[] singlePatterns;
-    private final boolean singlePatternOperands;
-    private LinkedHashSet<GroupEdge> groupEdges = null;
-
-    MultipleReadsOperator(PatternConfiguration conf, MultipleReadsOperator... operandPatterns) {
-        super(conf);
-        this.operandPatterns = operandPatterns;
-        this.singlePatterns = new SinglePattern[0];
-        this.singlePatternOperands = false;
+    public ParserConfiguration() {
     }
 
-    MultipleReadsOperator(PatternConfiguration conf, SinglePattern... singlePatterns) {
-        super(conf);
-        this.singlePatterns = singlePatterns;
-        this.operandPatterns = new MultipleReadsOperator[0];
-        this.singlePatternOperands = true;
+    ParserConfiguration(ParserConfiguration originalConf) {
     }
 
-    @Override
-    public ArrayList<GroupEdge> getGroupEdges() {
-        if (groupEdges == null) {
-            groupEdges = new LinkedHashSet<>();
-            for (Pattern pattern : singlePatternOperands ? singlePatterns : operandPatterns)
-                groupEdges.addAll(pattern.getGroupEdges());
-        }
-        return new ArrayList<>(groupEdges);
+    public boolean defaultGroupsOverride() {
+        return defaultGroupsOverride;
     }
 
-    public int getNumberOfPatterns() {
-        return Math.max(singlePatterns.length, operandPatterns.length);
+    void setDefaultGroupsOverride(boolean defaultGroupsOverride) {
+        this.defaultGroupsOverride = defaultGroupsOverride;
     }
 }

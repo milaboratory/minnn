@@ -33,12 +33,10 @@ import com.milaboratory.core.sequence.MultiNSequenceWithQuality;
 import java.util.ArrayList;
 
 public abstract class Pattern {
-    protected final PatternAligner patternAligner;
-    protected final boolean defaultGroupsOverride;
+    protected final PatternConfiguration conf;
 
-    Pattern(PatternAligner patternAligner, boolean defaultGroupsOverride) {
-        this.patternAligner = patternAligner;
-        this.defaultGroupsOverride = defaultGroupsOverride;
+    Pattern(PatternConfiguration conf) {
+        this.conf = conf;
     }
 
     /**
@@ -56,12 +54,8 @@ public abstract class Pattern {
      */
     public abstract ArrayList<GroupEdge> getGroupEdges();
 
-    public PatternAligner getPatternAligner() {
-        return patternAligner;
-    }
-
-    public boolean isDefaultGroupsOverride() {
-        return defaultGroupsOverride;
+    public PatternConfiguration getConfiguration() {
+        return conf;
     }
 
     /**

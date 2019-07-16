@@ -52,30 +52,27 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
     private final ArrayList<Integer> groupOffsets;
 
     public FuzzyMatchPattern(
-            PatternAligner patternAligner, boolean defaultGroupsOverride, NucleotideSequenceCaseSensitive patternSeq) {
-        this(patternAligner, defaultGroupsOverride, patternSeq, new ArrayList<>());
+            PatternConfiguration conf, NucleotideSequenceCaseSensitive patternSeq) {
+        this(conf, patternSeq, new ArrayList<>());
     }
 
     public FuzzyMatchPattern(
-            PatternAligner patternAligner, boolean defaultGroupsOverride, NucleotideSequenceCaseSensitive patternSeq,
-            int leftCut, int rightCut, int fixedLeftBorder, int fixedRightBorder) {
-        this(patternAligner, defaultGroupsOverride, patternSeq, leftCut, rightCut, fixedLeftBorder, fixedRightBorder,
-                new ArrayList<>());
+            PatternConfiguration conf, NucleotideSequenceCaseSensitive patternSeq, int leftCut, int rightCut,
+            int fixedLeftBorder, int fixedRightBorder) {
+        this(conf, patternSeq, leftCut, rightCut, fixedLeftBorder, fixedRightBorder, new ArrayList<>());
     }
 
     public FuzzyMatchPattern(
-            PatternAligner patternAligner, boolean defaultGroupsOverride, NucleotideSequenceCaseSensitive patternSeq,
+            PatternConfiguration conf, NucleotideSequenceCaseSensitive patternSeq,
             List<GroupEdgePosition> groupEdgePositions) {
-        this(patternAligner, defaultGroupsOverride, patternSeq, 0, 0, -1, -1,
-                groupEdgePositions);
+        this(conf, patternSeq, 0, 0, -1, -1, groupEdgePositions);
     }
 
     /**
-     * Find match with possible insertions and deletions using bitap and aligner. If fixedLeftBorder or fixedRightBorder
-     * is specified, find only matches near that border.
+     * Find match with possible insertions and deletions using bitap and aligner. If fixedLeftBorder
+     * or fixedRightBorder is specified, find only matches near that border.
      *
-     * @param patternAligner pattern aligner; it also provides information about maxErrors for bitap
-     * @param defaultGroupsOverride true if there is default groups override in any pattern in the query
+     * @param conf pattern configuration: it provides information about maxErrors for bitap
      * @param patternSeq sequence to find in the target
      * @param leftCut number of nucleotides that can be cut on the left without penalty
      * @param rightCut number of nucleotides that can be cut on the right without penalty
@@ -86,10 +83,9 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
      * @param groupEdgePositions list of group edges and their positions
      */
     public FuzzyMatchPattern(
-            PatternAligner patternAligner, boolean defaultGroupsOverride, NucleotideSequenceCaseSensitive patternSeq,
-            int leftCut, int rightCut, int fixedLeftBorder, int fixedRightBorder,
-            List<GroupEdgePosition> groupEdgePositions) {
-        super(patternAligner, defaultGroupsOverride);
+            PatternConfiguration conf, NucleotideSequenceCaseSensitive patternSeq, int leftCut, int rightCut,
+            int fixedLeftBorder, int fixedRightBorder, List<GroupEdgePosition> groupEdgePositions) {
+        super(conf);
         int size = patternSeq.size();
         if (leftCut + rightCut >= size)
             throw new IllegalArgumentException("Wrong arguments: leftCut=" + leftCut + ", rightCut=" + rightCut
@@ -155,7 +151,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
 
     @Override
     public int estimateMaxLength() {
-        return sequences.get(0).size() + patternAligner.bitapMaxErrors();
+        return sequences.get(0).size() + conf.bitapMaxErrors;
     }
 
     @Override
@@ -231,8 +227,8 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                 throw new IllegalStateException(toString() + ": trying to set fixed right border to " + position
                         + " when it is already fixed at " + newRightBorder + "!");
         }
-        return new FuzzyMatchPattern(patternAligner, defaultGroupsOverride, sequences.get(0), leftCut, rightCut,
-                newLeftBorder, newRightBorder, groupEdgePositions);
+        return new FuzzyMatchPattern(conf, sequences.get(0), leftCut, rightCut, newLeftBorder, newRightBorder,
+                groupEdgePositions);
     }
 
     private class FuzzyMatchingResult implements MatchingResult {
@@ -258,7 +254,6 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
         private class FuzzyMatchOutputPort implements OutputPort<MatchIntermediate> {
             private final static int BITAP_MAX_LENGTH = 63;
             private final boolean fixedBorder;
-            private final int maxErrors;
             private final boolean fairSorting;
             private final List<BitapPattern> bitapPatterns;
             private final List<BitapMatcherFilter> bitapMatcherFilters;
@@ -283,7 +278,6 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
             FuzzyMatchOutputPort(boolean fairSorting) {
                 this.fairSorting = fairSorting;
                 this.fixedBorder = (fixedLeftBorder != -1) || (fixedRightBorder != -1);
-                this.maxErrors = patternAligner.bitapMaxErrors();
                 this.bitapPatterns = new ArrayList<>();
                 this.bitapPositionCorrections = new ArrayList<>();
                 for (int i = 0; i < sequences.size(); i++) {
@@ -313,7 +307,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                             .mapToObj(i -> new HashSet<Integer>()).collect(Collectors.toCollection(ArrayList::new));
                 } else
                     this.bitapMatcherFilters = bitapPatterns.stream().map(bp -> new BitapMatcherFilter(
-                            bp.substitutionAndIndelMatcherLast(maxErrors, target.getSequence(), from, to)))
+                            bp.substitutionAndIndelMatcherLast(conf.bitapMaxErrors, target.getSequence(), from, to)))
                             .collect(Collectors.toList());
             }
 
@@ -332,7 +326,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
             }
 
             private MatchIntermediate takeUnfair() {
-                while (currentNumBitapErrors <= maxErrors) {
+                while (currentNumBitapErrors <= conf.bitapMaxErrors) {
                     while (currentIndex < sequences.size()) {
                         int position = correctBitapPosition(bitapMatcherFilters.get(currentIndex).findNext());
                         if (position == -1) {
@@ -347,13 +341,13 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                             else
                                 currentReturnedPositions.add(position);
                             NucleotideSequenceCaseSensitive currentSeq = sequences.get(currentIndex);
-                            Alignment<NucleotideSequenceCaseSensitive> alignment = patternAligner.align(
-                                    currentSeq, target, position);
-                            if (alignment.getScore() >= patternAligner.penaltyThreshold())
+                            Alignment<NucleotideSequenceCaseSensitive> alignment = conf.patternAligner.align(
+                                    conf, currentSeq, target, position);
+                            if (alignment.getScore() >= conf.scoreThreshold)
                                 return generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
                                         fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                                currentSeq.size()), 0, defaultGroupsOverride);
+                                                currentSeq.size()), 0, conf.defaultGroupsOverride);
                         }
                     }
                     currentIndex = 0;
@@ -412,14 +406,14 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                     do {
                         matchLastPosition = correctBitapPosition(currentBitapFilter.findNext());
                         if (matchLastPosition != -1) {
-                            alignment = patternAligner.align(currentSeq, target, matchLastPosition);
-                            if ((alignment.getScore() >= patternAligner.penaltyThreshold())
+                            alignment = conf.patternAligner.align(conf, currentSeq, target, matchLastPosition);
+                            if ((alignment.getScore() >= conf.scoreThreshold)
                                     && !uniqueRanges.contains(alignment.getSequence2Range())) {
                                 uniqueRanges.add(alignment.getSequence2Range());
                                 allMatchesList.add(generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
                                         fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                        currentSeq.size()), 0, defaultGroupsOverride));
+                                        currentSeq.size()), 0, conf.defaultGroupsOverride));
                             }
                         }
                     } while (matchLastPosition != -1);
@@ -434,7 +428,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
              */
             private void fillAllMatchesForFixedLeftBorder() {
                 ArrayList<MatchIntermediate> allMatchesList = new ArrayList<>();
-                PatternAligner fixedPatternAligner = patternAligner.setLeftBorder(fixedLeftBorder);
+                PatternConfiguration fixedConfiguration = conf.setLeftBorder(fixedLeftBorder);
                 Alignment<NucleotideSequenceCaseSensitive> alignment;
 
                 for (currentIndex = 0; currentIndex < sequences.size(); currentIndex++) {
@@ -443,19 +437,20 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                     NucleotideSequenceCaseSensitive currentSeq = sequences.get(currentIndex);
                     HashSet<Range> uniqueRanges = new HashSet<>();
                     for (int rightBorder = Math.max(fixedLeftBorder, fixedLeftBorder + currentSeq.size()
-                            - fixedPatternAligner.bitapMaxErrors() - 1);
+                            - fixedConfiguration.bitapMaxErrors - 1);
                          rightBorder <= Math.min(to - 1, fixedLeftBorder + currentSeq.size()
-                                 + fixedPatternAligner.bitapMaxErrors() - 1);
+                                 + fixedConfiguration.bitapMaxErrors - 1);
                          rightBorder++)
                         if ((rightBorder >= fixedLeftBorder) && (rightBorder < target.size())) {
-                            alignment = fixedPatternAligner.align(currentSeq, target, rightBorder);
-                            if ((alignment.getScore() >= fixedPatternAligner.penaltyThreshold())
+                            alignment = fixedConfiguration.patternAligner.align(fixedConfiguration, currentSeq, target,
+                                    rightBorder);
+                            if ((alignment.getScore() >= fixedConfiguration.scoreThreshold)
                                     && !uniqueRanges.contains(alignment.getSequence2Range())) {
                                 uniqueRanges.add(alignment.getSequence2Range());
                                 allMatchesList.add(generateMatch(alignment, target, targetId,
                                         firstUppercase(currentSeq), lastUppercase(currentSeq),
                                         fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                        currentSeq.size()), 0, defaultGroupsOverride));
+                                        currentSeq.size()), 0, conf.defaultGroupsOverride));
                             }
                         }
                 }
@@ -469,20 +464,21 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
              */
             private void fillAllMatchesForFixedRightBorder() {
                 ArrayList<MatchIntermediate> allMatchesList = new ArrayList<>();
-                PatternAligner fixedPatternAligner = (fixedLeftBorder == -1) ? patternAligner
-                        : patternAligner.setLeftBorder(fixedLeftBorder);
+                PatternConfiguration fixedConfiguration = (fixedLeftBorder == -1) ? conf
+                        : conf.setLeftBorder(fixedLeftBorder);
                 Alignment<NucleotideSequenceCaseSensitive> alignment;
 
                 for (currentIndex = 0; currentIndex < sequences.size(); currentIndex++) {
                     if (bitapMatcherFilters.get(currentIndex).findNext() == -1)
                         continue;
                     NucleotideSequenceCaseSensitive currentSeq = sequences.get(currentIndex);
-                    alignment = fixedPatternAligner.align(currentSeq, target, fixedRightBorder);
-                    if (alignment.getScore() >= fixedPatternAligner.penaltyThreshold())
+                    alignment = fixedConfiguration.patternAligner.align(fixedConfiguration, currentSeq, target,
+                            fixedRightBorder);
+                    if (alignment.getScore() >= fixedConfiguration.scoreThreshold)
                         allMatchesList.add(generateMatch(alignment, target, targetId,
                                 firstUppercase(currentSeq), lastUppercase(currentSeq),
                                 fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                currentSeq.size()), 0, defaultGroupsOverride));
+                                currentSeq.size()), 0, conf.defaultGroupsOverride));
                 }
 
                 allMatches = new MatchIntermediate[allMatchesList.size()];
@@ -505,7 +501,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                 else {
                     int targetLength = target.size();
                     int correctPosition = position + correction;
-                    if (correctPosition >= targetLength + maxErrors)
+                    if (correctPosition >= targetLength + conf.bitapMaxErrors)
                         return -1;
                     else
                         return Math.min(correctPosition, targetLength - 1);

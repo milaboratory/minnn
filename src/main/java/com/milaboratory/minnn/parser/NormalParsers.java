@@ -37,16 +37,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.parser.BracketsType.*;
-import static com.milaboratory.minnn.parser.Parser.defaultGroupsOverride;
 import static com.milaboratory.minnn.parser.ParserUtils.*;
 
 /**
  * Parsers for objects and their parameters for normal syntax.
  */
 final class NormalParsers {
-    private final PatternAligner patternAligner;
+    private final ParserConfiguration conf;
     private final String query;
-    private final boolean defaultGroupsOverride;
     private final List<BracketsPair> squareBracketsPairs;
     private final ArrayList<Integer> startStickMarkers;
     private final ArrayList<Integer> endStickMarkers;
@@ -54,13 +52,12 @@ final class NormalParsers {
     private final ArrayList<BorderToken> borderTokens;
     private final List<NormalSyntaxGroupName> groupNames;
 
-    NormalParsers(PatternAligner patternAligner, String query, List<BracketsPair> squareBracketsPairs,
+    NormalParsers(ParserConfiguration conf, String query, List<BracketsPair> squareBracketsPairs,
                   ArrayList<Integer> startStickMarkers, ArrayList<Integer> endStickMarkers,
                   ArrayList<ScoreThreshold> scoreThresholds, ArrayList<BorderToken> borderTokens,
                   List<NormalSyntaxGroupName> groupNames) {
-        this.patternAligner = patternAligner;
+        this.conf = conf;
         this.query = query;
-        this.defaultGroupsOverride = defaultGroupsOverride(query, false);
         this.squareBracketsPairs = squareBracketsPairs;
         this.startStickMarkers = startStickMarkers;
         this.endStickMarkers = endStickMarkers;

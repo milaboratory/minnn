@@ -41,8 +41,8 @@ import static com.milaboratory.minnn.parser.SimplifiedParsers.*;
 import static com.milaboratory.minnn.parser.SimplifiedSyntaxStrings.*;
 
 final class SimplifiedTokenizer extends Tokenizer {
-    SimplifiedTokenizer(PatternAligner patternAligner, boolean defaultGroupsOverride) {
-        super(patternAligner, defaultGroupsOverride);
+    SimplifiedTokenizer(ParserConfiguration conf) {
+        super(conf);
     }
 
     /**

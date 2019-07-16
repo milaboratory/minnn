@@ -41,8 +41,8 @@ public abstract class SinglePattern extends Pattern {
      */
     protected byte targetId = 1;
 
-    SinglePattern(PatternAligner patternAligner, boolean defaultGroupsOverride) {
-        super(patternAligner, defaultGroupsOverride);
+    SinglePattern(PatternConfiguration conf) {
+        super(conf);
     }
 
     @Override

@@ -34,9 +34,8 @@ import com.milaboratory.core.sequence.MultiNSequenceWithQuality;
 import java.util.ArrayList;
 
 public final class NotOperator extends MultipleReadsOperator {
-    public NotOperator(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                       MultipleReadsOperator... operandPatterns) {
-        super(patternAligner, defaultGroupsOverride, operandPatterns);
+    public NotOperator(PatternConfiguration conf, MultipleReadsOperator... operandPatterns) {
+        super(conf, operandPatterns);
         if (operandPatterns.length != 1)
             throw new IllegalArgumentException("Not operator must take exactly 1 operand!");
     }
@@ -91,7 +90,7 @@ public final class NotOperator extends MultipleReadsOperator {
                 if (operandIsMatching)
                     return null;
                 else {
-                    return new MatchIntermediate(1, patternAligner.notResultScore(),
+                    return new MatchIntermediate(1, conf.notResultScore,
                             -1, -1,
                             new ArrayList<>(), new NullMatchedRange(0));
                 }

@@ -29,16 +29,16 @@
 package com.milaboratory.minnn.parser;
 
 import com.milaboratory.minnn.pattern.Pattern;
-import com.milaboratory.minnn.pattern.PatternAligner;
 
 import java.util.stream.IntStream;
 
 public final class Parser {
     public final static int BUILTIN_READ_GROUPS_NUM = 127;
-    private final PatternAligner patternAligner;
+    private final ParserConfiguration conf;
 
-    public Parser(PatternAligner patternAligner) {
-        this.patternAligner = patternAligner;
+    public Parser(ParserConfiguration conf) {
+        // ParserConfiguration has mutable field defaultGroupsOverride; copying the object to keep the original intact
+        this.conf = new ParserConfiguration(conf);
     }
 
     public Pattern parseQuery(String query) throws ParserException {
@@ -56,9 +56,14 @@ public final class Parser {
     public Pattern parseQuery(String query, ParserFormat format) throws ParserException {
         if (query.equals("")) throw new ParserException("Query is empty!");
         TokenizedString tokenizedString = new TokenizedString(query);
-        Tokenizer tokenizer = (format == ParserFormat.NORMAL)
-                ? new NormalTokenizer(patternAligner, defaultGroupsOverride(query, false))
-                : new SimplifiedTokenizer(patternAligner, defaultGroupsOverride(query, true));
+        Tokenizer tokenizer;
+        if (format == ParserFormat.NORMAL) {
+            conf.setDefaultGroupsOverride(defaultGroupsOverride(query, false));
+            tokenizer = new NormalTokenizer(conf);
+        } else {
+            conf.setDefaultGroupsOverride(defaultGroupsOverride(query, true));
+            tokenizer = new SimplifiedTokenizer(conf);
+        }
         tokenizer.tokenize(tokenizedString);
         return tokenizedString.getFinalPattern();
     }
@@ -70,7 +75,7 @@ public final class Parser {
      * @param simplifiedSyntax  true if it is simplified syntax, otherwise false
      * @return                  true if there is default group override
      */
-    static boolean defaultGroupsOverride(String query, boolean simplifiedSyntax) {
+    private static boolean defaultGroupsOverride(String query, boolean simplifiedSyntax) {
         String strippedQuery = query.replaceAll("\\s+", "");
         return IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM).mapToObj(i -> "R" + i).anyMatch(groupName -> {
             if (simplifiedSyntax)

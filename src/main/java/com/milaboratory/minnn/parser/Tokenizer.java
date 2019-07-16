@@ -28,15 +28,11 @@
  */
 package com.milaboratory.minnn.parser;
 
-import com.milaboratory.minnn.pattern.PatternAligner;
-
 abstract class Tokenizer {
-    protected final PatternAligner patternAligner;
-    protected final boolean defaultGroupsOverride;
+    protected final ParserConfiguration conf;
 
-    Tokenizer(PatternAligner patternAligner, boolean defaultGroupsOverride) {
-        this.patternAligner = patternAligner;
-        this.defaultGroupsOverride = defaultGroupsOverride;
+    Tokenizer(ParserConfiguration conf) {
+        this.conf = conf;
     }
 
     abstract void tokenize(TokenizedString tokenizedString) throws ParserException;

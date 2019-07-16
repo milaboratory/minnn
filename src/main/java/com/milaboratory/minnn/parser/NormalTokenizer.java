@@ -39,8 +39,8 @@ import static com.milaboratory.minnn.parser.ParserFormat.*;
 import static com.milaboratory.minnn.parser.ParserUtils.*;
 
 final class NormalTokenizer extends Tokenizer {
-    NormalTokenizer(PatternAligner patternAligner, boolean defaultGroupsOverride) {
-        super(patternAligner, defaultGroupsOverride);
+    NormalTokenizer(ParserConfiguration conf) {
+        super(conf);
     }
 
     @Override
@@ -58,7 +58,7 @@ final class NormalTokenizer extends Tokenizer {
         List<NormalSyntaxGroupName> groupNames = getGroupNames(fullString, parenthesesPairs);
         groupNames.sort(Comparator.comparingInt(gn -> gn.start));
 
-        NormalParsers normalParsers = new NormalParsers(patternAligner, fullString, squareBracketsPairs,
+        NormalParsers normalParsers = new NormalParsers(conf, fullString, squareBracketsPairs,
                 startStickMarkers, endStickMarkers, scoreThresholds, borderTokens, groupNames);
 
         normalParsers.parseRepeatPatterns(getRepeatPatternBraces(bracesPairs, borderBracesPairs))
@@ -112,7 +112,7 @@ final class NormalTokenizer extends Tokenizer {
         boolean duplicateGroupsAllowed = (finalPattern instanceof FullReadPattern
                 && ((FullReadPattern)finalPattern).getOperand() instanceof OrPattern)
                 || finalPattern instanceof OrOperator;
-        ArrayList<GroupEdge> groupEdges = defaultGroupsOverride ? finalPattern.getGroupEdges()
+        ArrayList<GroupEdge> groupEdges = conf.defaultGroupsOverride() ? finalPattern.getGroupEdges()
                 : filterGroupEdgesForValidation(finalPattern.getGroupEdges());
         validateGroupEdges(groupEdges, true, duplicateGroupsAllowed);
     }
