@@ -39,9 +39,8 @@ import static com.milaboratory.minnn.pattern.MatchValidationType.ORDER;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorterPortLimits;
 
 public final class PlusPattern extends MultiplePatternsOperator implements CanFixBorders {
-    public PlusPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                       SinglePattern... operandPatterns) {
-        super(patternAligner, defaultGroupsOverride, operandPatterns);
+    public PlusPattern(PatternConfiguration conf, SinglePattern... operandPatterns) {
+        super(conf, operandPatterns);
     }
 
     @Override
@@ -65,7 +64,7 @@ public final class PlusPattern extends MultiplePatternsOperator implements CanFi
         if (operandPatterns[targetOperandIndex] instanceof CanFixBorders) {
             SinglePattern newOperand = ((CanFixBorders)(operandPatterns[targetOperandIndex]))
                     .fixBorder(left, position);
-            return new PlusPattern(patternAligner, defaultGroupsOverride, IntStream.range(0, operandPatterns.length)
+            return new PlusPattern(conf, IntStream.range(0, operandPatterns.length)
                     .mapToObj((int i) -> (i == targetOperandIndex ? newOperand : operandPatterns[i]))
                     .toArray(SinglePattern[]::new));
         } else
@@ -85,10 +84,10 @@ public final class PlusPattern extends MultiplePatternsOperator implements CanFi
 
         @Override
         public OutputPort<MatchIntermediate> getMatches(boolean fairSorting) {
-            ApproximateSorterConfiguration conf = new ApproximateSorterConfiguration(target, from, to, patternAligner,
-                    true, fairSorting, ORDER, unfairSorterPortLimits.get(PlusPattern.class),
-                    operandPatterns);
-            return new ApproximateSorter(conf).getOutputPort();
+            ApproximateSorterConfiguration approximateSorterConfiguration = new ApproximateSorterConfiguration(target,
+                    from, to, conf, true, fairSorting, ORDER,
+                    unfairSorterPortLimits.get(PlusPattern.class), operandPatterns);
+            return new ApproximateSorter(approximateSorterConfiguration).getOutputPort();
         }
     }
 }

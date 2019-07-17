@@ -43,9 +43,8 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
     private final Filter filter;
     private final Pattern pattern;
 
-    public FilterPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                         Filter filter, Pattern pattern) {
-        super(patternAligner, defaultGroupsOverride);
+    public FilterPattern(PatternConfiguration conf, Filter filter, Pattern pattern) {
+        super(conf);
         this.filter = filter;
         this.pattern = pattern;
     }
@@ -100,8 +99,7 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
     @Override
     public SinglePattern fixBorder(boolean left, int position) {
         if (pattern instanceof CanFixBorders) {
-            return new FilterPattern(patternAligner, defaultGroupsOverride, filter,
-                    ((CanFixBorders)pattern).fixBorder(left, position));
+            return new FilterPattern(conf, filter, ((CanFixBorders)pattern).fixBorder(left, position));
         } else
             return this;
     }

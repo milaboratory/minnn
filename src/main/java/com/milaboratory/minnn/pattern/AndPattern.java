@@ -38,8 +38,8 @@ import static com.milaboratory.minnn.pattern.MatchValidationType.INTERSECTION;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorterPortLimits;
 
 public final class AndPattern extends MultiplePatternsOperator {
-    public AndPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, SinglePattern... operandPatterns) {
-        super(patternAligner, defaultGroupsOverride, operandPatterns);
+    public AndPattern(PatternConfiguration conf, SinglePattern... operandPatterns) {
+        super(conf, operandPatterns);
     }
 
     @Override
@@ -70,10 +70,10 @@ public final class AndPattern extends MultiplePatternsOperator {
 
         @Override
         public OutputPort<MatchIntermediate> getMatches(boolean fairSorting) {
-            ApproximateSorterConfiguration conf = new ApproximateSorterConfiguration(target, from, to, patternAligner,
-                    true, fairSorting, INTERSECTION, unfairSorterPortLimits.get(AndPattern.class),
-                    operandPatterns);
-            return new ApproximateSorter(conf).getOutputPort();
+            ApproximateSorterConfiguration approximateSorterConfiguration = new ApproximateSorterConfiguration(target,
+                    from, to, conf, true, fairSorting, INTERSECTION,
+                    unfairSorterPortLimits.get(AndPattern.class), operandPatterns);
+            return new ApproximateSorter(approximateSorterConfiguration).getOutputPort();
         }
     }
 }

@@ -72,15 +72,19 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
      * Find match with possible insertions and deletions using bitap and aligner. If fixedLeftBorder
      * or fixedRightBorder is specified, find only matches near that border.
      *
-     * @param conf pattern configuration: it provides information about maxErrors for bitap
-     * @param patternSeq sequence to find in the target
-     * @param leftCut number of nucleotides that can be cut on the left without penalty
-     * @param rightCut number of nucleotides that can be cut on the right without penalty
-     * @param fixedLeftBorder position in target where must be the left border; -1 if there is no fixed left border
-     *                        -2 - x means coordinate from the end of target; fixedLeftBorder is inclusive
-     * @param fixedRightBorder position in target where must be the right border; -1 if there is no fixed right border
-     *                         -2 - x means coordinate from the end of target; fixedRightBorder is inclusive
-     * @param groupEdgePositions list of group edges and their positions
+     * @param conf                  pattern configuration: it provides information about maxErrors for bitap
+     * @param patternSeq            sequence to find in the target
+     * @param leftCut               number of nucleotides that can be cut on the left without penalty
+     * @param rightCut              number of nucleotides that can be cut on the right without penalty
+     * @param fixedLeftBorder       position in target where must be the left border;
+     *                              -1 if there is no fixed left border;
+     *                              -2 - x means coordinate from the end of target;
+     *                              fixedLeftBorder is inclusive
+     * @param fixedRightBorder      position in target where must be the right border;
+     *                              -1 if there is no fixed right border;
+     *                              -2 - x means coordinate from the end of target;
+     *                              fixedRightBorder is inclusive
+     * @param groupEdgePositions    list of group edges and their positions
      */
     public FuzzyMatchPattern(
             PatternConfiguration conf, NucleotideSequenceCaseSensitive patternSeq, int leftCut, int rightCut,

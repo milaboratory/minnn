@@ -157,13 +157,14 @@ public final class ApproximateSorter {
                     Range rangeJ = sortedMatches[j].getRange();
                     Range intersection = rangeI.intersection(rangeJ);
                     if (intersection != null) {
-                        rangesCombinationPenalty += conf.patternAligner.overlapPenalty(target, intersection.getLower(),
-                                intersection.length());
+                        rangesCombinationPenalty += conf.patternConfiguration.patternAligner.overlapPenalty(
+                                conf.patternConfiguration, target, intersection.getLower(), intersection.length());
                         maxIntersection = Math.max(maxIntersection, intersection.length());
                     }
                     if ((conf.matchValidationType == FOLLOWING) && (j == i - 1)
                             && (rangeI.getLower() > rangeJ.getUpper()))
-                        rangesCombinationPenalty += conf.patternAligner.insertionPenalty(target, rangeJ.getUpper(),
+                        rangesCombinationPenalty += conf.patternConfiguration.patternAligner.insertionPenalty(
+                                conf.patternConfiguration, target, rangeJ.getUpper(),
                                 rangeI.getLower() - rangeJ.getUpper());
                 }
                 if (maxIntersection > 0) {
@@ -229,7 +230,7 @@ public final class ApproximateSorter {
      */
     private ArrayList<MatchIntermediate> takeFilteredMatches() {
         ArrayList<MatchIntermediate> allMatchesFiltered = new ArrayList<>();
-        long penaltyThreshold = conf.patternAligner.penaltyThreshold();
+        long scoreThreshold = conf.patternConfiguration.scoreThreshold;
         int numberOfOperands = conf.operandPatterns.length;
         int[] matchIndexes = new int[numberOfOperands];
         MatchIntermediate[] currentMatches = new MatchIntermediate[numberOfOperands];
@@ -273,7 +274,7 @@ public final class ApproximateSorter {
                         allIncompatibleIndexes.add(incompatibleIndexes);
                     else {
                         MatchIntermediate combinedMatch = combineMatches(currentMatches);
-                        if ((combinedMatch != null) && (combinedMatch.getScore() >= penaltyThreshold))
+                        if ((combinedMatch != null) && (combinedMatch.getScore() >= scoreThreshold))
                             allMatchesFiltered.add(combinedMatch);
                     }
                 }
@@ -300,7 +301,7 @@ public final class ApproximateSorter {
                     IncompatibleIndexes incompatibleIndexes = findIncompatibleIndexes(currentMatches, matchIndexes);
                     if (incompatibleIndexes == null) {
                         MatchIntermediate combinedMatch = combineMatches(currentMatches);
-                        if ((combinedMatch != null) && (combinedMatch.getScore() >= penaltyThreshold))
+                        if ((combinedMatch != null) && (combinedMatch.getScore() >= scoreThreshold))
                             allMatchesFiltered.add(combinedMatch);
                     }
                 } else
@@ -426,9 +427,11 @@ public final class ApproximateSorter {
         if (intersection == null)
             return false;
         else {
-            PatternAligner patternAligner = conf.patternAligner;
+            PatternConfiguration patternConfiguration = conf.patternConfiguration;
+            PatternAligner patternAligner = patternConfiguration.patternAligner;
             int overlap = intersection.length();
-            int maxOverlap = (patternAligner.maxOverlap() == -1) ? Integer.MAX_VALUE : patternAligner.maxOverlap();
+            int maxOverlap = (patternConfiguration.maxOverlap == -1) ? Integer.MAX_VALUE
+                    : patternConfiguration.maxOverlap;
             int maxOverlapLeft, maxOverlapRight;
             if (match0.getRange().getLower() < match1.getRange().getLower()) {
                 maxOverlapLeft = (match0.getRightUppercaseDistance() == -1) ? Integer.MAX_VALUE
@@ -442,8 +445,9 @@ public final class ApproximateSorter {
                         : match0.getLeftUppercaseDistance() - 1;
             }
             maxOverlap = Math.min(maxOverlap, Math.min(maxOverlapLeft, maxOverlapRight));
-            return (maxOverlap < overlap) || (patternAligner.overlapPenalty(target, intersection.getLower(), overlap)
-                    < patternAligner.penaltyThreshold());
+            return (maxOverlap < overlap)
+                    || (patternAligner.overlapPenalty(patternConfiguration, target, intersection.getLower(), overlap)
+                    < patternConfiguration.scoreThreshold);
         }
     }
 
@@ -459,9 +463,11 @@ public final class ApproximateSorter {
         if (insertionLength <= 0)
             return false;
         else {
-            PatternAligner patternAligner = conf.patternAligner;
-            return (patternAligner.insertionPenalty(target, leftMatch.getRange().getUpper(), insertionLength)
-                        < patternAligner.penaltyThreshold())
+            PatternConfiguration patternConfiguration = conf.patternConfiguration;
+            PatternAligner patternAligner = patternConfiguration.patternAligner;
+            return (patternAligner.insertionPenalty(
+                    patternConfiguration, target, leftMatch.getRange().getUpper(), insertionLength)
+                    < patternConfiguration.scoreThreshold)
                     || (leftMatch.getRightUppercaseDistance() == 0) || (rightMatch.getLeftUppercaseDistance() == 0);
         }
     }
@@ -476,7 +482,7 @@ public final class ApproximateSorter {
      */
     private int estimateMaxOverlap(int operandIndex, MatchIntermediate previousMatch,
                                    boolean overlappingPatternIsLeft) {
-        return minValid(conf.patternAligner.maxOverlap(), previousMatch.getRange().length() - 1,
+        return minValid(conf.patternConfiguration.maxOverlap, previousMatch.getRange().length() - 1,
                 overlappingPatternIsLeft ? previousMatch.getRightUppercaseDistance()
                         : previousMatch.getLeftUppercaseDistance(),
                 ((SinglePattern)conf.operandPatterns[operandIndex]).estimateMaxOverlap());
@@ -663,7 +669,7 @@ public final class ApproximateSorter {
 
     private class MatchesOutputPort implements OutputPort<MatchIntermediate> {
         private ArrayList<MatchIntermediate> allMatchesFiltered;
-        private long penaltyThreshold = conf.patternAligner.penaltyThreshold();
+        private long scoreThreshold = conf.patternConfiguration.scoreThreshold;
         private int numberOfPatterns = conf.operandPatterns.length;
         private int filteredMatchesCount = 0;
         private int currentMatchIndex = 0;
@@ -929,7 +935,7 @@ public final class ApproximateSorter {
                                 allIncompatibleIndexes.add(incompatibleIndexes);
                         } else {
                             MatchIntermediate combinedMatch = combineMatches(currentMatches);
-                            if ((combinedMatch != null) && (combinedMatch.getScore() >= penaltyThreshold))
+                            if ((combinedMatch != null) && (combinedMatch.getScore() >= scoreThreshold))
                                 return combinedMatch;
                         }
                     }

@@ -32,12 +32,12 @@ import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
 
 public class PatternConfiguration {
     public final boolean defaultGroupsOverride;
-    final PatternAligner patternAligner;
-    final PatternAndTargetAlignmentScoring scoring;
-    final long scoreThreshold;
+    public final PatternAligner patternAligner;
+    public final PatternAndTargetAlignmentScoring scoring;
+    public final long scoreThreshold;
     final long singleOverlapPenalty;
     final int bitapMaxErrors;
-    final int maxOverlap;
+    public final int maxOverlap;
     final int leftBorder;
     final long notResultScore;
 

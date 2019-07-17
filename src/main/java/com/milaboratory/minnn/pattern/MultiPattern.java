@@ -38,9 +38,8 @@ import static com.milaboratory.minnn.pattern.MatchValidationType.LOGICAL_AND;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorterPortLimits;
 
 public final class MultiPattern extends MultipleReadsOperator {
-    public MultiPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                        SinglePattern... operandPatterns) {
-        super(patternAligner, defaultGroupsOverride, operandPatterns);
+    public MultiPattern(PatternConfiguration conf, SinglePattern... operandPatterns) {
+        super(conf, operandPatterns);
         for (byte i = 0; i < operandPatterns.length; i++) {
             if (!(operandPatterns[i] instanceof FullReadPattern))
                 throw new IllegalArgumentException("All MultiPattern arguments must be FullReadPattern, got "
@@ -77,10 +76,10 @@ public final class MultiPattern extends MultipleReadsOperator {
 
         @Override
         public OutputPort<MatchIntermediate> getMatches(boolean fairSorting) {
-            ApproximateSorterConfiguration conf = new ApproximateSorterConfiguration(target, patternAligner,
-                    true, true, fairSorting, LOGICAL_AND,
+            ApproximateSorterConfiguration approximateSorterConfiguration = new ApproximateSorterConfiguration(target,
+                    conf, true, true, fairSorting, LOGICAL_AND,
                     unfairSorterPortLimits.get(MultiPattern.class), singlePatterns);
-            return new ApproximateSorter(conf).getOutputPort();
+            return new ApproximateSorter(approximateSorterConfiguration).getOutputPort();
         }
     }
 }

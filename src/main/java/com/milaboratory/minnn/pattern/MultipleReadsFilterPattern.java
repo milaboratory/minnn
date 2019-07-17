@@ -37,12 +37,12 @@ public final class MultipleReadsFilterPattern extends MultipleReadsOperator {
     private final FilterPattern filterPattern;
     private final Filter filter;
 
-    public MultipleReadsFilterPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, Filter filter,
-                                      MultipleReadsOperator... operandPatterns) {
-        super(patternAligner, defaultGroupsOverride, operandPatterns);
+    public MultipleReadsFilterPattern(
+            PatternConfiguration conf, Filter filter, MultipleReadsOperator... operandPatterns) {
+        super(conf, operandPatterns);
         if (operandPatterns.length != 1)
             throw new IllegalArgumentException("Filter pattern must take exactly 1 operand pattern!");
-        this.filterPattern = new FilterPattern(patternAligner, defaultGroupsOverride, filter, operandPatterns[0]);
+        this.filterPattern = new FilterPattern(conf, filter, operandPatterns[0]);
         this.filter = filter;
     }
 
