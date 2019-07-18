@@ -44,14 +44,13 @@ final class SimplifiedParsers {
     /**
      * Parse FuzzyMatchPattern parameters; group edge positions must be already parsed in this stage.
      *
-     * @param patternAligner pattern aligner
-     * @param defaultGroupsOverride true if there is default groups override in any pattern in the query
+     * @param conf parser configuration
      * @param str string containing FuzzyMatchPattern arguments which were inside parentheses
      * @param groupEdgePositions parsed group edge positions
      * @return FuzzyMatchPattern
      */
-    static FuzzyMatchPattern parseFuzzyMatchPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                                    String str, ArrayList<GroupEdgePosition> groupEdgePositions)
+    static FuzzyMatchPattern parseFuzzyMatchPattern(
+            ParserConfiguration conf, String str, ArrayList<GroupEdgePosition> groupEdgePositions)
             throws ParserException {
         List<QuotesPair> quotesPairs = getAllQuotes(str);
         int[] commaPositions = new int[5];
@@ -82,7 +81,7 @@ final class SimplifiedParsers {
                 throw new ParserException("Error while parsing " + str + ": expected ', [', found '"
                         + str.substring(commaPositions[4]) + "'");
 
-        return new FuzzyMatchPattern(patternAligner, defaultGroupsOverride, seq, leftCut, rightCut, fixedLeftBorder,
+        return new FuzzyMatchPattern(conf.getPatternConfiguration(), seq, leftCut, rightCut, fixedLeftBorder,
                 fixedRightBorder, groupEdgePositions);
     }
 

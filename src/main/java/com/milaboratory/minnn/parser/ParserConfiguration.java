@@ -28,20 +28,56 @@
  */
 package com.milaboratory.minnn.parser;
 
-public class ParserConfiguration {
-    private Boolean defaultGroupsOverride = null;
+import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
+import com.milaboratory.minnn.pattern.BasePatternAligner;
+import com.milaboratory.minnn.pattern.PatternConfiguration;
 
-    public ParserConfiguration() {
+import java.util.Objects;
+
+public class ParserConfiguration {
+    private final PatternAndTargetAlignmentScoring scoring;
+    private final long scoreThreshold;
+    private final long singleOverlapPenalty;
+    private final int bitapMaxErrors;
+    private final int maxOverlap;
+    private final long notResultScore;
+    private PatternConfiguration patternConfiguration;
+    private Boolean defaultGroupsOverride;
+
+    public ParserConfiguration(PatternAndTargetAlignmentScoring scoring, long scoreThreshold,
+                               long singleOverlapPenalty, int bitapMaxErrors, int maxOverlap, long notResultScore) {
+        this.scoring = scoring;
+        this.scoreThreshold = scoreThreshold;
+        this.singleOverlapPenalty = singleOverlapPenalty;
+        this.bitapMaxErrors = bitapMaxErrors;
+        this.maxOverlap = maxOverlap;
+        this.notResultScore = notResultScore;
+        this.patternConfiguration = null;
+        this.defaultGroupsOverride = null;
     }
 
     ParserConfiguration(ParserConfiguration originalConf) {
+        this.scoring = originalConf.scoring;
+        this.scoreThreshold = originalConf.scoreThreshold;
+        this.singleOverlapPenalty = originalConf.singleOverlapPenalty;
+        this.bitapMaxErrors = originalConf.bitapMaxErrors;
+        this.maxOverlap = originalConf.maxOverlap;
+        this.notResultScore = originalConf.notResultScore;
+        this.patternConfiguration = null;
+        this.defaultGroupsOverride = null;
     }
 
-    public boolean defaultGroupsOverride() {
-        return defaultGroupsOverride;
-    }
-
-    void setDefaultGroupsOverride(boolean defaultGroupsOverride) {
+    void init(boolean defaultGroupsOverride) {
+        this.patternConfiguration = new PatternConfiguration(defaultGroupsOverride, new BasePatternAligner(), scoring,
+                scoreThreshold, singleOverlapPenalty, bitapMaxErrors, maxOverlap, -1, notResultScore);
         this.defaultGroupsOverride = defaultGroupsOverride;
+    }
+
+    PatternConfiguration getPatternConfiguration() {
+        return Objects.requireNonNull(patternConfiguration);
+    }
+
+    boolean isDefaultGroupsOverride() {
+        return Objects.requireNonNull(defaultGroupsOverride);
     }
 }

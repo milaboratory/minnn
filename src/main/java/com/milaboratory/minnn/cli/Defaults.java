@@ -49,6 +49,7 @@ public final class Defaults {
     public final static byte DEFAULT_BAD_QUALITY = (byte)10;
     public final static int DEFAULT_MAX_QUALITY_PENALTY = -4;
     public final static long DEFAULT_SINGLE_OVERLAP_PENALTY = DEFAULT_GAP_SCORE;
+    public final static long DEFAULT_NOT_RESULT_SCORE = 0;
     public final static int DEFAULT_THREADS = 4;
     public final static MinnnDataFormat DEFAULT_INPUT_FORMAT = FASTQ;
     public final static int DEFAULT_SORT_MIN_CHUNK_SIZE = 16384;

@@ -41,6 +41,18 @@ public class PatternConfiguration {
     final int leftBorder;
     final long notResultScore;
 
+    /**
+     * @param defaultGroupsOverride     true if there is default groups override in any pattern in the query
+     * @param patternAligner            pattern aligner
+     * @param scoring                   scoring for pattern and target alignment
+     * @param scoreThreshold            matches with score below this threshold will be considered invalid
+     * @param singleOverlapPenalty      0 or negative; this is penalty for 1 nucleotide overlap between 2 patterns
+     * @param bitapMaxErrors            0 or positive; max errors to use in bitap matcher
+     * @param maxOverlap                0 or positive; maximal allowed overlap for two intersecting sub-patterns
+     * @param leftBorder                fixed left border position for alignment, -1 if not specified;
+     *                                  if left border is specified, global aligner is used
+     * @param notResultScore            score for result of Not operator
+     */
     public PatternConfiguration(
             boolean defaultGroupsOverride, PatternAligner patternAligner, PatternAndTargetAlignmentScoring scoring,
             long scoreThreshold, long singleOverlapPenalty, int bitapMaxErrors, int maxOverlap, int leftBorder,

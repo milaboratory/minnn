@@ -112,7 +112,7 @@ final class NormalTokenizer extends Tokenizer {
         boolean duplicateGroupsAllowed = (finalPattern instanceof FullReadPattern
                 && ((FullReadPattern)finalPattern).getOperand() instanceof OrPattern)
                 || finalPattern instanceof OrOperator;
-        ArrayList<GroupEdge> groupEdges = conf.defaultGroupsOverride() ? finalPattern.getGroupEdges()
+        ArrayList<GroupEdge> groupEdges = conf.isDefaultGroupsOverride() ? finalPattern.getGroupEdges()
                 : filterGroupEdgesForValidation(finalPattern.getGroupEdges());
         validateGroupEdges(groupEdges, true, duplicateGroupsAllowed);
     }

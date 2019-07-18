@@ -33,11 +33,10 @@ import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
 import com.milaboratory.minnn.io.MinnnDataFormat;
 import com.milaboratory.minnn.io.ReadProcessor;
 import com.milaboratory.minnn.parser.Parser;
+import com.milaboratory.minnn.parser.ParserConfiguration;
 import com.milaboratory.minnn.parser.ParserException;
-import com.milaboratory.minnn.pattern.BasePatternAligner;
 import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.minnn.pattern.Pattern;
-import com.milaboratory.minnn.pattern.PatternAligner;
 import picocli.CommandLine.*;
 
 import java.util.*;
@@ -69,9 +68,8 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     public void run1() {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(matchScore, mismatchScore,
                 gapScore, uppercaseMismatchScore, goodQuality, badQuality, maxQualityPenalty);
-        PatternAligner patternAligner = new BasePatternAligner(scoring, scoreThreshold, singleOverlapPenalty,
-                bitapMaxErrors, maxOverlap);
-        Parser patternParser = new Parser(patternAligner);
+        Parser patternParser = new Parser(new ParserConfiguration(scoring, scoreThreshold, singleOverlapPenalty,
+                bitapMaxErrors, maxOverlap, DEFAULT_NOT_RESULT_SCORE));
         Pattern pattern;
         try {
             pattern = simplifiedSyntax ? patternParser.parseQuery(stripQuotes(query), SIMPLIFIED)
