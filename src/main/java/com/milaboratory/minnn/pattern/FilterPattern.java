@@ -49,6 +49,12 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
         this.pattern = pattern;
     }
 
+    private FilterPattern(PatternConfiguration conf, byte targetId, Filter filter, Pattern pattern) {
+        super(conf, targetId);
+        this.filter = filter;
+        this.pattern = pattern;
+    }
+
     @Override
     public String toString() {
         return "FilterPattern(" + filter + ", " + pattern + ")";
@@ -83,11 +89,12 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
     }
 
     @Override
-    void setTargetId(byte targetId) {
-        super.setTargetId(targetId);
-        if (pattern instanceof SinglePattern)
-            ((SinglePattern)pattern).setTargetId(targetId);
-        else
+    SinglePattern setTargetId(byte targetId) {
+        validateTargetId(targetId);
+        if (pattern instanceof SinglePattern) {
+            SinglePattern newOperandPattern = ((SinglePattern)pattern).setTargetId(targetId);
+            return new FilterPattern(conf, targetId, filter, newOperandPattern);
+        } else
             throw new IllegalStateException("setTargetId() called for argument of class " + pattern.getClass());
     }
 

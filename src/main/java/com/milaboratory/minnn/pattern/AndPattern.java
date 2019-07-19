@@ -32,6 +32,7 @@ import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.minnn.util.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static com.milaboratory.minnn.pattern.MatchValidationType.INTERSECTION;
@@ -40,6 +41,12 @@ import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorter
 public final class AndPattern extends MultiplePatternsOperator {
     public AndPattern(PatternConfiguration conf, SinglePattern... operandPatterns) {
         super(conf, operandPatterns);
+    }
+
+    private AndPattern(
+            PatternConfiguration conf, byte targetId, SinglePattern[] operandPatterns,
+            ArrayList<GroupEdge> groupEdges) {
+        super(conf, targetId, operandPatterns, groupEdges);
     }
 
     @Override
@@ -55,6 +62,13 @@ public final class AndPattern extends MultiplePatternsOperator {
     @Override
     public long estimateComplexity() {
         return Arrays.stream(operandPatterns).mapToLong(Pattern::estimateComplexity).sum();
+    }
+
+    @Override
+    SinglePattern setTargetId(byte targetId) {
+        validateTargetId(targetId);
+        SinglePattern[] newOperandPatterns = setTargetIdForOperands();
+        return new AndPattern(conf, targetId, newOperandPatterns, groupEdges);
     }
 
     private class AndPatternMatchingResult implements MatchingResult {

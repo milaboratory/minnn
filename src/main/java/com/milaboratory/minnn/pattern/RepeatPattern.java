@@ -97,6 +97,18 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
         this.groupEdgePositions = groupEdgePositions;
     }
 
+    private RepeatPattern(
+            PatternConfiguration conf, byte targetId, NucleotideSequenceCaseSensitive patternSeq, int minRepeats,
+            int maxRepeats, int fixedLeftBorder, int fixedRightBorder, List<GroupEdgePosition> groupEdgePositions) {
+        super(conf, targetId);
+        this.patternSeq = patternSeq;
+        this.minRepeats = minRepeats;
+        this.maxRepeats = maxRepeats;
+        this.fixedLeftBorder = fixedLeftBorder;
+        this.fixedRightBorder = fixedRightBorder;
+        this.groupEdgePositions = groupEdgePositions;
+    }
+
     @Override
     public String toString() {
         if (groupEdgePositions.size() > 0)
@@ -122,7 +134,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
         int fromWithBorder = (fixedLeftBorder == -1) ? from : Math.max(from, fixedLeftBorder);
         // to is exclusive and fixedRightBorder is inclusive
         int toWithBorder = (fixedRightBorder == -1) ? to : Math.min(to, fixedRightBorder + 1);
-        return new RepeatPatternMatchingResult(fixedLeftBorder, fixedRightBorder, target, fromWithBorder, toWithBorder);
+        return new RepeatPatternMatchingResult(fixedLeftBorder, fixedRightBorder, target,
+                fromWithBorder, toWithBorder);
     }
 
     @Override
@@ -177,6 +190,13 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                         + " when it is already fixed at " + newRightBorder + "!");
         }
         return new RepeatPattern(conf, patternSeq, minRepeats, maxRepeats, newLeftBorder, newRightBorder,
+                groupEdgePositions);
+    }
+
+    @Override
+    SinglePattern setTargetId(byte targetId) {
+        validateTargetId(targetId);
+        return new RepeatPattern(conf, targetId, patternSeq, minRepeats, maxRepeats, fixedLeftBorder, fixedRightBorder,
                 groupEdgePositions);
     }
 

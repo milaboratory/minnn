@@ -39,10 +39,16 @@ public abstract class SinglePattern extends Pattern {
      * 0 value used only in NullMatchedRange that is used in matches for NotOperator and OrOperator.
      * -1 used for non-default groups in matches with default groups override.
      */
-    protected byte targetId = 1;
+    protected final byte targetId;
 
     SinglePattern(PatternConfiguration conf) {
         super(conf);
+        this.targetId = 1;
+    }
+
+    protected SinglePattern(PatternConfiguration conf, byte targetId) {
+        super(conf);
+        this.targetId = targetId;
     }
 
     @Override
@@ -104,10 +110,12 @@ public abstract class SinglePattern extends Pattern {
      * This function sets targetId for SinglePattern from MultiPattern. Values 0 and -1 are not allowed here.
      *
      * @param targetId target id
+     * @return copy of this pattern with targetId set as specified
      */
-    void setTargetId(byte targetId) {
+    abstract SinglePattern setTargetId(byte targetId);
+
+    protected void validateTargetId(byte targetId) {
         if (targetId < 1)
             throw new IllegalArgumentException("targetId of SinglePattern must be positive; found " + targetId);
-        this.targetId = targetId;
     }
 }

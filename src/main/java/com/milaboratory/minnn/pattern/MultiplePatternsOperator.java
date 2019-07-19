@@ -55,14 +55,20 @@ abstract class MultiplePatternsOperator extends SinglePattern {
             throw new IllegalStateException("Operands contain equal group edges!");
     }
 
+    protected MultiplePatternsOperator(
+            PatternConfiguration conf, byte targetId, SinglePattern[] operandPatterns,
+            ArrayList<GroupEdge> groupEdges) {
+        super(conf, targetId);
+        this.operandPatterns = operandPatterns;
+        this.groupEdges = groupEdges;
+    }
+
     @Override
     public ArrayList<GroupEdge> getGroupEdges() {
         return groupEdges;
     }
 
-    @Override
-    void setTargetId(byte targetId) {
-        super.setTargetId(targetId);
-        Arrays.stream(operandPatterns).forEach(sp -> sp.setTargetId(targetId));
+    protected SinglePattern[] setTargetIdForOperands() {
+        return Arrays.stream(operandPatterns).map(sp -> sp.setTargetId(targetId)).toArray(SinglePattern[]::new);
     }
 }

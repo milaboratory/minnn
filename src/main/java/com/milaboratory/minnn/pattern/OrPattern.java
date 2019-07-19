@@ -46,6 +46,12 @@ public final class OrPattern extends MultiplePatternsOperator implements CanFixB
         super(conf, false, operandPatterns);
     }
 
+    private OrPattern(
+            PatternConfiguration conf, byte targetId, SinglePattern[] operandPatterns,
+            ArrayList<GroupEdge> groupEdges) {
+        super(conf, targetId, operandPatterns, groupEdges);
+    }
+
     @Override
     public String toString() {
         return "OrPattern(" + Arrays.toString(operandPatterns) + ")";
@@ -85,6 +91,13 @@ public final class OrPattern extends MultiplePatternsOperator implements CanFixB
         return new OrPattern(conf, Arrays.stream(operandPatterns)
                 .map(p -> (p instanceof CanFixBorders ? ((CanFixBorders)p).fixBorder(left, position) : p))
                 .toArray(SinglePattern[]::new));
+    }
+
+    @Override
+    SinglePattern setTargetId(byte targetId) {
+        validateTargetId(targetId);
+        SinglePattern[] newOperandPatterns = setTargetIdForOperands();
+        return new OrPattern(conf, targetId, newOperandPatterns, groupEdges);
     }
 
     private class OrPatternMatchingResult implements MatchingResult {

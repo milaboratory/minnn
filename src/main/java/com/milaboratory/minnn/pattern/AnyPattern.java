@@ -45,6 +45,11 @@ public final class AnyPattern extends SinglePattern {
         this.groupEdges = groupEdges;
     }
 
+    private AnyPattern(PatternConfiguration conf, byte targetId, ArrayList<GroupEdge> groupEdges) {
+        super(conf, targetId);
+        this.groupEdges = groupEdges;
+    }
+
     @Override
     public String toString() {
         if (groupEdges.size() > 0)
@@ -71,6 +76,12 @@ public final class AnyPattern extends SinglePattern {
     @Override
     public long estimateComplexity() {
         return 1;
+    }
+
+    @Override
+    SinglePattern setTargetId(byte targetId) {
+        validateTargetId(targetId);
+        return new AnyPattern(conf, targetId, groupEdges);
     }
 
     private class AnyPatternMatchingResult implements MatchingResult {

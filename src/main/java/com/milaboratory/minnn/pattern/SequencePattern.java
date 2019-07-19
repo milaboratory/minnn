@@ -32,6 +32,7 @@ import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.minnn.util.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
@@ -41,6 +42,12 @@ import static com.milaboratory.minnn.util.UnfairSorterConfiguration.*;
 public final class SequencePattern extends MultiplePatternsOperator implements CanBeSingleSequence, CanFixBorders {
     public SequencePattern(PatternConfiguration conf, SinglePattern... operandPatterns) {
         super(conf, operandPatterns);
+    }
+
+    private SequencePattern(
+            PatternConfiguration conf, byte targetId, SinglePattern[] operandPatterns,
+            ArrayList<GroupEdge> groupEdges) {
+        super(conf, targetId, operandPatterns, groupEdges);
     }
 
     @Override
@@ -94,6 +101,13 @@ public final class SequencePattern extends MultiplePatternsOperator implements C
                     .toArray(SinglePattern[]::new));
         } else
             return this;
+    }
+
+    @Override
+    SinglePattern setTargetId(byte targetId) {
+        validateTargetId(targetId);
+        SinglePattern[] newOperandPatterns = setTargetIdForOperands();
+        return new SequencePattern(conf, targetId, newOperandPatterns, groupEdges);
     }
 
     private class SequencePatternMatchingResult implements MatchingResult {

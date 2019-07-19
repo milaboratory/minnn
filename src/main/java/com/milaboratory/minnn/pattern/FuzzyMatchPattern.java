@@ -125,6 +125,21 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                         + groupEdgePosition.getPosition() + ") is outside of motif (motif size: " + size + ")");
     }
 
+    private FuzzyMatchPattern(
+            PatternConfiguration conf, byte targetId, ArrayList<NucleotideSequenceCaseSensitive> sequences,
+            ArrayList<Motif<NucleotideSequence>> motifs, int leftCut, int rightCut, int fixedLeftBorder,
+            int fixedRightBorder, List<GroupEdgePosition> groupEdgePositions, ArrayList<Integer> groupOffsets) {
+        super(conf, targetId);
+        this.sequences = sequences;
+        this.motifs = motifs;
+        this.leftCut = leftCut;
+        this.rightCut = rightCut;
+        this.fixedLeftBorder = fixedLeftBorder;
+        this.fixedRightBorder = fixedRightBorder;
+        this.groupEdgePositions = groupEdgePositions;
+        this.groupOffsets = groupOffsets;
+    }
+
     @Override
     public String toString() {
         if (groupEdgePositions.size() > 0)
@@ -233,6 +248,13 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
         }
         return new FuzzyMatchPattern(conf, sequences.get(0), leftCut, rightCut, newLeftBorder, newRightBorder,
                 groupEdgePositions);
+    }
+
+    @Override
+    SinglePattern setTargetId(byte targetId) {
+        validateTargetId(targetId);
+        return new FuzzyMatchPattern(conf, targetId, sequences, motifs, leftCut, rightCut, fixedLeftBorder,
+                fixedRightBorder, groupEdgePositions, groupOffsets);
     }
 
     private class FuzzyMatchingResult implements MatchingResult {

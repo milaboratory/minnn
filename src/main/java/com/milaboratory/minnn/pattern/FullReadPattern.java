@@ -35,11 +35,18 @@ import java.util.ArrayList;
 
 public final class FullReadPattern extends SinglePattern {
     private final SinglePattern operandPattern;
-    private boolean targetIdInitialized = false;
+    private final boolean targetIdInitialized;
 
     public FullReadPattern(PatternConfiguration conf, SinglePattern operandPattern) {
         super(conf);
         this.operandPattern = operandPattern;
+        this.targetIdInitialized = false;
+    }
+
+    private FullReadPattern(PatternConfiguration conf, byte targetId, SinglePattern operandPattern) {
+        super(conf, targetId);
+        this.operandPattern = operandPattern;
+        this.targetIdInitialized = true;
     }
 
     @Override
@@ -83,10 +90,10 @@ public final class FullReadPattern extends SinglePattern {
     }
 
     @Override
-    public void setTargetId(byte targetId) {
-        super.setTargetId(targetId);
-        operandPattern.setTargetId(targetId);
-        targetIdInitialized = true;
+    public SinglePattern setTargetId(byte targetId) {
+        validateTargetId(targetId);
+        SinglePattern newOperandPattern = operandPattern.setTargetId(targetId);
+        return new FullReadPattern(conf, targetId, newOperandPattern);
     }
 
     public SinglePattern getOperand() {

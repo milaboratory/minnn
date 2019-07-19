@@ -39,13 +39,24 @@ import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorter
 
 public final class MultiPattern extends MultipleReadsOperator {
     public MultiPattern(PatternConfiguration conf, SinglePattern... operandPatterns) {
-        super(conf, operandPatterns);
+        super(conf, updateOperandPatterns(operandPatterns));
+    }
+
+    /**
+     * Validate operand patterns and set targetIds for them.
+     *
+     * @param operandPatterns   original operand patterns
+     * @return                  new operand patterns with configured targetIds
+     */
+    private static SinglePattern[] updateOperandPatterns(SinglePattern[] operandPatterns) {
+        SinglePattern[] newOperandPatterns = new SinglePattern[operandPatterns.length];
         for (byte i = 0; i < operandPatterns.length; i++) {
             if (!(operandPatterns[i] instanceof FullReadPattern))
                 throw new IllegalArgumentException("All MultiPattern arguments must be FullReadPattern, got "
                         + operandPatterns[i]);
-            operandPatterns[i].setTargetId((byte)(i + 1));
+            newOperandPatterns[i] = operandPatterns[i].setTargetId((byte)(i + 1));
         }
+        return newOperandPatterns;
     }
 
     @Override
