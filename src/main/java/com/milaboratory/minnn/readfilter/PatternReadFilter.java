@@ -31,6 +31,7 @@ package com.milaboratory.minnn.readfilter;
 import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.parser.Parser;
+import com.milaboratory.minnn.parser.ParserConfiguration;
 import com.milaboratory.minnn.parser.ParserException;
 import com.milaboratory.minnn.pattern.*;
 
@@ -47,9 +48,8 @@ public final class PatternReadFilter implements ReadFilter {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(0,
                 -1, -1, DEFAULT_UPPERCASE_MISMATCH_SCORE,
                 DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
-        PatternAligner patternAligner = new BasePatternAligner(scoring, 0, -1,
-                0, 0);
-        Parser patternParser = new Parser(patternAligner);
+        Parser patternParser = new Parser(new ParserConfiguration(scoring, 0, -1,
+                0, 0, DEFAULT_NOT_RESULT_SCORE));
         Pattern pattern;
         try {
             pattern = patternParser.parseQuery(patternQuery);

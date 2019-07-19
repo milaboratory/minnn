@@ -33,6 +33,7 @@ import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
 import com.milaboratory.core.sequence.MultiNSequenceWithQuality;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.parser.Parser;
+import com.milaboratory.minnn.parser.ParserConfiguration;
 import com.milaboratory.minnn.parser.ParserException;
 import com.milaboratory.minnn.pattern.*;
 import picocli.CommandLine.*;
@@ -63,9 +64,8 @@ public final class ReportAction extends ACommand implements MiNNNCommand {
     public void run0() {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(matchScore, mismatchScore,
                 gapScore, uppercaseMismatchScore, goodQuality, badQuality, maxQualityPenalty);
-        PatternAligner patternAligner = new BasePatternAligner(scoring, scoreThreshold, singleOverlapPenalty,
-                bitapMaxErrors, maxOverlap);
-        Parser patternParser = new Parser(patternAligner);
+        Parser patternParser = new Parser(new ParserConfiguration(scoring, scoreThreshold, singleOverlapPenalty,
+                bitapMaxErrors, maxOverlap, DEFAULT_NOT_RESULT_SCORE));
         Pattern pattern;
         try {
             pattern = patternParser.parseQuery(stripQuotes(query));

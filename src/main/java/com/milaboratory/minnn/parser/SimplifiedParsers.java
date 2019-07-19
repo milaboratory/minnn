@@ -44,13 +44,13 @@ final class SimplifiedParsers {
     /**
      * Parse FuzzyMatchPattern parameters; group edge positions must be already parsed in this stage.
      *
-     * @param conf parser configuration
+     * @param conf pattern configuration
      * @param str string containing FuzzyMatchPattern arguments which were inside parentheses
      * @param groupEdgePositions parsed group edge positions
      * @return FuzzyMatchPattern
      */
     static FuzzyMatchPattern parseFuzzyMatchPattern(
-            ParserConfiguration conf, String str, ArrayList<GroupEdgePosition> groupEdgePositions)
+            PatternConfiguration conf, String str, ArrayList<GroupEdgePosition> groupEdgePositions)
             throws ParserException {
         List<QuotesPair> quotesPairs = getAllQuotes(str);
         int[] commaPositions = new int[5];
@@ -81,21 +81,21 @@ final class SimplifiedParsers {
                 throw new ParserException("Error while parsing " + str + ": expected ', [', found '"
                         + str.substring(commaPositions[4]) + "'");
 
-        return new FuzzyMatchPattern(conf.getPatternConfiguration(), seq, leftCut, rightCut, fixedLeftBorder,
-                fixedRightBorder, groupEdgePositions);
+        return new FuzzyMatchPattern(conf, seq, leftCut, rightCut, fixedLeftBorder, fixedRightBorder,
+                groupEdgePositions);
     }
 
     /**
      * Parse RepeatPattern parameters; group edge positions must be already parsed in this stage.
      *
-     * @param patternAligner pattern aligner
-     * @param defaultGroupsOverride true if there is default groups override in any pattern in the query
+     * @param conf pattern configuration
      * @param str string containing RepeatPattern arguments which were inside parentheses
      * @param groupEdgePositions parsed group edge positions
      * @return RepeatPattern
      */
-    static RepeatPattern parseRepeatPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, String str,
-                                            ArrayList<GroupEdgePosition> groupEdgePositions) throws ParserException {
+    static RepeatPattern parseRepeatPattern(
+            PatternConfiguration conf, String str, ArrayList<GroupEdgePosition> groupEdgePositions)
+            throws ParserException {
         List<QuotesPair> quotesPairs = getAllQuotes(str);
         int[] commaPositions = new int[5];
 
@@ -125,75 +125,75 @@ final class SimplifiedParsers {
                 throw new ParserException("Error while parsing " + str + ": expected ', [', found '"
                         + str.substring(commaPositions[4]) + "'");
 
-        return new RepeatPattern(patternAligner, defaultGroupsOverride, seq, minRepeats, maxRepeats,
-                fixedLeftBorder, fixedRightBorder, groupEdgePositions);
+        return new RepeatPattern(conf, seq, minRepeats, maxRepeats, fixedLeftBorder, fixedRightBorder,
+                groupEdgePositions);
     }
 
-    static AnyPattern parseAnyPattern(PatternAligner patternAligner, boolean defaultGroupsOverride, String str,
-                                      ArrayList<GroupEdge> groupEdges) throws ParserException {
+    static AnyPattern parseAnyPattern(
+            PatternConfiguration conf, String str, ArrayList<GroupEdge> groupEdges) throws ParserException {
         if (!(str.equals("") || ((str.charAt(0) == '[') && (str.charAt(str.length() - 1) == ']'))))
             throw new ParserException("Found unexpected tokens in AnyPattern: " + str);
-        return new AnyPattern(patternAligner, defaultGroupsOverride, groupEdges);
+        return new AnyPattern(conf, groupEdges);
     }
 
-    static FullReadPattern parseFullReadPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                                ArrayList<Token> tokenizedSubstring)
-            throws ParserException {
+    static FullReadPattern parseFullReadPattern(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring) throws ParserException {
         if ((tokenizedSubstring.size() != 1) || !tokenizedSubstring.get(0).isPatternAndNotNull()) {
             throw new ParserException("Invalid tokens as arguments for FullReadPattern: " + tokenizedSubstring);
         }
-        return new FullReadPattern(patternAligner, defaultGroupsOverride,
-                tokenizedSubstring.get(0).getSinglePattern());
+        return new FullReadPattern(conf, tokenizedSubstring.get(0).getSinglePattern());
     }
 
     /**
      * Parse AndPattern from tokenized substring returned by getTokens() function and already parsed operand patterns.
      *
-     * @param patternAligner pattern aligner
-     * @param defaultGroupsOverride true if there is default groups override in any pattern in the query
+     * @param conf pattern configuration
      * @param tokenizedSubstring tokenized substring for this AndPattern that returned by getTokens() function
      * @param singlePatterns parsed operand patterns
      * @return AndPattern
      */
-    static AndPattern parseAndPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                      ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
+    static AndPattern parseAndPattern(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
             throws ParserException {
         checkOperandArraySpelling(tokenizedSubstring);
         SinglePattern[] operands = singlePatterns.toArray(new SinglePattern[singlePatterns.size()]);
-        validateGroupEdges(true, false, true, defaultGroupsOverride, operands);
-        return new AndPattern(patternAligner, defaultGroupsOverride, operands);
+        validateGroupEdges(true, false, true, conf.defaultGroupsOverride,
+                operands);
+        return new AndPattern(conf, operands);
     }
 
-    static PlusPattern parsePlusPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                        ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
+    static PlusPattern parsePlusPattern(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
             throws ParserException {
         checkOperandArraySpelling(tokenizedSubstring);
         SinglePattern[] operands = singlePatterns.toArray(new SinglePattern[singlePatterns.size()]);
-        validateGroupEdges(false, false, true, defaultGroupsOverride, operands);
-        return new PlusPattern(patternAligner, defaultGroupsOverride, operands);
+        validateGroupEdges(false, false, true, conf.defaultGroupsOverride,
+                operands);
+        return new PlusPattern(conf, operands);
     }
 
-    static SequencePattern parseSequencePattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                                ArrayList<Token> tokenizedSubstring,
-                                                ArrayList<SinglePattern> singlePatterns)
+    static SequencePattern parseSequencePattern(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
             throws ParserException {
         checkOperandArraySpelling(tokenizedSubstring);
         SinglePattern[] operands = singlePatterns.toArray(new SinglePattern[singlePatterns.size()]);
-        validateGroupEdges(false, false, true, defaultGroupsOverride, operands);
-        return new SequencePattern(patternAligner, defaultGroupsOverride, operands);
+        validateGroupEdges(false, false, true, conf.defaultGroupsOverride,
+                operands);
+        return new SequencePattern(conf, operands);
     }
 
-    static OrPattern parseOrPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                    ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
+    static OrPattern parseOrPattern(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
             throws ParserException {
         checkOperandArraySpelling(tokenizedSubstring);
         SinglePattern[] operands = singlePatterns.toArray(new SinglePattern[singlePatterns.size()]);
-        validateGroupEdges(true, true, true, defaultGroupsOverride, operands);
-        return new OrPattern(patternAligner, defaultGroupsOverride, operands);
+        validateGroupEdges(true, true, true, conf.defaultGroupsOverride,
+                operands);
+        return new OrPattern(conf, operands);
     }
 
-    static MultiPattern parseMultiPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                          ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
+    static MultiPattern parseMultiPattern(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring, ArrayList<SinglePattern> singlePatterns)
             throws ParserException {
         checkOperandArraySpelling(tokenizedSubstring);
         for (SinglePattern singlePattern : singlePatterns)
@@ -201,45 +201,46 @@ final class SimplifiedParsers {
                 throw new ParserException("Excepted FullReadPattern argument for MultiPattern, got "
                         + singlePattern);
         SinglePattern[] operands = singlePatterns.toArray(new SinglePattern[singlePatterns.size()]);
-        validateGroupEdges(true, false, true, defaultGroupsOverride, operands);
-        return new MultiPattern(patternAligner, defaultGroupsOverride, operands);
+        validateGroupEdges(true, false, true, conf.defaultGroupsOverride,
+                operands);
+        return new MultiPattern(conf, operands);
     }
 
-    static AndOperator parseAndOperator(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                        ArrayList<Token> tokenizedSubstring,
-                                        ArrayList<MultipleReadsOperator> multiReadPatterns)
-            throws ParserException {
+    static AndOperator parseAndOperator(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring,
+            ArrayList<MultipleReadsOperator> multiReadPatterns) throws ParserException {
         checkOperandArraySpelling(tokenizedSubstring);
         MultipleReadsOperator[] operands = multiReadPatterns
                 .toArray(new MultipleReadsOperator[multiReadPatterns.size()]);
-        validateGroupEdges(true, false, true, defaultGroupsOverride, operands);
-        return new AndOperator(patternAligner, defaultGroupsOverride, operands);
+        validateGroupEdges(true, false, true, conf.defaultGroupsOverride,
+                operands);
+        return new AndOperator(conf, operands);
     }
 
-    static OrOperator parseOrOperator(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                      ArrayList<Token> tokenizedSubstring,
-                                      ArrayList<MultipleReadsOperator> multiReadPatterns)
-            throws ParserException {
+    static OrOperator parseOrOperator(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring,
+            ArrayList<MultipleReadsOperator> multiReadPatterns) throws ParserException {
         checkOperandArraySpelling(tokenizedSubstring);
         MultipleReadsOperator[] operands = multiReadPatterns
                 .toArray(new MultipleReadsOperator[multiReadPatterns.size()]);
-        validateGroupEdges(true, true, true, defaultGroupsOverride, operands);
-        return new OrOperator(patternAligner, defaultGroupsOverride, operands);
+        validateGroupEdges(true, true, true, conf.defaultGroupsOverride,
+                operands);
+        return new OrOperator(conf, operands);
     }
 
-    static NotOperator parseNotOperator(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                        ArrayList<Token> tokenizedSubstring)
-            throws ParserException {
+    static NotOperator parseNotOperator(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring) throws ParserException {
         if (tokenizedSubstring.size() != 1)
             throw new ParserException("Syntax not parsed correctly for Not operator; possibly missing operand: "
                     + tokenizedSubstring);
         MultipleReadsOperator operand = tokenizedSubstring.get(0).getMultipleReadsOperator();
-        validateGroupEdges(false, true, false, defaultGroupsOverride, operand);
-        return new NotOperator(patternAligner, defaultGroupsOverride, operand);
+        validateGroupEdges(false, true, false, conf.defaultGroupsOverride,
+                operand);
+        return new NotOperator(conf, operand);
     }
 
-    static Pattern parseFilterPattern(PatternAligner patternAligner, boolean defaultGroupsOverride,
-                                      ArrayList<Token> tokenizedSubstring, boolean multipleReads)
+    static Pattern parseFilterPattern(
+            PatternConfiguration conf, ArrayList<Token> tokenizedSubstring, boolean multipleReads)
             throws ParserException {
         if (tokenizedSubstring.size() != 2)
             throw new ParserException("Syntax not parsed correctly for Filter pattern; possibly missing operand: "
@@ -275,11 +276,9 @@ final class SimplifiedParsers {
         }
 
         if (multipleReads)
-            return new MultipleReadsFilterPattern(patternAligner, defaultGroupsOverride, filter,
-                    tokenizedSubstring.get(1).getMultipleReadsOperator());
+            return new MultipleReadsFilterPattern(conf, filter, tokenizedSubstring.get(1).getMultipleReadsOperator());
         else
-            return new FilterPattern(patternAligner, defaultGroupsOverride, filter,
-                    tokenizedSubstring.get(1).getSinglePattern());
+            return new FilterPattern(conf, filter, tokenizedSubstring.get(1).getSinglePattern());
     }
 
     private static ScoreFilter parseScoreFilter(String str, String startingPart) throws ParserException {

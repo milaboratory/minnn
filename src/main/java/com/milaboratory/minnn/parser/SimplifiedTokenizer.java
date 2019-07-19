@@ -68,7 +68,7 @@ final class SimplifiedTokenizer extends Tokenizer {
         objectStrings.sort(Comparator.comparingInt(ObjectString::getNestedLevel).reversed());
 
         for (ObjectString objectString : objectStrings) {
-            PatternAligner currentPatternAligner = getPatternAligner(scoreThresholds, objectString);
+            PatternConfiguration currentPatternConfiguration = getPatternConfiguration(scoreThresholds, objectString);
             switch (objectString.getName()) {
                 case GROUP_EDGE_NAME:
                 case GROUP_EDGE_POSITION_NAME:
@@ -92,8 +92,8 @@ final class SimplifiedTokenizer extends Tokenizer {
                     }
                     String fuzzyMatchPatternString = tokenizedString.getOneString(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    FuzzyMatchPattern fuzzyMatchPattern = parseFuzzyMatchPattern(currentPatternAligner,
-                            defaultGroupsOverride, fuzzyMatchPatternString, groupEdgePositionsFuzzy);
+                    FuzzyMatchPattern fuzzyMatchPattern = parseFuzzyMatchPattern(currentPatternConfiguration,
+                            fuzzyMatchPatternString, groupEdgePositionsFuzzy);
                     tokenizedString.tokenizeSubstring(fuzzyMatchPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
                     break;
@@ -114,8 +114,8 @@ final class SimplifiedTokenizer extends Tokenizer {
                     }
                     String repeatPatternString = tokenizedString.getOneString(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    RepeatPattern repeatPattern = parseRepeatPattern(currentPatternAligner,
-                            defaultGroupsOverride, repeatPatternString, groupEdgePositionsRepeat);
+                    RepeatPattern repeatPattern = parseRepeatPattern(currentPatternConfiguration,
+                            repeatPatternString, groupEdgePositionsRepeat);
                     tokenizedString.tokenizeSubstring(repeatPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
                     break;
@@ -135,7 +135,7 @@ final class SimplifiedTokenizer extends Tokenizer {
                     }
                     String anyPatternString = tokenizedString.getOneString(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    AnyPattern anyPattern = parseAnyPattern(currentPatternAligner, defaultGroupsOverride,
+                    AnyPattern anyPattern = parseAnyPattern(currentPatternConfiguration,
                             anyPatternString, groupEdgesAny);
                     tokenizedString.tokenizeSubstring(anyPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
@@ -145,7 +145,7 @@ final class SimplifiedTokenizer extends Tokenizer {
                             tokenizedString, squareBracketsPairs, objectString, SinglePattern.class);
                     ArrayList<Token> andPatternTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    AndPattern andPattern = parseAndPattern(currentPatternAligner, defaultGroupsOverride,
+                    AndPattern andPattern = parseAndPattern(currentPatternConfiguration,
                             andPatternTokenizedSubstring, andPatternOperands);
                     tokenizedString.tokenizeSubstring(andPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
@@ -155,7 +155,7 @@ final class SimplifiedTokenizer extends Tokenizer {
                             tokenizedString, squareBracketsPairs, objectString, SinglePattern.class);
                     ArrayList<Token> plusPatternTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    PlusPattern plusPattern = parsePlusPattern(currentPatternAligner, defaultGroupsOverride,
+                    PlusPattern plusPattern = parsePlusPattern(currentPatternConfiguration,
                             plusPatternTokenizedSubstring, plusPatternOperands);
                     tokenizedString.tokenizeSubstring(plusPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
@@ -165,8 +165,8 @@ final class SimplifiedTokenizer extends Tokenizer {
                             tokenizedString, squareBracketsPairs, objectString, SinglePattern.class);
                     ArrayList<Token> sequencePatternTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    SequencePattern sequencePattern = parseSequencePattern(currentPatternAligner,
-                            defaultGroupsOverride, sequencePatternTokenizedSubstring, sequencePatternOperands);
+                    SequencePattern sequencePattern = parseSequencePattern(currentPatternConfiguration,
+                            sequencePatternTokenizedSubstring, sequencePatternOperands);
                     tokenizedString.tokenizeSubstring(sequencePattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
                     break;
@@ -175,7 +175,7 @@ final class SimplifiedTokenizer extends Tokenizer {
                             tokenizedString, squareBracketsPairs, objectString, SinglePattern.class);
                     ArrayList<Token> orPatternTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    OrPattern orPattern = parseOrPattern(currentPatternAligner, defaultGroupsOverride,
+                    OrPattern orPattern = parseOrPattern(currentPatternConfiguration,
                             orPatternTokenizedSubstring, orPatternOperands);
                     tokenizedString.tokenizeSubstring(orPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
@@ -183,8 +183,8 @@ final class SimplifiedTokenizer extends Tokenizer {
                 case FULL_READ_PATTERN_NAME:
                     ArrayList<Token> fullReadPatternTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    FullReadPattern fullReadPattern = parseFullReadPattern(currentPatternAligner,
-                            defaultGroupsOverride, fullReadPatternTokenizedSubstring);
+                    FullReadPattern fullReadPattern = parseFullReadPattern(currentPatternConfiguration,
+                            fullReadPatternTokenizedSubstring);
                     tokenizedString.tokenizeSubstring(fullReadPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
                     break;
@@ -193,7 +193,7 @@ final class SimplifiedTokenizer extends Tokenizer {
                             tokenizedString, squareBracketsPairs, objectString, SinglePattern.class);
                     ArrayList<Token> multiPatternTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    MultiPattern multiPattern = parseMultiPattern(currentPatternAligner, defaultGroupsOverride,
+                    MultiPattern multiPattern = parseMultiPattern(currentPatternConfiguration,
                             multiPatternTokenizedSubstring, multiPatternOperands);
                     tokenizedString.tokenizeSubstring(multiPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
@@ -203,7 +203,7 @@ final class SimplifiedTokenizer extends Tokenizer {
                             tokenizedString, squareBracketsPairs, objectString, MultipleReadsOperator.class);
                     ArrayList<Token> andOperatorTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    AndOperator andOperator = parseAndOperator(currentPatternAligner, defaultGroupsOverride,
+                    AndOperator andOperator = parseAndOperator(currentPatternConfiguration,
                             andOperatorTokenizedSubstring, andOperatorOperands);
                     tokenizedString.tokenizeSubstring(andOperator,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
@@ -213,7 +213,7 @@ final class SimplifiedTokenizer extends Tokenizer {
                             tokenizedString, squareBracketsPairs, objectString, MultipleReadsOperator.class);
                     ArrayList<Token> orOperatorTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    OrOperator orOperator = parseOrOperator(currentPatternAligner, defaultGroupsOverride,
+                    OrOperator orOperator = parseOrOperator(currentPatternConfiguration,
                             orOperatorTokenizedSubstring, orOperatorOperands);
                     tokenizedString.tokenizeSubstring(orOperator,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
@@ -221,7 +221,7 @@ final class SimplifiedTokenizer extends Tokenizer {
                 case NOT_OPERATOR_NAME:
                     ArrayList<Token> notOperatorTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    NotOperator notOperator = parseNotOperator(currentPatternAligner, defaultGroupsOverride,
+                    NotOperator notOperator = parseNotOperator(currentPatternConfiguration,
                             notOperatorTokenizedSubstring);
                     tokenizedString.tokenizeSubstring(notOperator,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
@@ -230,16 +230,15 @@ final class SimplifiedTokenizer extends Tokenizer {
                     ArrayList<Token> mFilterPatternTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
                     MultipleReadsFilterPattern mFilterPattern = (MultipleReadsFilterPattern)parseFilterPattern(
-                            currentPatternAligner, defaultGroupsOverride, mFilterPatternTokenizedSubstring,
-                            true);
+                            currentPatternConfiguration, mFilterPatternTokenizedSubstring, true);
                     tokenizedString.tokenizeSubstring(mFilterPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
                     break;
                 case FILTER_PATTERN_NAME:
                     ArrayList<Token> filterPatternTokenizedSubstring = tokenizedString.getTokens(
                             objectString.getDataStart(), objectString.getDataEnd());
-                    FilterPattern filterPattern = (FilterPattern)parseFilterPattern(currentPatternAligner,
-                            defaultGroupsOverride, filterPatternTokenizedSubstring, false);
+                    FilterPattern filterPattern = (FilterPattern)parseFilterPattern(currentPatternConfiguration,
+                            filterPatternTokenizedSubstring, false);
                     tokenizedString.tokenizeSubstring(filterPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
                     break;
@@ -254,7 +253,7 @@ final class SimplifiedTokenizer extends Tokenizer {
         boolean duplicateGroupsAllowed = (finalPattern instanceof FullReadPattern
                 && ((FullReadPattern)finalPattern).getOperand() instanceof OrPattern)
                 || finalPattern instanceof OrPattern || finalPattern instanceof OrOperator;
-        ArrayList<GroupEdge> groupEdges = defaultGroupsOverride ? finalPattern.getGroupEdges()
+        ArrayList<GroupEdge> groupEdges = conf.isDefaultGroupsOverride() ? finalPattern.getGroupEdges()
                 : filterGroupEdgesForValidation(finalPattern.getGroupEdges());
         validateGroupEdges(groupEdges, true, duplicateGroupsAllowed);
     }
@@ -354,14 +353,15 @@ final class SimplifiedTokenizer extends Tokenizer {
     }
 
     /**
-     * Find score threshold for specified object and return PatternAligner with this threshold. If there is no score
-     * threshold, return pattern aligner without changing its threshold.
+     * Find score threshold for specified object and return PatternConfiguration with this threshold. If there is
+     * no score threshold, return pattern configuration without changing its threshold.
      *
      * @param scoreThresholds score thresholds list
      * @param objectString string of the object for which we calculate score threshold
-     * @return PatternAligner with updated score threshold for the specified object
+     * @return PatternConfiguration with updated score threshold for the specified object
      */
-    private PatternAligner getPatternAligner(ArrayList<ScoreThreshold> scoreThresholds, ObjectString objectString) {
+    private PatternConfiguration getPatternConfiguration(
+            ArrayList<ScoreThreshold> scoreThresholds, ObjectString objectString) {
         int currentNestedLevel = -1;
         long currentThreshold = 0;
         for (ScoreThreshold scoreThreshold : scoreThresholds)
@@ -371,9 +371,9 @@ final class SimplifiedTokenizer extends Tokenizer {
                 currentThreshold = scoreThreshold.threshold;
             }
         if (currentNestedLevel == -1)
-            return patternAligner;
+            return conf.getPatternConfiguration();
         else
-            return patternAligner.overridePenaltyThreshold(currentThreshold);
+            return conf.getPatternConfiguration().overrideScoreThreshold(currentThreshold);
     }
 
     private static class ObjectString {

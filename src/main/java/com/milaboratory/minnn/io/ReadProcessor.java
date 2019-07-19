@@ -386,7 +386,8 @@ public final class ReadProcessor {
                 }
             }
 
-            int numberOfTargetsOverride = (pattern.isDefaultGroupsOverride()) ? outputNumberOfTargets : -1;
+            int numberOfTargetsOverride = pattern.getConfiguration().defaultGroupsOverride
+                    ? outputNumberOfTargets : -1;
             return new ParsedRead(input.sequenceRead, reverseMatch, numberOfTargetsOverride,
                     (bestMatch == null) ? null : descriptionGroups.addDescriptionGroups(bestMatch, input.sequenceRead),
                     0, input.index);
