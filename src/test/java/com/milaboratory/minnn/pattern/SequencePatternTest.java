@@ -32,7 +32,7 @@ import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.test.TestUtil;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.*;
 import java.util.stream.Collectors;

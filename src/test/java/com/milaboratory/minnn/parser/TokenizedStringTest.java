@@ -43,9 +43,9 @@ public class TokenizedStringTest {
     @Test
     public void simpleTest1() throws Exception {
         TokenizedString ts1 = new TokenizedString("AATTAA");
-        FuzzyMatchPattern testPattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern testPattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("aa"));
-        FuzzyMatchPattern testPattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern testPattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("tt"));
         assertEquals("AATTAA", ts1.getOneString());
         ts1.tokenizeSubstring(testPattern1, 0, 2);
@@ -65,14 +65,12 @@ public class TokenizedStringTest {
 
     @Test
     public void simpleTest2() throws Exception {
-        FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("atttgtg"));
-        AndPattern andPattern = new AndPattern(getTestPatternAligner(), false,
-                fuzzyMatchPattern, fuzzyMatchPattern);
+        AndPattern andPattern = new AndPattern(getTestPatternConfiguration(), fuzzyMatchPattern, fuzzyMatchPattern);
         ScoreFilter scoreFilter = new ScoreFilter(-1);
-        FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(), false,
-                scoreFilter, fuzzyMatchPattern);
-        MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), andPattern, filterPattern);
+        FilterPattern filterPattern = new FilterPattern(getTestPatternConfiguration(), scoreFilter, fuzzyMatchPattern);
+        MultiPattern multiPattern = createMultiPattern(getTestPatternConfiguration(), andPattern, filterPattern);
         TokenizedString ts = new TokenizedString(multiPattern.toString());
         ts.tokenizeSubstring(fuzzyMatchPattern, 5, 10);
         assertEquals(3, ts.getTokens(1, 20).size());

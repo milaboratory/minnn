@@ -49,31 +49,25 @@ public class PlusPatternTest {
 
     @Test
     public void simpleTest() throws Exception {
-        PatternAligner patternAligner = getTestPatternAligner(true);
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternAligner, false,
+        PatternConfiguration patternConfiguration = getTestPatternConfiguration(true);
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("attagaca"));
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("ttag"));
-        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("agta"));
-        FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("agtag"));
         NSequenceWithQuality nseq1 = new NSequenceWithQuality("ACTGCGATAAATTAGACAGTACGTA");
         NSequenceWithQuality nseq2 = new NSequenceWithQuality("TTAGTAGAGTATTTAGAGA");
         NSequenceWithQuality nseq3 = new NSequenceWithQuality("ATTAGACAAGTAATTAGACATTAG");
-        PlusPattern plusPattern1 = new PlusPattern(patternAligner, false,
-                pattern1, pattern3);
-        PlusPattern plusPattern2 = new PlusPattern(patternAligner, false,
-                pattern2, pattern3);
-        PlusPattern plusPattern3 = new PlusPattern(patternAligner, false,
-                pattern2, pattern1, pattern3);
-        PlusPattern plusPattern4 = new PlusPattern(patternAligner, false,
-                pattern4);
-        PlusPattern plusPattern5 = new PlusPattern(patternAligner, false);
-        PlusPattern plusPattern6 = new PlusPattern(patternAligner, false,
-                pattern1);
-        PlusPattern plusPattern7 = new PlusPattern(patternAligner, false,
-                pattern1, pattern3, pattern2);
+        PlusPattern plusPattern1 = new PlusPattern(patternConfiguration, pattern1, pattern3);
+        PlusPattern plusPattern2 = new PlusPattern(patternConfiguration, pattern2, pattern3);
+        PlusPattern plusPattern3 = new PlusPattern(patternConfiguration, pattern2, pattern1, pattern3);
+        PlusPattern plusPattern4 = new PlusPattern(patternConfiguration, pattern4);
+        PlusPattern plusPattern5 = new PlusPattern(patternConfiguration);
+        PlusPattern plusPattern6 = new PlusPattern(patternConfiguration, pattern1);
+        PlusPattern plusPattern7 = new PlusPattern(patternConfiguration, pattern1, pattern3, pattern2);
 
         assertFalse(plusPattern1.match(nseq1).isFound());
         assertFalse(plusPattern1.match(nseq1, 0, 25).isFound());
@@ -113,11 +107,9 @@ public class PlusPatternTest {
             NucleotideSequenceCaseSensitive fullSeq = SequencesUtils.concatenate(
                     seqLeft, seqMotif1, seqMiddle, seqMotif2, seqRight);
             NSequenceWithQuality target = new NSequenceWithQuality(fullSeq.toString());
-            FuzzyMatchPattern patternMotif1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
-                    seqMotif1);
-            FuzzyMatchPattern patternMotif2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
-                    seqMotif2);
-            PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(rg.nextBoolean()), false,
+            FuzzyMatchPattern patternMotif1 = new FuzzyMatchPattern(getTestPatternConfiguration(), seqMotif1);
+            FuzzyMatchPattern patternMotif2 = new FuzzyMatchPattern(getTestPatternConfiguration(), seqMotif2);
+            PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(rg.nextBoolean()),
                     patternMotif1, patternMotif2);
             assertTrue(plusPattern.match(target).isFound());
             assertNotNull(plusPattern.match(target).getBestMatch(false));
@@ -137,14 +129,14 @@ public class PlusPatternTest {
 
     @Test
     public void allMatchesTest() throws Exception {
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("atta"));
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("gaca"));
         NSequenceWithQuality nseq = new NSequenceWithQuality("GACATTATTATTAGACAGACATTAGACATTATTAGACAGACATTAATTA");
-        PlusPattern plusPattern1 = new PlusPattern(getTestPatternAligner(true), false,
+        PlusPattern plusPattern1 = new PlusPattern(getTestPatternConfiguration(true),
                 pattern1, pattern2);
-        PlusPattern plusPattern2 = new PlusPattern(getTestPatternAligner(true), false,
+        PlusPattern plusPattern2 = new PlusPattern(getTestPatternConfiguration(true),
                 pattern1, pattern1, pattern2);
         assertNotNull(plusPattern1.match(nseq).getBestMatch());
         assertNotNull(plusPattern2.match(nseq).getBestMatch());
@@ -164,12 +156,11 @@ public class PlusPatternTest {
 
     @Test
     public void matchesIntersectionTest() throws Exception {
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("ata"));
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("tat"));
-        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(true), false,
-                pattern1, pattern2);
+        PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(true), pattern1, pattern2);
         NSequenceWithQuality nseq = new NSequenceWithQuality("ATATATATTATA");
         plusPattern.match(nseq).getMatches(true);
         assertEquals(6, countMatches(plusPattern.match(nseq), true));
@@ -177,11 +168,11 @@ public class PlusPatternTest {
 
     @Test
     public void quickSearchTest() throws Exception {
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("ata"));
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("tat"));
-        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(true), false,
+        PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(),
                 pattern1, pattern2);
         NSequenceWithQuality nseq1 = new NSequenceWithQuality("ATATATATTATA");
         NSequenceWithQuality nseq2 = new NSequenceWithQuality("GCGGTGCGTATAGCG");
@@ -222,11 +213,11 @@ public class PlusPatternTest {
             add(new GroupEdgePosition(new GroupEdge("5", false), 6));
         }};
 
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("tagcc"), groupsEdgePositions1);
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("cagatgca"), groupsEdgePositions2);
-        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(true), false,
+        PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(true),
                 pattern2, pattern1);
         NSequenceWithQuality nseq = new NSequenceWithQuality("AAACAGATGCAGACATAGCC");
         MatchingResult result = plusPattern.match(nseq);
@@ -252,11 +243,9 @@ public class PlusPatternTest {
             NSequenceWithQuality targetQ = new NSequenceWithQuality(target.toString());
             NucleotideSequenceCaseSensitive motif1WithErrors = toLowerCase(makeRandomErrors(motif1, maxErrors));
             NucleotideSequenceCaseSensitive motif2WithErrors = toLowerCase(makeRandomErrors(motif2, maxErrors));
-            PatternAligner fuzzyPatternAligner = getTestPatternAligner(maxErrors);
-            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(fuzzyPatternAligner, false,
-                    motif1WithErrors);
-            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(fuzzyPatternAligner, false,
-                    motif2WithErrors);
+            PatternConfiguration fuzzyPatternConfiguration = getTestPatternConfiguration(maxErrors);
+            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(fuzzyPatternConfiguration, motif1WithErrors);
+            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(fuzzyPatternConfiguration, motif2WithErrors);
             boolean targetContainsPattern1 = target.toString().contains(motif1.toString());
             boolean isMatchingPattern1 = pattern1.match(targetQ).isFound();
 
@@ -272,25 +261,25 @@ public class PlusPatternTest {
 
             long errorScorePenalty = -rg.nextInt(50) - 1;
             int maxOverlap = rg.nextInt(5) - 1;
-            long plusPenaltyThreshold;
+            long plusScoreThreshold;
             boolean misplacedPatterns = false;
             if (isMatchingPattern1) {
                 MatchIntermediate match1 = pattern1.match(targetQ).getBestMatch(true);
                 MatchIntermediate match2 = pattern2.match(targetQ).getBestMatch(true);
-                plusPenaltyThreshold = match1.getScore() + match2.getScore()
+                plusScoreThreshold = match1.getScore() + match2.getScore()
                         + errorScorePenalty * getIntersectionLength(match1.getRange(), match2.getRange());
                 misplacedPatterns = (match1.getRange().getLower() >= match2.getRange().getLower())
                         || checkFullIntersection(match1.getRange(), match2.getRange()) || ((maxOverlap != -1)
                         && (getIntersectionLength(match1.getRange(), match2.getRange()) > maxOverlap));
             } else {
-                plusPenaltyThreshold = pattern2.match(targetQ).getBestMatch(true).getScore();
+                plusScoreThreshold = pattern2.match(targetQ).getBestMatch(true).getScore();
                 if ((targetLength <= maxErrors) || (motif1WithErrors.size() <= maxErrors))
-                    plusPenaltyThreshold = 0;
+                    plusScoreThreshold = 0;
             }
 
             boolean plusMustBeFound = isMatchingPattern1;
             if (misplacedPatterns) {
-                plusPenaltyThreshold = Long.MIN_VALUE;
+                plusScoreThreshold = Long.MIN_VALUE;
                 OutputPort<MatchIntermediate> port1 = pattern1.match(targetQ).getMatches(true);
                 OutputPort<MatchIntermediate> port2 = pattern2.match(targetQ).getMatches(true);
                 List<Range> ranges1 = streamPort(port1).map(MatchIntermediate::getRange).collect(Collectors.toList());
@@ -308,8 +297,8 @@ public class PlusPatternTest {
                         }
             }
 
-            PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(plusPenaltyThreshold, 0,
-                    0, errorScorePenalty, maxOverlap), false, pattern1, pattern2);
+            PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(plusScoreThreshold, 0,
+                    0, errorScorePenalty, maxOverlap), pattern1, pattern2);
 
             assertEquals(plusMustBeFound, plusPattern.match(targetQ).getBestMatch(true) != null);
             assertEquals(plusMustBeFound, plusPattern.match(targetQ).getMatches(true).take() != null);
@@ -335,18 +324,16 @@ public class PlusPatternTest {
             boolean middlePartUppercase = Character.isUpperCase(middleLetter.symbolAt(0));
             boolean rightPartUppercaseStart = Character.isUpperCase(rightPart.symbolAt(0));
 
-            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
-                    motif1);
-            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
-                    motif2);
-            PlusPattern plusPattern1 = new PlusPattern(getTestPatternAligner(0, 0,
-                    0, overlapPenalty), false, pattern1, pattern2);
-            PlusPattern plusPattern2 = new PlusPattern(getTestPatternAligner(0, 0,
-                    0, overlapPenalty), false, pattern2, pattern1);
-            PlusPattern plusPattern3 = new PlusPattern(getTestPatternAligner(overlapPenalty, 0,
-                    0, overlapPenalty), false, pattern1, pattern2);
-            PlusPattern plusPattern4 = new PlusPattern(getTestPatternAligner(overlapPenalty, 0,
-                    0, overlapPenalty), false, pattern2, pattern1);
+            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(), motif1);
+            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(), motif2);
+            PlusPattern plusPattern1 = new PlusPattern(getTestPatternConfiguration(0, 0,
+                    0, overlapPenalty), pattern1, pattern2);
+            PlusPattern plusPattern2 = new PlusPattern(getTestPatternConfiguration(0, 0,
+                    0, overlapPenalty), pattern2, pattern1);
+            PlusPattern plusPattern3 = new PlusPattern(getTestPatternConfiguration(overlapPenalty, 0,
+                    0, overlapPenalty), pattern1, pattern2);
+            PlusPattern plusPattern4 = new PlusPattern(getTestPatternConfiguration(overlapPenalty, 0,
+                    0, overlapPenalty), pattern2, pattern1);
 
             assertNull(plusPattern1.match(targetQ).getBestMatch());
             assertNull(plusPattern2.match(targetQ).getBestMatch());
@@ -379,13 +366,13 @@ public class PlusPatternTest {
             add(new GroupEdgePosition(new GroupEdge("D", false), 5));
         }};
 
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("ataga"), groupsEdgePositions1);
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("gattc"), groupsEdgePositions2);
-        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(-10, 0,
-                0, -5, 2, -1, getTestScoring()),
-                false, pattern1, pattern2);
+        PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(-10, 0,
+                0, -5, 2, -1, getTestScoring(),
+                false), pattern1, pattern2);
         NSequenceWithQuality nseq = new NSequenceWithQuality("ATAGATTC");
         MatchingResult result = plusPattern.match(nseq);
         OutputPort<MatchIntermediate> matchOutputPort = result.getMatches(true);
@@ -411,22 +398,22 @@ public class PlusPatternTest {
     }
 
     private MatchingResult specialCaseTest1MatchingResult() {
-        PatternAligner patternAligner = getTestPatternAligner(-100, 2, 0,
-                -1);
+        PatternConfiguration patternConfiguration = getTestPatternConfiguration(-100,
+                2, 0, -1);
         NSequenceWithQuality target = new NSequenceWithQuality("TAATCATCCATTAGACATTTTTTTA");
-        FuzzyMatchPattern andOperand1 = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern andOperand1 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("a"));
-        FuzzyMatchPattern andOperand2 = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern andOperand2 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("g"));
-        AndPattern andPattern = new AndPattern(patternAligner, false,
+        AndPattern andPattern = new AndPattern(patternConfiguration,
                 andOperand1, andOperand2);
-        FuzzyMatchPattern plusOperand1 = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern plusOperand1 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("atta"));
-        FuzzyMatchPattern plusOperand2 = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern plusOperand2 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("gaca"));
-        FuzzyMatchPattern plusOperand4 = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern plusOperand4 = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("t"));
-        PlusPattern plusPattern = new PlusPattern(patternAligner, false,
+        PlusPattern plusPattern = new PlusPattern(patternConfiguration,
                 plusOperand1, plusOperand2, andPattern, plusOperand4);
         return plusPattern.match(target);
     }

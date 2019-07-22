@@ -50,24 +50,21 @@ public class FullReadPatternTest {
         groupEdgePositions3.add(new GroupEdgePosition(new GroupEdge("ABC", false), 2));
 
         NSequenceWithQuality target = new NSequenceWithQuality("AAAAA");
-        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("AAAAA"), groupEdgePositions1);
-        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("AAAAA"), groupEdgePositions2);
-        FuzzyMatchPattern fuzzyMatchPattern3 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern fuzzyMatchPattern3 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("AAAAA"), groupEdgePositions3);
-        FullReadPattern fullReadPattern1a = new FullReadPattern(getTestPatternAligner(), true,
-                fuzzyMatchPattern1);
-        FullReadPattern fullReadPattern1b = new FullReadPattern(getTestPatternAligner(), false,
-                fuzzyMatchPattern1);
-        FullReadPattern fullReadPattern2a = new FullReadPattern(getTestPatternAligner(), true,
-                fuzzyMatchPattern2);
-        FullReadPattern fullReadPattern2b = new FullReadPattern(getTestPatternAligner(), false,
-                fuzzyMatchPattern2);
-        FullReadPattern fullReadPattern3a = new FullReadPattern(getTestPatternAligner(), true,
-                fuzzyMatchPattern3);
-        FullReadPattern fullReadPattern3b = new FullReadPattern(getTestPatternAligner(), false,
-                fuzzyMatchPattern3);
+        FullReadPattern fullReadPattern1a = new FullReadPattern(getTestPatternConfiguration(
+                false, true), fuzzyMatchPattern1);
+        FullReadPattern fullReadPattern1b = new FullReadPattern(getTestPatternConfiguration(), fuzzyMatchPattern1);
+        FullReadPattern fullReadPattern2a = new FullReadPattern(getTestPatternConfiguration(
+                false, true), fuzzyMatchPattern2);
+        FullReadPattern fullReadPattern2b = new FullReadPattern(getTestPatternConfiguration(), fuzzyMatchPattern2);
+        FullReadPattern fullReadPattern3a = new FullReadPattern(getTestPatternConfiguration(
+                false, true), fuzzyMatchPattern3);
+        FullReadPattern fullReadPattern3b = new FullReadPattern(getTestPatternConfiguration(), fuzzyMatchPattern3);
         for (FullReadPattern pattern : new FullReadPattern[] { fullReadPattern1a, fullReadPattern1b,
                 fullReadPattern2a, fullReadPattern2b, fullReadPattern3a, fullReadPattern3b }) {
             assertException(IllegalStateException.class, () -> { pattern.getGroupEdges(); return null; });

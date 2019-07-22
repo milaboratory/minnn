@@ -50,7 +50,7 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void bestMatchTest() throws Exception {
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("attagaca"));
         NSequenceWithQuality nseq = new NSequenceWithQuality("ACTGCGATAAATTAGACAGTACGTA");
         ArrayList<MatchingResult> results = new ArrayList<>(Arrays.asList(
@@ -76,7 +76,7 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void noMatchesTest() throws Exception {
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("attagaca"));
         NSequenceWithQuality nseq1 = new NSequenceWithQuality("ACTGCGATAAATTAGACAGTACGTA");
         NSequenceWithQuality nseq2 = new NSequenceWithQuality("ACTGCGATAAATTACACAGTACGTA");
@@ -95,7 +95,7 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void quickMatchTest() throws Exception {
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("attagaca"));
         NSequenceWithQuality nseq = new NSequenceWithQuality("ACTGCGATAAATTAGACAGTACGTA");
         MatchingResult result = pattern.match(nseq, 1, 19);

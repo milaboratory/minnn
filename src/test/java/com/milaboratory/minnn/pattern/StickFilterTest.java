@@ -33,7 +33,7 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 import com.milaboratory.test.TestUtil;
-import org.junit.Test;
+import org.junit.*;
 
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
@@ -48,9 +48,8 @@ public class StickFilterTest {
             NSequenceWithQuality target = new NSequenceWithQuality(seq);
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     1, 20);
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(rg.nextInt(5)),
-                    false, motif);
-            FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(), false,
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(rg.nextInt(5)), motif);
+            FilterPattern filterPattern = new FilterPattern(getTestPatternConfiguration(),
                     new StickFilter(left, position), pattern);
             MatchIntermediate patternBestMatch = pattern.match(target).getBestMatch(true);
             boolean mustMatch = (patternBestMatch != null)

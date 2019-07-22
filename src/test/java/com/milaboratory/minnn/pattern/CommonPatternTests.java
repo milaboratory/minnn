@@ -31,7 +31,7 @@ package com.milaboratory.minnn.pattern;
 import com.milaboratory.core.alignment.PatternAndTargetAlignmentScoring;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.test.TestUtil;
-import org.junit.Test;
+import org.junit.*;
 
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.*;
@@ -40,61 +40,61 @@ import static org.junit.Assert.*;
 public class CommonPatternTests {
     @Test
     public void estimateComplexityTest() throws Exception {
-        PatternAligner patternAligner = getRandomPatternAligner();
+        PatternConfiguration patternConfiguration = getRandomPatternConfiguration();
 
         SinglePattern[] patterns = new SinglePattern[21];
-        patterns[0] = new FuzzyMatchPattern(patternAligner, false,
+        patterns[0] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("ATTAGACA"));
-        patterns[1] = new FuzzyMatchPattern(patternAligner, false,
+        patterns[1] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("CNNNC"), 2, 2, -1, -1,
                 getRandomGroupsForFuzzyMatch(5));
-        patterns[2] = new FuzzyMatchPattern(patternAligner, false,
+        patterns[2] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("WWATTNB"), 0, 0, 1, -1);
-        patterns[3] = new FuzzyMatchPattern(patternAligner, false,
+        patterns[3] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("NNNNTNNAN"), 1, 2, 1, 8);
-        patterns[4] = new FuzzyMatchPattern(patternAligner, false,
+        patterns[4] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("NNN"), 1, 0, -1, -1);
-        patterns[5] = new RepeatPattern(patternAligner, false,
+        patterns[5] = new RepeatPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("N"), 20, 20);
-        patterns[6] = new RepeatPattern(patternAligner, false,
+        patterns[6] = new RepeatPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("A"), 4, 6);
-        patterns[7] = new RepeatPattern(patternAligner, false,
+        patterns[7] = new RepeatPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("B"), 8, 10, 4, -1,
                 getRandomGroupsForFuzzyMatch(8));
-        patterns[8] = new SequencePattern(patternAligner, false,
+        patterns[8] = new SequencePattern(patternConfiguration,
                 patterns[0], patterns[5]);
-        patterns[9] = new SequencePattern(patternAligner, false,
+        patterns[9] = new SequencePattern(patternConfiguration,
                 patterns[7], patterns[1], patterns[0]);
-        patterns[10] = new PlusPattern(patternAligner, false,
+        patterns[10] = new PlusPattern(patternConfiguration,
                 patterns[2], patterns[6]);
-        patterns[11] = new PlusPattern(patternAligner, false,
+        patterns[11] = new PlusPattern(patternConfiguration,
                 patterns[0], patterns[0]);
-        patterns[12] = new SequencePattern(patternAligner, false,
+        patterns[12] = new SequencePattern(patternConfiguration,
                 patterns[10], patterns[0]);
-        patterns[13] = new SequencePattern(patternAligner, false,
+        patterns[13] = new SequencePattern(patternConfiguration,
                 patterns[5], patterns[11]);
-        patterns[14] = new OrPattern(patternAligner, false,
+        patterns[14] = new OrPattern(patternConfiguration,
                 patterns[7], patterns[11], patterns[12]);
-        patterns[15] = new AndPattern(patternAligner, false,
+        patterns[15] = new AndPattern(patternConfiguration,
                 patterns[1], patterns[11]);
-        patterns[16] = new FuzzyMatchPattern(patternAligner, false,
+        patterns[16] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("attagaca"));
-        patterns[17] = new FuzzyMatchPattern(patternAligner, false,
+        patterns[17] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("atTAGAca"));
-        patterns[18] = new FuzzyMatchPattern(patternAligner, false,
+        patterns[18] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("WwATTnB"));
-        patterns[19] = new RepeatPattern(patternAligner, false,
+        patterns[19] = new RepeatPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("a"), 4, 6);
-        patterns[20] = new RepeatPattern(patternAligner, false,
+        patterns[20] = new RepeatPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("b"),
                 8, 10, -1, -1,
                 getRandomGroupsForFuzzyMatch(8));
 
         MultipleReadsOperator[] mPatterns = new MultipleReadsOperator[4];
-        mPatterns[0] = createMultiPattern(patternAligner, patterns[14], patterns[15]);
-        mPatterns[1] = createMultiPattern(patternAligner, patterns[0], patterns[4]);
-        mPatterns[2] = new AndOperator(patternAligner, false, mPatterns[0], mPatterns[1]);
-        mPatterns[3] = new OrOperator(patternAligner, false, mPatterns[0], mPatterns[1]);
+        mPatterns[0] = createMultiPattern(patternConfiguration, patterns[14], patterns[15]);
+        mPatterns[1] = createMultiPattern(patternConfiguration, patterns[0], patterns[4]);
+        mPatterns[2] = new AndOperator(patternConfiguration, mPatterns[0], mPatterns[1]);
+        mPatterns[3] = new OrOperator(patternConfiguration, mPatterns[0], mPatterns[1]);
 
         long[] expected = new long[25];
         expected[0] = notFixedSequenceMinComplexity + singleNucleotideComplexity / 8;
@@ -137,15 +137,15 @@ public class CommonPatternTests {
     @Test
     public void estimateComplexityRandomTest() throws Exception {
         for (int i = 0; i < 1000; i++) {
-            PatternAligner patternAligner = getRandomPatternAligner();
+            PatternConfiguration patternConfiguration = getRandomPatternConfiguration();
             boolean hasGroups = rg.nextBoolean();
-            SinglePattern pattern = getRandomBasicPattern(patternAligner, hasGroups);
+            SinglePattern pattern = getRandomBasicPattern(patternConfiguration, hasGroups);
             Filter filter = new ScoreFilter(-rg.nextInt(75));
-            FilterPattern filterPattern = new FilterPattern(patternAligner, false, filter, pattern);
-            NotOperator notOperator = hasGroups ? null : new NotOperator(patternAligner,
-                    false, createMultiPattern(patternAligner, pattern));
-            MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(patternAligner,
-                    false, filter, createMultiPattern(patternAligner, pattern));
+            FilterPattern filterPattern = new FilterPattern(patternConfiguration, filter, pattern);
+            NotOperator notOperator = hasGroups ? null : new NotOperator(patternConfiguration,
+                    createMultiPattern(patternConfiguration, pattern));
+            MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(patternConfiguration,
+                    filter, createMultiPattern(patternConfiguration, pattern));
 
             if (pattern instanceof CanFixBorders) {
                 boolean isBorderFixed = false;
@@ -204,25 +204,25 @@ public class CommonPatternTests {
     @Test
     public void specialCasesTest() throws Exception {
         PatternAndTargetAlignmentScoring[] scorings = new PatternAndTargetAlignmentScoring[1];
-        PatternAligner[] patternAligners = new PatternAligner[2];
+        PatternConfiguration[] patternConfigurations = new PatternConfiguration[2];
         String[] sequences = new String[1];
         NSequenceWithQuality[] targets = new NSequenceWithQuality[1];
         SinglePattern[] patterns = new SinglePattern[3];
 
         scorings[0] = new PatternAndTargetAlignmentScoring(0, -2, -1,
                 -2, (byte)25, (byte)6, -1);
-        patternAligners[0] = getTestPatternAligner();
-        patternAligners[1] = getTestPatternAligner(-40, 1, 0,
-                -1, -1, -1, scorings[0]);
+        patternConfigurations[0] = getTestPatternConfiguration();
+        patternConfigurations[1] = getTestPatternConfiguration(-40, 1, 0,
+                -1, -1, -1, scorings[0], false);
         sequences[0] = "t";
         targets[0] = new NSequenceWithQuality(sequences[0]);
-        patterns[0] = new RepeatPattern(patternAligners[1], false,
+        patterns[0] = new RepeatPattern(patternConfigurations[1],
                 new NucleotideSequenceCaseSensitive("c"),
                 1, 1, -1, 45);
-        patterns[1] = new RepeatPattern(patternAligners[0], false,
+        patterns[1] = new RepeatPattern(patternConfigurations[0],
                 new NucleotideSequenceCaseSensitive(sequences[0]),
                 4, 30, -1, -1);
-        patterns[2] = new SequencePattern(patternAligners[0], false,
+        patterns[2] = new SequencePattern(patternConfigurations[0],
                 patterns[0], patterns[1]);
 
         MatchingResult matchingResult = patterns[2].match(targets[0]);

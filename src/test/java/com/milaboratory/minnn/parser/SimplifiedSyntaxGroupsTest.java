@@ -41,8 +41,8 @@ import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.RandomStringType.*;
 
 public class SimplifiedSyntaxGroupsTest {
-    private final PatternAligner patternAligner = getTestPatternAligner();
-    private final Parser parser = new Parser(patternAligner);
+    private final Parser parser = new Parser(new ParserConfiguration(getTestScoring(), Long.MIN_VALUE,
+            -1, 0, -1, 0));
 
     // pattern names that are valid as outer objects for group edges; this list doesn't include NOT_OPERATOR_NAME
     private final List<String> validGroupEdgeOuterObjectNames = Arrays.asList(FUZZY_MATCH_PATTERN_NAME,
@@ -63,7 +63,7 @@ public class SimplifiedSyntaxGroupsTest {
     @Test
     public void correctGroupsTest() throws Exception {
         for (int i = 0; i < 50; i++) {
-            PatternAligner patternAligner = getRandomPatternAligner();
+            PatternConfiguration patternConfiguration = getRandomPatternConfiguration();
             ArrayList<FuzzyMatchPattern> fuzzyMatchPatterns = new ArrayList<>();
             ArrayList<RepeatPattern> repeatPatterns = new ArrayList<>();
             ArrayList<OrPattern> orPatterns = new ArrayList<>();
@@ -71,23 +71,23 @@ public class SimplifiedSyntaxGroupsTest {
             ArrayList<OrOperator> orOperators = new ArrayList<>();
             ArrayList<String> groupCheckerQueries = new ArrayList<>();
             for (int j = 0; j < 3; j++) {
-                fuzzyMatchPatterns.add(getRandomFuzzyPattern(patternAligner, true));
-                repeatPatterns.add(getRandomRepeatPattern(patternAligner, true));
+                fuzzyMatchPatterns.add(getRandomFuzzyPattern(patternConfiguration, true));
+                repeatPatterns.add(getRandomRepeatPattern(patternConfiguration, true));
             }
             for (int j = 0; j < 5; j++) {
-                orPatterns.add(new OrPattern(patternAligner, false,
+                orPatterns.add(new OrPattern(patternConfiguration,
                         fuzzyMatchPatterns.get(rg.nextInt(3)),
-                        getRandomRawSinglePattern(patternAligner, fuzzyMatchPatterns.get(rg.nextInt(3))),
+                        getRandomRawSinglePattern(patternConfiguration, fuzzyMatchPatterns.get(rg.nextInt(3))),
                         repeatPatterns.get(rg.nextInt(3)),
-                        getRandomRawSinglePattern(patternAligner, repeatPatterns.get(rg.nextInt(3)))));
-                multiPatterns.add(createMultiPattern(patternAligner, false,
-                        getRandomRawSinglePattern(patternAligner,
+                        getRandomRawSinglePattern(patternConfiguration, repeatPatterns.get(rg.nextInt(3)))));
+                multiPatterns.add(createMultiPattern(patternConfiguration,
+                        getRandomRawSinglePattern(patternConfiguration,
                         rg.nextBoolean() ? fuzzyMatchPatterns.get(rg.nextInt(3))
                                 : repeatPatterns.get(rg.nextInt(3))),
-                        getRandomBasicPattern(patternAligner)));
-                orOperators.add(new OrOperator(patternAligner, false,
+                        getRandomBasicPattern(patternConfiguration)));
+                orOperators.add(new OrOperator(patternConfiguration,
                         multiPatterns.get(j),
-                        new AndOperator(patternAligner, false,
+                        new AndOperator(patternConfiguration,
                                 multiPatterns.get(j)),
                         multiPatterns.get(rg.nextInt(multiPatterns.size()))));
 
@@ -96,22 +96,22 @@ public class SimplifiedSyntaxGroupsTest {
                 ArrayList<GroupEdgePosition> groupEdgePositions2 = new ArrayList<>();
                 groupEdgePositions1.add(new GroupEdgePosition(new GroupEdge(randomGroupName, true), 0));
                 groupEdgePositions2.add(new GroupEdgePosition(new GroupEdge(randomGroupName, false), 1));
-                FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(patternAligner, true,
+                FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(patternConfiguration,
                         new NucleotideSequenceCaseSensitive("a"), groupEdgePositions1);
-                RepeatPattern repeatPattern = new RepeatPattern(patternAligner, true,
+                RepeatPattern repeatPattern = new RepeatPattern(patternConfiguration,
                         new NucleotideSequenceCaseSensitive("a"), 1, 2, groupEdgePositions2);
-                PlusPattern plusPattern1 = new PlusPattern(patternAligner, true,
-                        getRandomBasicPattern(patternAligner),
-                        new FilterPattern(patternAligner, true, new ScoreFilter(0),
+                PlusPattern plusPattern1 = new PlusPattern(patternConfiguration,
+                        getRandomBasicPattern(patternConfiguration),
+                        new FilterPattern(patternConfiguration, new ScoreFilter(0),
                                 fuzzyMatchPattern),
-                        getRandomBasicPattern(patternAligner));
-                PlusPattern plusPattern2 = new PlusPattern(patternAligner, true,
-                        getRandomBasicPattern(patternAligner),
-                        new FilterPattern(patternAligner, true, new ScoreFilter(-1),
+                        getRandomBasicPattern(patternConfiguration));
+                PlusPattern plusPattern2 = new PlusPattern(patternConfiguration,
+                        getRandomBasicPattern(patternConfiguration),
+                        new FilterPattern(patternConfiguration, new ScoreFilter(-1),
                                 repeatPattern),
-                        getRandomBasicPattern(patternAligner));
+                        getRandomBasicPattern(patternConfiguration));
 
-                groupCheckerQueries.add(new SequencePattern(patternAligner, true,
+                groupCheckerQueries.add(new SequencePattern(patternConfiguration,
                         plusPattern1, plusPattern2).toString());
                 groupCheckerQueries.add(orPatterns.get(j).toString());
                 groupCheckerQueries.add(orOperators.get(j).toString());
@@ -157,9 +157,9 @@ public class SimplifiedSyntaxGroupsTest {
         ArrayList<GroupEdgePosition> groupEdgePositions2 = new ArrayList<>();
         groupEdgePositions1.add(new GroupEdgePosition(new GroupEdge(randomGroupName, true), 0));
         groupEdgePositions2.add(new GroupEdgePosition(new GroupEdge(randomGroupName, false), 1));
-        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getRandomPatternAligner(), true,
+        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getRandomPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("a"), groupEdgePositions1);
-        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getRandomPatternAligner(), true,
+        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getRandomPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("a"), groupEdgePositions2);
         Pattern invalidPattern = getRandomPatternNotInList(validGroupPartNotCommonObjectNames,
                 fuzzyMatchPattern1, fuzzyMatchPattern2);

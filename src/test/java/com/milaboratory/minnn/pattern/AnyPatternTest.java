@@ -32,7 +32,7 @@ import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.test.TestUtil;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.ArrayList;
 
@@ -43,14 +43,15 @@ public class AnyPatternTest {
     @Test
     public void randomGroupsTest() throws Exception {
         for (int i = 0; i < 30000; i++) {
-            PatternAligner patternAligner = getTestPatternAligner(rg.nextInt(10));
+            PatternConfiguration patternConfiguration = getTestPatternConfiguration(rg.nextInt(10));
             ArrayList<GroupEdge> groupEdges = new ArrayList<>();
             int numGroupEdges = rg.nextInt(40);
             int targetSize = rg.nextInt(1000) + 1;
             for (int j = 0; j < numGroupEdges; j++)
                 groupEdges.add(new GroupEdge("1", rg.nextBoolean()));
-            AnyPattern pattern = new AnyPattern(patternAligner, false, groupEdges);
-            NucleotideSequence targetSeq = TestUtil.randomSequence(NucleotideSequence.ALPHABET, targetSize, targetSize);
+            AnyPattern pattern = new AnyPattern(patternConfiguration, groupEdges);
+            NucleotideSequence targetSeq = TestUtil.randomSequence(NucleotideSequence.ALPHABET,
+                    targetSize, targetSize);
             NSequenceWithQuality target = new NSequenceWithQuality(targetSeq.toString());
             OutputPort<MatchIntermediate> port = pattern.match(target).getMatches(rg.nextBoolean());
             Match match = port.take();
@@ -61,7 +62,7 @@ public class AnyPatternTest {
                     assertEquals(0, matchedGroupEdge.getPosition());
                 else
                     assertEquals(target.size(), matchedGroupEdge.getPosition());
-                assertTrue(matchedGroupEdge.getGroupName().equals("1"));
+                assertEquals("1", matchedGroupEdge.getGroupName());
             }
         }
     }

@@ -34,7 +34,7 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 import com.milaboratory.test.TestUtil;
-import org.junit.Test;
+import org.junit.*;
 
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
@@ -49,14 +49,13 @@ public class ScoreFilterTest {
             MultiNSequenceWithQuality multiTarget = createMultiNSeq(seq, 2);
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     1, 20);
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(rg.nextInt(5)),
-                    false, motif);
-            FilterPattern filterPattern = new FilterPattern(getTestPatternAligner(), false,
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(rg.nextInt(5)), motif);
+            FilterPattern filterPattern = new FilterPattern(getTestPatternConfiguration(),
                     new ScoreFilter(scoreThreshold), pattern);
-            MultiPattern multiPattern = createMultiPattern(getTestPatternAligner(), pattern, filterPattern);
-            MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(getTestPatternAligner(),
-                    false, new ScoreFilter(scoreThreshold * 2), multiPattern);
-            AndOperator andOperator = new AndOperator(getTestPatternAligner(), false,
+            MultiPattern multiPattern = createMultiPattern(getTestPatternConfiguration(), pattern, filterPattern);
+            MultipleReadsFilterPattern mFilterPattern = new MultipleReadsFilterPattern(getTestPatternConfiguration(),
+                    new ScoreFilter(scoreThreshold * 2), multiPattern);
+            AndOperator andOperator = new AndOperator(getTestPatternConfiguration(),
                     multiPattern, mFilterPattern);
             Match patternBestMatch = pattern.match(target).getBestMatch(true);
             boolean isMatching = (patternBestMatch != null) && (patternBestMatch.getScore() >= scoreThreshold);
