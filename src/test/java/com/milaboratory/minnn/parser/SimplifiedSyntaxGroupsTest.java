@@ -36,13 +36,13 @@ import org.junit.rules.ExpectedException;
 import java.util.*;
 
 import static com.milaboratory.minnn.parser.ParserFormat.*;
+import static com.milaboratory.minnn.parser.ParserTestUtils.*;
 import static com.milaboratory.minnn.parser.SimplifiedSyntaxStrings.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.RandomStringType.*;
 
 public class SimplifiedSyntaxGroupsTest {
-    private final Parser parser = new Parser(new ParserConfiguration(getTestScoring(), Long.MIN_VALUE,
-            -1, 0, -1, 0));
+    private final Parser parser = getTestParser();
 
     // pattern names that are valid as outer objects for group edges; this list doesn't include NOT_OPERATOR_NAME
     private final List<String> validGroupEdgeOuterObjectNames = Arrays.asList(FUZZY_MATCH_PATTERN_NAME,

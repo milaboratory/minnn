@@ -30,12 +30,10 @@ package com.milaboratory.minnn.util;
 
 import com.milaboratory.core.alignment.*;
 import com.milaboratory.core.sequence.*;
-import com.milaboratory.minnn.pattern.PatternAligner;
 import com.milaboratory.test.TestUtil;
 import org.junit.*;
 
 import static com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive.fromNucleotideSequence;
-import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static com.milaboratory.minnn.util.DebugUtils.*;
 import static org.junit.Assert.*;
 
@@ -93,7 +91,6 @@ public class ProfilingTest {
         final PatternAndTargetAlignmentScoring scoringNew = new PatternAndTargetAlignmentScoring(
                 0, -9, -10, -9,
                 (byte)34, (byte)0, 0);
-        final PatternAligner patternAligner = getTestPatternAligner();
         for (int i = 0; i < 100000; i++) {
             final NucleotideSequence seq1 = TestUtil.randomSequence(NucleotideSequence.ALPHABET,
                     20, 40);

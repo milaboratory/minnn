@@ -104,7 +104,7 @@ public class FuzzyMatchPatternTest {
         assertFalse(result.isFound());
         result = pattern.match(nseq, 11, 20);
         assertFalse(result.isFound());
-        pattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        pattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("attttaca"));
         result = pattern.match(nseq, 1, 19);
         assertFalse(result.isFound());
@@ -113,8 +113,8 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void specialCasesTest() throws Exception {
-        PatternAligner patternAligner1 = getTestPatternAligner(7);
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternAligner1, false,
+        PatternConfiguration patternConfiguration1 = getTestPatternConfiguration(7);
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternConfiguration1,
                 new NucleotideSequenceCaseSensitive("gcatcatgct"));
         NSequenceWithQuality target1 = new NSequenceWithQuality("TTT");
         MatchingResult result1 = pattern1.match(target1);
@@ -124,10 +124,10 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void uppercaseLettersTest() throws Exception {
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(-30, 1,
-                0, -1), false,
-                new NucleotideSequenceCaseSensitive("cgATTAcgA"));
-        NSequenceWithQuality target = new NSequenceWithQuality("TCGATTTACGACTGATTACGATTATTACGATTATCGATTACGTCGATTACAGA");
+        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(-30, 1,
+                0, -1), new NucleotideSequenceCaseSensitive("cgATTAcgA"));
+        NSequenceWithQuality target = new NSequenceWithQuality(
+                "TCGATTTACGACTGATTACGATTATTACGATTATCGATTACGTCGATTACAGA");
         OutputPort<MatchIntermediate> matches = pattern.match(target).getMatches(true);
 
         MatchIntermediate match = matches.take();
@@ -164,7 +164,7 @@ public class FuzzyMatchPatternTest {
                     0, 40);
             NucleotideSequenceCaseSensitive fullSeq = SequencesUtils.concatenate(seqL, seqM, seqR);
             NSequenceWithQuality target = new NSequenceWithQuality(fullSeq.toString());
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false, seqM);
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(), seqM);
             assertTrue(pattern.match(target).isFound());
             assertNotNull(pattern.match(target).getBestMatch(rg.nextBoolean()));
             assertNotNull(pattern.match(target).getMatches(rg.nextBoolean()).take());
@@ -179,7 +179,7 @@ public class FuzzyMatchPatternTest {
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     1, 50);
             NSequenceWithQuality targetQ = new NSequenceWithQuality(target.toString());
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false, motif);
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(), motif);
             boolean isMatching = target.toString().contains(motif.toString().toUpperCase());
             assertEquals(isMatching, pattern.match(targetQ).isFound());
             assertEquals(isMatching, pattern.match(targetQ).getBestMatch(rg.nextBoolean()) != null);
@@ -189,7 +189,7 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void multipleMatchesTest() throws Exception {
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("attagaca"));
         NSequenceWithQuality nseq = new NSequenceWithQuality("ACTGCGATAAATTAGACATTAGACATTAGACAGTACGTATTAGACA");
         MatchingResult result = pattern.match(nseq);
@@ -214,7 +214,7 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void matchesIntersectionTest() throws Exception {
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("ata"));
         NSequenceWithQuality nseq = new NSequenceWithQuality("ATATATTAAATATATATTTAATATATAAT");
         OutputPort<MatchIntermediate> matches = pattern.match(nseq).getMatches();
@@ -240,7 +240,7 @@ public class FuzzyMatchPatternTest {
             add(new GroupEdgePosition(new GroupEdge("GH", false), 11));
         }};
 
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("gtggttgtgttgt"), groups);
         NSequenceWithQuality nseq = new NSequenceWithQuality("GTGTTGTGGTTGTGTTGTTGTGGTTGTGTTGTGG");
         MatchingResult result = pattern.match(nseq);
@@ -251,7 +251,7 @@ public class FuzzyMatchPatternTest {
         assertNull(matches.take());
 
         exception.expect(IllegalArgumentException.class);
-        new FuzzyMatchPattern(getTestPatternAligner(), false,
+        new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("ggtgtgtcac"), groups);
     }
 
@@ -267,7 +267,7 @@ public class FuzzyMatchPatternTest {
         }};
 
         exception.expect(IllegalArgumentException.class);
-        new FuzzyMatchPattern(getTestPatternAligner(), false,
+        new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("tagcc"), groups);
     }
 
@@ -275,7 +275,7 @@ public class FuzzyMatchPatternTest {
     public void randomGroupsTest() throws Exception {
         for (int i = 0; i < 30000; i++) {
             int numErrors = rg.nextInt(4);
-            PatternAligner patternAligner = getTestPatternAligner(numErrors);
+            PatternConfiguration patternConfiguration = getTestPatternConfiguration(numErrors);
             ArrayList<GroupEdgePosition> groupEdges = new ArrayList<>();
             int numGroupEdges = rg.nextInt(40);
             int motifSize = rg.nextInt(50) + 1 + numErrors;
@@ -285,10 +285,8 @@ public class FuzzyMatchPatternTest {
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     motifSize, motifSize);
             NucleotideSequenceCaseSensitive mutatedMotif = makeRandomErrors(motif, numErrors);
-            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternAligner, false,
-                    motif, groupEdges);
-            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternAligner, false,
-                    mutatedMotif, groupEdges);
+            FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternConfiguration, motif, groupEdges);
+            FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternConfiguration, mutatedMotif, groupEdges);
             NSequenceWithQuality target = new NSequenceWithQuality(motif.toString() + motif.toString());
             OutputPort<MatchIntermediate> port1 = pattern1.match(target).getMatches(false);
             OutputPort<MatchIntermediate> port2 = pattern2.match(target).getMatches(rg.nextBoolean());
@@ -300,8 +298,8 @@ public class FuzzyMatchPatternTest {
             int matchesArraySize;
             if (matches[3] == null) {
                 matchesArraySize = 3;
-                Range matchedRange = patternAligner.align(mutatedMotif, target, target.size() - 1)
-                        .getSequence1Range();
+                Range matchedRange = patternConfiguration.patternAligner.align(patternConfiguration, mutatedMotif,
+                        target, target.size() - 1).getSequence1Range();
                 assertEquals(0, matchedRange.getLower());
                 assertTrue(matchedRange.getUpper() < target.size());
             } else
@@ -326,7 +324,7 @@ public class FuzzyMatchPatternTest {
             NucleotideSequenceCaseSensitive motif = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                     1, 50, false);
             NSequenceWithQuality targetQ = new NSequenceWithQuality(target.toString());
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternAligner(), false, motif);
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(), motif);
             BitapMatcher matcher = motif.toNucleotideSequence().toMotif().getBitapPattern()
                     .exactMatcher(target.getSequence(), 0, target.size());
             boolean isMatching = (matcher.findNext() != -1);
@@ -337,11 +335,11 @@ public class FuzzyMatchPatternTest {
     @Test
     public void simpleAlignmentTest() throws Exception {
         FuzzyMatchPattern[] patterns = {
-            new FuzzyMatchPattern(getTestPatternAligner(0), false,
+            new FuzzyMatchPattern(getTestPatternConfiguration(0),
                     new NucleotideSequenceCaseSensitive("attagaca")),
-            new FuzzyMatchPattern(getTestPatternAligner(1), false,
+            new FuzzyMatchPattern(getTestPatternConfiguration(1),
                     new NucleotideSequenceCaseSensitive("attagaca")),
-            new FuzzyMatchPattern(getTestPatternAligner(2), false,
+            new FuzzyMatchPattern(getTestPatternConfiguration(2),
                     new NucleotideSequenceCaseSensitive("attagaca"))
         };
         NSequenceWithQuality[] sequences = {
@@ -379,11 +377,11 @@ public class FuzzyMatchPatternTest {
     @Test
     public void scoringTest() throws Exception {
         FuzzyMatchPattern[] patterns = {
-                new FuzzyMatchPattern(getTestPatternAligner(0), false,
+                new FuzzyMatchPattern(getTestPatternConfiguration(0),
                         new NucleotideSequenceCaseSensitive("attagaca")),
-                new FuzzyMatchPattern(getTestPatternAligner(1), false,
+                new FuzzyMatchPattern(getTestPatternConfiguration(1),
                         new NucleotideSequenceCaseSensitive("attagaca")),
-                new FuzzyMatchPattern(getTestPatternAligner(0), false,
+                new FuzzyMatchPattern(getTestPatternConfiguration(0),
                         new NucleotideSequenceCaseSensitive("TA"))
         };
         NSequenceWithQuality[] sequences = {
@@ -416,15 +414,15 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void fixedBordersTest() throws Exception {
-        PatternAligner patternAligner = getTestPatternAligner(1);
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternAligner, false,
-                new NucleotideSequenceCaseSensitive("attagaca"),0, 0, 2, -1,
+        PatternConfiguration patternConfiguration = getTestPatternConfiguration(1);
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(patternConfiguration,
+                new NucleotideSequenceCaseSensitive("attagaca"), 0, 0, 2, -1,
                 getRandomGroupsForFuzzyMatch(8));
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternAligner, false,
-                new NucleotideSequenceCaseSensitive("attagaca"),0, 0, -1, 11,
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(patternConfiguration,
+                new NucleotideSequenceCaseSensitive("attagaca"), 0, 0, -1, 11,
                 getRandomGroupsForFuzzyMatch(4));
-        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(patternAligner, false,
-                new NucleotideSequenceCaseSensitive("attagaca"),0, 0, 3, 9,
+        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(patternConfiguration,
+                new NucleotideSequenceCaseSensitive("attagaca"), 0, 0, 3, 9,
                 getRandomGroupsForFuzzyMatch(6, 15));
         NSequenceWithQuality target1_1 = new NSequenceWithQuality("GATTAGACA");
         NSequenceWithQuality target1_2 = new NSequenceWithQuality("ATTAGACA");
@@ -456,25 +454,25 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void borderCutsTest() throws Exception {
-        PatternAligner patternAligner = getTestPatternAligner(true);
+        PatternConfiguration patternConfiguration = getTestPatternConfiguration(true);
         NucleotideSequenceCaseSensitive seq = new NucleotideSequenceCaseSensitive("attagaca");
         NSequenceWithQuality target = new NSequenceWithQuality("TAGAC");
         FuzzyMatchPattern[] patterns = {
-                new FuzzyMatchPattern(patternAligner, false,
+                new FuzzyMatchPattern(patternConfiguration,
                         seq, 2, 1, -1, -1),
-                new FuzzyMatchPattern(patternAligner, false,
+                new FuzzyMatchPattern(patternConfiguration,
                         seq, 3, 3, -1, -1),
-                new FuzzyMatchPattern(patternAligner, false,
+                new FuzzyMatchPattern(patternConfiguration,
                         seq, 2, 1, 0, -2),
-                new FuzzyMatchPattern(patternAligner, false,
+                new FuzzyMatchPattern(patternConfiguration,
                         seq, 3, 3, 0, -2),
-                new FuzzyMatchPattern(patternAligner, false,
+                new FuzzyMatchPattern(patternConfiguration,
                         seq, 1, 1, -1, -1),
-                new FuzzyMatchPattern(patternAligner, false,
+                new FuzzyMatchPattern(patternConfiguration,
                         seq, 0, 0, -1, -1),
-                new FuzzyMatchPattern(patternAligner, false,
+                new FuzzyMatchPattern(patternConfiguration,
                         seq, 1, 1, 0, -2),
-                new FuzzyMatchPattern(patternAligner, false,
+                new FuzzyMatchPattern(patternConfiguration,
                         seq, 0, 0, 0, -2)
         };
         for (int i = 0; i < 8; i++)
@@ -485,12 +483,12 @@ public class FuzzyMatchPatternTest {
     public void groupEdgeMovementTest() throws Exception {
         for (int i = 0; i < 1000; i++) {
             int length = rg.nextInt(100) + 1;
-            PatternAligner patternAligner = getTestPatternAligner(true);
+            PatternConfiguration patternConfiguration = getTestPatternConfiguration(true);
             RandomCuts randomCuts = new RandomCuts(length);
             List<GroupEdgePosition> randomGroupEdges = getRandomGroupsForFuzzyMatch(length);
             NucleotideSequenceCaseSensitive seq = fromNucleotideSequence(TestUtil.randomSequence(
                     NucleotideSequence.ALPHABET, length, length), true);
-            FuzzyMatchPattern pattern = new FuzzyMatchPattern(patternAligner, false,
+            FuzzyMatchPattern pattern = new FuzzyMatchPattern(patternConfiguration,
                     seq, randomCuts.left, randomCuts.right,
                     rg.nextBoolean() ? 0 : -1, rg.nextBoolean() ? -2 : -1, randomGroupEdges);
             int targetCutLeft = (randomCuts.left == 0) ? 0 : rg.nextInt(randomCuts.left);
@@ -499,7 +497,7 @@ public class FuzzyMatchPatternTest {
                     .substring(targetCutLeft, seq.size() - targetCutRight));
             MatchIntermediate bestMatch = pattern.match(target).getMatches(rg.nextBoolean()).take();
             if (bestMatch != null) {
-                boolean multipleMatches = (countMatches(new FuzzyMatchPattern(patternAligner, false,
+                boolean multipleMatches = (countMatches(new FuzzyMatchPattern(patternConfiguration,
                         fromNucleotideSequence(bestMatch.getValue().getSequence(), true))
                         .match(new NSequenceWithQuality(seq.toString())), true) > 1);
                 ArrayList<MatchedGroupEdge> matchedGroupEdges = bestMatch.getMatchedGroupEdges();
@@ -525,7 +523,7 @@ public class FuzzyMatchPatternTest {
 
     @Test
     public void estimateMaxOverlapTest() throws Exception {
-        PatternAligner patternAligner = getTestPatternAligner();
+        PatternConfiguration patternConfiguration = getTestPatternConfiguration();
         NucleotideSequenceCaseSensitive[] sequences = new NucleotideSequenceCaseSensitive[5];
         FuzzyMatchPattern[] patterns = new FuzzyMatchPattern[6];
 
@@ -534,15 +532,15 @@ public class FuzzyMatchPatternTest {
         sequences[2] = new NucleotideSequenceCaseSensitive("aaAaa");
         sequences[3] = new NucleotideSequenceCaseSensitive("tTtttttt");
         sequences[4] = new NucleotideSequenceCaseSensitive("nNnnnnnnnNnnn");
-        patterns[0] = new FuzzyMatchPattern(patternAligner, false, sequences[0]);
-        patterns[1] = new FuzzyMatchPattern(patternAligner, false, sequences[1]);
-        patterns[2] = new FuzzyMatchPattern(patternAligner, false, sequences[2],
+        patterns[0] = new FuzzyMatchPattern(patternConfiguration, sequences[0]);
+        patterns[1] = new FuzzyMatchPattern(patternConfiguration, sequences[1]);
+        patterns[2] = new FuzzyMatchPattern(patternConfiguration, sequences[2],
                 0, 2, -1, -1);
-        patterns[3] = new FuzzyMatchPattern(patternAligner, false, sequences[3],
+        patterns[3] = new FuzzyMatchPattern(patternConfiguration, sequences[3],
                 2, 1, -1, -1);
-        patterns[4] = new FuzzyMatchPattern(patternAligner, false, sequences[4],
+        patterns[4] = new FuzzyMatchPattern(patternConfiguration, sequences[4],
                 2, 3, -1, -1);
-        patterns[5] = new FuzzyMatchPattern(patternAligner, false, sequences[4],
+        patterns[5] = new FuzzyMatchPattern(patternConfiguration, sequences[4],
                 0, 4, -1, -1);
 
         assertEquals(7, patterns[0].estimateMaxOverlap());
@@ -557,10 +555,11 @@ public class FuzzyMatchPatternTest {
     public void matchLengthTest() throws Exception {
         PatternAndTargetAlignmentScoring scoring = new PatternAndTargetAlignmentScoring(1,
                 -4, -5, -10000, (byte)0, (byte)30, 0);
-        PatternAligner patternAligner = getTestPatternAligner(-10, 2, 0,
-                -1, 0, -1, scoring);
+        PatternConfiguration patternConfiguration = getTestPatternConfiguration(-10,
+                2, 0, -1, 0, -1,
+                scoring, false);
         NSequenceWithQuality nseq = new NSequenceWithQuality("TTTACCATTTTTACTGATTTT");
-        FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(patternAligner, false,
+        FuzzyMatchPattern fuzzyMatchPattern = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("acga"));
         MatchIntermediate bestMatch = fuzzyMatchPattern.match(nseq).getBestMatch(true);
         assertEquals(-1, bestMatch.getScore());

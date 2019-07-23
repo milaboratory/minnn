@@ -63,7 +63,7 @@ public class CommonTestUtils {
         return StreamSupport.stream(CUtils.it(port).spliterator(), false);
     }
 
-    public static long countPortValues(OutputPort<MatchIntermediate> port) {
+    public static long countPortValues(OutputPort<?> port) {
         return streamPort(port).count();
     }
 

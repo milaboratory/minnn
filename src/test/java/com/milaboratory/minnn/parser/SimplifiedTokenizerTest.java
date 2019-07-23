@@ -36,6 +36,7 @@ import org.junit.rules.ExpectedException;
 import java.util.*;
 
 import static com.milaboratory.minnn.parser.ParserFormat.SIMPLIFIED;
+import static com.milaboratory.minnn.parser.ParserTestUtils.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
 
@@ -54,36 +55,28 @@ public class SimplifiedTokenizerTest {
             add(new GroupEdgePosition(new GroupEdge("GH", false), 11));
         }};
 
-        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern fuzzyMatchPattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("gtggttgtgttgt"), groups);
-        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getTestPatternAligner(), false,
+        FuzzyMatchPattern fuzzyMatchPattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("attg"));
-        AndPattern andPattern = new AndPattern(getTestPatternAligner(), false,
-                fuzzyMatchPattern2, fuzzyMatchPattern2);
-        PlusPattern plusPattern = new PlusPattern(getTestPatternAligner(), false,
-                andPattern, fuzzyMatchPattern2);
-        OrPattern orPattern = new OrPattern(getTestPatternAligner(), false,
-                plusPattern, andPattern);
+        AndPattern andPattern = new AndPattern(getTestPatternConfiguration(), fuzzyMatchPattern2, fuzzyMatchPattern2);
+        PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(), andPattern, fuzzyMatchPattern2);
+        OrPattern orPattern = new OrPattern(getTestPatternConfiguration(), plusPattern, andPattern);
         ScoreFilter scoreFilter = new ScoreFilter(-3);
-        FilterPattern scoreFilterPatternS = new FilterPattern(getTestPatternAligner(), false,
-                scoreFilter, plusPattern);
-        MultiPattern multiPattern1 = createMultiPattern(getTestPatternAligner(), true,
+        FilterPattern scoreFilterPatternS = new FilterPattern(getTestPatternConfiguration(), scoreFilter, plusPattern);
+        MultiPattern multiPattern1 = createMultiPattern(getTestPatternConfiguration(),
                 orPattern, scoreFilterPatternS, fuzzyMatchPattern1, andPattern);
-        MultiPattern multiPattern2 = createMultiPattern(getTestPatternAligner(), false,
+        MultiPattern multiPattern2 = createMultiPattern(getTestPatternConfiguration(),
                 scoreFilterPatternS, fuzzyMatchPattern2, andPattern);
-        AndOperator andOperator1 = new AndOperator(getTestPatternAligner(), false,
-                multiPattern1, multiPattern2);
-        AndOperator andOperator2 = new AndOperator(getTestPatternAligner(), false,
-                multiPattern2, multiPattern2);
-        MultipleReadsFilterPattern scoreFilterPatternM = new MultipleReadsFilterPattern(getTestPatternAligner(),
-                false, scoreFilter, andOperator2);
-        NotOperator notOperator = new NotOperator(getTestPatternAligner(), false,
-                scoreFilterPatternM);
-        OrOperator orOperator = new OrOperator(getTestPatternAligner(), false,
+        AndOperator andOperator1 = new AndOperator(getTestPatternConfiguration(), multiPattern1, multiPattern2);
+        AndOperator andOperator2 = new AndOperator(getTestPatternConfiguration(), multiPattern2, multiPattern2);
+        MultipleReadsFilterPattern scoreFilterPatternM = new MultipleReadsFilterPattern(getTestPatternConfiguration(),
+                scoreFilter, andOperator2);
+        NotOperator notOperator = new NotOperator(getTestPatternConfiguration(), scoreFilterPatternM);
+        OrOperator orOperator = new OrOperator(getTestPatternConfiguration(),
                 andOperator1, notOperator, scoreFilterPatternM);
 
-        Parser parser = new Parser(getTestPatternAligner());
-        Pattern parseResult = parser.parseQuery(orOperator.toString(), SIMPLIFIED);
+        Pattern parseResult = getTestParser().parseQuery(orOperator.toString(), SIMPLIFIED);
         assertNotNull(parseResult);
         assertEquals(orOperator.toString(), parseResult.toString());
     }
@@ -99,12 +92,12 @@ public class SimplifiedTokenizerTest {
                         .toArray(new SinglePattern[singlePatterns.size()])));
                 Collections.reverse(singlePatterns);
             }
-            Parser parser = new Parser(getRandomPatternAligner());
+            Parser parser = getRandomParser();
             Pattern parseResult = parser.parseQuery(singlePatterns.get(0).toString(), SIMPLIFIED);
             assertNotNull(parseResult);
             assertEquals(singlePatterns.get(0).toString(), parseResult.toString());
             ArrayList<MultipleReadsOperator> multiPatterns = new ArrayList<>();
-            multiPatterns.add(createMultiPattern(getRandomPatternAligner(), rg.nextBoolean(), singlePatterns.get(0)));
+            multiPatterns.add(createMultiPattern(getRandomPatternConfiguration(), singlePatterns.get(0)));
             multiPatterns.add(getRandomMultiReadPattern());
             for (int j = 1; j < nestedMultiLevel; j++) {
                 multiPatterns.add(getRandomMultiReadPattern(multiPatterns.toArray(
@@ -114,7 +107,7 @@ public class SimplifiedTokenizerTest {
             parseResult = parser.parseQuery(multiPatterns.get(0).toString(), SIMPLIFIED);
             assertNotNull(parseResult);
             assertEquals(multiPatterns.get(0).toString(), parseResult.toString());
-            multiPatterns.add(createMultiPattern(getRandomPatternAligner(), rg.nextBoolean(),
+            multiPatterns.add(createMultiPattern(getRandomPatternConfiguration(),
                     getRandomRawSinglePattern(getRandomBasicPattern(true), getRandomBasicPattern(),
                             singlePatterns.get(0))));
             parseResult = parser.parseQuery(multiPatterns.get(multiPatterns.size() - 1).toString(), SIMPLIFIED);
@@ -125,7 +118,7 @@ public class SimplifiedTokenizerTest {
 
     @Test
     public void wrongOperandClassTest() throws Exception {
-        Parser parser = new Parser(getTestPatternAligner());
+        Parser parser = getTestParser();
         exception.expect(ParserException.class);
         parser.parseQuery("AndOperator([FuzzyMatchPattern(GATCACGTCGGGCTTCGT, -1, -1, []), "
                 + "FuzzyMatchPattern(GATCACGTCGGGCTTCGT, -1, -1, [])])", SIMPLIFIED);

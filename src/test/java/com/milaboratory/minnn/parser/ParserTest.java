@@ -32,7 +32,7 @@ import com.milaboratory.core.Range;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.pattern.*;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,7 +43,8 @@ import static com.milaboratory.minnn.util.CommonTestUtils.RandomStringType.*;
 import static org.junit.Assert.*;
 
 public class ParserTest {
-    private static final Parser strictParser = new Parser(getTestPatternAligner(true));
+    private static final Parser strictParser = new Parser(new ParserConfiguration(getTestScoring(), 0,
+            -1, 0, 0, 0));
 
     @Test
     public void sampleNormalSyntaxQueriesTest1() throws Exception {
@@ -60,8 +61,8 @@ public class ParserTest {
             "TATTAGA",                                                  // 2
             "GACAGGGG"                                                  // 3
         };
-        Parser parser = new Parser(getTestPatternAligner(-100, 2, 0,
-                -1));
+        Parser parser = new Parser(new ParserConfiguration(getTestScoring(), -100,
+                -1, 2, -1, 0));
         List<Pattern> patterns = Arrays.stream(queries).map(rethrow(parser::parseQuery)).collect(Collectors.toList());
         List<List<MatchIntermediate>> bestMatches = patterns.stream().map(p -> Arrays.stream(targets)
                 .map(t -> p.match(new NSequenceWithQuality(t)).getBestMatch(true))
