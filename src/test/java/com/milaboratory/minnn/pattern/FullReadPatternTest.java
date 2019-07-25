@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, MiLaboratory LLC
+ * Copyright (c) 2016-2019, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -66,10 +66,14 @@ public class FullReadPatternTest {
                 false, true), fuzzyMatchPattern3);
         FullReadPattern fullReadPattern3b = new FullReadPattern(getTestPatternConfiguration(), fuzzyMatchPattern3);
         for (FullReadPattern pattern : new FullReadPattern[] { fullReadPattern1a, fullReadPattern1b,
-                fullReadPattern2a, fullReadPattern2b, fullReadPattern3a, fullReadPattern3b }) {
+                fullReadPattern2a, fullReadPattern2b, fullReadPattern3a, fullReadPattern3b })
             assertException(IllegalStateException.class, () -> { pattern.getGroupEdges(); return null; });
-            pattern.setTargetId((byte)1);
-        }
+        fullReadPattern1a = (FullReadPattern)(fullReadPattern1a.setTargetId((byte)1));
+        fullReadPattern1b = (FullReadPattern)(fullReadPattern1b.setTargetId((byte)1));
+        fullReadPattern2a = (FullReadPattern)(fullReadPattern2a.setTargetId((byte)1));
+        fullReadPattern2b = (FullReadPattern)(fullReadPattern2b.setTargetId((byte)1));
+        fullReadPattern3a = (FullReadPattern)(fullReadPattern3a.setTargetId((byte)1));
+        fullReadPattern3b = (FullReadPattern)(fullReadPattern3b.setTargetId((byte)1));
 
         GroupEdge[] expectedGroupEdges1a = new GroupEdge[] { new GroupEdge("R1", true),
                 new GroupEdge("R1", false) };

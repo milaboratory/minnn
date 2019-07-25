@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, MiLaboratory LLC
+ * Copyright (c) 2016-2019, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -138,6 +138,9 @@ public class MultiPatternTest {
 
     @Test
     public void groupNamesTest1() throws Exception {
+        PatternConfiguration configurationWithOverride = getTestPatternConfiguration(
+                false, true);
+
         ArrayList<GroupEdgePosition> groups1 = new ArrayList<GroupEdgePosition>() {{
             add(new GroupEdgePosition(new GroupEdge("ABC", true), 1));
             add(new GroupEdgePosition(new GroupEdge("ABC", false), 3));
@@ -153,16 +156,19 @@ public class MultiPatternTest {
             add(new GroupEdgePosition(new GroupEdge("XYZ", false), 3));
         }};
 
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(configurationWithOverride,
                 new NucleotideSequenceCaseSensitive("gtggttgtgttgt"), groups1);
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(configurationWithOverride,
                 new NucleotideSequenceCaseSensitive("gtggttgtgttgt"), groups2);
         assertEquals(8,
-                createMultiPattern(getTestPatternConfiguration(), pattern1, pattern2).getGroupEdges().size());
+                createMultiPattern(configurationWithOverride, pattern1, pattern2).getGroupEdges().size());
     }
 
     @Test
     public void groupNamesTest2() throws Exception {
+        PatternConfiguration configurationWithOverride = getTestPatternConfiguration(
+                false, true);
+
         ArrayList<GroupEdgePosition> groups = new ArrayList<GroupEdgePosition>() {{
             add(new GroupEdgePosition(new GroupEdge("ABC", true), 1));
             add(new GroupEdgePosition(new GroupEdge("ABC", false), 3));
@@ -172,9 +178,9 @@ public class MultiPatternTest {
             add(new GroupEdgePosition(new GroupEdge("GH", false), 11));
         }};
 
-        FuzzyMatchPattern pattern = new FuzzyMatchPattern(getTestPatternConfiguration(),
+        FuzzyMatchPattern pattern = new FuzzyMatchPattern(configurationWithOverride,
                 new NucleotideSequenceCaseSensitive("gtggttgtgttgt"), groups);
-        assertEquals(6, createMultiPattern(getTestPatternConfiguration(), pattern, pattern)
+        assertEquals(6, createMultiPattern(configurationWithOverride, pattern, pattern)
                 .getGroupEdges().size());
     }
 

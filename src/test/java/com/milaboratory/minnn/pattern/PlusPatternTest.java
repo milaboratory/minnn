@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, MiLaboratory LLC
+ * Copyright (c) 2016-2019, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -172,7 +172,7 @@ public class PlusPatternTest {
                 new NucleotideSequenceCaseSensitive("ata"));
         FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
                 new NucleotideSequenceCaseSensitive("tat"));
-        PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(),
+        PlusPattern plusPattern = new PlusPattern(getTestPatternConfiguration(true),
                 pattern1, pattern2);
         NSequenceWithQuality nseq1 = new NSequenceWithQuality("ATATATATTATA");
         NSequenceWithQuality nseq2 = new NSequenceWithQuality("GCGGTGCGTATAGCG");

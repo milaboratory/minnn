@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, MiLaboratory LLC
+ * Copyright (c) 2016-2019, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -202,7 +202,10 @@ public class LogicalOperatorsTest {
 
     @Test
     public void groupNamesTest() throws Exception {
+        PatternConfiguration configurationWithOverride = getTestPatternConfiguration(
+                false, true);
         NucleotideSequenceCaseSensitive testSeq = new NucleotideSequenceCaseSensitive("gtggttgtgttgt");
+
         ArrayList<GroupEdgePosition> groups1 = new ArrayList<GroupEdgePosition>() {{
             add(new GroupEdgePosition(new GroupEdge("ABC", true), 1));
             add(new GroupEdgePosition(new GroupEdge("ABC", false), 3));
@@ -231,20 +234,23 @@ public class LogicalOperatorsTest {
             add(new GroupEdgePosition(new GroupEdge("0", false), 5));
         }};
 
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(), testSeq, groups1);
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(), testSeq, groups2);
-        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternConfiguration(), testSeq, groups3);
-        FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(getTestPatternConfiguration(), testSeq, groups4);
-        MultiPattern multiPattern1 = createMultiPattern(getTestPatternConfiguration(), pattern1, pattern3);
-        MultiPattern multiPattern2 = createMultiPattern(getTestPatternConfiguration(), pattern2, pattern4);
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(configurationWithOverride, testSeq, groups1);
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(configurationWithOverride, testSeq, groups2);
+        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(configurationWithOverride, testSeq, groups3);
+        FuzzyMatchPattern pattern4 = new FuzzyMatchPattern(configurationWithOverride, testSeq, groups4);
+        MultiPattern multiPattern1 = createMultiPattern(configurationWithOverride, pattern1, pattern3);
+        MultiPattern multiPattern2 = createMultiPattern(configurationWithOverride, pattern2, pattern4);
 
         // group edge validity now checked in parser; AndOperator must remove duplicate group edges
-        assertEquals(15, new AndOperator(getTestPatternConfiguration(),
+        assertEquals(15, new AndOperator(configurationWithOverride,
                 multiPattern1, multiPattern2).getGroupEdges().size());
     }
 
     @Test
     public void groupsTest() throws Exception {
+        PatternConfiguration configurationWithOverride = getTestPatternConfiguration(
+                false, true);
+
         ArrayList<GroupEdgePosition> groups1 = new ArrayList<GroupEdgePosition>() {{
             add(new GroupEdgePosition(new GroupEdge("1", true), 0));
             add(new GroupEdgePosition(new GroupEdge("1", false), 1));
@@ -261,18 +267,18 @@ public class LogicalOperatorsTest {
             add(new GroupEdgePosition(new GroupEdge("5", false), 6));
         }};
 
-        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(),
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(configurationWithOverride,
                 new NucleotideSequenceCaseSensitive("tagcc"), groups1);
-        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(),
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(configurationWithOverride,
                 new NucleotideSequenceCaseSensitive("cagatgca"), groups2);
-        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(getTestPatternConfiguration(),
+        FuzzyMatchPattern pattern3 = new FuzzyMatchPattern(configurationWithOverride,
                 new NucleotideSequenceCaseSensitive("a"));
-        MultiPattern multiPattern1 = createMultiPattern(getTestPatternConfiguration(), pattern1, pattern3);
-        MultiPattern multiPattern2 = createMultiPattern(getTestPatternConfiguration(), pattern3, pattern2);
-        MultiPattern multiPattern3 = createMultiPattern(getTestPatternConfiguration(), pattern3, pattern3);
-        NotOperator notOperator = new NotOperator(getTestPatternConfiguration(), multiPattern3);
-        OrOperator orOperator = new OrOperator(getTestPatternConfiguration(), notOperator, multiPattern1, notOperator);
-        AndOperator andOperator = new AndOperator(getTestPatternConfiguration(), multiPattern2, orOperator);
+        MultiPattern multiPattern1 = createMultiPattern(configurationWithOverride, pattern1, pattern3);
+        MultiPattern multiPattern2 = createMultiPattern(configurationWithOverride, pattern3, pattern2);
+        MultiPattern multiPattern3 = createMultiPattern(configurationWithOverride, pattern3, pattern3);
+        NotOperator notOperator = new NotOperator(configurationWithOverride, multiPattern3);
+        OrOperator orOperator = new OrOperator(configurationWithOverride, notOperator, multiPattern1, notOperator);
+        AndOperator andOperator = new AndOperator(configurationWithOverride, multiPattern2, orOperator);
 
         MultiNSequenceWithQuality mseq = new MultiNSequenceWithQualityImpl(
                 new NSequenceWithQuality("ACAATTAGCCA"),
