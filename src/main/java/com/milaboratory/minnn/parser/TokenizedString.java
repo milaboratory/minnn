@@ -28,7 +28,7 @@
  */
 package com.milaboratory.minnn.parser;
 
-import com.milaboratory.minnn.pattern.Pattern;
+import com.milaboratory.minnn.pattern.*;
 
 import java.util.*;
 import java.util.stream.*;
@@ -317,7 +317,10 @@ final class TokenizedString {
      */
     Pattern getFinalPattern() throws ParserException {
         assertFullyTokenized();
-        return tokenizedString.get(0).getPattern();
+        Pattern finalPattern = tokenizedString.get(0).getPattern();
+        if (finalPattern instanceof FullReadPattern)
+            finalPattern = ((FullReadPattern)finalPattern).setTargetId((byte)1);
+        return finalPattern;
     }
 
     void checkNotParsedNullPatterns() throws ParserException {
