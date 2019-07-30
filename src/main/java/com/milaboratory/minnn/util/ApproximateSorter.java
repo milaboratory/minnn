@@ -267,7 +267,7 @@ public final class ApproximateSorter {
             }
 
             for (int i = 0; i < totalNumberOfCombinations; i++) {
-                if (areCompatible(matchIndexes) && !alreadyReturned(matchIndexes)) {
+                if (areCompatible(matchIndexes) && newUniqueCombination(matchIndexes)) {
                     for (int j = 0; j < numberOfOperands; j++)
                         currentMatches[j] = allMatches.get(j).get(matchIndexes[j]);
                     IncompatibleIndexes incompatibleIndexes = findIncompatibleIndexes(currentMatches, matchIndexes);
@@ -298,7 +298,7 @@ public final class ApproximateSorter {
                 // all variables with "Unordered" suffix must be converted with operandOrder[] before using as index
                 int firstFoundNullIndexUnordered = numberOfOperands - 1;
                 currentMatches = getMatchesByIndexes(matchIndexes);
-                if (!alreadyReturned(matchIndexes) && Arrays.stream(currentMatches).noneMatch(Objects::isNull)) {
+                if (newUniqueCombination(matchIndexes) && Arrays.stream(currentMatches).noneMatch(Objects::isNull)) {
                     IncompatibleIndexes incompatibleIndexes = findIncompatibleIndexes(currentMatches, matchIndexes);
                     if (incompatibleIndexes == null) {
                         MatchIntermediate combinedMatch = combineMatches(currentMatches);
@@ -353,16 +353,16 @@ public final class ApproximateSorter {
             case INTERSECTION:
                 target = matches[0].getMatchedRange().getTarget();
                 Range[] ranges = new Range[matches.length];
-
-                OUTER:
-                for (int i = 0; i < matches.length; i++) {
-                    ranges[i] = matches[i].getRange();
-                    for (int j = 0; j < i; j++)     // Compare with all previously added matches
-                        if (checkFullIntersection(ranges[i], ranges[j])
-                                || checkOverlap(target, matches[i], matches[j])) {
-                            result = new IncompatibleIndexes(j, indexes[j], i, indexes[i]);
-                            break OUTER;
-                        }
+                { OUTER:
+                    for (int i = 0; i < matches.length; i++) {
+                        ranges[i] = matches[i].getRange();
+                        for (int j = 0; j < i; j++)     // Compare with all previously added matches
+                            if (checkFullIntersection(ranges[i], ranges[j])
+                                    || checkOverlap(target, matches[i], matches[j])) {
+                                result = new IncompatibleIndexes(j, indexes[j], i, indexes[i]);
+                                break OUTER;
+                            }
+                    }
                 }
                 break;
             case ORDER:
@@ -409,13 +409,13 @@ public final class ApproximateSorter {
     }
 
     /**
-     * Check if this combination of matches was already returned on first stages of unfair sorter.
+     * Check if this combination of matches is new and was not returned on first stages of unfair sorter.
      *
      * @param indexes indexes of matches
-     * @return true if combination was already returned, otherwise false
+     * @return false if we use unfair sorting and combination was already returned, otherwise true
      */
-    private boolean alreadyReturned(int[] indexes) {
-        return !conf.fairSorting && unfairReturnedCombinationsHashes.contains(Arrays.hashCode(indexes));
+    private boolean newUniqueCombination(int[] indexes) {
+        return conf.fairSorting || !unfairReturnedCombinationsHashes.contains(Arrays.hashCode(indexes));
     }
 
     /**
@@ -918,7 +918,7 @@ public final class ApproximateSorter {
         private MatchIntermediate takeMatchOrNull(int[] indexes) {
             MatchIntermediate[] currentMatches;
             if (areCompatible(indexes)) {
-                if (!alreadyReturned(indexes)) {
+                if (newUniqueCombination(indexes)) {
                     rememberReturnedCombination(indexes);
                     currentMatches = getMatchesByIndexes(indexes);
 
