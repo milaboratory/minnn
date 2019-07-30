@@ -169,6 +169,11 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
     }
 
     @Override
+    public int estimateMinLength() {
+        return Math.max(1, sequences.get(sequences.size() - 1).size() - conf.bitapMaxErrors);
+    }
+
+    @Override
     public int estimateMaxLength() {
         return sequences.get(0).size() + conf.bitapMaxErrors;
     }

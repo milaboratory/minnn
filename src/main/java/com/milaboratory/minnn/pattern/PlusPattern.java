@@ -61,6 +61,18 @@ public final class PlusPattern extends MultiplePatternsOperator implements CanFi
     }
 
     @Override
+    public int estimateMinLength() {
+        int summaryLength = 0;
+        for (int i = 0; i < operandPatterns.length; i++) {
+            if (i == 0)
+                summaryLength += operandPatterns[0].estimateMinLength();
+            else
+                summaryLength += Math.max(1, operandPatterns[i].estimateMinLength() - conf.maxOverlap);
+        }
+        return summaryLength;
+    }
+
+    @Override
     public long estimateComplexity() {
         return Arrays.stream(operandPatterns).mapToLong(Pattern::estimateComplexity).sum();
     }

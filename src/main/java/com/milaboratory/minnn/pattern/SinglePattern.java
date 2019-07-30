@@ -89,6 +89,13 @@ public abstract class SinglePattern extends Pattern {
     public abstract MatchingResult match(NSequenceWithQuality target, int from, int to);
 
     /**
+     * Return estimated minimum length for this pattern.
+     *
+     * @return estimated minimum length for this pattern
+     */
+    public abstract int estimateMinLength();
+
+    /**
      * Return estimated maximum length for this pattern, or if it is unavailable for this pattern, return -1.
      *
      * @return estimated maximum length for this pattern, or -1 if it is unavailable

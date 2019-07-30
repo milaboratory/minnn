@@ -68,6 +68,11 @@ public final class OrPattern extends MultiplePatternsOperator implements CanFixB
     }
 
     @Override
+    public int estimateMinLength() {
+        return Arrays.stream(operandPatterns).mapToInt(SinglePattern::estimateMinLength).min().orElse(1);
+    }
+
+    @Override
     public int estimateMaxLength() {
         int maxLength = -1;
         for (SinglePattern currentPattern : operandPatterns) {

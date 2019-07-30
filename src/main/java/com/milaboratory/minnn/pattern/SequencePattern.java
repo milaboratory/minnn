@@ -61,6 +61,18 @@ public final class SequencePattern extends MultiplePatternsOperator implements C
     }
 
     @Override
+    public int estimateMinLength() {
+        int summaryLength = 0;
+        for (int i = 0; i < operandPatterns.length; i++) {
+            if (i == 0)
+                summaryLength += operandPatterns[0].estimateMinLength();
+            else
+                summaryLength += Math.max(1, operandPatterns[i].estimateMinLength() - conf.maxOverlap);
+        }
+        return summaryLength;
+    }
+
+    @Override
     public int estimateMaxLength() {
         int maxGap = Math.max(conf.maxOverlap, conf.bitapMaxErrors);
         int summaryLength = maxGap * (operandPatterns.length - 1);

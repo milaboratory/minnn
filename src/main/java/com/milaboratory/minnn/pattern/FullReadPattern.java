@@ -80,6 +80,11 @@ public final class FullReadPattern extends SinglePattern {
     }
 
     @Override
+    public int estimateMinLength() {
+        throw new IllegalStateException("estimateMinLength() called for FullReadPattern!");
+    }
+
+    @Override
     public int estimateMaxLength() {
         throw new IllegalStateException("estimateMaxLength() called for FullReadPattern!");
     }

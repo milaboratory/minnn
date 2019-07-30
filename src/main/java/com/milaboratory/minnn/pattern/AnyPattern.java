@@ -69,6 +69,11 @@ public final class AnyPattern extends SinglePattern {
     }
 
     @Override
+    public int estimateMinLength() {
+        throw new IllegalStateException("estimateMinLength() called for AnyPattern!");
+    }
+
+    @Override
     public int estimateMaxLength() {
         throw new IllegalStateException("estimateMaxLength() called for AnyPattern!");
     }

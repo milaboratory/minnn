@@ -76,6 +76,14 @@ public final class FilterPattern extends SinglePattern implements CanBeSingleSeq
     }
 
     @Override
+    public int estimateMinLength() {
+        if (pattern instanceof SinglePattern)
+            return ((SinglePattern)pattern).estimateMinLength();
+        else
+            throw new IllegalStateException("estimateMinLength() called for argument of class " + pattern.getClass());
+    }
+
+    @Override
     public int estimateMaxLength() {
         if (pattern instanceof SinglePattern)
             return ((SinglePattern)pattern).estimateMaxLength();

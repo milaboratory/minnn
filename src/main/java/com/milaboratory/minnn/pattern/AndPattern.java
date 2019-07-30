@@ -32,8 +32,7 @@ import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.minnn.util.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 import static com.milaboratory.minnn.pattern.MatchValidationType.INTERSECTION;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.unfairSorterPortLimits;
@@ -57,6 +56,12 @@ public final class AndPattern extends MultiplePatternsOperator {
     @Override
     public MatchingResult match(NSequenceWithQuality target, int from, int to) {
         return new AndPatternMatchingResult(target, from, to);
+    }
+
+    @Override
+    public int estimateMinLength() {
+        int summaryLength = Arrays.stream(operandPatterns).mapToInt(SinglePattern::estimateMinLength).sum();
+        return Math.max(1, summaryLength - conf.maxOverlap * Math.max(0, operandPatterns.length - 1));
     }
 
     @Override
