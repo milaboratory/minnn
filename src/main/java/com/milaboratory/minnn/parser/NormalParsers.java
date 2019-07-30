@@ -90,17 +90,20 @@ final class NormalParsers {
                 fixedRightBorder = -2;
             }
 
-            int minRepeats = 1;
-            int maxRepeats = MAX_REPEATS;
+            int minRepeats;
+            int maxRepeats;
             if (arguments.length() == 0)
                 throw new ParserException("Missing number of repeats in " + query.substring(bracesPair.start - 1,
                         bracesPair.end + 1));
-            else if (arguments.equals("*"))
+            else if (arguments.equals("*")) {
                 minRepeats = 1;
-            else if (!arguments.contains(":")) {
+                maxRepeats = MAX_REPEATS;
+            } else if (!arguments.contains(":")) {
                 minRepeats = toInt(arguments, "number of repeats");
                 maxRepeats = minRepeats;
             } else {
+                minRepeats = 1;
+                maxRepeats = MAX_REPEATS;
                 if (arguments.indexOf(":") != 0)
                     minRepeats = toInt(arguments.substring(0, arguments.indexOf(":")),
                             "minimum number of repeats");
@@ -108,12 +111,12 @@ final class NormalParsers {
                     maxRepeats = toInt(arguments.substring(arguments.indexOf(":") + 1),
                             "maximum number of repeats");
             }
-            if (minRepeats > maxRepeats)
-                throw new ParserException("Minimum number of repeats (" + minRepeats + ") is bigger than maximum ("
-                        + maxRepeats + ")!");
             if ((minRepeats < 1) || (maxRepeats < 1))
                 throw new ParserException("Number of repeats must not be less than 1; found: min "
                         + minRepeats + ", max " + maxRepeats);
+            if (minRepeats > maxRepeats)
+                throw new ParserException("Minimum number of repeats (" + minRepeats + ") is bigger than maximum ("
+                        + maxRepeats + ")!");
 
             List<FoundGroupEdgePosition> foundGroupEdgePositions = new ArrayList<>();
             foundGroupEdgePositions.addAll(findGroupsOnBorder(bracesPair.start - 1, true, MAX_REPEATS));

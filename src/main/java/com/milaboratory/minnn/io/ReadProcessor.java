@@ -266,7 +266,7 @@ public final class ReadProcessor {
         return foundDefaultGroups;
     }
 
-    private class IndexedSequenceRead {
+    private static class IndexedSequenceRead {
         final SequenceRead sequenceRead;
         final long index;
 

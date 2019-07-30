@@ -255,7 +255,8 @@ public final class ApproximateSorter {
                     currentPortMatchesList = new ArrayList<>();
                     do {
                         currentMatch = currentPort.take();
-                        if ((currentMatch != null) || (areNullMatchesAllowed() && (currentPortMatchesList.size() == 0)))
+                        if ((currentMatch != null)
+                                || (areNullMatchesAllowed() && (currentPortMatchesList.size() == 0)))
                             currentPortMatchesList.add(currentMatch);
                     } while (currentMatch != null);
                 } else
