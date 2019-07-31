@@ -181,7 +181,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         return listener.getParsedArguments();
     }
 
-    private class FileNameListener extends DemultiplexGrammarBaseListener {
+    private static class FileNameListener extends DemultiplexGrammarBaseListener {
         private String fileName = null;
 
         String getFileName() {
@@ -198,7 +198,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         }
     }
 
-    private class InputFileNameListener extends DemultiplexGrammarBaseListener {
+    private static class InputFileNameListener extends DemultiplexGrammarBaseListener {
         private String inputFileName = null;
 
         String getInputFileName() {
@@ -213,7 +213,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         }
     }
 
-    private class ByBarcodeListener extends DemultiplexGrammarBaseListener {
+    private static class ByBarcodeListener extends DemultiplexGrammarBaseListener {
         private String barcodeName = null;
 
         String getBarcodeName() {
@@ -226,7 +226,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         }
     }
 
-    private class BySampleListener extends DemultiplexGrammarBaseListener {
+    private static class BySampleListener extends DemultiplexGrammarBaseListener {
         private String sampleFileName = null;
 
         String getSampleFileName() {

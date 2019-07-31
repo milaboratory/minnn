@@ -62,11 +62,20 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Override
     public void run1() {
-        String filterQuery = stripQuotes(String.join("", filterQueryList));
-        ReadFilter parsedReadFilter = parseFilterQuery(filterQuery);
-        if (parsedReadFilter == null)
-            throw exitWithError("Filter query not parsed: " + filterQuery);
-        FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), parsedReadFilter,
+        ArrayList<ReadFilter> readFilters = new ArrayList<>();
+        if (filterQueryList != null) {
+            String filterQuery = stripQuotes(String.join("", filterQueryList));
+            ReadFilter parsedReadFilter = parseFilterQuery(filterQuery);
+            if (parsedReadFilter == null)
+                throw exitWithError("Filter query not parsed: " + filterQuery);
+            readFilters.add(parsedReadFilter);
+        }
+        if (barcodeWhitelistFiles != null)
+            for (HashMap.Entry<String, String> entry : barcodeWhitelistFiles.entrySet()) {
+                // TODO: parse files and generate filters
+            }
+        ReadFilter finalReadFilter = (readFilters.size() == 1) ? readFilters.get(0) : new AndReadFilter(readFilters);
+        FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), finalReadFilter,
                 String.join("", filterQueryList), inputFileName, outputFileName, inputReadsLimit, threads,
                 reportFileName, jsonReportFileName);
         filterIO.go();
@@ -79,7 +88,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Override
     public void validate() {
-        if (filterQueryList == null)
+        if ((filterQueryList == null) && (barcodeWhitelistFiles == null))
             throwValidationException("Filter query is not specified!");
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
     }
@@ -89,6 +98,8 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         List<String> inputFileNames = new ArrayList<>();
         if (inputFileName != null)
             inputFileNames.add(inputFileName);
+        if (barcodeWhitelistFiles != null)
+            inputFileNames.addAll(barcodeWhitelistFiles.values());
         return inputFileNames;
     }
 
@@ -112,7 +123,8 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
     @Override
     public ActionConfiguration getConfiguration() {
         return new FilterActionConfiguration(new FilterActionConfiguration.FilterActionParameters(
-                String.join("", filterQueryList), fairSorting, inputReadsLimit));
+                (filterQueryList == null) ? null : String.join("", filterQueryList),
+                barcodeWhitelistFiles, fairSorting, inputReadsLimit));
     }
 
     @Override
@@ -136,6 +148,15 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
     @Option(description = OUT_FILE_OR_STDOUT,
             names = {"--output"})
     private String outputFileName = null;
+
+    @Option(description = "Barcode Whitelist Options: Barcode names and names of corresponding files with " +
+            "whitelists. Whitelist files must contain barcode values or queries with MiNNN pattern syntax, " +
+            "one value or query on the line. This is more convenient way for specifying OR pattern when there are " +
+            "many operands. So, for example, instead of using \"BC1~'AAA || GGG || CCC'\", option " +
+            "--whitelist BC1=options_BC1.txt can be used, where options_BC1.txt must contain AAA, GGG and CCC lines.",
+            names = {"--whitelist"},
+            arity = "1..*")
+    private LinkedHashMap<String, String> barcodeWhitelistFiles = null;
 
     @Option(description = FAIR_SORTING,
             names = {"--fair-sorting"})
@@ -168,7 +189,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         return listener.getFilter();
     }
 
-    private class AntlrFilterListener extends FilterGrammarBaseListener {
+    private static class AntlrFilterListener extends FilterGrammarBaseListener {
         protected ReadFilter filter = null;
 
         ReadFilter getFilter() {
@@ -185,21 +206,21 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         }
     }
 
-    private class MinConsensusReadsListener extends AntlrFilterListener {
+    private static class MinConsensusReadsListener extends AntlrFilterListener {
         @Override
         public void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) {
             filter = new ConsensusReadsReadFilter(Integer.parseInt(ctx.minConsensusReadsNum().getText()));
         }
     }
 
-    private class LenListener extends AntlrFilterListener {
+    private static class LenListener extends AntlrFilterListener {
         @Override
         public void enterLen(FilterGrammarParser.LenContext ctx) {
             filter = new LenReadFilter(ctx.groupNameOrAll().getText(), Integer.parseInt(ctx.groupLength().getText()));
         }
     }
 
-    private class GroupNFractionListener extends AntlrFilterListener {
+    private static class GroupNFractionListener extends AntlrFilterListener {
         @Override
         public void enterGroupNFraction(FilterGrammarParser.GroupNFractionContext ctx) {
             filter = new GroupNFractionFilter(ctx.groupNameOrAll().getText(),
@@ -207,7 +228,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         }
     }
 
-    private class GroupNCountListener extends AntlrFilterListener {
+    private static class GroupNCountListener extends AntlrFilterListener {
         @Override
         public void enterGroupNCount(FilterGrammarParser.GroupNCountContext ctx) {
             filter = new GroupNCountFilter(ctx.groupNameOrAll().getText(),
@@ -215,7 +236,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         }
     }
 
-    private class AvgGroupQualityListener extends AntlrFilterListener {
+    private static class AvgGroupQualityListener extends AntlrFilterListener {
         @Override
         public void enterAvgGroupQuality(FilterGrammarParser.AvgGroupQualityContext ctx) {
             filter = new AvgGroupQualityFilter(ctx.groupNameOrAll().getText(),
@@ -223,7 +244,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         }
     }
 
-    private class MinGroupQualityListener extends AntlrFilterListener {
+    private static class MinGroupQualityListener extends AntlrFilterListener {
         @Override
         public void enterMinGroupQuality(FilterGrammarParser.MinGroupQualityContext ctx) {
             filter = new MinGroupQualityFilter(ctx.groupNameOrAll().getText(),
@@ -231,7 +252,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         }
     }
 
-    private class SimpleFilterListener extends AntlrFilterListener {
+    private static class SimpleFilterListener extends AntlrFilterListener {
         @Override
         public void enterSimpleFilter(FilterGrammarParser.SimpleFilterContext ctx) {
             setIfNotNull(ctx.minGroupQuality(), new MinGroupQualityListener());
