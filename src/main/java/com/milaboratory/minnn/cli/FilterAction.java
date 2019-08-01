@@ -39,11 +39,13 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import picocli.CommandLine.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.CommonDescriptions.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
 import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
+import static com.milaboratory.minnn.io.IOUtils.*;
 import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 import static com.milaboratory.minnn.util.CommonUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
@@ -72,12 +74,16 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         }
         if (barcodeWhitelistFiles != null)
             for (HashMap.Entry<String, String> entry : barcodeWhitelistFiles.entrySet()) {
-                // TODO: parse files and generate filters
+                List<String> currentWhitelist = readLines(entry.getValue());
+                ReadFilter currentReadFilter = new OrReadFilter(currentWhitelist.stream()
+                        .map(query -> new PatternReadFilter(entry.getKey(), query, fairSorting))
+                        .collect(Collectors.toList()));
+                readFilters.add(currentReadFilter);
             }
         ReadFilter finalReadFilter = (readFilters.size() == 1) ? readFilters.get(0) : new AndReadFilter(readFilters);
         FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), finalReadFilter,
-                String.join("", filterQueryList), inputFileName, outputFileName, inputReadsLimit, threads,
-                reportFileName, jsonReportFileName);
+                (filterQueryList == null) ? null : String.join("", filterQueryList),
+                inputFileName, outputFileName, inputReadsLimit, threads, reportFileName, jsonReportFileName);
         filterIO.go();
     }
 
@@ -137,7 +143,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
             return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
     }
 
-    @Parameters(arity = "1..*",
+    @Parameters(arity = "0..*",
             description = "\"<filter_query>\"")
     private List<String> filterQueryList = null;
 
@@ -155,7 +161,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
             "many operands. So, for example, instead of using \"BC1~'AAA || GGG || CCC'\", option " +
             "--whitelist BC1=options_BC1.txt can be used, where options_BC1.txt must contain AAA, GGG and CCC lines.",
             names = {"--whitelist"},
-            arity = "1..*")
+            arity = "1")
     private LinkedHashMap<String, String> barcodeWhitelistFiles = null;
 
     @Option(description = FAIR_SORTING,
