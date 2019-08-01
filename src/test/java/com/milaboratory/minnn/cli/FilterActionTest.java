@@ -133,4 +133,28 @@ public class FilterActionTest {
         for (int i = 1; i <= 5; i++)
             assertTrue(new File(TEMP_DIR + "filterOutput" + i + ".mif").delete());
     }
+
+    @Test
+    public void barcodeWhitelistTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        String outputFile1 = TEMP_DIR + "filterOutput1.mif";
+        String outputFile2 = TEMP_DIR + "filterOutput2.mif";
+        String whitelist1 = EXAMPLES_PATH + "filter_whitelists/whitelist1.txt";
+        String whitelist2 = EXAMPLES_PATH + "filter_whitelists/whitelist2.txt";
+        for (String fairSorting : new String[] { "", " --fair-sorting" }) {
+            assertOutputContains(true, "276", () -> callableExec("filter -f" + fairSorting
+                    + " --input " + inputFile + " --output " + outputFile1 + " --whitelist G1=" + whitelist1));
+            assertOutputContains(true, "matched 1 reads", () -> callableExec("filter -f"
+                    + fairSorting + " --input " + inputFile + " --output " + outputFile2
+                    + " --whitelist R2=" + whitelist2 + " --whitelist G1=" + whitelist1 + " \"G2~'nnc'|Len(G4)=5\""));
+        }
+
+        try {
+            exec("filter -f --input " + inputFile + " --output " + outputFile1);
+            fail();
+        } catch (RuntimeException ignored) {}
+
+        for (String fileName : new String[] { inputFile, outputFile1, outputFile2 })
+            assertTrue(new File(fileName).delete());
+    }
 }
