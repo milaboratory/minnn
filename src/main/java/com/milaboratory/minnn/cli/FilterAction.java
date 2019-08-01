@@ -157,8 +157,8 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Option(description = "Barcode Whitelist Options: Barcode names and names of corresponding files with " +
             "whitelists. Whitelist files must contain barcode values or queries with MiNNN pattern syntax, " +
-            "one value or query on the line. This is more convenient way for specifying OR pattern when there are " +
-            "many operands. So, for example, instead of using \"BC1~'AAA || GGG || CCC'\", option " +
+            "one value or query on the line. This is more convenient way for specifying OR operator when there are " +
+            "many operands. So, for example, instead of using \"BC1~'AAA' | BC1~'GGG' | BC1~'CCC'\" query, option " +
             "--whitelist BC1=options_BC1.txt can be used, where options_BC1.txt must contain AAA, GGG and CCC lines.",
             names = {"--whitelist"},
             arity = "1")

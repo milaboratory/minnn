@@ -48,6 +48,7 @@ filter
 
  --input: Input file in MIF format. If not specified, stdin will be used.
  --output: Output file in MIF format. If not specified, stdout will be used.
+ --whitelist: Barcode Whitelist Options: Barcode names and names of corresponding files with whitelists. Whitelist files must contain barcode values or queries with MiNNN pattern syntax, one value or query on the line. This is more convenient way for specifying OR operator when there are many operands. So, for example, instead of using "BC1~'AAA' | BC1~'GGG' | BC1~'CCC'" query, option --whitelist BC1=options_BC1.txt can be used, where options_BC1.txt must contain AAA, GGG and CCC lines.
  --fair-sorting: Use fair sorting and fair best match by score for all patterns.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --threads: Number of threads for parsing reads.

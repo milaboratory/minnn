@@ -102,3 +102,7 @@ Parentheses :code:`()` can be used to manage operations priority. Examples:
    minnn filter "MinConsensusReads=25 & G1~'TCGCC'"
    minnn filter "G1~'N{4:8}' & (G2~'ATTA' | G3~'GACA')"
    minnn filter "Len(G1)=10 & Len(G2)=8 | Len(G1)=8 & Len(G2)=10"
+
+If there are many arguments for :code:`|` operator, :code:`--whitelist` option is more convenient way to specify
+them. Arguments can be specified in a text file instead of filter query. For more information, see
+:ref:`filter` action.
