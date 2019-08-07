@@ -49,6 +49,7 @@ public final class ApproximateSorterConfiguration {
     final MatchValidationType matchValidationType;
     final int unfairSorterLimit;
     final boolean specificOutputPorts;
+    private final BorderPatternsLength borderPatternsLength;
 
     /**
      * Configuration for MultipleReadsOperator patterns.
@@ -82,6 +83,7 @@ public final class ApproximateSorterConfiguration {
         this.unfairSorterLimit = unfairSorterLimit;
         this.specificOutputPorts = false;
         this.operandOrder = null;
+        this.borderPatternsLength = null;
         if (((matchValidationType == INTERSECTION) || (matchValidationType == ORDER)
                 || (matchValidationType == FOLLOWING) || (matchValidationType == FIRST)))
             throw new IllegalArgumentException("Invalid combination of multipleReads and matchValidationType flags: " +
@@ -155,8 +157,11 @@ public final class ApproximateSorterConfiguration {
                 operandOrderList.add(leftComplexity > rightComplexity ? rightIndex : leftIndex);
             }
             this.operandOrder = operandOrderList.stream().mapToInt(Integer::intValue).toArray();
-        } else
+            this.borderPatternsLength = calculateBorderPatternsLength();
+        } else {
             this.operandOrder = null;
+            this.borderPatternsLength = null;
+        }
         if ((from < 0) || (to < 0))
             throw new IllegalArgumentException("Invalid from and to arguments: from = " + from + ", to = " + to);
         if ((matchValidationType == LOGICAL_AND) || (matchValidationType == LOGICAL_OR))
@@ -185,10 +190,51 @@ public final class ApproximateSorterConfiguration {
         return to;
     }
 
+    int firstOperandFrom() {
+        if (specificOutputPorts)
+            return from + borderPatternsLength.minLengthOnLeftFromFirst;
+        else
+            throw new IllegalStateException("firstOperandFrom() called when specificOutputPorts is false!");
+    }
+
+    int firstOperandTo() {
+        if (specificOutputPorts)
+            return to - borderPatternsLength.minLengthOnRightFromFirst;
+        else
+            throw new IllegalStateException("firstOperandTo() called when specificOutputPorts is false!");
+    }
+
     int[] operandOrder() {
         if (specificOutputPorts)
             return operandOrder;
         else
             throw new IllegalStateException("Trying to get \"operandOrder\" when specificOutputPorts is false!");
+    }
+
+    private BorderPatternsLength calculateBorderPatternsLength() {
+        int minLengthOnLeftFromFirst = 0;
+        int minLengthOnRightFromFirst = 0;
+        int firstOperandIndex = operandOrder()[0];
+        for (int i = 1; i < operandPatterns.length; i++) {
+            int currentOperandIndex = operandOrder[i];
+            boolean currentOperandOnLeftFromFirst = currentOperandIndex < firstOperandIndex;
+            int minLengthIncrement = Math.max(1, ((SinglePattern)(operandPatterns[currentOperandIndex]))
+                    .estimateMinLength() - patternConfiguration.maxOverlap);
+            if (currentOperandOnLeftFromFirst)
+                minLengthOnLeftFromFirst += minLengthIncrement;
+            else
+                minLengthOnRightFromFirst += minLengthIncrement;
+        }
+        return new BorderPatternsLength(minLengthOnLeftFromFirst, minLengthOnRightFromFirst);
+    }
+
+    private static class BorderPatternsLength {
+        final int minLengthOnLeftFromFirst;
+        final int minLengthOnRightFromFirst;
+
+        BorderPatternsLength(int minLengthOnLeftFromFirst, int minLengthOnRightFromFirst) {
+            this.minLengthOnLeftFromFirst = minLengthOnLeftFromFirst;
+            this.minLengthOnRightFromFirst = minLengthOnRightFromFirst;
+        }
     }
 }

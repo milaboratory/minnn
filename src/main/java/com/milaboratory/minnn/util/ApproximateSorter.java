@@ -497,11 +497,13 @@ public final class ApproximateSorter {
      * Get SpecificOutputPort for specified operand index, "from" and "to" coordinates for operand pattern
      * match() call.
      *
-     * @param operandIndex operand index
-     * @param from from coordinate for operand pattern match() call, or -1 if conf.from() should be used
-     * @param to to coordinate for operand pattern match() call, or -1 if conf.to() should be used
-     * @param estimatedMaxOverlap estimated max overlap between this and previous match, or -1 if not used
-     * @return new SpecificOutputPort with specified parameters
+     * @param operandIndex          operand index
+     * @param from                  from coordinate for operand pattern match() call,
+     *                              or -1 if conf.from() should be used
+     * @param to                    to coordinate for operand pattern match() call,
+     *                              or -1 if conf.to() should be used
+     * @param estimatedMaxOverlap   estimated max overlap between this and previous match, or -1 if not used
+     * @return                      new SpecificOutputPort with specified parameters
      */
     private SpecificOutputPort getPortWithParams(int operandIndex, int from, int to, int estimatedMaxOverlap) {
         SpecificOutputPortIndex currentPortIndex = new SpecificOutputPortIndex(operandIndex, from, to);
@@ -556,10 +558,32 @@ public final class ApproximateSorter {
     }
 
     /**
+     * Get SpecificOutputPort for first operand (by conf.operandOrder), using "from" and "to" calculated by
+     * left and right patterns minimal length.
+     *
+     * @return new SpecificOutputPort with calculated parameters
+     */
+    private SpecificOutputPort getFirstOperandPort() {
+        int firstOperandIndex = conf.operandOrder()[0];
+        int from = conf.firstOperandFrom();
+        int to = conf.firstOperandTo();
+        SpecificOutputPortIndex currentPortIndex = new SpecificOutputPortIndex(firstOperandIndex, from, to);
+        SpecificOutputPort firstOperandPort = unfairOutputPorts.get(currentPortIndex);
+        if (firstOperandPort == null) {
+            SinglePattern firstPattern = (SinglePattern)(conf.operandPatterns[firstOperandIndex]);
+            int portLimit = unfairSorterPortLimits.get(firstPattern.getClass());
+            firstOperandPort = new SpecificOutputPort(firstPattern.match(conf.target.get(0), from, to)
+                    .getMatches(false), firstOperandIndex, from, to, portLimit);
+            unfairOutputPorts.put(currentPortIndex, firstOperandPort);
+        }
+        return firstOperandPort;
+    }
+
+    /**
      * Get array of matches by array of match indexes in output ports.
      *
-     * @param portValueIndexes array of indexes in output ports of pattern operands
-     * @return array of matches
+     * @param portValueIndexes  array of indexes in output ports of pattern operands
+     * @return                  array of matches
      */
     private MatchIntermediate[] getMatchesByIndexes(int[] portValueIndexes) {
         int numberOfOperands = conf.operandPatterns.length;
@@ -570,7 +594,7 @@ public final class ApproximateSorter {
         if (conf.specificOutputPorts) {
             int[] operandOrder = conf.operandOrder();
             int firstOperandIndex = operandOrder[0];
-            matches[firstOperandIndex] = getPortWithParams(firstOperandIndex).get(portValueIndexes[firstOperandIndex]);
+            matches[firstOperandIndex] = getFirstOperandPort().get(portValueIndexes[firstOperandIndex]);
             for (int i = 1; i < numberOfOperands; i++) {
                 int currentOperandIndex = operandOrder[i];
                 boolean previousMatchIsLeft = currentOperandIndex > firstOperandIndex;
@@ -691,7 +715,8 @@ public final class ApproximateSorter {
         public MatchIntermediate take() {
             if (alwaysReturnNull) return null;
             if (conf.fairSorting) return takeSorted();
-            if (++unfairSorterTakenValues > conf.unfairSorterLimit) {
+            if ((conf.specificOutputPorts && (conf.firstOperandFrom() >= conf.firstOperandTo()))
+                    || (++unfairSorterTakenValues > conf.unfairSorterLimit)) {
                 alwaysReturnNull = true;
                 return null;
             }
