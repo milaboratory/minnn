@@ -218,8 +218,9 @@ public final class ApproximateSorterConfiguration {
         for (int i = 1; i < operandPatterns.length; i++) {
             int currentOperandIndex = operandOrder[i];
             boolean currentOperandOnLeftFromFirst = currentOperandIndex < firstOperandIndex;
-            int minLengthIncrement = Math.max(1, ((SinglePattern)(operandPatterns[currentOperandIndex]))
-                    .estimateMinLength() - patternConfiguration.maxOverlap);
+            int minLengthIncrement = (patternConfiguration.maxOverlap == -1) ? 1
+                    : Math.max(1, ((SinglePattern)(operandPatterns[currentOperandIndex])).estimateMinLength()
+                    - patternConfiguration.maxOverlap);
             if (currentOperandOnLeftFromFirst)
                 minLengthOnLeftFromFirst += minLengthIncrement;
             else

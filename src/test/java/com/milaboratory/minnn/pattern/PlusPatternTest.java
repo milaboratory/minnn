@@ -397,6 +397,31 @@ public class PlusPatternTest {
         assertEquals(7253, countMatches(specialCaseTest1MatchingResult(), true));
     }
 
+    @Test
+    public void specialCaseTest2() throws Exception {
+        int overlapPenalty = -752;
+        NucleotideSequenceCaseSensitive motif1 = new NucleotideSequenceCaseSensitive("cAaTaAcAAtccgTtata");
+        NucleotideSequenceCaseSensitive motif2 = new NucleotideSequenceCaseSensitive("agTaTATCcGcGtGgACTa");
+        NucleotideSequenceCaseSensitive target = new NucleotideSequenceCaseSensitive(
+                "cAaTaAcAAtccgTtatagTaTATCcGcGtGgACTa");
+        FuzzyMatchPattern pattern1 = new FuzzyMatchPattern(getTestPatternConfiguration(), motif1);
+        FuzzyMatchPattern pattern2 = new FuzzyMatchPattern(getTestPatternConfiguration(), motif2);
+        PlusPattern plusPattern1 = new PlusPattern(getTestPatternConfiguration(0, 0,
+                0, overlapPenalty), pattern1, pattern2);
+        PlusPattern plusPattern2 = new PlusPattern(getTestPatternConfiguration(0, 0,
+                0, overlapPenalty), pattern2, pattern1);
+        PlusPattern plusPattern3 = new PlusPattern(getTestPatternConfiguration(overlapPenalty, 0,
+                0, overlapPenalty), pattern1, pattern2);
+
+        NSequenceWithQuality targetQ = new NSequenceWithQuality(target.toString());
+        assertNull(plusPattern1.match(targetQ).getBestMatch());
+        assertNull(plusPattern2.match(targetQ).getBestMatch());
+
+        assertEquals(pattern1.match(targetQ).getBestMatch().getScore()
+                        + pattern2.match(targetQ).getBestMatch().getScore() + overlapPenalty,
+                plusPattern3.match(targetQ).getBestMatch().getScore());
+    }
+
     private MatchingResult specialCaseTest1MatchingResult() {
         PatternConfiguration patternConfiguration = getTestPatternConfiguration(-100,
                 2, 0, -1);

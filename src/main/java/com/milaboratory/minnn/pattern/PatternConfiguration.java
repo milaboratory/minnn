@@ -48,7 +48,8 @@ public class PatternConfiguration {
      * @param scoreThreshold            matches with score below this threshold will be considered invalid
      * @param singleOverlapPenalty      0 or negative; this is penalty for 1 nucleotide overlap between 2 patterns
      * @param bitapMaxErrors            0 or positive; max errors to use in bitap matcher
-     * @param maxOverlap                0 or positive; maximal allowed overlap for two intersecting sub-patterns
+     * @param maxOverlap                maximal allowed overlap for two intersecting sub-patterns;
+     *                                  -1 means unlimited overlap
      * @param leftBorder                fixed left border position for alignment, -1 if not specified;
      *                                  if left border is specified, global aligner is used
      * @param notResultScore            score for result of Not operator
@@ -61,8 +62,15 @@ public class PatternConfiguration {
         this.patternAligner = patternAligner;
         this.scoring = scoring;
         this.scoreThreshold = scoreThreshold;
+        if (singleOverlapPenalty > 0)
+            throw new IllegalArgumentException("singleOverlapPenalty must be 0 or negative; got value "
+                    + singleOverlapPenalty);
         this.singleOverlapPenalty = singleOverlapPenalty;
+        if (bitapMaxErrors < 0)
+            throw new IllegalArgumentException("bitapMaxErrors must be 0 or positive; got value " + bitapMaxErrors);
         this.bitapMaxErrors = bitapMaxErrors;
+        if (maxOverlap < -1)
+            throw new IllegalArgumentException("maxOverlap must be -1, 0 or positive; got value " + maxOverlap);
         this.maxOverlap = maxOverlap;
         this.leftBorder = leftBorder;
         this.notResultScore = notResultScore;

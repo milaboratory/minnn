@@ -28,8 +28,8 @@ extract
  --good-quality-value: This or better quality value will be considered good quality, without score penalties.
  --bad-quality-value: This or worse quality value will be considered bad quality, with maximal score penalty.
  --max-quality-penalty: Maximal score penalty for bad quality nucleotide in target.
- --single-overlap-penalty: Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value.
- --max-overlap: Max allowed overlap for 2 intersecting operands in +, & and pattern sequences.
+ --single-overlap-penalty: Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value or 0.
+ --max-overlap: Max allowed overlap for 2 intersecting operands in +, & and pattern sequences. Value -1 means unlimited overlap size.
  --bitap-max-errors: Maximum allowed number of errors for bitap matcher.
  --fair-sorting: Use fair sorting and fair best match by score for all patterns.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
@@ -248,8 +248,8 @@ report
  --good-quality-value: This or better quality value will be considered good quality, without score penalties.
  --bad-quality-value: This or worse quality value will be considered bad quality, with maximal score penalty.
  --max-quality-penalty: Maximal score penalty for bad quality nucleotide in target.
- --single-overlap-penalty: Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value.
- --max-overlap: Max allowed overlap for 2 intersecting operands in +, & and pattern sequences.
+ --single-overlap-penalty: Score penalty for 1 nucleotide overlap between neighbor patterns. Negative value or 0.
+ --max-overlap: Max allowed overlap for 2 intersecting operands in +, & and pattern sequences. Value -1 means unlimited overlap size.
  --bitap-max-errors: Maximum allowed number of errors for bitap matcher.
  --fair-sorting: Use fair sorting and fair best match by score for all patterns.
 

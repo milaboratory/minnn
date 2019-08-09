@@ -100,6 +100,15 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
         validateQuality(goodQuality, spec.commandLine());
         validateQuality(badQuality, spec.commandLine());
+        if (maxOverlap < -1)
+            throw new ValidationException(spec.commandLine(), maxOverlap + " is invalid value for --max-overlap! " +
+                    "Valid values are -1, 0 and positive values.", false);
+        if (singleOverlapPenalty > 0)
+            throw new ValidationException(spec.commandLine(), singleOverlapPenalty + " is invalid value for " +
+                    "--single-overlap-penalty! Single overlap penalty must be 0 or negative.", false);
+        if (bitapMaxErrors < 0)
+            throw new ValidationException(spec.commandLine(), bitapMaxErrors + " is invalid value for " +
+                    "--bitap-max-errors! Valid values are positive or 0.", false);
     }
 
     @Override

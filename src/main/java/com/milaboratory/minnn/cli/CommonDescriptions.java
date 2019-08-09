@@ -48,8 +48,9 @@ class CommonDescriptions {
             "with maximal score penalty.";
     static final String MAX_QUALITY_PENALTY = "Maximal score penalty for bad quality nucleotide in target.";
     static final String SINGLE_OVERLAP_PENALTY = "Score penalty for 1 nucleotide overlap between neighbor patterns. " +
-            "Negative value.";
-    static final String MAX_OVERLAP = "Max allowed overlap for 2 intersecting operands in +, & and pattern sequences.";
+            "Negative value or 0.";
+    static final String MAX_OVERLAP = "Max allowed overlap for 2 intersecting operands in +, & and pattern " +
+            "sequences. Value -1 means unlimited overlap size.";
     static final String BITAP_MAX_ERRORS = "Maximum allowed number of errors for bitap matcher.";
     static final String FAIR_SORTING = "Use fair sorting and fair best match by score for all patterns.";
     static final String MIN_COUNT_FILTER = "Filter unique group values represented by less than specified number of " +
