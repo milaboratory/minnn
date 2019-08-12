@@ -127,33 +127,24 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
 
     @Override
     public MatchingResult match(NSequenceWithQuality target, int from, int to) {
-        int fixedLeftBorder = (this.fixedLeftBorder > -2) ? this.fixedLeftBorder
-                : target.size() - 1 - invertCoordinate(this.fixedLeftBorder);
-        int fixedRightBorder = (this.fixedRightBorder > -2) ? this.fixedRightBorder
-                : target.size() - 1 - invertCoordinate(this.fixedRightBorder);
-        int fromWithBorder = (fixedLeftBorder == -1) ? from : Math.max(from, fixedLeftBorder);
-        // to is exclusive and fixedRightBorder is inclusive
-        int toWithBorder = (fixedRightBorder == -1) ? to : Math.min(to, fixedRightBorder + 1);
-        return new RepeatPatternMatchingResult(fixedLeftBorder, fixedRightBorder, target,
-                fromWithBorder, toWithBorder);
+        SimplePatternBorders borders = new SimplePatternBorders(target.size(), from, to,
+                fixedLeftBorder, fixedRightBorder);
+        return new RepeatPatternMatchingResult(borders.fixedLeftBorder, borders.fixedRightBorder, target,
+                borders.fromWithBorder, borders.toWithBorder);
     }
 
     @Override
     public int estimateMinLength() {
-        boolean useBitapMaxErrors = Character.isLowerCase(patternSeq.symbolAt(0))
-                && !nLetters.contains(patternSeq.toString());
-        return Math.max(1, minRepeats - (useBitapMaxErrors ? conf.bitapMaxErrors : 0));
+        return Math.max(1, minRepeats - (Character.isLowerCase(patternSeq.symbolAt(0)) ? conf.bitapMaxErrors
+                : 0));
     }
 
     @Override
     public int estimateMaxLength() {
         if (maxRepeats == Integer.MAX_VALUE)
             return -1;
-        else {
-            boolean useBitapMaxErrors = Character.isLowerCase(patternSeq.symbolAt(0))
-                    && !nLetters.contains(patternSeq.toString());
-            return maxRepeats + (useBitapMaxErrors ? conf.bitapMaxErrors : 0);
-        }
+        else
+            return maxRepeats + (Character.isLowerCase(patternSeq.symbolAt(0)) ? conf.bitapMaxErrors : 0);
     }
 
     @Override
@@ -167,11 +158,9 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
 
         if ((fixedLeftBorder != -1) || (fixedRightBorder != -1))
             return Math.min(fixedSequenceMaxComplexity, repeatsRangeLength);
-        else {
-            int minRepeatsFactor = nLetters.contains(patternSeq.toString()) ? 1 : minRepeats;
+        else
             return notFixedSequenceMinComplexity + repeatsRangeLength * singleNucleotideComplexity
-                    * lettersComplexity.get(patternSeq.symbolAt(0)) / minRepeatsFactor;
-        }
+                    * lettersComplexity.get(patternSeq.symbolAt(0)) / minRepeats;
     }
 
     @Override
@@ -181,23 +170,10 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
 
     @Override
     public SinglePattern fixBorder(boolean left, int position) {
-        int newLeftBorder = fixedLeftBorder;
-        int newRightBorder = fixedRightBorder;
-        if (left) {
-            if (newLeftBorder == -1)
-                newLeftBorder = position;
-            else if (newLeftBorder != position)
-                throw new IllegalStateException(toString() + ": trying to set fixed left border to " + position
-                        + " when it is already fixed at " + newLeftBorder + "!");
-        } else {
-            if (newRightBorder == -1)
-                newRightBorder = position;
-            else if (newRightBorder != position)
-                throw new IllegalStateException(toString() + ": trying to set fixed right border to " + position
-                        + " when it is already fixed at " + newRightBorder + "!");
-        }
-        return new RepeatPattern(conf, patternSeq, minRepeats, maxRepeats, newLeftBorder, newRightBorder,
-                groupEdgePositions);
+        LeftAndRightBorders newBorders = prepareNewBorders(left, position, fixedLeftBorder, fixedRightBorder,
+                toString());
+        return new RepeatPattern(conf, patternSeq, minRepeats, maxRepeats,
+                newBorders.fixedLeftBorder, newBorders.fixedRightBorder, groupEdgePositions);
     }
 
     @Override
@@ -556,7 +532,6 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
             allMatchingLetters.put('V', "AaGgCcRrSsMmVv");
             allMatchingLetters.put('H', "AaTtCcYyWwMmHh");
             allMatchingLetters.put('D', "AaTtGgRrWwKkDd");
-            allMatchingLetters.put('N', "AaTtGgCcRrYySsWwKkMmBbDdHhVvNn");
             new HashSet<>(allMatchingLetters.keySet())
                     .forEach(l -> allMatchingLetters.put(Character.toLowerCase(l), allMatchingLetters.get(l)));
         }

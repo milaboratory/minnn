@@ -158,14 +158,10 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
 
     @Override
     public MatchingResult match(NSequenceWithQuality target, int from, int to) {
-        int fixedLeftBorder = (this.fixedLeftBorder > -2) ? this.fixedLeftBorder
-                : target.size() - 1 - invertCoordinate(this.fixedLeftBorder);
-        int fixedRightBorder = (this.fixedRightBorder > -2) ? this.fixedRightBorder
-                : target.size() - 1 - invertCoordinate(this.fixedRightBorder);
-        int fromWithBorder = (fixedLeftBorder == -1) ? from : Math.max(from, fixedLeftBorder);
-        // to is exclusive and fixedRightBorder is inclusive
-        int toWithBorder = (fixedRightBorder == -1) ? to : Math.min(to, fixedRightBorder + 1);
-        return new FuzzyMatchingResult(fixedLeftBorder, fixedRightBorder, target, fromWithBorder, toWithBorder);
+        SimplePatternBorders borders = new SimplePatternBorders(target.size(), from, to,
+                fixedLeftBorder, fixedRightBorder);
+        return new FuzzyMatchingResult(borders.fixedLeftBorder, borders.fixedRightBorder, target,
+                borders.fromWithBorder, borders.toWithBorder);
     }
 
     @Override
@@ -219,8 +215,8 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
      * Estimate complexity for single sequence. Used in estimateComplexity() and in bitap matching
      * for long (>63 nucleotides) sequences.
      *
-     * @param s nucleotide sequence string
-     * @return estimated complexity for this sequence
+     * @param s     nucleotide sequence string
+     * @return      estimated complexity for this sequence
      */
     private static double estimateSequenceComplexity(String s) {
         if (s.chars().allMatch(c -> nLetters.contains(Character.toString((char)c))))
@@ -236,23 +232,10 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
 
     @Override
     public SinglePattern fixBorder(boolean left, int position) {
-        int newLeftBorder = fixedLeftBorder;
-        int newRightBorder = fixedRightBorder;
-        if (left) {
-            if (newLeftBorder == -1)
-                newLeftBorder = position;
-            else if (newLeftBorder != position)
-                throw new IllegalStateException(toString() + ": trying to set fixed left border to " + position
-                        + " when it is already fixed at " + newLeftBorder + "!");
-        } else {
-            if (newRightBorder == -1)
-                newRightBorder = position;
-            else if (newRightBorder != position)
-                throw new IllegalStateException(toString() + ": trying to set fixed right border to " + position
-                        + " when it is already fixed at " + newRightBorder + "!");
-        }
-        return new FuzzyMatchPattern(conf, sequences.get(0), leftCut, rightCut, newLeftBorder, newRightBorder,
-                groupEdgePositions);
+        LeftAndRightBorders newBorders = prepareNewBorders(left, position, fixedLeftBorder, fixedRightBorder,
+                toString());
+        return new FuzzyMatchPattern(conf, sequences.get(0), leftCut, rightCut,
+                newBorders.fixedLeftBorder, newBorders.fixedRightBorder, groupEdgePositions);
     }
 
     @Override

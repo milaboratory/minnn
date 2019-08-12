@@ -28,33 +28,12 @@
  */
 package com.milaboratory.minnn.pattern;
 
-public interface CanFixBorders {
-    /**
-     * Set fixed left or right border for this pattern.
-     *
-     * @param left      true for left border, false for right border
-     * @param position  coordinate for fixed border
-     * @return          copy of this pattern with fixed border
-     */
-    SinglePattern fixBorder(boolean left, int position);
+class LeftAndRightBorders {
+    final int fixedLeftBorder;
+    final int fixedRightBorder;
 
-    default LeftAndRightBorders prepareNewBorders(
-            boolean left, int position, int oldLeftBorder, int oldRightBorder, String patternString) {
-        int newLeftBorder = oldLeftBorder;
-        int newRightBorder = oldRightBorder;
-        if (left) {
-            if (newLeftBorder == -1)
-                newLeftBorder = position;
-            else if (newLeftBorder != position)
-                throw new IllegalStateException(patternString + ": trying to set fixed left border to " + position
-                        + " when it is already fixed at " + newLeftBorder + "!");
-        } else {
-            if (newRightBorder == -1)
-                newRightBorder = position;
-            else if (newRightBorder != position)
-                throw new IllegalStateException(patternString + ": trying to set fixed right border to " + position
-                        + " when it is already fixed at " + newRightBorder + "!");
-        }
-        return new LeftAndRightBorders(newLeftBorder, newRightBorder);
+    LeftAndRightBorders(int fixedLeftBorder, int fixedRightBorder) {
+        this.fixedLeftBorder = fixedLeftBorder;
+        this.fixedRightBorder = fixedRightBorder;
     }
 }
