@@ -190,8 +190,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
         private final int from;
         private final int to;
 
-        RepeatPatternMatchingResult(int fixedLeftBorder, int fixedRightBorder, NSequenceWithQuality target,
-                                    int from, int to) {
+        RepeatPatternMatchingResult(
+                int fixedLeftBorder, int fixedRightBorder, NSequenceWithQuality target, int from, int to) {
             this.fixedLeftBorder = fixedLeftBorder;
             this.fixedRightBorder = fixedRightBorder;
             this.target = target;
@@ -333,7 +333,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                 if (!sortingPerformed) {
                     fillAllMatchesForFairSorting();
                     Arrays.sort(allMatches,
-                            Comparator.comparingInt((MatchIntermediate match) -> match.getRange().length()).reversed());
+                            Comparator.comparingInt((MatchIntermediate match) ->
+                                    match.getRange().length()).reversed());
                     Arrays.sort(allMatches, Comparator.comparingLong(MatchIntermediate::getScore).reversed());
                     sortingPerformed = true;
                 }
@@ -350,7 +351,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                     else throw new IllegalArgumentException("Wrong call of takeFromFixedPosition: fixedLeftBorder="
                                 + fixedLeftBorder + ", fixedRightBorder=" + fixedRightBorder);
                     Arrays.sort(allMatches,
-                            Comparator.comparingInt((MatchIntermediate match) -> match.getRange().length()).reversed());
+                            Comparator.comparingInt((MatchIntermediate match) ->
+                                    match.getRange().length()).reversed());
                     Arrays.sort(allMatches, Comparator.comparingLong(MatchIntermediate::getScore).reversed());
                     sortingPerformed = true;
                 }
