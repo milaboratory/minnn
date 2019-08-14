@@ -210,19 +210,21 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
             private final TIntObjectHashMap<NucleotideSequenceCaseSensitive> sequences = new TIntObjectHashMap<>();
 
             // used for fair sorting and for matching in fixed position
-            private final TreeSet<ComparableMatch> allMatches;
+            private TreeSet<ComparableMatch> allMatches = null;
+            private Iterator<ComparableMatch> allMatchesIterator = null;
 
             RepeatNPatternOutputPort(boolean fairSorting) {
                 this.maxRepeats = Math.min(RepeatNPattern.this.maxRepeats, to - from);
                 this.fixedBorder = (fixedLeftBorder != -1) || (fixedRightBorder != -1);
                 this.fairSorting = fairSorting;
-                if ((from >= to) || (minRepeats > this.maxRepeats))
+                if ((from + minRepeats > to) || (minRepeats > this.maxRepeats)
+                        || ((fixedLeftBorder != -1) && (from > fixedLeftBorder))
+                        || ((fixedRightBorder != -1) && (to <= fixedRightBorder)))
                     noMoreMatches = true;
                 else
                     for (int repeats = minRepeats; repeats <= this.maxRepeats; repeats++)
                         sequences.put(repeats, new NucleotideSequenceCaseSensitive(new String(new char[repeats])
                                 .replace("\0", "N")));
-                allMatches = (fairSorting || fixedBorder) ? new TreeSet<>() : null;
             }
 
             @Override
@@ -238,6 +240,59 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
                     match = takeUnfair();
 
                 return match;
+            }
+
+            private MatchIntermediate takeFair() {
+                if (allMatchesIterator == null) {
+                    allMatches = new TreeSet<>();
+                    for (int rangeFrom = from; rangeFrom <= to - minRepeats; rangeFrom++)
+                        for (int rangeTo = rangeFrom + minRepeats; rangeTo <= Math.min(to, rangeFrom + maxRepeats);
+                             rangeTo++) {
+                            Range range = new Range(rangeFrom, rangeTo);
+                            allMatches.add(new ComparableMatch(range, rangeToMatch(range)));
+                        }
+                    allMatchesIterator = allMatches.iterator();
+                }
+                return (allMatchesIterator.hasNext()) ? allMatchesIterator.next().match : null;
+            }
+
+            private MatchIntermediate takeFromFixedPosition() {
+                if (allMatchesIterator == null) {
+                    allMatches = new TreeSet<>();
+                    if (fixedRightBorder != -1) {
+                        // at this point, from must be equal to fixedLeftBorder if fixedLeftBorder != -1
+                        int rangeFromMin;
+                        int rangeFromMax;
+                        if (fixedLeftBorder != -1) {
+                            rangeFromMin = fixedLeftBorder;
+                            rangeFromMax = fixedLeftBorder;
+                        } else {
+                            rangeFromMin = Math.max(from, fixedRightBorder - maxRepeats + 1);
+                            rangeFromMax = fixedRightBorder - minRepeats + 1;
+                        }
+                        for (int rangeFrom = rangeFromMin; rangeFrom <= rangeFromMax; rangeFrom++) {
+                            Range range = new Range(rangeFrom, fixedRightBorder + 1);
+                            allMatches.add(new ComparableMatch(range, rangeToMatch(range)));
+                        }
+                    } else if (fixedLeftBorder != -1) {
+                        for (int rangeTo = fixedLeftBorder + minRepeats;
+                             rangeTo <= Math.min(to, fixedLeftBorder + maxRepeats); rangeTo++) {
+                            Range range = new Range(fixedLeftBorder, rangeTo);
+                            allMatches.add(new ComparableMatch(range, rangeToMatch(range)));
+                        }
+                    } else throw new IllegalArgumentException("Wrong call of takeFromFixedPosition: fixedLeftBorder="
+                            + fixedLeftBorder + ", fixedRightBorder=" + fixedRightBorder);
+                    allMatchesIterator = allMatches.iterator();
+                }
+                return (allMatchesIterator.hasNext()) ? allMatchesIterator.next().match : null;
+            }
+
+            private MatchIntermediate takeUnfair() {
+                while (!noMoreMatches) {
+                    // TODO
+                    pointToNextUnfairMatch();
+                }
+                return null;
             }
 
             private MatchIntermediate rangeToMatch(Range range) {
@@ -268,10 +323,15 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
 
                 @Override
                 public int compareTo(ComparableMatch other) {
+                    // start from high scores
                     int result = -Long.compare(match.getScore(), other.match.getScore());
+                    // if scores are equal, start from long sequences
                     if (result == 0)
                         result = -Integer.compare(range.length(), other.range.length());
-                    return (result == 0) ? -1 : result;
+                    // compare objects' unique hashcodes to avoid 0 result that can cause loss of objects in TreeSet
+                    if (result == 0)
+                        result = Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
+                    return result;
                 }
 
                 @Override
