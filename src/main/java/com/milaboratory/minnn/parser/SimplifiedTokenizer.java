@@ -119,6 +119,28 @@ final class SimplifiedTokenizer extends Tokenizer {
                     tokenizedString.tokenizeSubstring(repeatPattern,
                             objectString.getFullStringStart(), objectString.getFullStringEnd());
                     break;
+                case REPEAT_N_PATTERN_NAME:
+                    ArrayList<GroupEdgePosition> groupEdgePositionsRepeatN;
+                    List<BracketsPair> innerSquareBracketsRepeatN = squareBracketsPairs.stream().
+                            filter(bp -> objectString.getParenthesesPair().contains(bp)).collect(Collectors.toList());
+                    switch (innerSquareBracketsRepeatN.size()) {
+                        case 0:
+                            groupEdgePositionsRepeatN = new ArrayList<>();
+                            break;
+                        case 1:
+                            groupEdgePositionsRepeatN = parseArrayOfGroupEdgePositions(tokenizedString,
+                                    innerSquareBracketsRepeatN.get(0));
+                            break;
+                        default:
+                            throw new ParserException("Found multiple square bracket pairs in RepeatNPattern!");
+                    }
+                    String repeatNPatternString = tokenizedString.getOneString(
+                            objectString.getDataStart(), objectString.getDataEnd());
+                    RepeatNPattern repeatNPattern = parseRepeatNPattern(currentPatternConfiguration,
+                            repeatNPatternString, groupEdgePositionsRepeatN);
+                    tokenizedString.tokenizeSubstring(repeatNPattern,
+                            objectString.getFullStringStart(), objectString.getFullStringEnd());
+                    break;
                 case ANY_PATTERN_NAME:
                     ArrayList<GroupEdge> groupEdgesAny;
                     List<BracketsPair> innerSquareBracketsAny = squareBracketsPairs.stream().

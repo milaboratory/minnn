@@ -42,6 +42,7 @@ public final class UnfairSorterConfiguration {
     static {
         unfairSorterPortLimits.put(FuzzyMatchPattern.class, 100);
         unfairSorterPortLimits.put(RepeatPattern.class, 100);
+        unfairSorterPortLimits.put(RepeatNPattern.class, 200);
         unfairSorterPortLimits.put(AnyPattern.class, 1);
         unfairSorterPortLimits.put(FilterPattern.class, 25);
         unfairSorterPortLimits.put(AndPattern.class, 20);

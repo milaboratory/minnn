@@ -76,6 +76,7 @@ final class NormalParsers {
             String arguments = query.substring(bracesPair.start + 1, bracesPair.end);
             NucleotideSequenceCaseSensitive patternSeq = toNSeq(query.substring(
                     bracesPair.start - 1, bracesPair.start));
+            boolean isRepeatNPattern = (Character.toUpperCase(patternSeq.symbolAt(0)) == 'N');
 
             int startStickPosition = findStartStick(bracesPair.start - 1);
             int endStickPosition = findEndStick(bracesPair.end);
@@ -126,10 +127,15 @@ final class NormalParsers {
                     .map(fe -> fe.groupEdgePosition).collect(Collectors.toCollection(ArrayList::new));
             validateGroupEdgePositions(groupEdgePositions);
 
-            foundTokens.add(new FoundToken(new RepeatPattern(getPatternConfiguration(
-                    bracesPair.start - 1, bracesPair.end + 1), patternSeq, minRepeats, maxRepeats,
-                    fixedLeftBorder, fixedRightBorder, groupEdgePositions),
-                    bracesPair.start - 1, bracesPair.end + 1));
+            FoundToken foundToken = new FoundToken(isRepeatNPattern
+                    ? new RepeatNPattern(
+                            getPatternConfiguration(bracesPair.start - 1, bracesPair.end + 1),
+                    minRepeats, maxRepeats, fixedLeftBorder, fixedRightBorder, groupEdgePositions)
+                    : new RepeatPattern(
+                            getPatternConfiguration(bracesPair.start - 1, bracesPair.end + 1),
+                    patternSeq, minRepeats, maxRepeats, fixedLeftBorder, fixedRightBorder, groupEdgePositions),
+                    bracesPair.start - 1, bracesPair.end + 1);
+            foundTokens.add(foundToken);
         }
 
         return foundTokens;

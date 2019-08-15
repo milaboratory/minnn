@@ -41,6 +41,7 @@ final class SimplifiedSyntaxStrings {
     final static String STICK_FILTER_NAME = "StickFilter";
     final static String FUZZY_MATCH_PATTERN_NAME = "FuzzyMatchPattern";
     final static String REPEAT_PATTERN_NAME = "RepeatPattern";
+    final static String REPEAT_N_PATTERN_NAME = "RepeatNPattern";
     final static String ANY_PATTERN_NAME = "AnyPattern";
     final static String AND_PATTERN_NAME = "AndPattern";
     final static String PLUS_PATTERN_NAME = "PlusPattern";

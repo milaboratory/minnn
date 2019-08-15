@@ -129,6 +129,40 @@ final class SimplifiedParsers {
                 groupEdgePositions);
     }
 
+    static RepeatNPattern parseRepeatNPattern(
+            PatternConfiguration conf, String str, ArrayList<GroupEdgePosition> groupEdgePositions)
+            throws ParserException {
+        List<QuotesPair> quotesPairs = getAllQuotes(str);
+        int[] commaPositions = new int[4];
+
+        commaPositions[0] = nonQuotedIndexOf(quotesPairs, str, ", ", 0);
+        if (commaPositions[0] == -1)
+            throw new ParserException("Missing first ', ' in RepeatNPattern arguments: " + str);
+        else if (commaPositions[0] == 0)
+            throw new ParserException("Missing first argument in RepeatNPattern: " + str);
+        for (int i = 1; i <= 3; i++) {
+            commaPositions[i] = nonQuotedIndexOf(quotesPairs, str, ", ", commaPositions[i - 1] + 1);
+            if ((i < 3) && (commaPositions[i] == -1))
+                throw new ParserException("Missing ', ' with index " + i
+                        + " in RepeatNPattern arguments (probably, insufficient arguments): " + str);
+        }
+
+        int minRepeats = toInt(str.substring(0, commaPositions[0]), "minRepeats");
+        int maxRepeats = toInt(str.substring(commaPositions[0] + 2, commaPositions[1]), "maxRepeats");
+        int fixedLeftBorder = toInt(str.substring(commaPositions[1] + 2, commaPositions[2]),
+                "fixedLeftBorder");
+        int fixedRightBorder = toInt(str.substring(commaPositions[2] + 2,
+                (commaPositions[3] == -1) ? str.length() : commaPositions[3]), "fixedRightBorder");
+
+        if (commaPositions[3] != -1)
+            if ((str.substring(commaPositions[3]).length() < 3)
+                    || (!str.substring(commaPositions[3], commaPositions[3] + 3).equals(", [")))
+                throw new ParserException("Error while parsing " + str + ": expected ', [', found '"
+                        + str.substring(commaPositions[3]) + "'");
+
+        return new RepeatNPattern(conf, minRepeats, maxRepeats, fixedLeftBorder, fixedRightBorder, groupEdgePositions);
+    }
+
     static AnyPattern parseAnyPattern(
             PatternConfiguration conf, String str, ArrayList<GroupEdge> groupEdges) throws ParserException {
         if (!(str.equals("") || ((str.charAt(0) == '[') && (str.charAt(str.length() - 1) == ']'))))

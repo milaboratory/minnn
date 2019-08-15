@@ -205,6 +205,8 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
             private final boolean fixedBorder;
             private final boolean fairSorting;
             private boolean noMoreMatches = false;
+            private int currentRepeats;
+            private int currentPosition;
 
             // sequences are needed to produce alignments; keys: number of repeats, values: sequences of N letters
             private final TIntObjectHashMap<NucleotideSequenceCaseSensitive> sequences = new TIntObjectHashMap<>();
@@ -221,10 +223,13 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
                         || ((fixedLeftBorder != -1) && (from > fixedLeftBorder))
                         || ((fixedRightBorder != -1) && (to <= fixedRightBorder)))
                     noMoreMatches = true;
-                else
+                else {
                     for (int repeats = minRepeats; repeats <= this.maxRepeats; repeats++)
                         sequences.put(repeats, new NucleotideSequenceCaseSensitive(new String(new char[repeats])
                                 .replace("\0", "N")));
+                    this.currentRepeats = this.maxRepeats;
+                    this.currentPosition = 0;
+                }
             }
 
             @Override
@@ -289,10 +294,24 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
 
             private MatchIntermediate takeUnfair() {
                 while (!noMoreMatches) {
-                    // TODO
+                    Range range = new Range(currentPosition + from,
+                            Math.min(to, currentPosition + currentRepeats + from));
+                    MatchIntermediate match = rangeToMatch(range);
                     pointToNextUnfairMatch();
+                    if (match.getScore() >= conf.scoreThreshold)
+                        return match;
                 }
                 return null;
+            }
+
+            private void pointToNextUnfairMatch() {
+                currentPosition++;
+                if (currentPosition > to - from - currentRepeats) {
+                    currentPosition = 0;
+                    currentRepeats--;
+                    if (currentRepeats < minRepeats)
+                        noMoreMatches = true;
+                }
             }
 
             private MatchIntermediate rangeToMatch(Range range) {
