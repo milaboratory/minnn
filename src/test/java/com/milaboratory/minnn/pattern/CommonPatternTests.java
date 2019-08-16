@@ -54,8 +54,8 @@ public class CommonPatternTests {
                 new NucleotideSequenceCaseSensitive("NNNNTNNAN"), 1, 2, 1, 8);
         patterns[4] = new FuzzyMatchPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("NNN"), 1, 0, -1, -1);
-        patterns[5] = new RepeatPattern(patternConfiguration,
-                new NucleotideSequenceCaseSensitive("N"), 20, 20);
+        patterns[5] = new RepeatNPattern(patternConfiguration,
+                20, 20);
         patterns[6] = new RepeatPattern(patternConfiguration,
                 new NucleotideSequenceCaseSensitive("A"), 4, 6);
         patterns[7] = new RepeatPattern(patternConfiguration,
