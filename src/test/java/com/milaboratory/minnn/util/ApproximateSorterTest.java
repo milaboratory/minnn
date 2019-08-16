@@ -303,19 +303,18 @@ public class ApproximateSorterTest {
                 new NucleotideSequenceCaseSensitive("aaagt"));
         patterns[3] = new FuzzyMatchPattern(patternConfigurations[2],
                 new NucleotideSequenceCaseSensitive("NN"));
-        patterns[4] = new RepeatPattern(patternConfigurations[2],
-                new NucleotideSequenceCaseSensitive("N"), 12, 12);
-        patterns[5] = new RepeatPattern(patternConfigurations[2],
-                new NucleotideSequenceCaseSensitive("N"), 22, 22);
+        patterns[4] = new RepeatNPattern(patternConfigurations[2],
+                12, 12);
+        patterns[5] = new RepeatNPattern(patternConfigurations[2],
+                22, 22);
         patterns[6] = new FuzzyMatchPattern(patternConfigurations[2],
                 new NucleotideSequenceCaseSensitive("TCAG"));
-        patterns[7] = new RepeatPattern(patternConfigurations[3],
-                new NucleotideSequenceCaseSensitive("N"),
+        patterns[7] = new RepeatNPattern(patternConfigurations[3],
                 14, 14, 0, -1);
-        patterns[8] = new RepeatPattern(patternConfigurations[3],
-                new NucleotideSequenceCaseSensitive("n"), 22, 22);
-        patterns[9] = new RepeatPattern(patternConfigurations[3],
-                new NucleotideSequenceCaseSensitive("N"), 4, 4);
+        patterns[8] = new RepeatNPattern(patternConfigurations[3],
+                22, 22);
+        patterns[9] = new RepeatNPattern(patternConfigurations[3],
+                4, 4);
 
         targets[0] = new NSequenceWithQuality(repeatString(sequences[0], 5));
         targets[1] = new NSequenceWithQuality(sequences[1]);

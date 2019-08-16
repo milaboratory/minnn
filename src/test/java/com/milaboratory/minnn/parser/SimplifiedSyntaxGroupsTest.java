@@ -65,7 +65,7 @@ public class SimplifiedSyntaxGroupsTest {
         for (int i = 0; i < 50; i++) {
             PatternConfiguration patternConfiguration = getRandomPatternConfiguration();
             ArrayList<FuzzyMatchPattern> fuzzyMatchPatterns = new ArrayList<>();
-            ArrayList<RepeatPattern> repeatPatterns = new ArrayList<>();
+            ArrayList<SinglePattern> repeatPatterns = new ArrayList<>();
             ArrayList<OrPattern> orPatterns = new ArrayList<>();
             ArrayList<MultiPattern> multiPatterns = new ArrayList<>();
             ArrayList<OrOperator> orOperators = new ArrayList<>();

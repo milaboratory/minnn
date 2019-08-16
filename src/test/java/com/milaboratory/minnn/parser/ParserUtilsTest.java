@@ -28,8 +28,7 @@
  */
 package com.milaboratory.minnn.parser;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.util.*;

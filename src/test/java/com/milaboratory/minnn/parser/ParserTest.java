@@ -203,6 +203,10 @@ public class ParserTest {
         testSample("[-7:A]T", "AT", new Range(0, 2));
         testSample("A ( 1: TTA  )", "GATTA", new Range(1, 5));
         testSample("^(FULL:(BC:NN)(UMI:NN))NN(X1:(TS:N{*}))$", "ATTAGACA", new Range(0, 8));
+        testSample("a{3}ttt", "AATTT", null);
+        testSample("n{3}ttt", "AATTT", null);
+        testSample("a{3}ttt", "AAATTT", new Range(0, 6));
+        testSample("n{3}ttt", "AAATTT", new Range(0, 6));
     }
 
     @Test

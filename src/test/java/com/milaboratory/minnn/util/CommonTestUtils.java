@@ -297,16 +297,21 @@ public class CommonTestUtils {
                 withGroups ? getRandomGroupsForFuzzyMatch(length) : new ArrayList<>());
     }
 
-    public static RepeatPattern getRandomRepeatPattern(
+    public static SinglePattern getRandomRepeatPattern(
             PatternConfiguration patternConfiguration, boolean withGroups) {
         int minRepeats = rg.nextInt(10) + 1;
         int maxRepeats = rg.nextInt(100) + minRepeats;
         RandomBorders randomBorders = new RandomBorders(maxRepeats);
         NucleotideSequenceCaseSensitive seq = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                 1, 1);
-        return new RepeatPattern(patternConfiguration, seq, minRepeats, maxRepeats,
-                randomBorders.left, randomBorders.right,
-                withGroups ? getRandomGroupsForFuzzyMatch(maxRepeats) : new ArrayList<>());
+        if (Character.toUpperCase(seq.toString().charAt(0)) == 'N')
+            return new RepeatNPattern(patternConfiguration, minRepeats, maxRepeats,
+                    randomBorders.left, randomBorders.right,
+                    withGroups ? getRandomGroupsForFuzzyMatch(maxRepeats) : new ArrayList<>());
+        else
+            return new RepeatPattern(patternConfiguration, seq, minRepeats, maxRepeats,
+                    randomBorders.left, randomBorders.right,
+                    withGroups ? getRandomGroupsForFuzzyMatch(maxRepeats) : new ArrayList<>());
     }
 
     public static AnyPattern getRandomAnyPattern(
