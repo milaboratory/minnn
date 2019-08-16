@@ -92,6 +92,10 @@ The following syntax constructions are allowed:
 
 :code:`a{4:}` - interval from specified number (inclusive) to the entire sequence
 
+**Special Case:** if :code:`n` or :code:`N` nucleotide is used before curly brackets, indels and pattern overlaps
+(see :code:`--max-overlap` parameter below) are disabled, so lowercase :code:`n` and uppercase :code:`N` are
+equivalent when used before curly brackets.
+
 Symbols :code:`^` and :code:`$` can be used to restrict matched sequence to start or end of the target sequence.
 :code:`^` mark must be in the start of the query for the read, and it means that the query match must start from
 the beginning of the read sequence. :code:`$` mark must be in the end, and it means that the query match must be in the
