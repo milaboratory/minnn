@@ -36,9 +36,15 @@ import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 public class BasePatternAligner implements PatternAligner {
     @Override
     public Alignment<NucleotideSequenceCaseSensitive> align(
-            PatternConfiguration conf, NucleotideSequenceCaseSensitive pattern, NSequenceWithQuality target,
-            int rightMatchPosition) {
-        if (conf.leftBorder == -1) {
+            PatternConfiguration conf, boolean withoutIndels, NucleotideSequenceCaseSensitive pattern,
+            NSequenceWithQuality target, int rightMatchPosition) {
+        if (withoutIndels) {
+            if ((conf.leftBorder != -1) && (conf.leftBorder != rightMatchPosition + 1 - pattern.size()))
+                return null;
+            else
+                return PatternAndTargetAligner.alignLeftAddedWithoutIndels(conf.scoring, pattern, target,
+                        rightMatchPosition);
+        } else if (conf.leftBorder == -1) {
             return PatternAndTargetAligner.alignLeftAdded(conf.scoring, pattern, target, rightMatchPosition,
                     conf.bitapMaxErrors);
         } else {

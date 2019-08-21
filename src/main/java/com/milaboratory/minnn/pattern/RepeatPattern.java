@@ -294,18 +294,21 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                             int firstUppercase = uppercasePattern ? 0 : -1;
                             int lastUppercase = uppercasePattern ? repeats - 1 : -1;
                             Alignment<NucleotideSequenceCaseSensitive> alignment = conf.patternAligner.align(conf,
-                                    sequences[repeats - minRepeats], target,
+                                    uppercasePattern, sequences[repeats - minRepeats], target,
                                     currentRange.getUpper() - 1);
-                            Range targetRange = alignment.getSequence2Range();
-                            UniqueAlignedSequence alignedSequence = new UniqueAlignedSequence(targetRange, repeats);
-                            if ((alignment.getScore() >= conf.scoreThreshold)
-                                    && !uniqueAlignedSequencesUnfair.contains(alignedSequence)) {
-                                uniqueAlignedSequencesUnfair.add(alignedSequence);
-                                pointToNextUnfairMatch();
-                                return generateMatch(alignment, target, targetId, firstUppercase, lastUppercase,
-                                        fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
-                                        conf.patternAligner.repeatsPenalty(conf, patternSeq, repeats, maxRepeats),
-                                        conf.defaultGroupsOverride);
+                            if (alignment != null) {
+                                Range targetRange = alignment.getSequence2Range();
+                                UniqueAlignedSequence alignedSequence = new UniqueAlignedSequence(
+                                        targetRange, repeats);
+                                if ((alignment.getScore() >= conf.scoreThreshold)
+                                        && !uniqueAlignedSequencesUnfair.contains(alignedSequence)) {
+                                    uniqueAlignedSequencesUnfair.add(alignedSequence);
+                                    pointToNextUnfairMatch();
+                                    return generateMatch(alignment, target, targetId, firstUppercase, lastUppercase,
+                                            fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
+                                            conf.patternAligner.repeatsPenalty(conf, patternSeq, repeats, maxRepeats),
+                                            conf.defaultGroupsOverride);
+                                }
                             }
                         }
                     }
@@ -441,18 +444,21 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                     int repeats = Math.max(minRepeats, Math.min(maxRepeats, range.length()));
                     int firstUppercase = uppercasePattern ? 0 : -1;
                     int lastUppercase = uppercasePattern ? repeats - 1 : -1;
-                    alignment = patternConfiguration.patternAligner.align(patternConfiguration,
+                    alignment = patternConfiguration.patternAligner.align(patternConfiguration, uppercasePattern,
                             sequences[repeats - minRepeats], target, range.getUpper() - 1);
-                    Range targetRange = alignment.getSequence2Range();
-                    UniqueAlignedSequence alignedSequence = new UniqueAlignedSequence(targetRange, repeats);
-                    if ((alignment.getScore() >= patternConfiguration.scoreThreshold)
-                            && !uniqueAlignedSequences.contains(alignedSequence)) {
-                        uniqueAlignedSequences.add(alignedSequence);
-                        allMatchesList.add(generateMatch(alignment, target, targetId, firstUppercase, lastUppercase,
-                                fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
-                                patternConfiguration.patternAligner.repeatsPenalty(patternConfiguration, patternSeq,
-                                        repeats, maxRepeats),
-                                patternConfiguration.defaultGroupsOverride));
+                    if (alignment != null) {
+                        Range targetRange = alignment.getSequence2Range();
+                        UniqueAlignedSequence alignedSequence = new UniqueAlignedSequence(targetRange, repeats);
+                        if ((alignment.getScore() >= patternConfiguration.scoreThreshold)
+                                && !uniqueAlignedSequences.contains(alignedSequence)) {
+                            uniqueAlignedSequences.add(alignedSequence);
+                            allMatchesList.add(generateMatch(alignment, target, targetId,
+                                    firstUppercase, lastUppercase,
+                                    fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
+                                    patternConfiguration.patternAligner.repeatsPenalty(patternConfiguration,
+                                            patternSeq, repeats, maxRepeats),
+                                    patternConfiguration.defaultGroupsOverride));
+                        }
                     }
                 }
 

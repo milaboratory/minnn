@@ -34,17 +34,18 @@ import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 
 public interface PatternAligner {
     /**
-     * Returned alignment will have maximal score equals zero.
+     * Perform alignment of pattern and target or return null if alignment is impossible with specified parameters.
      *
      * @param conf                  pattern configuration: contains scoring, left border and other pattern settings
+     * @param withoutIndels         true if indels are not allowed, otherwise false
      * @param pattern               case sensitive nucleotide sequence from pattern
      * @param target                target nucleotide sequence with quality
      * @param rightMatchPosition    right position of found bitap match, inclusive
-     * @return                      alignment
+     * @return                      alignment or null if alignment is impossible
      */
     Alignment<NucleotideSequenceCaseSensitive> align(
-            PatternConfiguration conf, NucleotideSequenceCaseSensitive pattern, NSequenceWithQuality target,
-            int rightMatchPosition);
+            PatternConfiguration conf, boolean withoutIndels, NucleotideSequenceCaseSensitive pattern,
+            NSequenceWithQuality target, int rightMatchPosition);
 
     /**
      * Calculate penalty value for given overlap in the target.

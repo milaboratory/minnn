@@ -320,8 +320,9 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
                 int lastUppercase = numberOfRepeats - 1;
                 NucleotideSequenceCaseSensitive seq = sequences.get(numberOfRepeats);
                 PatternConfiguration fixedBorderConfiguration = conf.setLeftBorder(range.getLower());
-                Alignment<NucleotideSequenceCaseSensitive> alignment = fixedBorderConfiguration.patternAligner.align(
-                        fixedBorderConfiguration, seq, target, range.getUpper() - 1);
+                Alignment<NucleotideSequenceCaseSensitive> alignment = Objects.requireNonNull(
+                        fixedBorderConfiguration.patternAligner.align(fixedBorderConfiguration, true,
+                                seq, target, range.getUpper() - 1));
                 Range targetRange = alignment.getSequence2Range();
                 List<GroupEdgePosition> groupEdgePositions = fixGroupEdgePositions(
                         RepeatNPattern.this.groupEdgePositions, 0, targetRange.length());

@@ -298,8 +298,8 @@ public class FuzzyMatchPatternTest {
             int matchesArraySize;
             if (matches[3] == null) {
                 matchesArraySize = 3;
-                Range matchedRange = patternConfiguration.patternAligner.align(patternConfiguration, mutatedMotif,
-                        target, target.size() - 1).getSequence1Range();
+                Range matchedRange = patternConfiguration.patternAligner.align(patternConfiguration, false,
+                        mutatedMotif, target, target.size() - 1).getSequence1Range();
                 assertEquals(0, matchedRange.getLower());
                 assertTrue(matchedRange.getUpper() < target.size());
             } else

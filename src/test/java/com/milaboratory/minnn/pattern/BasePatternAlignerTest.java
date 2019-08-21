@@ -63,7 +63,7 @@ public class BasePatternAlignerTest {
                 for (NucleotideSequenceCaseSensitive sequence : sequences) {
                     NSequenceWithQuality target = setRandomQuality(sequence.toString());
                     Alignment<NucleotideSequenceCaseSensitive> alignment = configuration.patternAligner.align(
-                            configuration, sequence, target, seqLength - 1);
+                            configuration, rg.nextBoolean(), sequence, target, seqLength - 1);
                     assertEquals(new Range(0, seqLength), alignment.getSequence1Range());
                     assertEquals(alignment.getSequence1Range(), alignment.getSequence2Range());
                 }
@@ -81,18 +81,20 @@ public class BasePatternAlignerTest {
         NucleotideSequenceCaseSensitive pattern = new NucleotideSequenceCaseSensitive("aTTAgaca");
         NSequenceWithQuality target = new NSequenceWithQuality("CCTTATTC");
         Alignment<NucleotideSequenceCaseSensitive> alignment = patternConfiguration.patternAligner.align(
-                patternConfiguration, pattern, target, 7);
+                patternConfiguration, false, pattern, target, 7);
         assertEquals(new Range(1, 8), alignment.getSequence2Range());
         assertEquals(new Range(0, 8), alignment.getSequence1Range());
 
         pattern = new NucleotideSequenceCaseSensitive("ATTAgaCA");
         target = new NSequenceWithQuality("ATTTAGACA");
-        alignment = patternConfiguration.patternAligner.align(patternConfiguration, pattern, target, 8);
+        alignment = patternConfiguration.patternAligner.align(patternConfiguration, false, pattern, target,
+                8);
         assertEquals(new Range(1, 9), alignment.getSequence2Range());
         assertEquals(-9, (int)alignment.getScore());
 
         patternConfiguration = patternConfiguration.setLeftBorder(0);
-        alignment = patternConfiguration.patternAligner.align(patternConfiguration, pattern, target, 8);
+        alignment = patternConfiguration.patternAligner.align(patternConfiguration, false, pattern, target,
+                8);
         assertEquals(new Range(0, 9), alignment.getSequence2Range());
         assertEquals(-28, (int)alignment.getScore());
     }
