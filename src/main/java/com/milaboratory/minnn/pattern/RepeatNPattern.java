@@ -44,7 +44,6 @@ import static com.milaboratory.minnn.util.UnfairSorterConfiguration.*;
 public final class RepeatNPattern extends SinglePattern implements CanBeSingleSequence, CanFixBorders {
     private final int minRepeats;
     private final int maxRepeats;
-    private final boolean isAnyPattern;
     private final int fixedLeftBorder;
     private final int fixedRightBorder;
     private final List<GroupEdgePosition> groupEdgePositions;
@@ -87,7 +86,6 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
         else {
             this.minRepeats = minRepeats;
             this.maxRepeats = maxRepeats;
-            this.isAnyPattern = (maxRepeats == Integer.MAX_VALUE);
         }
         this.fixedLeftBorder = fixedLeftBorder;
         this.fixedRightBorder = fixedRightBorder;
@@ -95,12 +93,11 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
     }
 
     private RepeatNPattern(
-            PatternConfiguration conf, byte targetId, int minRepeats, int maxRepeats, boolean isAnyPattern,
+            PatternConfiguration conf, byte targetId, int minRepeats, int maxRepeats,
             int fixedLeftBorder, int fixedRightBorder, List<GroupEdgePosition> groupEdgePositions) {
         super(conf, targetId);
         this.minRepeats = minRepeats;
         this.maxRepeats = maxRepeats;
-        this.isAnyPattern = isAnyPattern;
         this.fixedLeftBorder = fixedLeftBorder;
         this.fixedRightBorder = fixedRightBorder;
         this.groupEdgePositions = groupEdgePositions;
@@ -139,7 +136,7 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
     @Override
     public int estimateMaxLength() {
         // indels are disabled for repeat-N patterns
-        return isAnyPattern ? -1 : maxRepeats;
+        return (maxRepeats == Integer.MAX_VALUE) ? -1 : maxRepeats;
     }
 
     @Override
@@ -175,8 +172,8 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
     @Override
     SinglePattern setTargetId(byte targetId) {
         validateTargetId(targetId);
-        return new RepeatNPattern(conf, targetId, minRepeats, maxRepeats, isAnyPattern, fixedLeftBorder,
-                fixedRightBorder, groupEdgePositions);
+        return new RepeatNPattern(conf, targetId, minRepeats, maxRepeats, fixedLeftBorder, fixedRightBorder,
+                groupEdgePositions);
     }
 
     private class RepeatNPatternMatchingResult implements MatchingResult {

@@ -32,6 +32,7 @@ import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.Range;
 import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.sequence.*;
+import gnu.trove.map.hash.TCharObjectHashMap;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -524,24 +525,15 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
         final int[] sections;
         final boolean firstMatching;
 
-        private static HashMap<Character, String> allMatchingLetters = new HashMap<>();
+        private static TCharObjectHashMap<String> allMatchingLetters = new TCharObjectHashMap<>();
         static {
-            allMatchingLetters.put('A', "Aa");
-            allMatchingLetters.put('T', "Tt");
-            allMatchingLetters.put('G', "Gg");
-            allMatchingLetters.put('C', "Cc");
-            allMatchingLetters.put('W', "AaTtWw");
-            allMatchingLetters.put('S', "GgCcSs");
-            allMatchingLetters.put('M', "AaCcMm");
-            allMatchingLetters.put('K', "GgTtKk");
-            allMatchingLetters.put('R', "AaGgRr");
-            allMatchingLetters.put('Y', "CcTtYy");
-            allMatchingLetters.put('B', "TtGgCcYySsKkBb");
-            allMatchingLetters.put('V', "AaGgCcRrSsMmVv");
-            allMatchingLetters.put('H', "AaTtCcYyWwMmHh");
-            allMatchingLetters.put('D', "AaTtGgRrWwKkDd");
-            new HashSet<>(allMatchingLetters.keySet())
-                    .forEach(l -> allMatchingLetters.put(Character.toLowerCase(l), allMatchingLetters.get(l)));
+            for (Wildcard wildcard : NucleotideSequenceCaseSensitive.ALPHABET.getAllWildcards()) {
+                char letter = wildcard.getSymbol();
+                StringBuilder matchingLetters = new StringBuilder();
+                NucleotideSequenceCaseSensitive.ALPHABET.getAllWildcards().stream().filter(wildcard::intersectsWith)
+                        .forEach(targetWildcard -> matchingLetters.append(targetWildcard.getSymbol()));
+                allMatchingLetters.put(letter, matchingLetters.toString());
+            }
         }
 
         TargetSections(String targetSubstring, NucleotideSequenceCaseSensitive patternSeq) {

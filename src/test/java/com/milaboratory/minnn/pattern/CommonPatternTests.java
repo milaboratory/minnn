@@ -114,15 +114,15 @@ public class CommonPatternTests {
         expected[14] = expected[12];
         expected[15] = expected[1] + expected[11];
         expected[16] = notFixedSequenceMinComplexity + (long)(singleNucleotideComplexity
-                / (8.0 / (1 + smallLetterExtraComplexity)));
+                / (8.0 / (1 + lowerCaseExtraComplexity)));
         expected[17] = notFixedSequenceMinComplexity + (long)(singleNucleotideComplexity
-                / (4 + 4.0 / (1 + smallLetterExtraComplexity)));
+                / (4 + 4.0 / (1 + lowerCaseExtraComplexity)));
         expected[18] = notFixedSequenceMinComplexity + (long)(singleNucleotideComplexity / (1.0 / 4
-                + 1.0 / (4 + smallLetterExtraComplexity) + 3 + 1.0 / (16 + smallLetterExtraComplexity) + 1.0 / 9));
+                + 1.0 / (4 + lowerCaseExtraComplexity) + 3 + 1.0 / (16 + lowerCaseExtraComplexity) + 1.0 / 9));
         expected[19] = notFixedSequenceMinComplexity + (singleNucleotideComplexity
-                * 3 * (1 + smallLetterExtraComplexity) / 4);
+                * 3 * (1 + lowerCaseExtraComplexity) / 4);
         expected[20] = notFixedSequenceMinComplexity + (singleNucleotideComplexity
-                * 3 * (9 + smallLetterExtraComplexity) / 8);
+                * 3 * (9 + lowerCaseExtraComplexity) / 8);
         expected[21] = expected[14] + expected[15];
         expected[22] = expected[0] + expected[4];
         expected[23] = expected[21] + expected[22];
