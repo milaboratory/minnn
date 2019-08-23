@@ -213,7 +213,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
             private final TargetSections targetSections;
 
             /* Length of longest valid section starting from this position (index1) in target inside (from->to) range.
-             * Section is valid when number of errors (index2) isn't bigger than bitapMaxErrors in PatternAligner. */
+             * Section is valid when number of errors (index2) isn't bigger than bitapMaxErrors
+             * in PatternConfiguration. */
             private final int[][] longestValidSections;
 
             private final NucleotideSequenceCaseSensitive[] sequences;
@@ -227,21 +228,20 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
             private int currentPosition = 0;
 
             // Data structures used for fair sorting and for matching in fixed position.
-            private MatchIntermediate[] allMatches;
-            private boolean sortingPerformed = false;
-            private int takenValues = 0;
+            private TreeSet<ComparableMatch> allMatches = null;
+            private Iterator<ComparableMatch> allMatchesIterator = null;
 
             RepeatPatternOutputPort(boolean fairSorting) {
                 int maxErrors = conf.bitapMaxErrors;
+                this.maxRepeats = Math.min(RepeatPattern.this.maxRepeats, to - from);
                 this.fixedBorder = (fixedLeftBorder != -1) || (fixedRightBorder != -1);
-                if (from >= to)
+                if ((from >= to) || (minRepeats > this.maxRepeats + maxErrors)
+                        || ((fixedLeftBorder != -1) && (from > fixedLeftBorder + maxErrors))
+                        || ((fixedRightBorder != -1) && (to <= fixedRightBorder - maxErrors)))
                     noMoreMatches = true;
                 this.uppercasePattern = Character.isUpperCase(patternSeq.symbolAt(0));
-                this.maxRepeats = Math.min(RepeatPattern.this.maxRepeats, to - from);
                 this.fairSorting = fairSorting;
                 this.currentRepeats = maxRepeats + maxErrors;
-                if (this.currentRepeats < minRepeats)
-                    noMoreMatches = true;
 
                 if (!noMoreMatches) {
                     this.targetSections = new TargetSections(target.getSequence().toString().substring(from, to),
@@ -334,34 +334,21 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
             }
 
             private MatchIntermediate takeFair() {
-                if (!sortingPerformed) {
+                if (allMatchesIterator == null)
                     fillAllMatchesForFairSorting();
-                    Arrays.sort(allMatches,
-                            Comparator.comparingInt((MatchIntermediate match) ->
-                                    match.getRange().length()).reversed());
-                    Arrays.sort(allMatches, Comparator.comparingLong(MatchIntermediate::getScore).reversed());
-                    sortingPerformed = true;
-                }
-                if (takenValues == allMatches.length) return null;
-                return allMatches[takenValues++];
+                return (allMatchesIterator.hasNext()) ? allMatchesIterator.next().match : null;
             }
 
             private MatchIntermediate takeFromFixedPosition() {
-                if (!sortingPerformed) {
+                if (allMatchesIterator == null) {
                     if (fixedRightBorder != -1)
                         fillAllMatchesForFixedRightBorder();
                     else if (fixedLeftBorder != -1)
                         fillAllMatchesForFixedLeftBorder();
                     else throw new IllegalArgumentException("Wrong call of takeFromFixedPosition: fixedLeftBorder="
                                 + fixedLeftBorder + ", fixedRightBorder=" + fixedRightBorder);
-                    Arrays.sort(allMatches,
-                            Comparator.comparingInt((MatchIntermediate match) ->
-                                    match.getRange().length()).reversed());
-                    Arrays.sort(allMatches, Comparator.comparingLong(MatchIntermediate::getScore).reversed());
-                    sortingPerformed = true;
                 }
-                if (takenValues == allMatches.length) return null;
-                return allMatches[takenValues++];
+                return (allMatchesIterator.hasNext()) ? allMatchesIterator.next().match : null;
             }
 
             /**
@@ -378,9 +365,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                             uniqueRanges.add(new Range(i + from, Math.min(to, i + repeats + from)));
                     }
 
-                ArrayList<MatchIntermediate> allMatchesList = getMatchesList(uniqueRanges, conf);
-                allMatches = new MatchIntermediate[allMatchesList.size()];
-                allMatchesList.toArray(allMatches);
+                allMatches = getAllMatchesTreeSet(uniqueRanges, conf);
+                allMatchesIterator = allMatches.iterator();
             }
 
             /**
@@ -397,9 +383,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                             uniqueRanges.add(new Range(i + from, Math.min(to, i + repeats + from)));
                     }
 
-                ArrayList<MatchIntermediate> allMatchesList = getMatchesList(uniqueRanges, conf.setLeftBorder(from));
-                allMatches = new MatchIntermediate[allMatchesList.size()];
-                allMatchesList.toArray(allMatches);
+                allMatches = getAllMatchesTreeSet(uniqueRanges, conf.setLeftBorder(from));
+                allMatchesIterator = allMatches.iterator();
             }
 
             /**
@@ -410,7 +395,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                 PatternConfiguration fixedConfiguration = (fixedLeftBorder == -1) ? conf : conf.setLeftBorder(from);
                 int maxErrors = fixedConfiguration.bitapMaxErrors;
 
-                for (int repeats = maxRepeats + maxErrors; repeats >= Math.max(1, minRepeats - maxErrors); repeats--) {
+                for (int repeats = maxRepeats + maxErrors;
+                     repeats >= Math.max(1, minRepeats - maxErrors); repeats--) {
                     int minIndex = (fixedLeftBorder == -1) ? Math.max(0, to - from - repeats - maxErrors) : 0;
                     int maxIndex = (fixedLeftBorder == -1) ? to - from - repeats
                             : Math.min(maxErrors, to - from - repeats);
@@ -421,23 +407,22 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                     }
                 }
 
-                ArrayList<MatchIntermediate> allMatchesList = getMatchesList(uniqueRanges, fixedConfiguration);
-                allMatches = new MatchIntermediate[allMatchesList.size()];
-                allMatchesList.toArray(allMatches);
+                allMatches = getAllMatchesTreeSet(uniqueRanges, fixedConfiguration);
+                allMatchesIterator = allMatches.iterator();
             }
 
             /**
-             * Get list of aligned matches from specified set of ranges. Used for fair sorting and
+             * Get TreeSet of aligned matches from specified set of ranges. Used for fair sorting and
              * for matching with fixed border.
              *
              * @param uniqueRanges          set of ranges where to use aligner
              * @param patternConfiguration  pattern configuration, may be configured for matching with fixed
              *                              or not fixed border
-             * @return                      list of aligned matches
+             * @return                      TreeSet of aligned matches
              */
-            private ArrayList<MatchIntermediate> getMatchesList(
+            private TreeSet<ComparableMatch> getAllMatchesTreeSet(
                     HashSet<Range> uniqueRanges, PatternConfiguration patternConfiguration) {
-                ArrayList<MatchIntermediate> allMatchesList = new ArrayList<>();
+                TreeSet<ComparableMatch> allMatchesTreeSet = new TreeSet<>();
                 Alignment<NucleotideSequenceCaseSensitive> alignment;
                 HashSet<UniqueAlignedSequence> uniqueAlignedSequences = new HashSet<>();
 
@@ -453,17 +438,18 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                         if ((alignment.getScore() >= patternConfiguration.scoreThreshold)
                                 && !uniqueAlignedSequences.contains(alignedSequence)) {
                             uniqueAlignedSequences.add(alignedSequence);
-                            allMatchesList.add(generateMatch(alignment, target, targetId,
+                            MatchIntermediate match = generateMatch(alignment, target, targetId,
                                     firstUppercase, lastUppercase,
                                     fixGroupEdgePositions(groupEdgePositions, 0, targetRange.length()),
                                     patternConfiguration.patternAligner.repeatsPenalty(patternConfiguration,
                                             patternSeq, repeats, maxRepeats),
-                                    patternConfiguration.defaultGroupsOverride));
+                                    patternConfiguration.defaultGroupsOverride);
+                            allMatchesTreeSet.add(new ComparableMatch(range, match));
                         }
                     }
                 }
 
-                return allMatchesList;
+                return allMatchesTreeSet;
             }
 
             /**

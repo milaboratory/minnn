@@ -328,42 +328,6 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
                 return generateMatch(alignment, target, targetId, firstUppercase, lastUppercase, groupEdgePositions,
                         repeatsPenalty, fixedBorderConfiguration.defaultGroupsOverride);
             }
-
-            private class ComparableMatch implements Comparable<ComparableMatch> {
-                final Range range;
-                final MatchIntermediate match;
-
-                ComparableMatch(Range range, MatchIntermediate match) {
-                    this.range = range;
-                    this.match = match;
-                }
-
-                @Override
-                public int compareTo(ComparableMatch other) {
-                    // start from high scores
-                    int result = -Long.compare(match.getScore(), other.match.getScore());
-                    // if scores are equal, start from long sequences
-                    if (result == 0)
-                        result = -Integer.compare(range.length(), other.range.length());
-                    // compare objects' unique hashcodes to avoid 0 result that can cause loss of objects in TreeSet
-                    if (result == 0)
-                        result = Integer.compare(System.identityHashCode(this), System.identityHashCode(other));
-                    return result;
-                }
-
-                @Override
-                public boolean equals(Object o) {
-                    if (this == o) return true;
-                    if (o == null || getClass() != o.getClass()) return false;
-                    ComparableMatch that = (ComparableMatch)o;
-                    return range.equals(that.range);
-                }
-
-                @Override
-                public int hashCode() {
-                    return range.hashCode();
-                }
-            }
         }
     }
 }
