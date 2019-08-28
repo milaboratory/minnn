@@ -76,7 +76,7 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
         boolean otherContainsWildcards = other.getSequence().containsWildcards();
         if (containsWildcards || otherContainsWildcards) {
             if (equalByWildcards(consensusSequence, other)) {
-                consensusSequence = multipleSequencesMerged(Arrays.asList(consensusSequence, other));
+                consensusSequence = mergeSequence(consensusSequence, count, other);
                 maxQuality = false;
                 uniqueOriginalSequences.add(other.getSequence());
                 containsWildcards = false;
@@ -87,7 +87,7 @@ final class SequenceCounter implements Comparable<SequenceCounter> {
         } else {
             if (consensusSequence.getSequence().equals(other.getSequence())) {
                 if (!maxQuality) {
-                    consensusSequence = multipleSequencesMerged(Arrays.asList(consensusSequence, other));
+                    consensusSequence = mergeSequence(consensusSequence, count, other);
                     maxQuality = (consensusSequence.getQuality().minValue() == DEFAULT_MAX_QUALITY);
                 }
                 count++;

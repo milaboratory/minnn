@@ -30,6 +30,7 @@ package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.minnn.util.ConsensusLetter;
 import org.junit.*;
 
 import java.util.*;
@@ -40,7 +41,7 @@ import static org.junit.Assert.*;
 
 public class CorrectionUtilsTest {
     @Test
-    public void multipleSequencesMergedTest() {
+    public void mergeSequenceTest() {
         LinkedHashMap<List<NSequenceWithQuality>, NSequenceWithQuality> testData = new LinkedHashMap<>();
         testData.put(Arrays.asList(
                 new NSequenceWithQuality("AAA", "###"),
@@ -76,7 +77,13 @@ public class CorrectionUtilsTest {
                 new NSequenceWithQuality("ATA", "[[["),
                 new NSequenceWithQuality("NTA", "###")),
                 new NSequenceWithQuality("ATA", "R[["));
-        for (HashMap.Entry<List<NSequenceWithQuality>, NSequenceWithQuality> currentTestData : testData.entrySet())
-            assertEquals(currentTestData.getValue(), multipleSequencesMerged(currentTestData.getKey()));
+        for (HashMap.Entry<List<NSequenceWithQuality>, NSequenceWithQuality> currentTestData : testData.entrySet()) {
+            Iterator<NSequenceWithQuality> iterator = currentTestData.getKey().iterator();
+            NSequenceWithQuality mergeResult = iterator.next();
+            int count = 1;
+            while (iterator.hasNext())
+                mergeResult = mergeSequence(mergeResult, count++, iterator.next());
+            assertEquals(currentTestData.getValue(), mergeResult);
+        }
     }
 }

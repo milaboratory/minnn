@@ -29,94 +29,25 @@
 package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.sequence.*;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.milaboratory.minnn.cli.Defaults.*;
-import static com.milaboratory.minnn.stat.StatUtils.*;
-import static com.milaboratory.minnn.util.SequencesCache.*;
+import com.milaboratory.minnn.util.ConsensusLetter;
 
 final class CorrectionUtils {
     private CorrectionUtils() {}
 
-    private static final NucleotideSequence[] letterOptions = new NucleotideSequence[] {
-            sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
-            sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")),
-            NucleotideSequence.EMPTY };
-
-    static NSequenceWithQuality multipleSequencesMerged(List<NSequenceWithQuality> sequences) {
-        int maxLength = sequences.stream().mapToInt(SequenceWithQuality::size).max()
-                .orElseThrow(IllegalArgumentException::new);
+    static NSequenceWithQuality mergeSequence(
+            NSequenceWithQuality oldConsensus, long consensusReadsCount, NSequenceWithQuality newSequence) {
+        int maxLength = Math.max(oldConsensus.size(), newSequence.size());
         NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
         for (int positionIndex = 0; positionIndex < maxLength; positionIndex++) {
-            List<NSequenceWithQuality> currentPositionLetters = new ArrayList<>();
-            for (NSequenceWithQuality sequence : sequences) {
-                if (sequence.size() > positionIndex) {
-                    NSequenceWithQuality currentLetter = sequence.getRange(positionIndex, positionIndex + 1);
-                    NucleotideSequence currentLetterSequence = sequencesCache.get(currentLetter.getSequence());
-                    byte currentLetterQuality = getLetterQuality(currentLetter);
-                    if (currentLetterSequence.containsWildcards()) {
-                        Wildcard wildcard = wildcards.get(currentLetterSequence);
-                        for (int i = 0; i < wildcard.basicSize(); i++) {
-                            NucleotideSequence currentBasicLetter = wildcardCodeToSequence
-                                    .get(wildcard.getMatchingCode(i));
-                            currentPositionLetters.add(new NSequenceWithQuality(currentBasicLetter,
-                                    qualityCache.get((byte)(currentLetterQuality / wildcard.basicSize()))));
-                        }
-                    } else {
-                        currentPositionLetters.add(new NSequenceWithQuality(currentLetterSequence,
-                                qualityCache.get(currentLetterQuality)));
-                    }
-                } else {
-                    currentPositionLetters.add(NSequenceWithQuality.EMPTY);
-                }
-            }
-            if (currentPositionLetters.size() < 1)
-                throw new IllegalStateException("Illegal state of currentPositionLetters: " + currentPositionLetters
-                        + ", sequences: " + sequences);
-            else if (currentPositionLetters.size() == 1) {
-                builder.append(currentPositionLetters.get(0));
-            } else {
-                Map<NucleotideSequence, Integer> letterCounts = Arrays.stream(letterOptions)
-                        .collect(Collectors.toMap(majorBase -> majorBase,
-                                majorBase -> (int)(currentPositionLetters.stream()
-                                        .map(SequenceWithQuality::getSequence).filter(majorBase::equals).count())));
-                double gamma = 1.0 / (letterOptions.length - 1);
-                NucleotideSequence bestLetterSequence = null;
-                double bestLetterQuality = -1;
-
-                for (int i = 0; i < 4; i++) {
-                    NucleotideSequence letterOption = letterOptions[i];     // don't count for empty option
-                    double product = Math.pow(gamma, -letterCounts.get(letterOption));
-                    for (NSequenceWithQuality currentLetter : currentPositionLetters) {
-                        double errorProbability = qualityToProbability(Math.max(DEFAULT_BAD_QUALITY,
-                                getLetterQuality(currentLetter)));
-                        if (currentLetter.getSequence().equals(letterOption))
-                            product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
-                        else
-                            product *= errorProbability / Math.max(OVERFLOW_PROTECTION_MIN,
-                                    1 - gamma * errorProbability);
-                        product = Math.min(product, OVERFLOW_PROTECTION_MAX);
-                    }
-
-                    double errorProbability = 1.0 / (1 + product);
-                    double quality = probabilityToQuality(errorProbability);
-                    if (quality > bestLetterQuality) {
-                        bestLetterSequence = letterOption;
-                        bestLetterQuality = quality;
-                    }
-                }
-                builder.append(new NSequenceWithQuality(bestLetterSequence,
-                        qualityCache.get((byte)Math.min(DEFAULT_MAX_QUALITY, bestLetterQuality))));
-            }
+            ConsensusLetter consensusLetter = new ConsensusLetter();
+            NSequenceWithQuality oldConsensusLetter = (positionIndex >= oldConsensus.size())
+                    ? NSequenceWithQuality.EMPTY : oldConsensus.getRange(positionIndex, positionIndex + 1);
+            NSequenceWithQuality newSequenceLetter = (positionIndex >= newSequence.size())
+                    ? NSequenceWithQuality.EMPTY : newSequence.getRange(positionIndex, positionIndex + 1);
+            consensusLetter.addLetters(oldConsensusLetter, consensusReadsCount);
+            consensusLetter.addLetters(newSequenceLetter, 1);
+            builder.append(consensusLetter.calculateConsensusLetter());
         }
-
         return builder.createAndDestroy();
-    }
-
-    private static byte getLetterQuality(NSequenceWithQuality letter) {
-        return (letter == NSequenceWithQuality.EMPTY) ? DEFAULT_BAD_QUALITY :
-                (byte)Math.min(DEFAULT_MAX_QUALITY, letter.getQuality().value(0));
     }
 }
