@@ -34,8 +34,7 @@ import com.milaboratory.minnn.util.ConsensusLetter;
 final class CorrectionUtils {
     private CorrectionUtils() {}
 
-    static NSequenceWithQuality mergeSequence(
-            NSequenceWithQuality oldConsensus, long consensusReadsCount, NSequenceWithQuality newSequence) {
+    static NSequenceWithQuality mergeSequence(NSequenceWithQuality oldConsensus, NSequenceWithQuality newSequence) {
         int maxLength = Math.max(oldConsensus.size(), newSequence.size());
         NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
         for (int positionIndex = 0; positionIndex < maxLength; positionIndex++) {
@@ -44,8 +43,8 @@ final class CorrectionUtils {
                     ? NSequenceWithQuality.EMPTY : oldConsensus.getRange(positionIndex, positionIndex + 1);
             NSequenceWithQuality newSequenceLetter = (positionIndex >= newSequence.size())
                     ? NSequenceWithQuality.EMPTY : newSequence.getRange(positionIndex, positionIndex + 1);
-            consensusLetter.addLetters(oldConsensusLetter, consensusReadsCount);
-            consensusLetter.addLetters(newSequenceLetter, 1);
+            consensusLetter.addLetter(oldConsensusLetter);
+            consensusLetter.addLetter(newSequenceLetter);
             builder.append(consensusLetter.calculateConsensusLetter());
         }
         return builder.createAndDestroy();

@@ -51,37 +51,38 @@ public class ConsensusLetter {
 
     private final TObjectLongHashMap<NucleotideSequence> letterCounts = new TObjectLongHashMap<>();
     private final ArrayList<LetterStats> stats = new ArrayList<>();
+    private long inputLettersCount = 0;
     private NSequenceWithQuality lastInputLetter = null;
 
     public ConsensusLetter() {
         Arrays.stream(letterOptions).forEach(letter -> letterCounts.put(letter, 0));
     }
 
-    public void addLetters(NSequenceWithQuality inputLetter, long count) {
+    public void addLetter(NSequenceWithQuality inputLetter) {
+        inputLettersCount++;
         lastInputLetter = inputLetter;
         if (inputLetter.equals(NSequenceWithQuality.EMPTY)) {
-            letterCounts.put(NucleotideSequence.EMPTY, letterCounts.get(NucleotideSequence.EMPTY) + count);
-            stats.add(new LetterStats(NucleotideSequence.EMPTY, count, DEFAULT_BAD_QUALITY));
+            letterCounts.put(NucleotideSequence.EMPTY, letterCounts.get(NucleotideSequence.EMPTY) + 1);
+            stats.add(new LetterStats(NucleotideSequence.EMPTY, DEFAULT_BAD_QUALITY));
         } else if (inputLetter.getSequence().containsWildcards()) {
             Wildcard wildcard = wildcards.get(inputLetter.getSequence());
             for (int i = 0; i < wildcard.basicSize(); i++) {
                 NucleotideSequence currentBasicLetter = wildcardCodeToSequence.get(wildcard.getMatchingCode(i));
-                letterCounts.put(currentBasicLetter, letterCounts.get(currentBasicLetter) + count);
-                stats.add(new LetterStats(currentBasicLetter, count,
+                letterCounts.put(currentBasicLetter, letterCounts.get(currentBasicLetter) + 1);
+                stats.add(new LetterStats(currentBasicLetter,
                         (double)(inputLetter.getQuality().value(0)) / wildcard.basicSize()));
             }
         } else {
             NucleotideSequence seq = inputLetter.getSequence();
-            letterCounts.put(seq, letterCounts.get(seq) + count);
-            stats.add(new LetterStats(seq, count, inputLetter.getQuality().value(0)));
+            letterCounts.put(seq, letterCounts.get(seq) + 1);
+            stats.add(new LetterStats(seq, inputLetter.getQuality().value(0)));
         }
     }
 
     public NSequenceWithQuality calculateConsensusLetter() {
-        long totalCount = Arrays.stream(letterCounts.values()).sum();
-        if (totalCount < 1)
+        if (inputLettersCount < 1)
             throw new IllegalStateException("Trying to calculate consensus letter without input letters!");
-        else if (totalCount == 1)
+        else if (inputLettersCount == 1)
             return Objects.requireNonNull(lastInputLetter);
         else {
             double gamma = 1.0 / (letterOptions.length - 1);
@@ -96,15 +97,12 @@ public class ConsensusLetter {
                             currentStats.quality));
                     double multiplier;
                     if (currentStats.letter.equals(letterOption))
-                        multiplier = Math.pow(
-                                (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability),
-                                currentStats.count);
+                        multiplier = (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN,
+                                errorProbability);
                     else
-                        multiplier = Math.pow(
-                                errorProbability / Math.max(OVERFLOW_PROTECTION_MIN, 1 - gamma * errorProbability),
-                                currentStats.count);
-                    product = Math.min(product * Math.min(multiplier, OVERFLOW_PROTECTION_MAX),
-                            OVERFLOW_PROTECTION_MAX);
+                        multiplier = errorProbability / Math.max(OVERFLOW_PROTECTION_MIN,
+                                1 - gamma * errorProbability);
+                    product = Math.min(product * multiplier, OVERFLOW_PROTECTION_MAX);
                 }
 
                 double errorProbability = 1.0 / (1 + product);
@@ -120,12 +118,10 @@ public class ConsensusLetter {
 
     private static class LetterStats {
         final NucleotideSequence letter;
-        final long count;
         final double quality;
 
-        LetterStats(NucleotideSequence letter, long count, double quality) {
+        LetterStats(NucleotideSequence letter, double quality) {
             this.letter = letter;
-            this.count = count;
             this.quality = quality;
         }
     }
