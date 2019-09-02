@@ -108,6 +108,17 @@ public class CorrectionUtilsTest {
         data6.setMergeOneByOneResult("ATA", "R[[");
         testData.add(data6);
 
+        MergeTestData data7 = new MergeTestData();
+        data7.addSequence("R", "4");
+        data7.originalSequences.add(NSequenceWithQuality.EMPTY);
+        data7.addSequence("A", "^");
+        data7.addSequence("C", "4");
+        data7.addSequence("R", "4");
+        data7.originalSequences.add(NSequenceWithQuality.EMPTY);
+        data7.setMergeAllResult("A", "H");
+        data7.setMergeOneByOneResult("A", "U");
+        testData.add(data7);
+
         for (MergeTestData currentTestData : testData) {
             int maxLength = currentTestData.originalSequences.stream().mapToInt(SequenceWithQuality::size).max()
                     .orElseThrow(RuntimeException::new);
