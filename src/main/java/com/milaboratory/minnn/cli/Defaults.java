@@ -79,4 +79,6 @@ public final class Defaults {
     public final static int DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE = 1 << 16;
     public final static double OVERFLOW_PROTECTION_MIN = 1E-100D;
     public final static double OVERFLOW_PROTECTION_MAX = 1E100D;
+    public final static int SEQUENCES_OF_N_CACHE_SIZE = 2000;
+    public final static int SEQUENCES_OF_CHARACTERS_CACHE_SIZE = 100;
 }

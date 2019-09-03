@@ -33,12 +33,12 @@ import com.milaboratory.core.Range;
 import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
-import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.pattern.PatternUtils.*;
+import static com.milaboratory.minnn.util.SequencesCache.*;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.*;
 
 public final class RepeatNPattern extends SinglePattern implements CanBeSingleSequence, CanFixBorders {
@@ -205,9 +205,6 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
             private int currentRepeats;
             private int currentPosition;
 
-            // sequences are needed to produce alignments; keys: number of repeats, values: sequences of N letters
-            private final TIntObjectHashMap<NucleotideSequenceCaseSensitive> sequences = new TIntObjectHashMap<>();
-
             // used for fair sorting and for matching in fixed position
             private TreeSet<ComparableMatch> allMatches = null;
             private Iterator<ComparableMatch> allMatchesIterator = null;
@@ -221,9 +218,6 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
                         || ((fixedRightBorder != -1) && (to <= fixedRightBorder)))
                     noMoreMatches = true;
                 else {
-                    for (int repeats = minRepeats; repeats <= this.maxRepeats; repeats++)
-                        sequences.put(repeats, new NucleotideSequenceCaseSensitive(new String(new char[repeats])
-                                .replace("\0", "N")));
                     this.currentRepeats = this.maxRepeats;
                     this.currentPosition = 0;
                 }
@@ -315,7 +309,7 @@ public final class RepeatNPattern extends SinglePattern implements CanBeSingleSe
                 int numberOfRepeats = range.length();
                 int firstUppercase = 0;
                 int lastUppercase = numberOfRepeats - 1;
-                NucleotideSequenceCaseSensitive seq = sequences.get(numberOfRepeats);
+                NucleotideSequenceCaseSensitive seq = getSequenceOfN(numberOfRepeats);
                 PatternConfiguration fixedBorderConfiguration = conf.setLeftBorder(range.getLower());
                 Alignment<NucleotideSequenceCaseSensitive> alignment = Objects.requireNonNull(
                         fixedBorderConfiguration.patternAligner.align(fixedBorderConfiguration, true,

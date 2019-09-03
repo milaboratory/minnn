@@ -38,6 +38,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.pattern.PatternUtils.*;
+import static com.milaboratory.minnn.util.SequencesCache.*;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.*;
 
 public final class RepeatPattern extends SinglePattern implements CanBeSingleSequence, CanFixBorders {
@@ -211,14 +212,12 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
             private final boolean fixedBorder;
             private final boolean fairSorting;
             private final TargetSections targetSections;
+            private boolean noMoreMatches = false;
 
             /* Length of longest valid section starting from this position (index1) in target inside (from->to) range.
              * Section is valid when number of errors (index2) isn't bigger than bitapMaxErrors
              * in PatternConfiguration. */
             private final int[][] longestValidSections;
-
-            private final NucleotideSequenceCaseSensitive[] sequences;
-            private boolean noMoreMatches = false;
 
             // Data structures used for unfair sorting.
             private final HashSet<Range> uniqueRangesUnfair = new HashSet<>();
@@ -252,19 +251,9 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                         for (int j = 0; j <= maxErrors; j++)
                             longestValidSections[i][j] = calculateLongestValidSection(i, j);
                     }
-                    this.sequences = new NucleotideSequenceCaseSensitive[Math.max(1, maxRepeats - minRepeats + 1)];
-                    for (int i = 0; i < this.sequences.length; i++) {
-                        NucleotideSequenceCaseSensitive[] sequencesToConcatenate
-                                = new NucleotideSequenceCaseSensitive[minRepeats + i];
-                        Arrays.fill(sequencesToConcatenate, patternSeq);
-                        NucleotideSequenceCaseSensitive currentSequence = SequencesUtils
-                                .concatenate(sequencesToConcatenate);
-                        this.sequences[i] = currentSequence;
-                    }
                 } else {
                     this.targetSections = null;
                     this.longestValidSections = null;
-                    this.sequences = null;
                 }
             }
 
@@ -295,7 +284,7 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                             int firstUppercase = uppercasePattern ? 0 : -1;
                             int lastUppercase = uppercasePattern ? repeats - 1 : -1;
                             Alignment<NucleotideSequenceCaseSensitive> alignment = conf.patternAligner.align(conf,
-                                    uppercasePattern, sequences[repeats - minRepeats], target,
+                                    uppercasePattern, getSequenceOfCharacters(patternSeq, repeats), target,
                                     currentRange.getUpper() - 1);
                             if (alignment != null) {
                                 Range targetRange = alignment.getSequence2Range();
@@ -430,8 +419,9 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
                     int repeats = Math.max(minRepeats, Math.min(maxRepeats, range.length()));
                     int firstUppercase = uppercasePattern ? 0 : -1;
                     int lastUppercase = uppercasePattern ? repeats - 1 : -1;
-                    alignment = patternConfiguration.patternAligner.align(patternConfiguration, uppercasePattern,
-                            sequences[repeats - minRepeats], target, range.getUpper() - 1);
+                    alignment = patternConfiguration.patternAligner.align(patternConfiguration,
+                            uppercasePattern, getSequenceOfCharacters(patternSeq, repeats), target,
+                            range.getUpper() - 1);
                     if (alignment != null) {
                         Range targetRange = alignment.getSequence2Range();
                         UniqueAlignedSequence alignedSequence = new UniqueAlignedSequence(targetRange, repeats);
