@@ -36,7 +36,6 @@ import static com.milaboratory.minnn.io.MinnnDataFormat.*;
 public final class Defaults {
     private Defaults() {}
 
-    public final static String APP_NAME = "minnn";
     public final static long DEFAULT_SCORE_THRESHOLD = -30;
     public final static int DEFAULT_BITAP_MAX_ERRORS = 2;
     public final static int DEFAULT_MAX_OVERLAP = 2;
@@ -77,6 +76,9 @@ public final class Defaults {
     public final static int DEFAULT_CONSENSUS_KMER_OFFSET = 15;
     public final static int DEFAULT_CONSENSUS_KMER_MAX_ERRORS = 3;
     public final static int DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE = 1 << 16;
+
+    public final static String APP_NAME = "minnn";
+    public final static int BITAP_MAX_LENGTH = 63;
     public final static double OVERFLOW_PROTECTION_MIN = 1E-100D;
     public final static double OVERFLOW_PROTECTION_MAX = 1E100D;
     public final static int SEQUENCES_OF_N_CACHE_SIZE = 2000;

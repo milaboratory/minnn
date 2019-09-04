@@ -38,12 +38,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.*;
 import static com.milaboratory.minnn.util.UnfairSorterConfiguration.*;
 
 public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingleSequence, CanFixBorders {
     private final ArrayList<NucleotideSequenceCaseSensitive> sequences;
     private final ArrayList<Motif<NucleotideSequence>> motifs;
+    private final ArrayList<BitapPattern> bitapPatterns;
+    private final ArrayList<Integer> bitapPositionCorrections;
     private final int leftCut;
     private final int rightCut;
     private final int fixedLeftBorder;
@@ -123,12 +126,35 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                 throw new IllegalArgumentException("Group edge " + groupEdgePosition.getGroupEdge().getGroupName()
                         + (groupEdgePosition.getGroupEdge().isStart() ? " start" : " end") + " ("
                         + groupEdgePosition.getPosition() + ") is outside of motif (motif size: " + size + ")");
+
+        this.bitapPatterns = new ArrayList<>();
+        this.bitapPositionCorrections = new ArrayList<>();
+        for (int i = 0; i < sequences.size(); i++) {
+            NucleotideSequenceCaseSensitive currentSequence = sequences.get(i);
+            if (currentSequence.size() > BITAP_MAX_LENGTH) {
+                String seqString = currentSequence.toString();
+                int seqLength = currentSequence.size();
+                String seqStart = seqString.substring(0, BITAP_MAX_LENGTH);
+                String seqEnd = seqString.substring(seqLength - BITAP_MAX_LENGTH, seqLength);
+                if (estimateSequenceComplexity(seqStart) > estimateSequenceComplexity(seqEnd)) {
+                    this.bitapPatterns.add(new NucleotideSequence(seqEnd).toMotif().getBitapPattern());
+                    this.bitapPositionCorrections.add(0);
+                } else {
+                    this.bitapPatterns.add(new NucleotideSequence(seqStart).toMotif().getBitapPattern());
+                    this.bitapPositionCorrections.add(seqLength - BITAP_MAX_LENGTH);
+                }
+            } else {
+                this.bitapPatterns.add(motifs.get(i).getBitapPattern());
+                this.bitapPositionCorrections.add(0);
+            }
+        }
     }
 
     private FuzzyMatchPattern(
             PatternConfiguration conf, byte targetId, ArrayList<NucleotideSequenceCaseSensitive> sequences,
             ArrayList<Motif<NucleotideSequence>> motifs, int leftCut, int rightCut, int fixedLeftBorder,
-            int fixedRightBorder, List<GroupEdgePosition> groupEdgePositions, ArrayList<Integer> groupOffsets) {
+            int fixedRightBorder, List<GroupEdgePosition> groupEdgePositions, ArrayList<Integer> groupOffsets,
+            ArrayList<BitapPattern> bitapPatterns, ArrayList<Integer> bitapPositionCorrections) {
         super(conf, targetId);
         this.sequences = sequences;
         this.motifs = motifs;
@@ -138,6 +164,8 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
         this.fixedRightBorder = fixedRightBorder;
         this.groupEdgePositions = groupEdgePositions;
         this.groupOffsets = groupOffsets;
+        this.bitapPatterns = bitapPatterns;
+        this.bitapPositionCorrections = bitapPositionCorrections;
     }
 
     @Override
@@ -242,7 +270,7 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
     SinglePattern setTargetId(byte targetId) {
         validateTargetId(targetId);
         return new FuzzyMatchPattern(conf, targetId, sequences, motifs, leftCut, rightCut, fixedLeftBorder,
-                fixedRightBorder, groupEdgePositions, groupOffsets);
+                fixedRightBorder, groupEdgePositions, groupOffsets, bitapPatterns, bitapPositionCorrections);
     }
 
     private class FuzzyMatchingResult implements MatchingResult {
@@ -266,12 +294,9 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
         }
 
         private class FuzzyMatchOutputPort implements OutputPort<MatchIntermediate> {
-            private final static int BITAP_MAX_LENGTH = 63;
             private final boolean fixedBorder;
             private final boolean fairSorting;
-            private final List<BitapPattern> bitapPatterns;
             private final List<BitapMatcherFilter> bitapMatcherFilters;
-            private final ArrayList<Integer> bitapPositionCorrections;
 
             /* Current index in lists of sequences and bitap patterns.
              * Index represents combination of numbers of cut nucleotides on the left and right sides. */
@@ -291,27 +316,6 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
             FuzzyMatchOutputPort(boolean fairSorting) {
                 this.fairSorting = fairSorting;
                 this.fixedBorder = (fixedLeftBorder != -1) || (fixedRightBorder != -1);
-                this.bitapPatterns = new ArrayList<>();
-                this.bitapPositionCorrections = new ArrayList<>();
-                for (int i = 0; i < sequences.size(); i++) {
-                    NucleotideSequenceCaseSensitive currentSequence = sequences.get(i);
-                    if (currentSequence.size() > BITAP_MAX_LENGTH) {
-                        String seqString = currentSequence.toString();
-                        int seqLength = currentSequence.size();
-                        String seqStart = seqString.substring(0, BITAP_MAX_LENGTH);
-                        String seqEnd = seqString.substring(seqLength - BITAP_MAX_LENGTH, seqLength);
-                        if (estimateSequenceComplexity(seqStart) > estimateSequenceComplexity(seqEnd)) {
-                            this.bitapPatterns.add(new NucleotideSequence(seqEnd).toMotif().getBitapPattern());
-                            this.bitapPositionCorrections.add(0);
-                        } else {
-                            this.bitapPatterns.add(new NucleotideSequence(seqStart).toMotif().getBitapPattern());
-                            this.bitapPositionCorrections.add(seqLength - BITAP_MAX_LENGTH);
-                        }
-                    } else {
-                        this.bitapPatterns.add(motifs.get(i).getBitapPattern());
-                        this.bitapPositionCorrections.add(0);
-                    }
-                }
                 if (!fixedBorder && !fairSorting) {
                     this.bitapMatcherFilters = bitapPatterns.stream().map(bp -> new BitapMatcherFilter(
                             bp.substitutionAndIndelMatcherLast(0, target.getSequence(), from, to)))
