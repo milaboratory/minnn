@@ -29,8 +29,8 @@
 package com.milaboratory.minnn.consensus;
 
 import cc.redberry.pipe.Processor;
-import com.milaboratory.core.sequence.NucleotideSequence;
-import com.milaboratory.core.sequence.Wildcard;
+import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.minnn.util.ConsensusLetter;
 import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.io.PrintStream;
@@ -38,18 +38,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
-import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
-import static com.milaboratory.minnn.stat.StatUtils.*;
-import static com.milaboratory.minnn.util.SequencesCache.*;
 
 public abstract class ConsensusAlgorithm implements Processor<Cluster, CalculatedConsensuses> {
-    private static final NucleotideSequence[] consensusMajorBases = new NucleotideSequence[] {
-            sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
-            sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")) };
     protected final Consumer<String> displayWarning;
     protected final int numberOfTargets;
     protected final int maxConsensusesPerCluster;
@@ -94,74 +87,19 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     /**
      * Calculate consensus letter from list of base letters.
      *
-     * @param baseLetters       base letters; allowed values A, T, G, C and EMPTY_SEQ (deletion)
-     * @return                  calculated consensus letter: letter with quality or EMPTY_SEQ for deletion
+     * @param baseLetters       base letters; can be basic letters, wildcards or EMPTY_SEQ (deletion)
+     * @return                  calculated consensus letter: basic letter with quality or EMPTY_SEQ for deletion
      */
-    protected SequenceWithAttributes calculateConsensusLetter(List<SequenceWithAttributes> baseLetters) {
+    protected NSequenceWithQuality calculateConsensusLetter(List<SequenceWithAttributes> baseLetters) {
         if (baseLetters.size() == 1)
-            return baseLetters.get(0);
-        Map<NucleotideSequence, Integer> letterCounts = Arrays.stream(consensusMajorBases)
-                .collect(Collectors.toMap(majorBase -> majorBase, majorBase -> (int)(baseLetters.stream()
-                        .map(SequenceWithAttributes::getSeq).filter(majorBase::equals).count())));
-        int deletionsCount = (int)(baseLetters.stream().filter(SequenceWithAttributes::isEmpty).count());
-        if (letterCounts.values().stream().allMatch(count -> count <= deletionsCount))
-            return new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ, -1);
-        final double gamma = 1.0 / (consensusMajorBases.length - 1);
-
-        NucleotideSequence bestMajorBase = null;
-        double bestQuality = -1;
-        for (NucleotideSequence majorBase : consensusMajorBases) {
-            double product = Math.pow(gamma, -letterCounts.get(majorBase));
-            for (SequenceWithAttributes currentLetter : baseLetters)
-                if (!currentLetter.isEmpty()) {
-                    double errorProbability = qualityToProbability(Math.max(DEFAULT_BAD_QUALITY,
-                            currentLetter.getQual().value(0)));
-                    if (currentLetter.getSeq().equals(majorBase))
-                        product *= (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
-                    else
-                        product *= errorProbability / Math.max(OVERFLOW_PROTECTION_MIN,
-                                1 - gamma * errorProbability);
-                    product = Math.min(product, OVERFLOW_PROTECTION_MAX);
-                }
-
-            double majorErrorProbability = 1.0 / (1 + product);
-            double quality = probabilityToQuality(majorErrorProbability);
-            if (quality > bestQuality) {
-                bestMajorBase = majorBase;
-                bestQuality = quality;
-            }
-        }
-
-        return new SequenceWithAttributes(Objects.requireNonNull(bestMajorBase),
-                qualityCache.get((byte)Math.min(DEFAULT_MAX_QUALITY, bestQuality)), -1);
-    }
-
-    /**
-     * Prepare letters for consensus calculation: expand wildcards and skip NULL_SEQ (missing edges).
-     *
-     * @param rawLetter input letter, can be basic, wildcard, EMPTY_SEQ or NULL_SEQ
-     * @return          list of valid letters for consensus calculation: can be basic nucleotides,
-     *                  deletion (EMPTY_SEQ) or empty list
-     */
-    protected List<SequenceWithAttributes> prepareForConsensus(SequenceWithAttributes rawLetter) {
-        ArrayList<SequenceWithAttributes> baseLetters = new ArrayList<>();
-        if (rawLetter.isEmpty())
-            baseLetters.add(rawLetter);
-        else if (!rawLetter.isNull()) {
-            NucleotideSequence letterWithoutQuality = rawLetter.getSeq();
-            if (letterWithoutQuality.containsWildcards()) {
-                Wildcard wildcard = wildcards.get(letterWithoutQuality);
-                for (int i = 0; i < wildcard.basicSize(); i++) {
-                    NucleotideSequence currentBasicLetter = wildcardCodeToSequence.get(wildcard.getMatchingCode(i));
-                    baseLetters.add(new SequenceWithAttributes(currentBasicLetter, qualityCache
-                            .get((byte)(rawLetter.getQual().value(0) / wildcard.basicSize())),
-                            rawLetter.getOriginalReadId()));
-                }
-            } else
-                baseLetters.add(rawLetter);
-        }
-
-        return baseLetters;
+            return baseLetters.get(0).toNSequenceWithQuality();
+        ConsensusLetter consensusLetter = new ConsensusLetter();
+        baseLetters.forEach(letter -> consensusLetter.addLetter(letter.toNSequenceWithQuality()));
+        long deletionsCount = baseLetters.stream().filter(SequenceWithAttributes::isEmpty).count();
+        if (Arrays.stream(consensusLetter.getLetterCounts().values()).allMatch(count -> count <= deletionsCount))
+            return NSequenceWithQuality.EMPTY;
+        else
+            return consensusLetter.calculateConsensusLetter();
     }
 
     /**

@@ -290,7 +290,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
             ArrayList<ArrayList<SequenceWithAttributes>> debugDataForThisTarget = (debugData == null) ? null
                     : debugData.data.get(targetIndex);
-            ArrayList<SequenceWithAttributes> consensusDebugDataForThisTarget = (debugData == null) ? null
+            ArrayList<NSequenceWithQuality> consensusDebugDataForThisTarget = (debugData == null) ? null
                     : debugData.consensusData.get(targetIndex);
             ArrayList<Long> alignmentScoresDebugForThisTarget = (debugData == null) ? null
                     : debugData.alignmentScores.get(targetIndex);
@@ -354,7 +354,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
 
             // choosing letters for consensus and calculating quality
             int fullRowLength = lettersMatrixList.get(0).size();
-            ArrayList<SequenceWithAttributes> consensusLetters = getLettersWithQuality(lettersList, fullRowLength,
+            ArrayList<NSequenceWithQuality> consensusLetters = getLettersWithQuality(lettersList, fullRowLength,
                     targetIndex);
 
             // consensus sequence assembling and quality trimming
@@ -364,14 +364,14 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                 storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
                 return new Consensus(debugData, numberOfTargets, stage2);
             }
-            NSequenceWithQuality consensusRawSequence = NSequenceWithQuality.EMPTY;
-            for (SequenceWithAttributes consensusLetter : consensusLetters) {
-                if (!consensusLetter.isEmpty())
-                    consensusRawSequence = consensusRawSequence
-                            .concatenate(consensusLetter.toNSequenceWithQuality());
+            NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
+            for (NSequenceWithQuality consensusLetter : consensusLetters) {
+                if (consensusLetter != NSequenceWithQuality.EMPTY)
+                    builder.append(consensusLetter);
                 if (debugData != null)
                     consensusDebugDataForThisTarget.add(consensusLetter);
             }
+            NSequenceWithQuality consensusRawSequence = builder.createAndDestroy();
             SequenceWithAttributes consensusSequence = new SequenceWithAttributes(
                     consensusRawSequence.getSequence(), consensusRawSequence.getQuality(), bestSeqReadId);
 
@@ -420,22 +420,23 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
      * @param targetIndex       current targetIndex
      * @return                  list of calculated consensus letters with calculated qualities
      */
-    private ArrayList<SequenceWithAttributes> getLettersWithQuality(
+    private ArrayList<NSequenceWithQuality> getLettersWithQuality(
             List<LettersWithPositions> lettersList, int fullRowLength, int targetIndex) {
-        ArrayList<SequenceWithAttributes> consensusLetters = new ArrayList<>();
+        ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
 
         for (int position = 0; position < fullRowLength; position++) {
             ArrayList<SequenceWithAttributes> baseLetters = new ArrayList<>();
             // loop by source reads for this consensus
             for (LettersWithPositions currentLettersWithPositions : lettersList) {
                 SequenceWithAttributes currentLetter = currentLettersWithPositions.get(targetIndex, position);
-                baseLetters.addAll(prepareForConsensus(currentLetter));
+                if (!currentLetter.isNull())
+                    baseLetters.add(currentLetter);
             }
 
             if (baseLetters.size() > 0)
                 consensusLetters.add(calculateConsensusLetter(baseLetters));
             else
-                consensusLetters.add(new SequenceWithAttributes(SpecialSequences.EMPTY_SEQ, -1));
+                consensusLetters.add(NSequenceWithQuality.EMPTY);
         }
 
         return consensusLetters;
@@ -502,7 +503,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         }
     }
 
-    private class LettersWithPositions {
+    private static class LettersWithPositions {
         private HashMap<Integer, ArrayList<SequenceWithAttributes>> targetSequences = new HashMap<>();
 
         void set(int targetIndex, ArrayList<SequenceWithAttributes> values) {
@@ -521,7 +522,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         }
     }
 
-    private class LettersMatrix {
+    private static class LettersMatrix {
         // column numbers in the matrix corresponding to base sequence letters; last value is row length
         private final int[] baseLettersCoordinates;
         private final int baseSequenceRealIndex;

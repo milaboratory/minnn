@@ -46,6 +46,7 @@ public final class SequencesCache {
     private SequencesCache() {}
 
     public static final HashMap<NucleotideSequence, NucleotideSequence> sequencesCache = new HashMap<>();
+    public static final NucleotideSequence[] consensusMajorBases;
     public static final TByteObjectHashMap<SequenceQuality> qualityCache = new TByteObjectHashMap<>();
     public static final HashMap<NucleotideSequence, Wildcard> wildcards = new HashMap<>();
     public static final TByteObjectHashMap<NucleotideSequence> wildcardCodeToSequence = new TByteObjectHashMap<>();
@@ -63,6 +64,10 @@ public final class SequencesCache {
             NucleotideSequence currentSequence = new NucleotideSequence(first + second);
             sequencesCache.put(currentSequence, currentSequence);
         }));
+        consensusMajorBases = new NucleotideSequence[] {
+                sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
+                sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")),
+                NucleotideSequence.EMPTY };
         NucleotideSequence.ALPHABET.getAllWildcards().forEach(wildcard -> {
             String letter = String.valueOf(wildcard.getSymbol());
             NucleotideSequence sequence = sequencesCache.get(new NucleotideSequence(letter));

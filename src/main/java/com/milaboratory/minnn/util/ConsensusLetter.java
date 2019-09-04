@@ -44,18 +44,13 @@ import static com.milaboratory.minnn.util.SequencesCache.*;
  * letters and stores letter counts and qualities.
  */
 public class ConsensusLetter {
-    private static final NucleotideSequence[] letterOptions = new NucleotideSequence[] {
-            sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
-            sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")),
-            NucleotideSequence.EMPTY };
-
     private final TObjectLongHashMap<NucleotideSequence> letterCounts = new TObjectLongHashMap<>();
     private final ArrayList<LetterStats> stats = new ArrayList<>();
     private long inputLettersCount = 0;
     private NSequenceWithQuality lastInputLetter = null;
 
     public ConsensusLetter() {
-        Arrays.stream(letterOptions).forEach(letter -> letterCounts.put(letter, 0));
+        Arrays.stream(consensusMajorBases).forEach(letter -> letterCounts.put(letter, 0));
     }
 
     public void addLetter(NSequenceWithQuality inputLetter) {
@@ -85,12 +80,12 @@ public class ConsensusLetter {
         else if (inputLettersCount == 1)
             return Objects.requireNonNull(lastInputLetter);
         else {
-            double gamma = 1.0 / (letterOptions.length - 1);
+            double gamma = 1.0 / (consensusMajorBases.length - 1);
             NucleotideSequence bestLetterSequence = null;
             double bestLetterQuality = -1;
 
             for (int i = 0; i < 4; i++) {
-                NucleotideSequence letterOption = letterOptions[i];     // don't count for empty option
+                NucleotideSequence letterOption = consensusMajorBases[i];   // don't count for empty option
                 double product = Math.pow(gamma, -letterCounts.get(letterOption));
                 for (LetterStats currentStats : stats) {
                     double errorProbability = qualityToProbability(Math.max(DEFAULT_BAD_QUALITY,
@@ -114,6 +109,10 @@ public class ConsensusLetter {
             }
             return new NSequenceWithQuality(bestLetterSequence, qualityCache.get((byte)bestLetterQuality));
         }
+    }
+
+    public TObjectLongHashMap<NucleotideSequence> getLetterCounts() {
+        return new TObjectLongHashMap<>(letterCounts);
     }
 
     private static class LetterStats {

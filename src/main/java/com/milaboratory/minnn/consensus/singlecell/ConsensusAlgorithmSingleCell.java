@@ -29,6 +29,7 @@
 package com.milaboratory.minnn.consensus.singlecell;
 
 import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.core.sequence.NSequenceWithQualityBuilder;
 import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.minnn.consensus.*;
 import gnu.trove.map.hash.TByteObjectHashMap;
@@ -241,13 +242,16 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 alignedSequencesMatrix.addRow(currentRead.getSequences().get(targetId),
                         kmerOffsets.get(currentRead.getOriginalReadId()));
 
-            ArrayList<SequenceWithAttributes> consensusLetters = new ArrayList<>();
+            ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
             for (int coordinate = alignedSequencesMatrix.getMinCoordinate();
                  coordinate <= alignedSequencesMatrix.getMaxCoordinate(); coordinate++) {
                 ArrayList<SequenceWithAttributes> currentCoordinateLetters = new ArrayList<>();
-                for (long readId : usedReadIds)
-                    currentCoordinateLetters.addAll(prepareForConsensus(alignedSequencesMatrix
-                            .letterAt(readId, coordinate)));
+                for (long readId : usedReadIds) {
+                    SequenceWithAttributes currentLetter = alignedSequencesMatrix.letterAt(readId, coordinate);
+                    // skip missing edges (null sequences)
+                    if (!currentLetter.isNull())
+                        currentCoordinateLetters.add(currentLetter);
+                }
                 if (currentCoordinateLetters.size() > 0)
                     consensusLetters.add(calculateConsensusLetter(currentCoordinateLetters));
             }
@@ -269,10 +273,9 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 setUsedReadsStatus(usedReadIds, CONSENSUS_DISCARDED_TRIM);
                 return new Consensus(debugData, numberOfTargets, true);
             }
-            NSequenceWithQuality consensusRawSequence = NSequenceWithQuality.EMPTY;
-            for (SequenceWithAttributes consensusLetter : consensusLetters)
-                if (!consensusLetter.isEmpty())
-                    consensusRawSequence = consensusRawSequence.concatenate(consensusLetter.toNSequenceWithQuality());
+            NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
+            consensusLetters.stream().filter(letter -> letter != NSequenceWithQuality.EMPTY).forEach(builder::append);
+            NSequenceWithQuality consensusRawSequence = builder.createAndDestroy();
             SequenceWithAttributes consensusSequence = new SequenceWithAttributes(
                     consensusRawSequence.getSequence(), consensusRawSequence.getQuality(),
                     offsetSearchResults.usedReads.get(0).getOriginalReadId());

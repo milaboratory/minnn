@@ -28,6 +28,8 @@
  */
 package com.milaboratory.minnn.consensus;
 
+import com.milaboratory.core.sequence.NSequenceWithQuality;
+
 import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.*;
@@ -43,7 +45,7 @@ public final class ConsensusDebugData {
     // outer list - targetIndex, second - sequenceIndex, inner - positionIndex
     public List<ArrayList<ArrayList<SequenceWithAttributes>>> data;
     // outer list - targetIndex, inner - positionIndex
-    public List<ArrayList<SequenceWithAttributes>> consensusData;
+    public List<ArrayList<NSequenceWithQuality>> consensusData;
     // outer list - targetIndex, inner - sequenceIndex
     public List<ArrayList<Long>> alignmentScores;
 
@@ -56,7 +58,7 @@ public final class ConsensusDebugData {
         this.data = IntStream.range(0, numberOfTargets)
                 .mapToObj(i -> new ArrayList<ArrayList<SequenceWithAttributes>>()).collect(Collectors.toList());
         this.consensusData = IntStream.range(0, numberOfTargets)
-                .mapToObj(i -> new ArrayList<SequenceWithAttributes>()).collect(Collectors.toList());
+                .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());
         if (useAlignmentScores)
             this.alignmentScores = IntStream.range(0, numberOfTargets)
                     .mapToObj(i -> new ArrayList<Long>()).collect(Collectors.toList());
@@ -73,7 +75,7 @@ public final class ConsensusDebugData {
         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
             debugOutputStream.println("targetIndex: " + targetIndex);
             ArrayList<ArrayList<SequenceWithAttributes>> targetData = data.get(targetIndex);
-            ArrayList<SequenceWithAttributes> targetConsensus = consensusData.get(targetIndex);
+            ArrayList<NSequenceWithQuality> targetConsensus = consensusData.get(targetIndex);
             ArrayList<Long> targetAlignmentScores = useAlignmentScores ? alignmentScores.get(targetIndex) : null;
             for (int sequenceIndex = 0; sequenceIndex < targetData.size(); sequenceIndex++) {
                 ArrayList<SequenceWithAttributes> sequenceData = targetData.get(sequenceIndex);
@@ -99,14 +101,14 @@ public final class ConsensusDebugData {
                 debugOutputStream.println(sequenceString.toString());
             }
             StringBuilder consensusString = new StringBuilder();
-            for (SequenceWithAttributes currentLetter : targetConsensus) {
-                if (currentLetter.isEmpty())
+            for (NSequenceWithQuality currentLetter : targetConsensus) {
+                if (currentLetter == NSequenceWithQuality.EMPTY)
                     consensusString.append("-");
                 else {
-                    if (currentLetter.getQual().value(0) < debugQualityThreshold)
-                        consensusString.append(Character.toLowerCase(currentLetter.getSeq().symbolAt(0)));
+                    if (currentLetter.getQuality().value(0) < debugQualityThreshold)
+                        consensusString.append(Character.toLowerCase(currentLetter.getSequence().symbolAt(0)));
                     else
-                        consensusString.append(Character.toUpperCase(currentLetter.getSeq().symbolAt(0)));
+                        consensusString.append(Character.toUpperCase(currentLetter.getSequence().symbolAt(0)));
                 }
             }
             if (targetConsensus.size() > 0)
