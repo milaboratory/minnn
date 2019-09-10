@@ -34,85 +34,185 @@ import com.milaboratory.core.sequence.Wildcard;
 import gnu.trove.map.hash.TObjectLongHashMap;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.stat.StatUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
 /**
- * Helper class for merging multiple letters with quality into one consensus letter. Transforms wildcards to basic
- * letters and stores letter counts and qualities.
+ * Helper class for merging multiple letters with quality into one consensus letter.
  */
 public class ConsensusLetter {
-    private final TObjectLongHashMap<NucleotideSequence> letterCounts = new TObjectLongHashMap<>();
-    private final ArrayList<LetterStats> stats = new ArrayList<>();
-    private long inputLettersCount = 0;
-    private NSequenceWithQuality lastInputLetter = null;
+    private static final ConcurrentHashMap<PairOfLetters, NSequenceWithQuality> consensusesCache
+            = new ConcurrentHashMap<>();
+    private static final HashMap<NSequenceWithQuality, TObjectLongHashMap<NucleotideSequence>> countsCache
+            = new HashMap<>();
+    private static final HashMap<NSequenceWithQuality, List<LetterStats>> statsCache = new HashMap<>();
+    private static boolean cachesInitialized = false;
 
-    public ConsensusLetter() {
-        Arrays.stream(consensusMajorBases).forEach(letter -> letterCounts.put(letter, 0));
+    private final List<NSequenceWithQuality> inputLetters;
+    private TObjectLongHashMap<NucleotideSequence> letterCounts = null;
+    private List<LetterStats> letterStats = null;
+
+    public ConsensusLetter(List<NSequenceWithQuality> inputLetters) {
+        this.inputLetters = inputLetters;
+        initCaches();
     }
 
-    public void addLetter(NSequenceWithQuality inputLetter) {
-        inputLettersCount++;
-        lastInputLetter = inputLetter;
-        if (inputLetter.equals(NSequenceWithQuality.EMPTY)) {
-            letterCounts.put(NucleotideSequence.EMPTY, letterCounts.get(NucleotideSequence.EMPTY) + 1);
-            stats.add(new LetterStats(NucleotideSequence.EMPTY, DEFAULT_BAD_QUALITY));
-        } else if (inputLetter.getSequence().containsWildcards()) {
-            Wildcard wildcard = wildcards.get(inputLetter.getSequence());
-            for (int i = 0; i < wildcard.basicSize(); i++) {
-                NucleotideSequence currentBasicLetter = wildcardCodeToSequence.get(wildcard.getMatchingCode(i));
-                letterCounts.put(currentBasicLetter, letterCounts.get(currentBasicLetter) + 1);
-                stats.add(new LetterStats(currentBasicLetter,
-                        (double)(inputLetter.getQuality().value(0)) / wildcard.basicSize()));
-            }
-        } else {
-            NucleotideSequence seq = inputLetter.getSequence();
-            letterCounts.put(seq, letterCounts.get(seq) + 1);
-            stats.add(new LetterStats(seq, inputLetter.getQuality().value(0)));
-        }
-    }
-
-    public NSequenceWithQuality calculateConsensusLetter() {
-        if (inputLettersCount < 1)
+    public NSequenceWithQuality getConsensusLetter() {
+        if (inputLetters.size() < 1)
             throw new IllegalStateException("Trying to calculate consensus letter without input letters!");
-        else if (inputLettersCount == 1)
-            return Objects.requireNonNull(lastInputLetter);
+        else if (inputLetters.size() == 1)
+            return inputLetters.get(0);
         else {
-            double gamma = 1.0 / (consensusMajorBases.length - 1);
-            NucleotideSequence bestLetterSequence = null;
-            double bestLetterQuality = -1;
-
-            for (int i = 0; i < 4; i++) {
-                NucleotideSequence letterOption = consensusMajorBases[i];   // don't count for empty option
-                double product = Math.pow(gamma, -letterCounts.get(letterOption));
-                for (LetterStats currentStats : stats) {
-                    double errorProbability = qualityToProbability(Math.max(DEFAULT_BAD_QUALITY,
-                            currentStats.quality));
-                    double multiplier;
-                    if (currentStats.letter.equals(letterOption))
-                        multiplier = (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN,
-                                errorProbability);
-                    else
-                        multiplier = errorProbability / Math.max(OVERFLOW_PROTECTION_MIN,
-                                1 - gamma * errorProbability);
-                    product = Math.min(product * multiplier, OVERFLOW_PROTECTION_MAX);
-                }
-
-                double errorProbability = 1.0 / (1 + product);
-                double quality = probabilityToQuality(errorProbability);
-                if (quality > bestLetterQuality) {
-                    bestLetterSequence = letterOption;
-                    bestLetterQuality = quality;
-                }
+            if (inputLetters.size() == 2) {
+                PairOfLetters pair = new PairOfLetters(inputLetters.get(0), inputLetters.get(1));
+                if (consensusesCache.containsKey(pair))
+                    return consensusesCache.get(pair);
             }
-            return new NSequenceWithQuality(bestLetterSequence, qualityCache.get((byte)bestLetterQuality));
+            calculateCountsAndStats();
+            return calculateConsensusLetter(letterCounts, letterStats);
         }
     }
 
     public TObjectLongHashMap<NucleotideSequence> getLetterCounts() {
+        calculateCountsAndStats();
         return new TObjectLongHashMap<>(letterCounts);
+    }
+
+    private static NSequenceWithQuality calculateConsensusLetter(
+            TObjectLongHashMap<NucleotideSequence> letterCounts, List<LetterStats> letterStats) {
+        double gamma = 1.0 / (consensusMajorBases.length - 1);
+        NucleotideSequence bestLetterSequence = null;
+        double bestLetterQuality = -1;
+
+        for (int i = 0; i < 4; i++) {
+            NucleotideSequence letterOption = consensusMajorBases[i];   // don't count for empty option
+            double product = Math.pow(gamma, -letterCounts.get(letterOption));
+            for (LetterStats currentStats : letterStats) {
+                double errorProbability = qualityToProbability(Math.max(DEFAULT_BAD_QUALITY, currentStats.quality));
+                double multiplier;
+                if (currentStats.letter.equals(letterOption))
+                    multiplier = (1 - errorProbability) / Math.max(OVERFLOW_PROTECTION_MIN, errorProbability);
+                else
+                    multiplier = errorProbability / Math.max(OVERFLOW_PROTECTION_MIN, 1 - gamma * errorProbability);
+                product = Math.min(product * multiplier, OVERFLOW_PROTECTION_MAX);
+            }
+
+            double errorProbability = 1.0 / (1 + product);
+            double quality = probabilityToQuality(errorProbability);
+            if (quality > bestLetterQuality) {
+                bestLetterSequence = letterOption;
+                bestLetterQuality = quality;
+            }
+        }
+
+        return new NSequenceWithQuality(bestLetterSequence, qualityCache.get((byte)bestLetterQuality));
+    }
+
+    private static TObjectLongHashMap<NucleotideSequence> mergeCounts(
+            List<TObjectLongHashMap<NucleotideSequence>> separateCounts) {
+        TObjectLongHashMap<NucleotideSequence> mergedCounts = new TObjectLongHashMap<>();
+        Arrays.stream(consensusMajorBases).forEach(baseLetter -> mergedCounts.put(baseLetter, 0));
+        separateCounts.forEach(separateCount ->
+                separateCount.forEachEntry((currentLetter, currentCount) -> {
+                    mergedCounts.put(currentLetter, mergedCounts.get(currentLetter) + currentCount);
+                    return true;
+                }));
+        return mergedCounts;
+    }
+
+    private synchronized void calculateCountsAndStats() {
+        if ((letterCounts == null) && (letterStats == null)) {
+            letterStats = new ArrayList<>();
+            List<TObjectLongHashMap<NucleotideSequence>> separateCounts = new ArrayList<>();
+            inputLetters.stream().map(this::fixQuality).forEach(currentLetter -> {
+                separateCounts.add(countsCache.get(currentLetter));
+                letterStats.addAll(statsCache.get(currentLetter));
+            });
+            letterCounts = mergeCounts(separateCounts);
+        }
+    }
+
+    private NSequenceWithQuality fixQuality(NSequenceWithQuality letter) {
+        if (letter == NSequenceWithQuality.EMPTY)
+            return letter;
+        byte quality = letter.getQuality().value(0);
+        if (quality < 0)
+            return new NSequenceWithQuality(letter.getSequence(), qualityCache.get((byte)0));
+        else if (quality > DEFAULT_MAX_QUALITY)
+            return new NSequenceWithQuality(letter.getSequence(), qualityCache.get(DEFAULT_MAX_QUALITY));
+        else
+            return letter;
+    }
+
+    private synchronized void initCaches() {
+        if (!cachesInitialized) {
+            // calculating counts and stats for all letters with all possible qualities
+            List<NucleotideSequence> allLettersWithEmpty = new ArrayList<>(allLetters);
+            allLettersWithEmpty.add(NucleotideSequence.EMPTY);
+            allLettersWithEmpty.forEach(letter -> {
+                for (byte quality = 0; quality <= DEFAULT_MAX_QUALITY; quality++) {
+                    TObjectLongHashMap<NucleotideSequence> counts = new TObjectLongHashMap<>();
+                    Arrays.stream(consensusMajorBases).forEach(baseLetter -> counts.put(baseLetter, 0));
+                    List<LetterStats> stats = new ArrayList<>();
+                    if (letter == NucleotideSequence.EMPTY) {
+                        // EMPTY comes without quality, so add only one entry to the cache
+                        if (quality == 0) {
+                            counts.put(NucleotideSequence.EMPTY, 1);
+                            stats.add(new LetterStats(NucleotideSequence.EMPTY, DEFAULT_BAD_QUALITY));
+                            countsCache.put(NSequenceWithQuality.EMPTY, counts);
+                            statsCache.put(NSequenceWithQuality.EMPTY, stats);
+                        }
+                    } else {
+                        if (letter.containsWildcards()) {
+                            Wildcard wildcard = wildcards.get(letter);
+                            for (int i = 0; i < wildcard.basicSize(); i++) {
+                                NucleotideSequence currentBasicLetter = wildcardCodeToSequence
+                                        .get(wildcard.getMatchingCode(i));
+                                counts.put(currentBasicLetter, counts.get(currentBasicLetter) + 1);
+                                stats.add(new LetterStats(currentBasicLetter,
+                                        (double)quality / wildcard.basicSize()));
+                            }
+                        } else {
+                            counts.put(letter, counts.get(letter) + 1);
+                            stats.add(new LetterStats(letter, quality));
+                        }
+                        NSequenceWithQuality seq = new NSequenceWithQuality(letter, qualityCache.get(quality));
+                        countsCache.put(seq, counts);
+                        statsCache.put(seq, stats);
+                    }
+                }
+            });
+
+            // calculating cached consensuses for all pairs for base letters and N
+            LinkedHashSet<NucleotideSequence> baseLettersWithN = new LinkedHashSet<>(
+                    Arrays.asList(consensusMajorBases));
+            baseLettersWithN.remove(NucleotideSequence.EMPTY);
+            baseLettersWithN.add(new NucleotideSequence("N"));
+            baseLettersWithN.parallelStream().forEach(letter1 ->
+                    baseLettersWithN.forEach(letter2 -> {
+                        for (byte quality1 = 0; quality1 <= DEFAULT_MAX_QUALITY; quality1++)
+                            for (byte quality2 = 0; quality2 <= DEFAULT_MAX_QUALITY; quality2++) {
+                                NSequenceWithQuality seq1 = new NSequenceWithQuality(letter1,
+                                        qualityCache.get(quality1));
+                                NSequenceWithQuality seq2 = new NSequenceWithQuality(letter2,
+                                        qualityCache.get(quality2));
+                                PairOfLetters pair = new PairOfLetters(seq1, seq2);
+                                if (!consensusesCache.containsKey(pair)) {
+                                    TObjectLongHashMap<NucleotideSequence> letterCounts = mergeCounts(
+                                            Arrays.asList(countsCache.get(seq1), countsCache.get(seq2)));
+                                    List<LetterStats> letterStats = new ArrayList<>();
+                                    letterStats.addAll(statsCache.get(seq1));
+                                    letterStats.addAll(statsCache.get(seq2));
+                                    consensusesCache.put(pair, calculateConsensusLetter(letterCounts, letterStats));
+                                }
+                            }
+                    }));
+
+            cachesInitialized = true;
+        }
     }
 
     private static class LetterStats {
@@ -122,6 +222,34 @@ public class ConsensusLetter {
         LetterStats(NucleotideSequence letter, double quality) {
             this.letter = letter;
             this.quality = quality;
+        }
+    }
+
+    /**
+     * Pair of nucleotide sequences with qualities; order is not important for equality of two pairs.
+     * This class is used as key for HashMap in cache of precalculated consensuses for letter pairs.
+     */
+    private static class PairOfLetters {
+        private final NSequenceWithQuality letter1;
+        private final NSequenceWithQuality letter2;
+
+        PairOfLetters(NSequenceWithQuality letter1, NSequenceWithQuality letter2) {
+            this.letter1 = letter1;
+            this.letter2 = letter2;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PairOfLetters that = (PairOfLetters)o;
+            return (letter1.equals(that.letter1) && letter2.equals(that.letter2))
+                    || (letter1.equals(that.letter2) && letter2.equals(that.letter1));
+        }
+
+        @Override
+        public int hashCode() {
+            return letter1.hashCode() + letter2.hashCode();
         }
     }
 }

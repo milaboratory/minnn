@@ -28,10 +28,7 @@
  */
 package com.milaboratory.minnn.util;
 
-import com.milaboratory.core.sequence.NucleotideSequence;
-import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
-import com.milaboratory.core.sequence.SequenceQuality;
-import com.milaboratory.core.sequence.Wildcard;
+import com.milaboratory.core.sequence.*;
 import gnu.trove.map.hash.TByteObjectHashMap;
 import gnu.trove.map.hash.TCharObjectHashMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -47,10 +44,11 @@ public final class SequencesCache {
 
     public static final HashMap<NucleotideSequence, NucleotideSequence> sequencesCache = new HashMap<>();
     public static final NucleotideSequence[] consensusMajorBases;
-    public static final TByteObjectHashMap<SequenceQuality> qualityCache = new TByteObjectHashMap<>();
+    public static final List<NucleotideSequence> allLetters = new ArrayList<>();
     public static final HashMap<NucleotideSequence, Wildcard> wildcards = new HashMap<>();
     public static final TByteObjectHashMap<NucleotideSequence> wildcardCodeToSequence = new TByteObjectHashMap<>();
     public static final TCharObjectHashMap<Wildcard> charToWildcard = new TCharObjectHashMap<>();
+    public static final TByteObjectHashMap<SequenceQuality> qualityCache = new TByteObjectHashMap<>();
     public static final TObjectLongHashMap<NucleotideSequence> basicLettersMasks = new TObjectLongHashMap<>();
     private static final TIntObjectHashMap<NucleotideSequenceCaseSensitive> sequencesOfN = new TIntObjectHashMap<>();
     private static final HashMap<NucleotideSequenceCaseSensitive, TIntObjectHashMap<NucleotideSequenceCaseSensitive>>
@@ -64,21 +62,26 @@ public final class SequencesCache {
             NucleotideSequence currentSequence = new NucleotideSequence(first + second);
             sequencesCache.put(currentSequence, currentSequence);
         }));
+
         consensusMajorBases = new NucleotideSequence[] {
                 sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
                 sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")),
                 NucleotideSequence.EMPTY };
+
         NucleotideSequence.ALPHABET.getAllWildcards().forEach(wildcard -> {
             String letter = String.valueOf(wildcard.getSymbol());
             NucleotideSequence sequence = sequencesCache.get(new NucleotideSequence(letter));
+            allLetters.add(sequence);
             wildcards.put(sequence, wildcard);
             wildcardCodeToSequence.put(wildcard.getCode(), sequence);
             charToWildcard.put(wildcard.getSymbol(), wildcard);
         });
+
         for (byte quality = 0; quality <= DEFAULT_MAX_QUALITY; quality++)
             qualityCache.put(quality, new SequenceQuality(new byte[] { quality }));
         NucleotideSequence.ALPHABET.getAllWildcards().stream().filter(Wildcard::isBasic).forEach(wildcard ->
                 basicLettersMasks.put(wildcardCodeToSequence.get(wildcard.getCode()), wildcard.getBasicMask()));
+
         for (int i = 0; i <= SEQUENCES_OF_N_CACHE_SIZE; i++)
             sequencesOfN.put(i, generateSequenceOfCharacters("N", i));
         NucleotideSequenceCaseSensitive.ALPHABET.getAllWildcards().stream()

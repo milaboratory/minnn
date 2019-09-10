@@ -38,6 +38,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
@@ -93,13 +94,13 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     protected NSequenceWithQuality calculateConsensusLetter(List<SequenceWithAttributes> baseLetters) {
         if (baseLetters.size() == 1)
             return baseLetters.get(0).toNSequenceWithQuality();
-        ConsensusLetter consensusLetter = new ConsensusLetter();
-        baseLetters.forEach(letter -> consensusLetter.addLetter(letter.toNSequenceWithQuality()));
+        ConsensusLetter consensusLetter = new ConsensusLetter(baseLetters.stream()
+                .map(SequenceWithAttributes::toNSequenceWithQuality).collect(Collectors.toList()));
         long deletionsCount = baseLetters.stream().filter(SequenceWithAttributes::isEmpty).count();
         if (Arrays.stream(consensusLetter.getLetterCounts().values()).allMatch(count -> count <= deletionsCount))
             return NSequenceWithQuality.EMPTY;
         else
-            return consensusLetter.calculateConsensusLetter();
+            return consensusLetter.getConsensusLetter();
     }
 
     /**

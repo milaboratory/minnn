@@ -31,6 +31,8 @@ package com.milaboratory.minnn.correct;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.util.ConsensusLetter;
 
+import java.util.Arrays;
+
 final class CorrectionUtils {
     private CorrectionUtils() {}
 
@@ -38,14 +40,13 @@ final class CorrectionUtils {
         int maxLength = Math.max(oldConsensus.size(), newSequence.size());
         NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
         for (int positionIndex = 0; positionIndex < maxLength; positionIndex++) {
-            ConsensusLetter consensusLetter = new ConsensusLetter();
             NSequenceWithQuality oldConsensusLetter = (positionIndex >= oldConsensus.size())
                     ? NSequenceWithQuality.EMPTY : oldConsensus.getRange(positionIndex, positionIndex + 1);
             NSequenceWithQuality newSequenceLetter = (positionIndex >= newSequence.size())
                     ? NSequenceWithQuality.EMPTY : newSequence.getRange(positionIndex, positionIndex + 1);
-            consensusLetter.addLetter(oldConsensusLetter);
-            consensusLetter.addLetter(newSequenceLetter);
-            builder.append(consensusLetter.calculateConsensusLetter());
+            ConsensusLetter consensusLetter = new ConsensusLetter(
+                    Arrays.asList(oldConsensusLetter, newSequenceLetter));
+            builder.append(consensusLetter.getConsensusLetter());
         }
         return builder.createAndDestroy();
     }

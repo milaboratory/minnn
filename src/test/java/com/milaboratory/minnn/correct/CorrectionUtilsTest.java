@@ -96,7 +96,7 @@ public class CorrectionUtilsTest {
         data5.addSequence("AHABATYABGBHTRAGBDGRADAGAABDA", "597349AA8FNW54#%^385703583476");
         data5.addSequence("ATA", ",[,");
         data5.setMergeAllResult(
-                "ATACATTAAGGATAAGTTGAAAAGAATAA", "D\"G!\";![!(!#)HB!!!/!-!&$3)!!/");
+                "ATACATTAAGGATAAGTTGAAAAGAATAA", "D\"G!\";![!(!#)EB!!!/!-!&$3)!!/");
         data5.setMergeOneByOneResult(
                 "AAACATTAAAGATAAATAGAAAAGAAAAA", "['I-FQ2W2**Q-UW)'(I2H(D-JD'(G");
         testData.add(data5);
@@ -115,7 +115,7 @@ public class CorrectionUtilsTest {
         data7.addSequence("C", "4");
         data7.addSequence("R", "4");
         data7.originalSequences.add(NSequenceWithQuality.EMPTY);
-        data7.setMergeAllResult("A", "H");
+        data7.setMergeAllResult("A", "E");
         data7.setMergeOneByOneResult("A", "U");
         testData.add(data7);
 
@@ -124,11 +124,12 @@ public class CorrectionUtilsTest {
                     .orElseThrow(RuntimeException::new);
             NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
             for (int positionIndex = 0; positionIndex < maxLength; positionIndex++) {
-                ConsensusLetter consensusLetter = new ConsensusLetter();
+                List<NSequenceWithQuality> letters = new ArrayList<>();
                 for (NSequenceWithQuality currentSequence : currentTestData.originalSequences)
-                    consensusLetter.addLetter((positionIndex >= currentSequence.size()) ? NSequenceWithQuality.EMPTY
+                    letters.add((positionIndex >= currentSequence.size()) ? NSequenceWithQuality.EMPTY
                             : currentSequence.getRange(positionIndex, positionIndex + 1));
-                builder.append(consensusLetter.calculateConsensusLetter());
+                ConsensusLetter consensusLetter = new ConsensusLetter(letters);
+                builder.append(consensusLetter.getConsensusLetter());
             }
             NSequenceWithQuality mergeAllResult = builder.createAndDestroy();
             assertEquals(currentTestData.mergeAllResult, mergeAllResult);
