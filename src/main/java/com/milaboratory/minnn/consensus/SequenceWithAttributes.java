@@ -99,6 +99,8 @@ public final class SequenceWithAttributes {
             throw new IllegalStateException("Tried to convert null SequenceWithAttributes to NSequenceWithQuality!");
         if (isEmpty())
             return NSequenceWithQuality.EMPTY;
+        if (seq.size() == 1)
+            return seqWithQualityCache.get(new NSequenceWithQuality(seq, qual));
         return new NSequenceWithQuality(seq, qual);
     }
 

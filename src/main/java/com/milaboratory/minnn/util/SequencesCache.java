@@ -49,6 +49,7 @@ public final class SequencesCache {
     public static final TByteObjectHashMap<NucleotideSequence> wildcardCodeToSequence = new TByteObjectHashMap<>();
     public static final TCharObjectHashMap<Wildcard> charToWildcard = new TCharObjectHashMap<>();
     public static final TByteObjectHashMap<SequenceQuality> qualityCache = new TByteObjectHashMap<>();
+    public static final HashMap<NSequenceWithQuality, NSequenceWithQuality> seqWithQualityCache = new HashMap<>();
     public static final TObjectLongHashMap<NucleotideSequence> basicLettersMasks = new TObjectLongHashMap<>();
     private static final TIntObjectHashMap<NucleotideSequenceCaseSensitive> sequencesOfN = new TIntObjectHashMap<>();
     private static final HashMap<NucleotideSequenceCaseSensitive, TIntObjectHashMap<NucleotideSequenceCaseSensitive>>
@@ -77,8 +78,15 @@ public final class SequencesCache {
             charToWildcard.put(wildcard.getSymbol(), wildcard);
         });
 
-        for (byte quality = 0; quality <= DEFAULT_MAX_QUALITY; quality++)
-            qualityCache.put(quality, new SequenceQuality(new byte[] { quality }));
+        for (byte quality = 0; quality <= DEFAULT_MAX_QUALITY; quality++) {
+            SequenceQuality qualObject = new SequenceQuality(new byte[] { quality });
+            qualityCache.put(quality, qualObject);
+            allLetters.forEach(seq -> {
+                NSequenceWithQuality nSequenceWithQuality = new NSequenceWithQuality(seq, qualObject);
+                seqWithQualityCache.put(nSequenceWithQuality, nSequenceWithQuality);
+            });
+        }
+
         NucleotideSequence.ALPHABET.getAllWildcards().stream().filter(Wildcard::isBasic).forEach(wildcard ->
                 basicLettersMasks.put(wildcardCodeToSequence.get(wildcard.getCode()), wildcard.getBasicMask()));
 

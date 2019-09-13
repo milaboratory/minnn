@@ -52,8 +52,8 @@ public final class Defaults {
     public final static int DEFAULT_THREADS = 4;
     public final static MinnnDataFormat DEFAULT_INPUT_FORMAT = FASTQ;
     public final static int DEFAULT_SORT_MIN_CHUNK_SIZE = 16384;
-    public final static int DEFAULT_SORT_MAX_CHUNK_SIZE = 524288;
-    public final static float DEFAULT_SORT_CHUNK_MEMORY_SHARE = 0.01f;
+    public final static int DEFAULT_SORT_MAX_CHUNK_SIZE = 65536;
+    public final static float DEFAULT_SORT_CHUNK_MEMORY_SHARE = 0.005f;
     public final static float DEFAULT_MAX_ERRORS_SHARE = 0.15f;
     public final static float DEFAULT_CORRECT_CLUSTER_THRESHOLD = 1f;
     public final static int DEFAULT_CORRECT_MAX_CLUSTER_DEPTH = 2;
@@ -80,7 +80,7 @@ public final class Defaults {
     public final static String APP_NAME = "minnn";
     public final static int BITAP_MAX_LENGTH = 63;
     public final static int SEQUENCES_OF_CHARACTERS_CACHE_SIZE = 100;
-    public final static int SEQUENCES_OF_N_CACHE_SIZE = 2000;
+    public final static int SEQUENCES_OF_N_CACHE_SIZE = 1000;
     public final static double OVERFLOW_PROTECTION_MIN = 1E-100D;
     public final static double OVERFLOW_PROTECTION_MAX = 1E100D;
 }

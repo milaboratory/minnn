@@ -108,6 +108,21 @@ public class SpecialCasesTest {
     }
 
     @Test
+    public void consensusSpeedTest() throws Exception {
+        String inputFastqFiles = getBigOrSmallFastqTestFileNames("test01_R1.fastq.gz", "test01_R2.fastq.gz");
+        String extractOutput = TEMP_DIR + "extracted.mif";
+        String sortOutput = TEMP_DIR + "sorted.mif";
+        String consensusOutput = TEMP_DIR + "consensus.mif";
+        exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
+                + " --score-threshold -25 --bitap-max-errors 5"
+                + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
+        exec("sort -f --groups UMI --input " + extractOutput + " --output " + sortOutput);
+        exec("consensus -f --groups UMI --input " + sortOutput + " --output " + consensusOutput);
+        for (String fileName : new String[] { extractOutput, sortOutput, consensusOutput })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
     public void wrongGroupsTest() throws Exception {
         String inputFileR1 = TEST_RESOURCES_PATH + "sample_r1.fastq.gz";
         String inputFileR2 = TEST_RESOURCES_PATH + "sample_r2.fastq.gz";
