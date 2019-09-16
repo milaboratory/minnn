@@ -128,7 +128,7 @@ public class CorrectionUtilsTest {
                 for (NSequenceWithQuality currentSequence : currentTestData.originalSequences)
                     letters.add((positionIndex >= currentSequence.size()) ? NSequenceWithQuality.EMPTY
                             : currentSequence.getRange(positionIndex, positionIndex + 1));
-                ConsensusLetter consensusLetter = new ConsensusLetter(letters);
+                ConsensusLetter consensusLetter = new ConsensusLetter(letters, false);
                 builder.append(consensusLetter.getConsensusLetter());
             }
             NSequenceWithQuality mergeAllResult = builder.createAndDestroy();

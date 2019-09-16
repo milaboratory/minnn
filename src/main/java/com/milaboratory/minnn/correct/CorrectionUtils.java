@@ -45,7 +45,7 @@ final class CorrectionUtils {
             NSequenceWithQuality newSequenceLetter = (positionIndex >= newSequence.size())
                     ? NSequenceWithQuality.EMPTY : newSequence.getRange(positionIndex, positionIndex + 1);
             ConsensusLetter consensusLetter = new ConsensusLetter(
-                    Arrays.asList(oldConsensusLetter, newSequenceLetter));
+                    Arrays.asList(oldConsensusLetter, newSequenceLetter), true);
             builder.append(consensusLetter.getConsensusLetter());
         }
         return builder.createAndDestroy();

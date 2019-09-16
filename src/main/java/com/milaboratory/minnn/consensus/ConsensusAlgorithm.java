@@ -89,15 +89,15 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
      * Calculate consensus letter from list of base letters.
      *
      * @param baseLetters       base letters; can be basic letters, wildcards or EMPTY_SEQ (deletion)
-     * @return                  calculated consensus letter: basic letter with quality or EMPTY_SEQ for deletion
+     * @return                  calculated consensus letter: letter with quality or EMPTY for deletion
      */
     protected NSequenceWithQuality calculateConsensusLetter(List<SequenceWithAttributes> baseLetters) {
         if (baseLetters.size() == 1)
             return baseLetters.get(0).toNSequenceWithQuality();
         ConsensusLetter consensusLetter = new ConsensusLetter(baseLetters.stream()
-                .map(SequenceWithAttributes::toNSequenceWithQuality).collect(Collectors.toList()));
-        long deletionsCount = baseLetters.stream().filter(SequenceWithAttributes::isEmpty).count();
-        if (Arrays.stream(consensusLetter.getLetterCounts().values()).allMatch(count -> count <= deletionsCount))
+                .map(SequenceWithAttributes::toNSequenceWithQuality).collect(Collectors.toList()),
+                false);
+        if (consensusLetter.isDeletionMaxCount())
             return NSequenceWithQuality.EMPTY;
         else
             return consensusLetter.getConsensusLetter();
