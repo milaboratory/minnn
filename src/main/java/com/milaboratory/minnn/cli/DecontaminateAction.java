@@ -59,7 +59,7 @@ public final class DecontaminateAction extends ACommandWithSmartOverwrite implem
     public void run1() {
         DecontaminateIO decontaminateIO = new DecontaminateIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, excludedBarcodesOutputFileName, groupNames, primaryGroupNames, minCountShare,
-                inputReadsLimit, quiet, reportFileName, jsonReportFileName);
+                inputReadsLimit, reportFileName, jsonReportFileName);
         decontaminateIO.go();
     }
 
@@ -75,10 +75,7 @@ public final class DecontaminateAction extends ACommandWithSmartOverwrite implem
 
     @Override
     protected List<String> getInputFiles() {
-        List<String> inputFileNames = new ArrayList<>();
-        if (inputFileName != null)
-            inputFileNames.add(inputFileName);
-        return inputFileNames;
+        return Collections.singletonList(inputFileName);
     }
 
     @Override
@@ -108,12 +105,9 @@ public final class DecontaminateAction extends ACommandWithSmartOverwrite implem
 
     @Override
     public PipelineConfiguration getFullPipelineConfiguration() {
-        if (inputFileName != null)
-            return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
-                    binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
-                    AppVersionInfo.get());
-        else
-            return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
+        return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
+                binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
+                AppVersionInfo.get());
     }
 
     @Option(description = "Group names for molecular barcodes (UMI). Reads where these barcodes are contaminated " +
@@ -132,8 +126,9 @@ public final class DecontaminateAction extends ACommandWithSmartOverwrite implem
             arity = "1..*")
     private List<String> primaryGroupNames = null;
 
-    @Option(description = IN_FILE_OR_STDIN,
-            names = {"--input"})
+    @Option(description = IN_FILE_NO_STDIN,
+            names = {"--input"},
+            required = true)
     private String inputFileName = null;
 
     @Option(description = OUT_FILE_OR_STDOUT,
