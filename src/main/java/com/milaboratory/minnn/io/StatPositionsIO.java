@@ -79,7 +79,7 @@ public final class StatPositionsIO {
         ArrayList<String> sortedGroups;
 
         try (MifReader reader = createReader()) {
-            validateInputGroups(reader, groupList, true);
+            validateInputGroups(reader, groupList, true, "--groups");
             correctedGroups = reader.getCorrectedGroups();
             sortedGroups = reader.getSortedGroups();
             if (inputReadsLimit > 0)

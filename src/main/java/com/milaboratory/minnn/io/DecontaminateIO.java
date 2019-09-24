@@ -85,7 +85,9 @@ public final class DecontaminateIO {
                 pass1Reader.setParsedReadsLimit(inputReadsLimit);
                 pass2Reader.setParsedReadsLimit(inputReadsLimit);
             }
-            validateInputGroups(pass1Reader, groupNames, false);
+            validateInputGroups(pass1Reader, groupNames, false, "--groups");
+            validateInputGroups(pass1Reader, primaryGroupNames, false,
+                    "--primary-groups");
             performDecontamination(pass1Reader, pass2Reader, writer, excludedBarcodesWriter);
             pass1Reader.close();
             writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());

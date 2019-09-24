@@ -83,7 +83,7 @@ public final class SorterIO {
         long totalReads = 0;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(reader.getHeader())) {
-            validateInputGroups(reader, sortGroupNames, true);
+            validateInputGroups(reader, sortGroupNames, true, "--groups");
             SmartProgressReporter.startProgressReport("Reading", reader, System.err);
             List<String> notCorrectedGroups = sortGroupNames.stream().filter(gn -> reader.getCorrectedGroups().stream()
                     .noneMatch(gn::equals)).collect(Collectors.toList());

@@ -91,7 +91,10 @@ public final class CorrectBarcodesIO {
                 if (primaryGroups.size() == 0)
                     Objects.requireNonNull(pass2Reader).setParsedReadsLimit(inputReadsLimit);
             }
-            validateInputGroups(pass1Reader, groupNames, false);
+            validateInputGroups(pass1Reader, groupNames, false, "--groups");
+            if (primaryGroups.size() > 0)
+                validateInputGroups(pass1Reader, primaryGroups, false,
+                        "--primary-groups");
             LinkedHashSet<String> keyGroups = new LinkedHashSet<>(groupNames);
             if (!suppressWarnings && (pass1Reader.getSortedGroups().size() > 0) && (primaryGroups.size() == 0))
                 System.err.println("WARNING: correcting sorted MIF file; output file will be unsorted!");

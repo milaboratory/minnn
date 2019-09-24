@@ -41,6 +41,7 @@ import static com.milaboratory.cli.AppVersionInfo.OutputType.*;
 import static com.milaboratory.minnn.cli.ConsensusDoubleMultiAlignAction.CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ConsensusSingleCellAction.CONSENSUS_SINGLE_CELL_ACTION_NAME;
 import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.DecontaminateAction.DECONTAMINATE_ACTION_NAME;
 import static com.milaboratory.minnn.cli.Defaults.APP_NAME;
 import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
@@ -135,6 +136,7 @@ public final class Main {
                 .addSubcommand(CONSENSUS_SINGLE_CELL_ACTION_NAME, ConsensusSingleCellAction.class)
                 .addSubcommand(CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME, ConsensusDoubleMultiAlignAction.class)
                 .addSubcommand(MIF_TO_FASTQ_ACTION_NAME, MifToFastqAction.class)
+                .addSubcommand(DECONTAMINATE_ACTION_NAME, DecontaminateAction.class)
                 .addSubcommand(GENERATE_DOCS_ACTION_NAME, GenerateDocsAction.class)
                 .addSubcommand("help", HelpCommand.class);
         cmd.setSeparator(" ");

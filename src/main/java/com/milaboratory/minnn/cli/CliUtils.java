@@ -53,12 +53,12 @@ public final class CliUtils {
     }
 
     public static void validateInputGroups(
-            MifReader mifReader, Collection<String> inputGroups, boolean defaultGroupsAllowed) {
+            MifReader mifReader, Collection<String> inputGroups, boolean defaultGroupsAllowed, String argumentName) {
         if (!defaultGroupsAllowed) {
             Set<String> defaultGroups = IntStream.rangeClosed(1, mifReader.getNumberOfTargets())
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
             if (inputGroups.stream().anyMatch(defaultGroups::contains))
-                throw exitWithError("Default groups R1, R2 etc are not allowed in --groups argument!");
+                throw exitWithError("Default groups R1, R2 etc are not allowed in " + argumentName + " argument!");
         }
         Set<String> existingGroups = mifReader.getGroupEdges().stream().map(GroupEdge::getGroupName)
                 .collect(Collectors.toSet());

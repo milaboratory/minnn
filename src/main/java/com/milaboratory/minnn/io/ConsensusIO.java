@@ -186,7 +186,7 @@ public final class ConsensusIO {
              MifWriter writer = createWriter(mifHeader = reader.getHeader())) {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
-            validateInputGroups(reader, consensusGroups, false);
+            validateInputGroups(reader, consensusGroups, false, "--groups");
             LinkedHashSet<String> notCorrectedGroups = new LinkedHashSet<>(consensusGroups);
             notCorrectedGroups.removeAll(reader.getCorrectedGroups());
             LinkedHashSet<String> notSortedGroups = new LinkedHashSet<>(consensusGroups);
