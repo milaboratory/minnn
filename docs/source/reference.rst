@@ -230,6 +230,24 @@ stat-positions
  --report: File to write brief command execution stats in human readable form. If not specified, these stats are displayed on screen only.
  --json-report: File to write command execution stats in JSON format.
 
+.. _decontaminate:
+
+decontaminate
+-------------
+.. include:: reference_descriptions/decontaminate.rst
+
+.. code-block:: text
+
+ --groups: Group names for molecular barcodes (UMI). Reads where these barcodes are contaminated from other cells will be filtered out.
+ --primary-groups: Primary group names. These groups contains cell barcodes: each combination of primary group values corresponds to 1 cell. Molecular barcodes are counted separately for each cell, and then reads containing molecular barcodes with significantly lower counts than in other cell will be removed.
+ --input: Input file in MIF format. This argument is required; stdin is not supported.
+ --output: Output file in MIF format. If not specified, stdout will be used.
+ --excluded-barcodes-output: Output file for reads with filtered out barcodes. If not specified, reads with filtered out barcodes will not be written anywhere.
+ --min-count-share: Threshold for filtering out molecular barcodes. If count of a molecular barcode is lower than count of the same barcode in different cell, multiplied on this share, then reads in the cell with lower count of this barcode will be considered contaminated and will be filtered out.
+ -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
+
 .. _report:
 
 report
