@@ -55,11 +55,11 @@ public class DemultiplexActionTest {
     public void randomTest() throws Exception {
         String startFile = TEMP_DIR + "start_" + TEST_FILENAME_PREFIX + ".mif";
         String inputFile = TEMP_DIR + TEST_FILENAME_PREFIX + ".mif";
-        String sampleFile4 = EXAMPLES_PATH + "demultiplex_samples/sample4.txt";
+        String sampleFile = EXAMPLES_PATH + "demultiplex_samples/sample4.txt";
         String[] randomFilterOptions = new String[] {
                 "--by-barcode G1", "--by-barcode G2", "--by-barcode G1 --by-barcode G2",
-                "--by-barcode G2 --by-barcode G1", "--by-sample " + sampleFile4,
-                "--by-sample " + sampleFile4 + " --by-barcode G1", "--by-barcode G1 --by-sample " + sampleFile4
+                "--by-barcode G2 --by-barcode G1", "--by-sample " + sampleFile,
+                "--by-sample " + sampleFile + " --by-barcode G1", "--by-barcode G1 --by-sample " + sampleFile
         };
 
         Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
@@ -87,32 +87,38 @@ public class DemultiplexActionTest {
     public void preparedMifTest() throws Exception {
         String startFile = getExampleMif("twosided");
         String inputFile = TEMP_DIR + TEST_FILENAME_PREFIX + ".mif";
-        String sampleFile1 = EXAMPLES_PATH + "demultiplex_samples/sample1.txt";
-        String sampleFile2 = EXAMPLES_PATH + "demultiplex_samples/sample2.txt";
-        String sampleFile3 = EXAMPLES_PATH + "demultiplex_samples/sample3.txt";
-        String sampleFileBad = EXAMPLES_PATH + "demultiplex_samples/bad_sample.txt";
+        Map<String, String> sampleFiles = new HashMap<String, String>() {{
+            for (String sampleName : Arrays.asList("sample1", "sample2", "sample3", "asterisk_sample", "bad_sample"))
+                put(sampleName, EXAMPLES_PATH + "demultiplex_samples/" + sampleName + ".txt");
+        }};
 
         exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                 + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\""
                 + " --threads 5 --mismatch-score -9 --gap-score -10 --single-overlap-penalty -10");
         Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
 
-        exec("demultiplex -f " + inputFile + " --by-barcode G1 --by-sample " + sampleFile1
+        exec("demultiplex -f " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE);
         File[] outputFiles = getOutputFiles();
         assertEquals(4667, outputFiles.length);
         Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
 
-        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFile2 + " --by-sample " + sampleFile3
-                + " --demultiplex-log " + LOG_FILE);
+        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("sample2")
+                + " --by-sample " + sampleFiles.get("sample3") + " --demultiplex-log " + LOG_FILE);
         outputFiles = getOutputFiles();
         assertEquals(16, outputFiles.length);
         Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
 
+        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("asterisk_sample")
+                + " --demultiplex-log " + LOG_FILE);
+        outputFiles = getOutputFiles();
+        assertEquals(10, outputFiles.length);
+        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+
         assertOutputContains(true, "Invalid sample", () -> callableExec("demultiplex -f " + inputFile
-                + " --by-sample " + sampleFileBad + " --demultiplex-log " + LOG_FILE));
+                + " --by-sample " + sampleFiles.get("bad_sample") + " --demultiplex-log " + LOG_FILE));
         assertOutputContains(true, "Missing required option", () -> callableExec("demultiplex -f "
-                + inputFile + " --by-sample " + sampleFile1));
+                + inputFile + " --by-sample " + sampleFiles.get("sample1")));
         for (String fileName : new String[] { startFile, inputFile, LOG_FILE })
             assertTrue(new File(fileName).delete());
     }
