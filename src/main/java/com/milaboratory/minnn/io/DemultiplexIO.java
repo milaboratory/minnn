@@ -176,7 +176,7 @@ public final class DemultiplexIO {
         DemultiplexParameterValue filter(ParsedRead parsedRead);
     }
 
-    private class BarcodeFilter implements DemultiplexFilter {
+    private static class BarcodeFilter implements DemultiplexFilter {
         private final String name;
 
         BarcodeFilter(DemultiplexArgument argument) {
@@ -195,7 +195,7 @@ public final class DemultiplexIO {
         }
     }
 
-    private class SampleFilter implements DemultiplexFilter {
+    private static class SampleFilter implements DemultiplexFilter {
         private final List<Sample> samples;
 
         SampleFilter(DemultiplexArgument argument) {
@@ -225,8 +225,12 @@ public final class DemultiplexIO {
                         throw exitWithError("Wrong line in " + argument.argument + ": " + sampleTokens[0]);
                     else {
                         NucleotideSequence[] barcodeSequences = new NucleotideSequence[sampleTokens.length - 1];
-                        for (int i = 0; i < barcodeSequences.length; i++)
-                            barcodeSequences[i] = new NucleotideSequence(sampleTokens[i + 1]);
+                        for (int i = 0; i < barcodeSequences.length; i++) {
+                            // write null instead of barcode sequence if there is "*" token in the sample file
+                            String currentToken = sampleTokens[i + 1];
+                            barcodeSequences[i] = currentToken.equals("*") ? null
+                                    : new NucleotideSequence(currentToken);
+                        }
                         samples.add(new Sample(sampleTokens[0], barcodeNames, barcodeSequences));
                     }
                 }
@@ -250,7 +254,9 @@ public final class DemultiplexIO {
                     for (MatchedGroup matchedGroup : parsedRead.getGroups())
                         if (matchedGroup.getGroupName().equals(currentName)) {
                             groupFound = true;
-                            if (!matchedGroup.getValue().getSequence().equals(currentSequence))
+                            // null sequence means "*" in the sample file
+                            if ((currentSequence != null) &&
+                                    (!matchedGroup.getValue().getSequence().equals(currentSequence)))
                                 allMatch = false;
                             break;
                         }
@@ -268,7 +274,7 @@ public final class DemultiplexIO {
 
     private interface DemultiplexParameterValue {}
 
-    private class Barcode implements DemultiplexParameterValue {
+    private static class Barcode implements DemultiplexParameterValue {
         final NucleotideSequence barcode;
 
         Barcode(NucleotideSequence barcode) {
@@ -294,7 +300,7 @@ public final class DemultiplexIO {
         }
     }
 
-    private class Sample implements DemultiplexParameterValue {
+    private static class Sample implements DemultiplexParameterValue {
         final String name;
         final String[] barcodeNames;
         final NucleotideSequence[] barcodeSequences;
@@ -385,7 +391,7 @@ public final class DemultiplexIO {
         }
     }
 
-    private class DemultiplexResult {
+    private static class DemultiplexResult {
         final ParsedRead parsedRead;
         final String outputFileName;
         final MifWriter mifWriter;
