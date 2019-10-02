@@ -39,14 +39,15 @@ Example for sample file with single group:
    error_value_2 AATT
    special_value TTAA
 
-Example for sample file with multiple groups:
+Asterisk wildcards :code:`*` can be used if any value of a group must match. Example for sample file with
+multiple groups and wildcards:
 
 .. code-block:: text
 
    Sample SB1 SB2 SB3
    test_sample_1_1 AAAA CTT CGCGTCT
-   test_sample_1_2 AATA TTT CGCGGGG
-   test_sample_1_3 AACA CTT CGCGTCT
+   test_sample_1_2 * * CGCGGGG
+   test_sample_1_3 AACA * CGCGTCT
    test_sample_1_4 AAAA GTT CGCGTCT
 
 Output file names will contain input file name, and then sequence of sample names and barcode values separated with
