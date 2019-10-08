@@ -64,13 +64,13 @@ public final class ConsensusDebugData {
                     .mapToObj(i -> new ArrayList<Long>()).collect(Collectors.toList());
     }
 
-    public void writeDebugData(PrintStream debugOutputStream, int clusterIndex, int consensusIndex) {
+    public void writeDebugData(PrintStream debugOutputStream, long subclusterIndex, int consensusIndex) {
         String stagePrefix = "";
         if (stage == STAGE1)
             stagePrefix = "Stage 1, ";
         else if (stage == STAGE2)
             stagePrefix = "Stage 2, ";
-        debugOutputStream.println("\n" + stagePrefix + "clusterIndex: " + clusterIndex
+        debugOutputStream.println("\n" + stagePrefix + "subclusterIndex: " + subclusterIndex
                 + ", consensusIndex: " + consensusIndex);
         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
             debugOutputStream.println("targetIndex: " + targetIndex);

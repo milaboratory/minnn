@@ -98,6 +98,7 @@ public final class ConsensusIO {
     private final TLongLongHashMap consensusFinalIds;
     private ConsensusAlgorithm consensusAlgorithm;
     private long consensusReads = 0;
+    private long clustersCount = 0;
     private int warningsDisplayed = 0;
     private LinkedHashSet<String> consensusGroups;
     private int numberOfTargets;
@@ -274,8 +275,9 @@ public final class ConsensusIO {
                     consensusAlgorithm, threads);
             OrderedOutputPort<CalculatedConsensuses> orderedConsensusesPort = new OrderedOutputPort<>(
                     calculatedConsensusesPort, cc -> cc.orderedPortIndex);
-            int clusterIndex = -1;
+            long subclusterDebugIndex = -1;
             for (CalculatedConsensuses calculatedConsensuses : CUtils.it(orderedConsensusesPort)) {
+                clustersCount++;
                 for (int i = 0; i < calculatedConsensuses.consensuses.size(); i++) {
                     Consensus consensus = calculatedConsensuses.consensuses.get(i);
                     if (consensus.isConsensus && consensus.finalConsensus) {
@@ -289,8 +291,8 @@ public final class ConsensusIO {
                     }
                     if (debugOutputStream != null) {
                         if ((consensusAlgorithmType != DOUBLE_MULTI_ALIGN) || !consensus.finalConsensus)
-                            clusterIndex++;
-                        consensus.debugData.writeDebugData(debugOutputStream, clusterIndex, i);
+                            subclusterDebugIndex++;
+                        consensus.debugData.writeDebugData(debugOutputStream, subclusterDebugIndex, i);
                     }
                 }
             }
@@ -431,6 +433,9 @@ public final class ConsensusIO {
         if (consensusReads > 0)
             report.append("Average reads per consensus: ")
                     .append(floatFormat.format((float)totalReads.get() / consensusReads)).append("\n");
+        if (clustersCount > 0)
+            report.append("Average number of consensuses per barcode group: ")
+                    .append(floatFormat.format((float)consensusReads / clustersCount)).append("\n");
 
         jsonReportData.put("version", getShortestVersionString());
         jsonReportData.put("inputFileName", inputFileName);
@@ -438,8 +443,9 @@ public final class ConsensusIO {
         jsonReportData.put("consensusGroups", consensusGroups);
         jsonReportData.put("consensusAlgorithmType", consensusAlgorithmType.toString());
         jsonReportData.put("elapsedTime", elapsedTime);
-        jsonReportData.put("consensusReads", consensusReads);
         jsonReportData.put("totalReads", totalReads.get());
+        jsonReportData.put("consensusReads", consensusReads);
+        jsonReportData.put("clustersCount", clustersCount);
 
         humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
         jsonReport(jsonReportFileName, jsonReportData);
