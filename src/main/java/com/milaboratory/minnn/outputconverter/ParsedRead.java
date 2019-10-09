@@ -124,6 +124,10 @@ public final class ParsedRead {
         return (bestMatch == null) ? Long.MIN_VALUE : bestMatch.getScore();
     }
 
+    public NSequenceWithQuality getMatchTarget(byte targetId) {
+        return Objects.requireNonNull(bestMatch).getGroupValue("R" + targetId);
+    }
+
     public NSequenceWithQuality getGroupValue(String groupName) {
         if (bestMatch == null) {
             // this is used when mif2fastq called on file with mismatched reads from extract

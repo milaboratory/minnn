@@ -28,10 +28,22 @@
  */
 package com.milaboratory.minnn.util;
 
+import com.milaboratory.core.alignment.LinearGapAlignmentScoring;
+import com.milaboratory.core.sequence.NucleotideSequence;
+
+import static com.milaboratory.core.alignment.Aligner.alignGlobalLinear;
+
 public final class CommonUtils {
+    private static final LinearGapAlignmentScoring<NucleotideSequence> levenshteinCalculationScoring
+            = new LinearGapAlignmentScoring<>(NucleotideSequence.ALPHABET, 0, -1, -1);
+
     private CommonUtils() {}
 
     public static String stripQuotes(String str) {
         return str.replaceAll("^\"|\"$", "");
+    }
+
+    public static int calculateLevenshteinDistance(NucleotideSequence seq1, NucleotideSequence seq2) {
+        return alignGlobalLinear(levenshteinCalculationScoring, seq1, seq2).getAbsoluteMutations().size();
     }
 }

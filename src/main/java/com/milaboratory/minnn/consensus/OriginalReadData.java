@@ -31,8 +31,10 @@ package com.milaboratory.minnn.consensus;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
+import static com.milaboratory.minnn.util.CommonUtils.*;
 
 public final class OriginalReadData {
     public final ParsedRead read;
@@ -42,5 +44,19 @@ public final class OriginalReadData {
 
     public OriginalReadData(ParsedRead read) {
         this.read = read;
+    }
+
+    public int getConsensusDistance() {
+        if (consensus.sequences == null)
+            return -1;
+        else {
+            AtomicInteger consensusDistance = new AtomicInteger(0);
+            consensus.sequences.forEachEntry((targetId, consensusSequence) -> {
+                consensusDistance.getAndAdd(calculateLevenshteinDistance(
+                        read.getMatchTarget(targetId).getSequence(), consensusSequence.getSeq()));
+                return true;
+            });
+            return consensusDistance.get();
+        }
     }
 }

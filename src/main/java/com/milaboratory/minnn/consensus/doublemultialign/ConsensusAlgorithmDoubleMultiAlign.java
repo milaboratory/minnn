@@ -287,6 +287,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         TByteObjectHashMap<SequenceWithAttributes> sequences = new TByteObjectHashMap<>();
         List<LettersWithPositions> lettersList = IntStream.range(0, consensusReadsNum)
                 .mapToObj(i -> new LettersWithPositions()).collect(Collectors.toList());
+        int trimmedBadQualityLetters = 0;
         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
             ArrayList<ArrayList<SequenceWithAttributes>> debugDataForThisTarget = (debugData == null) ? null
                     : debugData.data.get(targetIndex);
@@ -379,7 +380,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                     1, true, avgQualityThreshold, trimWindowSize);
             if (trimResultLeft < -1) {
                 storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
-                return new Consensus(debugData, numberOfTargets, stage2);
+                return new Consensus(debugData, numberOfTargets, stage2, consensusSequence.size());
             }
             int trimResultRight = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                     -1, true, avgQualityThreshold, trimWindowSize);
@@ -387,14 +388,18 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                 throw new IllegalStateException("Unexpected negative trimming result");
             else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
                 storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
-                return new Consensus(debugData, numberOfTargets, stage2);
+                return new Consensus(debugData, numberOfTargets, stage2,
+                        consensusSequence.size()
+                                - Math.max(0, trimResultRight - trimResultLeft - 1));
             }
             consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
+            trimmedBadQualityLetters += consensusSequence.size() - (trimResultRight - trimResultLeft - 1);
             sequences.put((byte)(targetIndex + 1), consensusSequence);
         }
 
         Consensus consensus = new Consensus(sequences, barcodes, consensusReadsNum, debugData,
-                numberOfTargets, stage2, consensusCurrentTempId.getAndIncrement(), defaultGroupsOverride.get());
+                numberOfTargets, stage2, trimmedBadQualityLetters, consensusCurrentTempId.getAndIncrement(),
+                defaultGroupsOverride.get());
         storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus, stage2);
         return consensus;
     }

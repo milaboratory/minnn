@@ -309,7 +309,8 @@ public final class ConsensusIO {
                     new FileOutputStream(originalReadStatsFileName))) {
                 List<String> defaultGroups = IntStream.rangeClosed(1, numberOfTargets).mapToObj(i -> "R" + i)
                         .collect(Collectors.toList());
-                StringBuilder header = new StringBuilder("read.id consensus.id status consensus.best.id reads.num");
+                StringBuilder header = new StringBuilder("read.id consensus.id status distance ");
+                header.append("read.trimmed consensus.trimmed consensus.best.id reads.num");
                 for (String groupName : defaultGroups) {
                     header.append(' ').append(groupName).append(".seq ");
                     header.append(groupName).append(".qual ");
@@ -324,6 +325,7 @@ public final class ConsensusIO {
                     OriginalReadData currentReadData = originalReadsData.get(readId);
                     OriginalReadStatus status = (currentReadData == null) ? NOT_MATCHED : currentReadData.status;
                     Consensus consensus = (status == USED_IN_CONSENSUS) ? currentReadData.consensus : null;
+                    int consensusDistance = (currentReadData == null) ? -1 : currentReadData.getConsensusDistance();
 
                     StringBuilder line = new StringBuilder();
                     line.append(readId).append(' ');
@@ -336,6 +338,9 @@ public final class ConsensusIO {
                         line.append(finalId).append(' ');
                     }
                     line.append(status.name()).append(' ');
+                    line.append(consensusDistance).append(' ');
+                    line.append(0).append(' '); // TODO: trimmed letters from read
+                    line.append((consensus == null) ? 0 : consensus.trimmedBadQualityLetters);
                     line.append((consensus == null) ? -1 : consensus.sequences.get((byte)1).getOriginalReadId())
                             .append(' ');
                     line.append((consensus == null) ? 0 : consensus.consensusReadsNum);
