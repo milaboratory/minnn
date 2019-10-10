@@ -47,14 +47,14 @@ public final class Consensus {
     public final ArrayList<DataFromParsedReadWithAllGroups> savedOriginalSequences = new ArrayList<>();
     private final int numberOfTargets;
     public final boolean finalConsensus;
-    public final int trimmedBadQualityLetters;
+    public final TrimmedLettersCounters trimmedLettersCounters;
     public final long tempId;
     private final boolean defaultGroupsOverride;
 
     public Consensus(
             TByteObjectHashMap<SequenceWithAttributes> sequences, List<Barcode> barcodes, int consensusReadsNum,
-            ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus, int trimmedBadQualityLetters,
-            long tempId, boolean defaultGroupsOverride) {
+            ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus,
+            TrimmedLettersCounters trimmedLettersCounters, long tempId, boolean defaultGroupsOverride) {
         this.sequences = sequences;
         this.barcodes = barcodes;
         this.consensusReadsNum = consensusReadsNum;
@@ -62,17 +62,14 @@ public final class Consensus {
         this.isConsensus = true;
         this.numberOfTargets = numberOfTargets;
         this.finalConsensus = finalConsensus;
-        this.trimmedBadQualityLetters = trimmedBadQualityLetters;
+        this.trimmedLettersCounters = trimmedLettersCounters;
         this.tempId = tempId;
         this.defaultGroupsOverride = defaultGroupsOverride;
     }
 
-    public Consensus(ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus) {
-        this(debugData, numberOfTargets, finalConsensus, 0);
-    }
-
     public Consensus(
-            ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus, int trimmedBadQualityLetters) {
+            ConsensusDebugData debugData, int numberOfTargets, boolean finalConsensus,
+            TrimmedLettersCounters trimmedLettersCounters) {
         this.sequences = null;
         this.barcodes = null;
         this.consensusReadsNum = 0;
@@ -80,7 +77,7 @@ public final class Consensus {
         this.isConsensus = false;
         this.numberOfTargets = numberOfTargets;
         this.finalConsensus = finalConsensus;
-        this.trimmedBadQualityLetters = trimmedBadQualityLetters;
+        this.trimmedLettersCounters = trimmedLettersCounters;
         this.tempId = -1;
         this.defaultGroupsOverride = false;
     }

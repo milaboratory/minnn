@@ -28,25 +28,30 @@
  */
 package com.milaboratory.minnn.consensus;
 
-import com.milaboratory.minnn.outputconverter.ParsedRead;
+import gnu.trove.map.hash.TByteIntHashMap;
 
-import java.util.*;
+import java.util.Objects;
 
-import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
-import static com.milaboratory.minnn.util.CommonUtils.*;
+public final class TrimmedLettersCounters {
+    private final TByteIntHashMap counterByTargetId;
 
-public final class OriginalReadData {
-    public final ParsedRead read;
-    public OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
-    public Consensus consensus = null;
-    public List<long[]> alignmentScores = Arrays.asList(null, null);
-
-    public OriginalReadData(ParsedRead read) {
-        this.read = read;
+    public TrimmedLettersCounters(boolean collectStatsForOriginalReads, int numberOfTargets) {
+        this.counterByTargetId = collectStatsForOriginalReads ? getEmptyCounters(numberOfTargets) : null;
     }
 
-    public int getConsensusDistance(byte targetId) {
-        return ((consensus == null) || (consensus.sequences == null)) ? -1 : calculateLevenshteinDistance(
-                read.getMatchTarget(targetId).getSequence(), consensus.sequences.get(targetId).getSeq());
+    private static TByteIntHashMap getEmptyCounters(int numberOfTargets) {
+        TByteIntHashMap trimmedBadQualityLetters = new TByteIntHashMap();
+        for (byte targetId = 1; targetId <= numberOfTargets; targetId++)
+            trimmedBadQualityLetters.put(targetId, 0);
+        return trimmedBadQualityLetters;
+    }
+
+    public void setCountByTargetId(byte targetId, int trimmedBadQualityLetters) {
+        if (counterByTargetId != null)
+            counterByTargetId.put(targetId, trimmedBadQualityLetters);
+    }
+
+    public int getCountByTargetId(byte targetId) {
+        return Objects.requireNonNull(counterByTargetId).get(targetId);
     }
 }

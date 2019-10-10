@@ -75,7 +75,9 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
         if (remainingData.size() == 0) {
             if (debugOutputStream != null)
                 calculatedConsensuses.consensuses.add(new Consensus(new ConsensusDebugData(numberOfTargets,
-                        debugQualityThreshold, NO_STAGE, false), numberOfTargets, true));
+                        debugQualityThreshold, NO_STAGE, false), numberOfTargets, true,
+                        new TrimmedLettersCounters(originalReadsData != null,
+                                numberOfTargets)));
             if (clusterSize > 1)
                 displayWarning.accept("WARNING: all reads discarded after quality trimming from cluster of "
                         + clusterSize + " reads! Barcode values: "
@@ -234,7 +236,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 : new ConsensusDebugData(numberOfTargets, debugQualityThreshold, NO_STAGE, false);
         TByteObjectHashMap<SequenceWithAttributes> sequences = new TByteObjectHashMap<>();
         long[] usedReadIds = offsetSearchResults.getUsedReadsIds();
-        int trimmedBadQualityLetters = 0;
+        TrimmedLettersCounters trimmedLettersCounters = new TrimmedLettersCounters(
+                originalReadsData != null, numberOfTargets);
         // targetIds only for target sequences, so -1 is not needed here
         for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
             TLongIntHashMap kmerOffsets = offsetSearchResults.kmerOffsetsForTargets.get(targetId);
@@ -272,7 +275,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             // consensus sequence assembling
             if (consensusLetters.size() == 0) {
                 setUsedReadsStatus(usedReadIds, CONSENSUS_DISCARDED_TRIM);
-                return new Consensus(debugData, numberOfTargets, true);
+                return new Consensus(debugData, numberOfTargets, true, trimmedLettersCounters);
             }
             NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
             consensusLetters.stream().filter(letter -> letter != NSequenceWithQuality.EMPTY).forEach(builder::append);
@@ -286,7 +289,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                     1, true, avgQualityThreshold, trimWindowSize);
             if (trimResultLeft < -1) {
                 setUsedReadsStatus(usedReadIds, CONSENSUS_DISCARDED_TRIM);
-                return new Consensus(debugData, numberOfTargets, true, consensusSequence.size());
+                trimmedLettersCounters.setCountByTargetId(targetId, consensusSequence.size());
+                return new Consensus(debugData, numberOfTargets, true, trimmedLettersCounters);
             }
             int trimResultRight = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
                     -1, true, avgQualityThreshold, trimWindowSize);
@@ -294,18 +298,19 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 throw new IllegalStateException("Unexpected negative trimming result");
             else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
                 setUsedReadsStatus(usedReadIds, CONSENSUS_DISCARDED_TRIM);
-                return new Consensus(debugData, numberOfTargets, true,
-                        consensusSequence.size()
-                                - Math.max(0, trimResultRight - trimResultLeft - 1));
+                trimmedLettersCounters.setCountByTargetId(targetId, consensusSequence.size()
+                        - Math.max(0, trimResultRight - trimResultLeft - 1));
+                return new Consensus(debugData, numberOfTargets, true, trimmedLettersCounters);
             }
             consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
-            trimmedBadQualityLetters += consensusSequence.size() - (trimResultRight - trimResultLeft - 1);
+            trimmedLettersCounters.setCountByTargetId(targetId,
+                    consensusSequence.size() - (trimResultRight - trimResultLeft - 1));
             sequences.put(targetId, consensusSequence);
         }
 
         Consensus consensus = new Consensus(sequences, offsetSearchResults.barcodes,
                 offsetSearchResults.usedReads.size(), debugData, numberOfTargets, true,
-                trimmedBadQualityLetters, -1, defaultGroupsOverride.get());
+                trimmedLettersCounters, -1, defaultGroupsOverride.get());
         setUsedReadsStatus(usedReadIds, USED_IN_CONSENSUS);
         if (originalReadsData != null)
             Arrays.stream(usedReadIds).forEach(readId -> originalReadsData.get(readId).consensus = consensus);
