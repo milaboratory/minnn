@@ -34,7 +34,7 @@ import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.util.*;
 
-public final class DataFromParsedReadWithAllGroups extends BasicDataFromParsedRead {
+public final class DataFromParsedReadWithAllGroups extends DataFromParsedRead {
     private final LinkedHashMap<String, SequenceWithAttributes> otherGroups;
 
     public DataFromParsedReadWithAllGroups(ParsedRead parsedRead, LinkedHashSet<String> consensusGroups) {

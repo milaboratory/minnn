@@ -114,6 +114,8 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         for (DataFromParsedRead dataFromParsedRead : data) {
             TByteObjectHashMap<SequenceWithAttributes> sequences = dataFromParsedRead.getSequences();
             TByteObjectHashMap<SequenceWithAttributes> processedSequences = new TByteObjectHashMap<>();
+            TrimmedLettersCounters trimmedLettersCounters = new TrimmedLettersCounters(
+                    originalReadsData != null, numberOfTargets);
             boolean allSequencesAreGood = true;
             for (byte targetId : sequences.keys()) {
                 SequenceWithAttributes sequence = sequences.get(targetId);
@@ -121,6 +123,7 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
                         true, readsAvgQualityThreshold, readsTrimWindowSize);
                 if (trimResultLeft < -1) {
                     allSequencesAreGood = false;
+                    trimmedLettersCounters.setCountByTargetId(targetId, sequence.size());
                     break;
                 }
                 int trimResultRight = trim(sequence.getQual(), 0, sequence.size(), -1,
@@ -129,11 +132,20 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
                     throw new IllegalStateException("Unexpected negative trimming result");
                 else if (trimResultRight - trimResultLeft - 1 < readsMinGoodSeqLength) {
                     allSequencesAreGood = false;
+                    trimmedLettersCounters.setCountByTargetId(targetId, sequence.size()
+                            - Math.max(0, trimResultRight - trimResultLeft - 1));
                     break;
-                } else
+                } else {
+                    trimmedLettersCounters.setCountByTargetId(targetId,
+                            sequence.size() - (trimResultRight - trimResultLeft - 1));
                     processedSequences.put(targetId, sequence.getSubSequence(trimResultLeft + 1, trimResultRight));
+                }
             }
 
+            OriginalReadData currentReadData = (originalReadsData == null) ? null
+                    : originalReadsData.get(dataFromParsedRead.getOriginalReadId());
+            if (currentReadData != null)
+                currentReadData.trimmedLettersCounters = trimmedLettersCounters;
             if (allSequencesAreGood) {
                 if (dataFromParsedRead instanceof DataFromParsedReadWithAllGroups)
                     processedData.add(new DataFromParsedReadWithAllGroups(processedSequences,
@@ -141,10 +153,10 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
                             dataFromParsedRead.isDefaultGroupsOverride(),
                             ((DataFromParsedReadWithAllGroups)dataFromParsedRead).getOtherGroups()));
                 else
-                    processedData.add(new BasicDataFromParsedRead(processedSequences, dataFromParsedRead.getBarcodes(),
+                    processedData.add(new DataFromParsedRead(processedSequences, dataFromParsedRead.getBarcodes(),
                             dataFromParsedRead.getOriginalReadId(), dataFromParsedRead.isDefaultGroupsOverride()));
-            } else if (originalReadsData != null)
-                originalReadsData.get(dataFromParsedRead.getOriginalReadId()).status = READ_DISCARDED_TRIM;
+            } else if (currentReadData != null)
+                currentReadData.status = READ_DISCARDED_TRIM;
         }
 
         return processedData;

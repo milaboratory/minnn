@@ -28,13 +28,60 @@
  */
 package com.milaboratory.minnn.consensus;
 
+import com.milaboratory.minnn.outputconverter.MatchedGroup;
+import com.milaboratory.minnn.outputconverter.ParsedRead;
 import gnu.trove.map.hash.TByteObjectHashMap;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.*;
 
-public interface DataFromParsedRead {
-    TByteObjectHashMap<SequenceWithAttributes> getSequences();
-    List<Barcode> getBarcodes();
-    long getOriginalReadId();
-    boolean isDefaultGroupsOverride();
+public class DataFromParsedRead {
+    protected final TByteObjectHashMap<SequenceWithAttributes> sequences;
+    protected final List<Barcode> barcodes;
+    protected final long originalReadId;
+    protected final boolean defaultGroupsOverride;
+
+    public DataFromParsedRead(ParsedRead parsedRead, LinkedHashSet<String> consensusGroups) {
+        LinkedHashSet<String> defaultGroupNames = parsedRead.getDefaultGroupNames();
+        originalReadId = parsedRead.getOriginalRead().getId();
+        List<MatchedGroup> parsedReadGroups = parsedRead.getGroups();
+        List<MatchedGroup> extractedGroups = parsedReadGroups.stream()
+                .filter(g -> defaultGroupNames.contains(g.getGroupName())).collect(Collectors.toList());
+        sequences = new TByteObjectHashMap<>();
+        extractedGroups.forEach(group -> sequences.put(group.getTargetId(), new SequenceWithAttributes(
+                group.getValue().getSequence(), group.getValue().getQuality(), originalReadId)));
+        barcodes = new ArrayList<>();
+        parsedReadGroups.forEach(group -> {
+            SequenceWithAttributes sequenceWithAttributes = new SequenceWithAttributes(
+                    group.getValue().getSequence(), group.getValue().getQuality(), originalReadId);
+            if (consensusGroups.contains(group.getGroupName()))
+                barcodes.add(new Barcode(group.getGroupName(), sequenceWithAttributes, group.getTargetId()));
+        });
+        defaultGroupsOverride = parsedRead.isNumberOfTargetsOverride();
+    }
+
+    public DataFromParsedRead(
+            TByteObjectHashMap<SequenceWithAttributes> sequences, List<Barcode> barcodes, long originalReadId,
+            boolean defaultGroupsOverride) {
+        this.sequences = sequences;
+        this.barcodes = barcodes;
+        this.originalReadId = originalReadId;
+        this.defaultGroupsOverride = defaultGroupsOverride;
+    }
+
+    public TByteObjectHashMap<SequenceWithAttributes> getSequences() {
+        return sequences;
+    }
+
+    public List<Barcode> getBarcodes() {
+        return barcodes;
+    }
+
+    public long getOriginalReadId() {
+        return originalReadId;
+    }
+
+    public boolean isDefaultGroupsOverride() {
+        return defaultGroupsOverride;
+    }
 }

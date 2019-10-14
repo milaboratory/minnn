@@ -38,11 +38,16 @@ import static com.milaboratory.minnn.util.CommonUtils.*;
 public final class OriginalReadData {
     public final ParsedRead read;
     public OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
+    public TrimmedLettersCounters trimmedLettersCounters = null;
     public Consensus consensus = null;
     public List<long[]> alignmentScores = Arrays.asList(null, null);
 
     public OriginalReadData(ParsedRead read) {
         this.read = read;
+    }
+
+    public int getTrimmedLettersCount(byte targetId) {
+        return (trimmedLettersCounters == null) ? 0 : trimmedLettersCounters.getCountByTargetId(targetId);
     }
 
     public int getConsensusDistance(byte targetId) {

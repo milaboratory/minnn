@@ -388,7 +388,10 @@ public final class ConsensusIO {
                                     : currentReadData.getConsensusDistance(targetId);
                             line.append(consensusDistance).append(' ');
                         }
-                        line.append(0).append(' '); // TODO: trimmed letters from read
+                        if (currentReadData == null)
+                            line.append("0 ");
+                        else
+                            line.append(currentReadData.getTrimmedLettersCount(targetId)).append(' ');
                         if (consensus == null) {
                             line.append("0 ").append(Long.MIN_VALUE).append(' ').append(Long.MIN_VALUE);
                         } else {
@@ -497,7 +500,7 @@ public final class ConsensusIO {
 
     private DataFromParsedRead extractData(ParsedRead parsedRead) {
         return toSeparateGroups ? new DataFromParsedReadWithAllGroups(parsedRead, consensusGroups)
-                : new BasicDataFromParsedRead(parsedRead, consensusGroups);
+                : new DataFromParsedRead(parsedRead, consensusGroups);
     }
 
     private void saveOriginalReadsData(ParsedRead parsedRead) {
