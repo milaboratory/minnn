@@ -313,7 +313,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 trimmedLettersCounters, -1, defaultGroupsOverride.get());
         setUsedReadsStatus(usedReadIds, USED_IN_CONSENSUS);
         if (originalReadsData != null)
-            Arrays.stream(usedReadIds).forEach(readId -> originalReadsData.get(readId).consensus = consensus);
+            Arrays.stream(usedReadIds).forEach(readId -> originalReadsData.get(readId).setConsensus(consensus));
         return consensus;
     }
 

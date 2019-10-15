@@ -29,6 +29,7 @@
 package com.milaboratory.minnn.consensus;
 
 import com.milaboratory.minnn.outputconverter.ParsedRead;
+import gnu.trove.map.hash.TByteIntHashMap;
 
 import java.util.*;
 
@@ -39,7 +40,8 @@ public final class OriginalReadData {
     public final ParsedRead read;
     public OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
     public TrimmedLettersCounters trimmedLettersCounters = null;
-    public Consensus consensus = null;
+    private Consensus consensus = null;
+    private TByteIntHashMap consensusDistances = null;
     public List<long[]> alignmentScores = Arrays.asList(null, null);
 
     public OriginalReadData(ParsedRead read) {
@@ -50,8 +52,22 @@ public final class OriginalReadData {
         return (trimmedLettersCounters == null) ? 0 : trimmedLettersCounters.getCountByTargetId(targetId);
     }
 
+    public void setConsensus(Consensus consensus) {
+        this.consensus = consensus;
+        if (consensus.sequences != null) {
+            if (consensusDistances == null)
+                consensusDistances = new TByteIntHashMap();
+            for (byte targetId = 1; targetId <= consensus.numberOfTargets; targetId++)
+                consensusDistances.put(targetId, calculateLevenshteinDistance(
+                        read.getMatchTarget(targetId).getSequence(), consensus.sequences.get(targetId).getSeq()));
+        }
+    }
+
+    public Consensus getConsensus() {
+        return consensus;
+    }
+
     public int getConsensusDistance(byte targetId) {
-        return ((consensus == null) || (consensus.sequences == null)) ? -1 : calculateLevenshteinDistance(
-                read.getMatchTarget(targetId).getSequence(), consensus.sequences.get(targetId).getSeq());
+        return (consensusDistances == null) ? -1 : consensusDistances.get(targetId);
     }
 }

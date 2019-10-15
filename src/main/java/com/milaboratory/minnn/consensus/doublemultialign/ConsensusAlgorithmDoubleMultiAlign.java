@@ -415,7 +415,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             subsequencesList.forEach(alignedSubsequences -> {
                 OriginalReadData originalReadData = originalReadsData.get(alignedSubsequences.originalReadId);
                 originalReadData.status = status;
-                originalReadData.consensus = consensus;
+                originalReadData.setConsensus(consensus);
                 originalReadData.alignmentScores.set(stage2 ? 1 : 0, alignedSubsequences.alignmentScores);
             });
     }

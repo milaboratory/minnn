@@ -45,7 +45,7 @@ public final class Consensus {
     public final ConsensusDebugData debugData;
     public final boolean isConsensus;
     public final ArrayList<DataFromParsedReadWithAllGroups> savedOriginalSequences = new ArrayList<>();
-    private final int numberOfTargets;
+    public final int numberOfTargets;
     public final boolean finalConsensus;
     public final TrimmedLettersCounters trimmedLettersCounters;
     public final long tempId;
