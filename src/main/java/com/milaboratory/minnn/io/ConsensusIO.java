@@ -309,39 +309,44 @@ public final class ConsensusIO {
                     new FileOutputStream(originalReadStatsFileName))) {
                 List<String> defaultGroups = IntStream.rangeClosed(1, numberOfTargets).mapToObj(i -> "R" + i)
                         .collect(Collectors.toList());
-                StringBuilder header = new StringBuilder("read.id consensus.id status consensus.best.id reads.num");
+                StringBuilder header = new StringBuilder();
+                header.append("read.id ");              // common column 1
+                header.append("consensus.id ");         // common column 2
+                header.append("status ");               // common column 3
+                header.append("consensus.best.id ");    // common column 4
+                header.append("reads.num");             // common column 5
                 for (String groupName : defaultGroups) {
-                    header.append(' ').append(groupName).append(".seq ");
-                    header.append(groupName).append(".qual ");
-                    header.append(groupName).append(".consensus.seq ");
-                    header.append(groupName).append(".consensus.qual ");
-                    header.append(groupName).append(".consensus.distance ");
-                    header.append(groupName).append(".read.trimmed ");
-                    header.append(groupName).append(".consensus.trimmed ");
-                    header.append(groupName).append(".alignment.score.stage1 ");
-                    header.append(groupName).append(".alignment.score.stage2");
+                    header.append(' ').append(groupName).append(".seq ");           // target column 1
+                    header.append(groupName).append(".qual ");                      // target column 2
+                    header.append(groupName).append(".consensus.seq ");             // target column 3
+                    header.append(groupName).append(".consensus.qual ");            // target column 4
+                    header.append(groupName).append(".consensus.distance ");        // target column 5
+                    header.append(groupName).append(".read.trimmed ");              // target column 6
+                    header.append(groupName).append(".consensus.trimmed ");         // target column 7
+                    header.append(groupName).append(".alignment.score.stage1 ");    // target column 8
+                    header.append(groupName).append(".alignment.score.stage2");     // target column 9
                 }
                 originalReadsDataWriter.println(header);
 
                 for (long readId = 0; readId < originalNumberOfReads; readId++) {
                     OriginalReadData currentReadData = originalReadsData.get(readId);
                     OriginalReadStatus status = (currentReadData == null) ? NOT_MATCHED : currentReadData.status;
-                    Consensus consensus = (status == USED_IN_CONSENSUS) ? currentReadData.consensus : null;
+                    Consensus consensus = (status == USED_IN_CONSENSUS) ? currentReadData.getConsensus() : null;
 
                     StringBuilder line = new StringBuilder();
-                    line.append(readId).append(' ');
-                    if (consensus == null)
-                        line.append("-1 ");
-                    else {
+                    line.append(readId).append(' ');        // common column 1
+                    if (consensus == null) {
+                        line.append("-1 ");                 // common column 2
+                    } else {
                         long finalId = Objects.requireNonNull(consensusFinalIds).get(consensus.tempId);
                         if (finalId == -1)
                             throw new IllegalStateException("Consensus finalId == -1 for tempId " + consensus.tempId);
-                        line.append(finalId).append(' ');
+                        line.append(finalId).append(' ');   // common column 2
                     }
-                    line.append(status.name()).append(' ');
+                    line.append(status.name()).append(' '); // common column 3
                     line.append((consensus == null) ? -1 : consensus.sequences.get((byte)1).getOriginalReadId())
-                            .append(' ');
-                    line.append((consensus == null) ? 0 : consensus.consensusReadsNum);
+                            .append(' ');                   // common column 4
+                    line.append((consensus == null) ? 0 : consensus.consensusReadsNum);     // common column 5
                     for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
                         byte targetId = (byte)(targetIndex + 1);
                         long alignmentScoreStage1 = Long.MIN_VALUE;
@@ -357,9 +362,9 @@ public final class ConsensusIO {
                             if (alignmentScoresStage2 != null)
                                 alignmentScoreStage2 = alignmentScoresStage2[targetIndex];
                         }
-                        if (currentReadData == null)
-                            line.append(" - -");
-                        else {
+                        if (currentReadData == null) {
+                            line.append(" - -");        // target columns 1, 2
+                        } else {
                             ParsedRead parsedRead = currentReadData.read;
                             NSequenceWithQuality currentOriginalRead;
                             if (parsedRead.isNumberOfTargetsOverride()) {
@@ -375,29 +380,33 @@ public final class ConsensusIO {
                                 currentOriginalRead = parsedRead.getOriginalRead().getRead(originalTargetIndex)
                                         .getData();
                             }
-                            line.append(' ').append(currentOriginalRead.getSequence());
-                            line.append(' ').append(currentOriginalRead.getQuality());
+                            line.append(' ').append(currentOriginalRead.getSequence());     // target column 1
+                            line.append(' ').append(currentOriginalRead.getQuality());      // target column 2
                         }
                         if (consensus == null) {
-                            line.append(" - - -1 ");
+                            line.append(" - - -1 ");    // target columns 3, 4, 5
                         } else {
                             SequenceWithAttributes currentSeq = consensus.sequences.get(targetId);
-                            line.append(' ').append(currentSeq.getSeq());
-                            line.append(' ').append(currentSeq.getQual());
+                            line.append(' ').append(currentSeq.getSeq());                   // target column 3
+                            line.append(' ').append(currentSeq.getQual());                  // target column 4
                             int consensusDistance = (currentReadData == null) ? -1
                                     : currentReadData.getConsensusDistance(targetId);
-                            line.append(consensusDistance).append(' ');
+                            line.append(' ').append(consensusDistance).append(' ');         // target column 5
                         }
-                        if (currentReadData == null)
-                            line.append("0 ");
-                        else
+                        if (currentReadData == null) {
+                            line.append("0 ");      // target column 6
+                        } else {
+                            // target column 6
                             line.append(currentReadData.getTrimmedLettersCount(targetId)).append(' ');
+                        }
                         if (consensus == null) {
+                            // target columns 7, 8, 9
                             line.append("0 ").append(Long.MIN_VALUE).append(' ').append(Long.MIN_VALUE);
                         } else {
+                            // target column 7
                             line.append(consensus.trimmedLettersCounters.getCountByTargetId(targetId));
-                            line.append(' ').append(alignmentScoreStage1);
-                            line.append(' ').append(alignmentScoreStage2);
+                            line.append(' ').append(alignmentScoreStage1);      // target column 8
+                            line.append(' ').append(alignmentScoreStage2);      // target column 9
                         }
                     }
                     originalReadsDataWriter.println(line);
