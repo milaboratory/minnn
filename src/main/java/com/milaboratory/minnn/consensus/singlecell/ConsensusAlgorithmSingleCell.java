@@ -31,6 +31,7 @@ package com.milaboratory.minnn.consensus.singlecell;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NSequenceWithQualityBuilder;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.SequenceWithQuality;
 import com.milaboratory.minnn.consensus.*;
 import gnu.trove.map.hash.TByteObjectHashMap;
 import gnu.trove.map.hash.TLongIntHashMap;
@@ -41,7 +42,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.minnn.consensus.ConsensusStageForDebug.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 
@@ -76,8 +76,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             if (debugOutputStream != null)
                 calculatedConsensuses.consensuses.add(new Consensus(new ConsensusDebugData(numberOfTargets,
                         debugQualityThreshold, NO_STAGE, false), numberOfTargets, true,
-                        new TrimmedLettersCounters(originalReadsData != null,
-                                numberOfTargets)));
+                        collectOriginalReadsData ? new TrimmedLettersCounters(numberOfTargets) : null));
             if (clusterSize > 1)
                 displayWarning.accept("WARNING: all reads discarded after quality trimming from cluster of "
                         + clusterSize + " reads! Barcode values: "
@@ -187,7 +186,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
         }
 
         if (usedReads.size() == 0) {
-            if (originalReadsData != null)
+            if (collectOriginalReadsData)
                 for (long readId : skippedReads.toArray())
                     originalReadsData.get(readId).status = KMERS_NOT_FOUND;
             return null;
@@ -236,8 +235,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 : new ConsensusDebugData(numberOfTargets, debugQualityThreshold, NO_STAGE, false);
         TByteObjectHashMap<SequenceWithAttributes> sequences = new TByteObjectHashMap<>();
         long[] usedReadIds = offsetSearchResults.getUsedReadsIds();
-        TrimmedLettersCounters trimmedLettersCounters = new TrimmedLettersCounters(
-                originalReadsData != null, numberOfTargets);
+        TrimmedLettersCounters trimmedLettersCounters = collectOriginalReadsData
+                ? new TrimmedLettersCounters(numberOfTargets) : null;
         // targetIds only for target sequences, so -1 is not needed here
         for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
             TLongIntHashMap kmerOffsets = offsetSearchResults.kmerOffsetsForTargets.get(targetId);
@@ -272,54 +271,38 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 debugData.consensusData.set(targetId - 1, consensusLetters);
             }
 
-            // consensus sequence assembling
+            // consensus sequence assembling and quality trimming
             if (consensusLetters.size() == 0) {
-                setUsedReadsStatus(usedReadIds, CONSENSUS_DISCARDED_TRIM);
+                if (collectOriginalReadsData)
+                    for (long readId : usedReadIds)
+                        originalReadsData.get(readId).status = CONSENSUS_DISCARDED_TRIM;
                 return new Consensus(debugData, numberOfTargets, true, trimmedLettersCounters);
             }
             NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
             consensusLetters.stream().filter(letter -> letter != NSequenceWithQuality.EMPTY).forEach(builder::append);
             NSequenceWithQuality consensusRawSequence = builder.createAndDestroy();
-            SequenceWithAttributes consensusSequence = new SequenceWithAttributes(
-                    consensusRawSequence.getSequence(), consensusRawSequence.getQuality(),
-                    offsetSearchResults.usedReads.get(0).getOriginalReadId());
-
-            // quality trimming
-            int trimResultLeft = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
-                    1, true, avgQualityThreshold, trimWindowSize);
-            if (trimResultLeft < -1) {
-                setUsedReadsStatus(usedReadIds, CONSENSUS_DISCARDED_TRIM);
-                trimmedLettersCounters.setCountByTargetId(targetId, consensusSequence.size());
+            SequenceWithQuality<NucleotideSequence> consensusTrimmedSequence = trimConsensusBadQualityTails(
+                    consensusRawSequence, targetId, trimmedLettersCounters);
+            if (consensusTrimmedSequence == null) {
+                if (collectOriginalReadsData)
+                    for (long readId : usedReadIds)
+                        originalReadsData.get(readId).status = CONSENSUS_DISCARDED_TRIM;
                 return new Consensus(debugData, numberOfTargets, true, trimmedLettersCounters);
-            }
-            int trimResultRight = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
-                    -1, true, avgQualityThreshold, trimWindowSize);
-            if (trimResultRight < 0)
-                throw new IllegalStateException("Unexpected negative trimming result");
-            else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
-                setUsedReadsStatus(usedReadIds, CONSENSUS_DISCARDED_TRIM);
-                trimmedLettersCounters.setCountByTargetId(targetId, consensusSequence.size()
-                        - Math.max(0, trimResultRight - trimResultLeft - 1));
-                return new Consensus(debugData, numberOfTargets, true, trimmedLettersCounters);
-            }
-            consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
-            trimmedLettersCounters.setCountByTargetId(targetId,
-                    consensusSequence.size() - (trimResultRight - trimResultLeft - 1));
-            sequences.put(targetId, consensusSequence);
+            } else
+                sequences.put(targetId, new SequenceWithAttributes(
+                        consensusTrimmedSequence.getSequence(), consensusTrimmedSequence.getQuality(),
+                        offsetSearchResults.usedReads.get(0).getOriginalReadId()));
         }
 
         Consensus consensus = new Consensus(sequences, offsetSearchResults.barcodes,
                 offsetSearchResults.usedReads.size(), debugData, numberOfTargets, true,
                 trimmedLettersCounters, -1, defaultGroupsOverride.get());
-        setUsedReadsStatus(usedReadIds, USED_IN_CONSENSUS);
-        if (originalReadsData != null)
-            Arrays.stream(usedReadIds).forEach(readId -> originalReadsData.get(readId).setConsensus(consensus));
+        if (collectOriginalReadsData)
+            for (long readId : usedReadIds) {
+                OriginalReadData currentReadData = originalReadsData.get(readId);
+                currentReadData.status = USED_IN_CONSENSUS;
+                currentReadData.setConsensus(consensus);
+            }
         return consensus;
-    }
-
-    private void setUsedReadsStatus(long[] readIds, OriginalReadStatus status) {
-        if (originalReadsData != null)
-            for (long readId : readIds)
-                originalReadsData.get(readId).status = status;
     }
 }

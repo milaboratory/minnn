@@ -30,28 +30,11 @@ package com.milaboratory.minnn.consensus;
 
 import gnu.trove.map.hash.TByteIntHashMap;
 
-import java.util.Objects;
-
 public final class TrimmedLettersCounters {
-    private final TByteIntHashMap counterByTargetId;
+    public final TByteIntHashMap byTargetId = new TByteIntHashMap();
 
-    public TrimmedLettersCounters(boolean collectStatsForOriginalReads, int numberOfTargets) {
-        this.counterByTargetId = collectStatsForOriginalReads ? getEmptyCounters(numberOfTargets) : null;
-    }
-
-    private static TByteIntHashMap getEmptyCounters(int numberOfTargets) {
-        TByteIntHashMap trimmedBadQualityLetters = new TByteIntHashMap();
+    public TrimmedLettersCounters(int numberOfTargets) {
         for (byte targetId = 1; targetId <= numberOfTargets; targetId++)
-            trimmedBadQualityLetters.put(targetId, 0);
-        return trimmedBadQualityLetters;
-    }
-
-    public void setCountByTargetId(byte targetId, int trimmedBadQualityLetters) {
-        if (counterByTargetId != null)
-            counterByTargetId.put(targetId, trimmedBadQualityLetters);
-    }
-
-    public int getCountByTargetId(byte targetId) {
-        return Objects.requireNonNull(counterByTargetId).get(targetId);
+            this.byTargetId.put(targetId, 0);
     }
 }

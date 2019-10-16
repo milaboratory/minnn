@@ -40,7 +40,6 @@ import java.util.function.Consumer;
 import java.util.stream.*;
 
 import static com.milaboratory.core.alignment.BandedLinearAligner.alignLocalGlobal;
-import static com.milaboratory.core.sequence.quality.QualityTrimmer.trim;
 import static com.milaboratory.minnn.consensus.ConsensusStageForDebug.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.*;
@@ -80,8 +79,8 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         if (data.size() == 0) {
             calculatedConsensuses.consensuses.add(new Consensus((debugOutputStream == null) ? null
                     : new ConsensusDebugData(numberOfTargets, debugQualityThreshold, STAGE1, true),
-                    numberOfTargets, false, new TrimmedLettersCounters(
-                            originalReadsData != null, numberOfTargets)));
+                    numberOfTargets, false,
+                    collectOriginalReadsData ? new TrimmedLettersCounters(numberOfTargets) : null));
             if (cluster.data.size() > 1)
                 displayWarning.accept("WARNING: all reads discarded after quality trimming from cluster of "
                         + cluster.data.size() + " reads! Barcode values: "
@@ -288,9 +287,10 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         TByteObjectHashMap<SequenceWithAttributes> sequences = new TByteObjectHashMap<>();
         List<LettersWithPositions> lettersList = IntStream.range(0, consensusReadsNum)
                 .mapToObj(i -> new LettersWithPositions()).collect(Collectors.toList());
-        TrimmedLettersCounters trimmedLettersCounters = new TrimmedLettersCounters(
-                originalReadsData != null, numberOfTargets);
+        TrimmedLettersCounters trimmedLettersCounters = collectOriginalReadsData
+                ? new TrimmedLettersCounters(numberOfTargets) : null;
         for (int targetIndex = 0; targetIndex < numberOfTargets; targetIndex++) {
+            byte targetId = (byte)(targetIndex + 1);
             ArrayList<ArrayList<SequenceWithAttributes>> debugDataForThisTarget = (debugData == null) ? null
                     : debugData.data.get(targetIndex);
             ArrayList<NSequenceWithQuality> consensusDebugDataForThisTarget = (debugData == null) ? null
@@ -375,31 +375,14 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                     consensusDebugDataForThisTarget.add(consensusLetter);
             }
             NSequenceWithQuality consensusRawSequence = builder.createAndDestroy();
-            SequenceWithAttributes consensusSequence = new SequenceWithAttributes(
-                    consensusRawSequence.getSequence(), consensusRawSequence.getQuality(), bestSeqReadId);
-
-            int trimResultLeft = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
-                    1, true, avgQualityThreshold, trimWindowSize);
-            if (trimResultLeft < -1) {
+            SequenceWithQuality<NucleotideSequence> consensusTrimmedSequence = trimConsensusBadQualityTails(
+                    consensusRawSequence, targetId, trimmedLettersCounters);
+            if (consensusTrimmedSequence == null) {
                 storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
-                trimmedLettersCounters.setCountByTargetId((byte)(targetIndex + 1), consensusSequence.size());
                 return new Consensus(debugData, numberOfTargets, stage2, trimmedLettersCounters);
-            }
-            int trimResultRight = trim(consensusSequence.getQual(), 0, consensusSequence.size(),
-                    -1, true, avgQualityThreshold, trimWindowSize);
-            if (trimResultRight < 0)
-                throw new IllegalStateException("Unexpected negative trimming result");
-            else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
-                storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
-                trimmedLettersCounters.setCountByTargetId((byte)(targetIndex + 1),
-                        consensusSequence.size() - Math.max(0,
-                                trimResultRight - trimResultLeft - 1));
-                return new Consensus(debugData, numberOfTargets, stage2, trimmedLettersCounters);
-            }
-            consensusSequence = consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
-            trimmedLettersCounters.setCountByTargetId((byte)(targetIndex + 1),
-                    consensusSequence.size() - (trimResultRight - trimResultLeft - 1));
-            sequences.put((byte)(targetIndex + 1), consensusSequence);
+            } else
+                sequences.put(targetId, new SequenceWithAttributes(consensusTrimmedSequence.getSequence(),
+                        consensusTrimmedSequence.getQuality(), bestSeqReadId));
         }
 
         Consensus consensus = new Consensus(sequences, barcodes, consensusReadsNum, debugData,
@@ -411,7 +394,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
 
     private void storeOriginalReadsData(ArrayList<AlignedSubsequences> subsequencesList,
                                         OriginalReadStatus status, Consensus consensus, boolean stage2) {
-        if (originalReadsData != null)
+        if (collectOriginalReadsData)
             subsequencesList.forEach(alignedSubsequences -> {
                 OriginalReadData originalReadData = originalReadsData.get(alignedSubsequences.originalReadId);
                 originalReadData.status = status;

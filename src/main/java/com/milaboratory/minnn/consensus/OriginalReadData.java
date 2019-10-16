@@ -48,10 +48,6 @@ public final class OriginalReadData {
         this.read = read;
     }
 
-    public int getTrimmedLettersCount(byte targetId) {
-        return (trimmedLettersCounters == null) ? 0 : trimmedLettersCounters.getCountByTargetId(targetId);
-    }
-
     public void setConsensus(Consensus consensus) {
         this.consensus = consensus;
         if (consensus.sequences != null) {

@@ -397,14 +397,14 @@ public final class ConsensusIO {
                             line.append("0 ");      // target column 6
                         } else {
                             // target column 6
-                            line.append(currentReadData.getTrimmedLettersCount(targetId)).append(' ');
+                            line.append(currentReadData.trimmedLettersCounters.byTargetId.get(targetId)).append(' ');
                         }
                         if (consensus == null) {
                             // target columns 7, 8, 9
                             line.append("0 ").append(Long.MIN_VALUE).append(' ').append(Long.MIN_VALUE);
                         } else {
                             // target column 7
-                            line.append(consensus.trimmedLettersCounters.getCountByTargetId(targetId));
+                            line.append(consensus.trimmedLettersCounters.byTargetId.get(targetId));
                             line.append(' ').append(alignmentScoreStage1);      // target column 8
                             line.append(' ').append(alignmentScoreStage2);      // target column 9
                         }
