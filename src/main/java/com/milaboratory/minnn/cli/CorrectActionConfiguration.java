@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
 
 public final class CorrectActionConfiguration implements ActionConfiguration {
-    private static final String CORRECT_ACTION_VERSION_ID = "3";
+    private static final String CORRECT_ACTION_VERSION_ID = "4";
     private final CorrectActionParameters correctParameters;
 
     @JsonCreator
@@ -85,6 +85,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
         private float singleIndelProbability;
         private int maxUniqueBarcodes;
         private int minCount;
+        private boolean disableWildcardsCollapsing;
         private long inputReadsLimit;
 
         @JsonCreator
@@ -99,6 +100,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                 @JsonProperty("singleIndelProbability") float singleIndelProbability,
                 @JsonProperty("maxUniqueBarcodes") int maxUniqueBarcodes,
                 @JsonProperty("minCount") int minCount,
+                @JsonProperty("disableWildcardsCollapsing") boolean disableWildcardsCollapsing,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
             this.groupNames = groupNames;
             this.primaryGroupNames = primaryGroupNames;
@@ -110,6 +112,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.singleIndelProbability = singleIndelProbability;
             this.maxUniqueBarcodes = maxUniqueBarcodes;
             this.minCount = minCount;
+            this.disableWildcardsCollapsing = disableWildcardsCollapsing;
             this.inputReadsLimit = inputReadsLimit;
         }
 
@@ -193,6 +196,14 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.minCount = minCount;
         }
 
+        public boolean isDisableWildcardsCollapsing() {
+            return disableWildcardsCollapsing;
+        }
+
+        public void setDisableWildcardsCollapsing(boolean disableWildcardsCollapsing) {
+            this.disableWildcardsCollapsing = disableWildcardsCollapsing;
+        }
+
         public long getInputReadsLimit() {
             return inputReadsLimit;
         }
@@ -214,6 +225,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (Float.compare(that.singleIndelProbability, singleIndelProbability) != 0) return false;
             if (maxUniqueBarcodes != that.maxUniqueBarcodes) return false;
             if (minCount != that.minCount) return false;
+            if (disableWildcardsCollapsing != that.disableWildcardsCollapsing) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
             if (!Objects.equals(groupNames, that.groupNames)) return false;
             return Objects.equals(primaryGroupNames, that.primaryGroupNames);
@@ -233,6 +245,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                     ? Float.floatToIntBits(singleIndelProbability) : 0);
             result = 31 * result + maxUniqueBarcodes;
             result = 31 * result + minCount;
+            result = 31 * result + (disableWildcardsCollapsing ? 1 : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;
         }

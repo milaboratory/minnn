@@ -64,7 +64,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
                 new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability));
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, groupNames, primaryGroupNames, barcodeClusteringStrategyFactory, maxUniqueBarcodes,
-                minCount, excludedBarcodesOutputFileName, inputReadsLimit, quiet, reportFileName, jsonReportFileName);
+                minCount, excludedBarcodesOutputFileName, disableWildcardsCollapsing, inputReadsLimit, quiet,
+                reportFileName, jsonReportFileName);
         correctBarcodesIO.go();
     }
 
@@ -109,7 +110,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     public ActionConfiguration getConfiguration() {
         return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
                 primaryGroupNames, maxErrorsShare, maxErrors, threshold, maxClusterDepth,
-                singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes, minCount, inputReadsLimit));
+                singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes, minCount,
+                disableWildcardsCollapsing, inputReadsLimit));
     }
 
     @Override
@@ -193,6 +195,12 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             "excluded barcodes will not be written anywhere.",
             names = {"--excluded-barcodes-output"})
     private String excludedBarcodesOutputFileName = null;
+
+    @Option(description = "Don't merge different barcodes that equal by wildcards (for example, AAAT and ANNT). " +
+            "It will improve performance. Can be used when there are no wildcards in barcodes, or when barcodes " +
+            "correction is not needed, and command is run only to filter barcodes by count.",
+            names = {"--disable-wildcards-collapsing"})
+    private boolean disableWildcardsCollapsing = false;
 
     @Option(description = NUMBER_OF_READS,
             names = {"-n", "--number-of-reads"})

@@ -53,16 +53,18 @@ public final class CorrectBarcodesIO {
     private final int maxUniqueBarcodes;
     private final int minCount;
     private final String excludedBarcodesOutputFileName;
+    private final boolean disableWildcardsCollapsing;
     private final long inputReadsLimit;
     private final boolean suppressWarnings;
     private final String reportFileName;
     private final String jsonReportFileName;
 
-    public CorrectBarcodesIO(PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
-                             List<String> groupNames, List<String> primaryGroupNames,
-                             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, int maxUniqueBarcodes,
-                             int minCount, String excludedBarcodesOutputFileName, long inputReadsLimit,
-                             boolean suppressWarnings, String reportFileName, String jsonReportFileName) {
+    public CorrectBarcodesIO(
+            PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
+            List<String> groupNames, List<String> primaryGroupNames,
+            BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, int maxUniqueBarcodes, int minCount,
+            String excludedBarcodesOutputFileName, boolean disableWildcardsCollapsing, long inputReadsLimit,
+            boolean suppressWarnings, String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
@@ -73,6 +75,7 @@ public final class CorrectBarcodesIO {
         this.maxUniqueBarcodes = maxUniqueBarcodes;
         this.minCount = minCount;
         this.excludedBarcodesOutputFileName = excludedBarcodesOutputFileName;
+        this.disableWildcardsCollapsing = disableWildcardsCollapsing;
         this.inputReadsLimit = inputReadsLimit;
         this.suppressWarnings = suppressWarnings;
         this.reportFileName = reportFileName;
