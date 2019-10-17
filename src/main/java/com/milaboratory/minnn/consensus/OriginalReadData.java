@@ -40,6 +40,7 @@ public final class OriginalReadData {
     public final ParsedRead read;
     public OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
     public TrimmedLettersCounters trimmedLettersCounters = null;
+    public TrimmedLettersCounters consensusTrimmedLettersCounters = null;
     private Consensus consensus = null;
     private TByteIntHashMap consensusDistances = null;
     public List<long[]> alignmentScores = Arrays.asList(null, null);

@@ -79,8 +79,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         if (data.size() == 0) {
             calculatedConsensuses.consensuses.add(new Consensus((debugOutputStream == null) ? null
                     : new ConsensusDebugData(numberOfTargets, debugQualityThreshold, STAGE1, true),
-                    numberOfTargets, false,
-                    collectOriginalReadsData ? new TrimmedLettersCounters(numberOfTargets) : null));
+                    numberOfTargets, false));
             if (cluster.data.size() > 1)
                 displayWarning.accept("WARNING: all reads discarded after quality trimming from cluster of "
                         + cluster.data.size() + " reads! Barcode values: "
@@ -364,8 +363,9 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             OriginalReadStatus discardedStatus = stage2 ? CONSENSUS_DISCARDED_TRIM_STAGE2
                     : CONSENSUS_DISCARDED_TRIM_STAGE1;
             if (consensusLetters.size() == 0) {
-                storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
-                return new Consensus(debugData, numberOfTargets, stage2, trimmedLettersCounters);
+                storeOriginalReadsData(subsequencesList, discardedStatus, null, trimmedLettersCounters,
+                        stage2);
+                return new Consensus(debugData, numberOfTargets, stage2);
             }
             NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
             for (NSequenceWithQuality consensusLetter : consensusLetters) {
@@ -378,27 +378,30 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             SequenceWithQuality<NucleotideSequence> consensusTrimmedSequence = trimConsensusBadQualityTails(
                     consensusRawSequence, targetId, trimmedLettersCounters);
             if (consensusTrimmedSequence == null) {
-                storeOriginalReadsData(subsequencesList, discardedStatus, null, stage2);
-                return new Consensus(debugData, numberOfTargets, stage2, trimmedLettersCounters);
+                storeOriginalReadsData(subsequencesList, discardedStatus, null, trimmedLettersCounters,
+                        stage2);
+                return new Consensus(debugData, numberOfTargets, stage2);
             } else
                 sequences.put(targetId, new SequenceWithAttributes(consensusTrimmedSequence.getSequence(),
                         consensusTrimmedSequence.getQuality(), bestSeqReadId));
         }
 
         Consensus consensus = new Consensus(sequences, barcodes, consensusReadsNum, debugData,
-                numberOfTargets, stage2, trimmedLettersCounters, consensusCurrentTempId.getAndIncrement(),
-                defaultGroupsOverride.get());
-        storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus, stage2);
+                numberOfTargets, stage2, consensusCurrentTempId.getAndIncrement(), defaultGroupsOverride.get());
+        storeOriginalReadsData(subsequencesList, USED_IN_CONSENSUS, consensus, trimmedLettersCounters, stage2);
         return consensus;
     }
 
-    private void storeOriginalReadsData(ArrayList<AlignedSubsequences> subsequencesList,
-                                        OriginalReadStatus status, Consensus consensus, boolean stage2) {
+    private void storeOriginalReadsData(
+            ArrayList<AlignedSubsequences> subsequencesList, OriginalReadStatus status, Consensus consensus,
+            TrimmedLettersCounters consensusTrimmedLettersCounters, boolean stage2) {
         if (collectOriginalReadsData)
             subsequencesList.forEach(alignedSubsequences -> {
                 OriginalReadData originalReadData = originalReadsData.get(alignedSubsequences.originalReadId);
                 originalReadData.status = status;
-                originalReadData.setConsensus(consensus);
+                if (consensus != null)
+                    originalReadData.setConsensus(consensus);
+                originalReadData.consensusTrimmedLettersCounters = consensusTrimmedLettersCounters;
                 originalReadData.alignmentScores.set(stage2 ? 1 : 0, alignedSubsequences.alignmentScores);
             });
     }

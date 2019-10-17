@@ -399,12 +399,16 @@ public final class ConsensusIO {
                             // target column 6
                             line.append(currentReadData.trimmedLettersCounters.byTargetId.get(targetId)).append(' ');
                         }
-                        if (consensus == null) {
-                            // target columns 7, 8, 9
-                            line.append("0 ").append(Long.MIN_VALUE).append(' ').append(Long.MIN_VALUE);
+                        if ((currentReadData == null) || (currentReadData.consensusTrimmedLettersCounters == null)) {
+                            line.append('0');      // target column 7
                         } else {
                             // target column 7
-                            line.append(consensus.trimmedLettersCounters.byTargetId.get(targetId));
+                            line.append(currentReadData.consensusTrimmedLettersCounters.byTargetId.get(targetId));
+                        }
+                        if (consensus == null) {
+                            // target columns 8, 9
+                            line.append(' ').append(Long.MIN_VALUE).append(' ').append(Long.MIN_VALUE);
+                        } else {
                             line.append(' ').append(alignmentScoreStage1);      // target column 8
                             line.append(' ').append(alignmentScoreStage2);      // target column 9
                         }
