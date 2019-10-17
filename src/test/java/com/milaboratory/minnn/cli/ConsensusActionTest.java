@@ -32,6 +32,7 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import org.junit.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -254,6 +255,39 @@ public class ConsensusActionTest {
         assertFalse(new File(debugDMA).length() == 0);
         for (String fileName : new String[] { inputFile, correctedFile, sortedFile, consensusSCFile, consensusDMAFile,
                 debugSC, debugDMA })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void originalReadStatsTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        String correctedFile = TEMP_DIR + "corrected.mif";
+        String sortedFile = TEMP_DIR + "sorted.mif";
+        String consensusSCFile = TEMP_DIR + "consensusSC.mif";
+        String consensusDMAFile = TEMP_DIR + "consensusDMA.mif";
+        String statsSC = TEMP_DIR + "statsSC.txt";
+        String statsDMA = TEMP_DIR + "statsDMA.txt";
+        exec("correct -f --input " + inputFile + " --output " + correctedFile + " --groups G1 G2");
+        exec("sort -f --input " + correctedFile + " --output " + sortedFile + " --groups G1 G2");
+        exec("consensus -f --threads 2 --input " + sortedFile + " --output " + consensusSCFile
+                + " --original-read-stats " + statsSC + " --groups G1 G2 --avg-quality-threshold 25");
+        exec("consensus-dma -f --threads 2 --input " + sortedFile + " --output " + consensusDMAFile
+                + " --original-read-stats " + statsDMA + " --groups G1 G2 --avg-quality-threshold 25");
+        for (String statsFileName : Arrays.asList(statsSC, statsDMA)) {
+            try (Scanner scanner = new Scanner(new File(statsFileName))) {
+                int linesCount = 0;
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    assertEquals(23, line.split(" ").length);
+                    linesCount++;
+                }
+                assertEquals(25001, linesCount);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        for (String fileName : new String[] { inputFile, correctedFile, sortedFile, consensusSCFile, consensusDMAFile,
+                statsSC, statsDMA })
             assertTrue(new File(fileName).delete());
     }
 }
