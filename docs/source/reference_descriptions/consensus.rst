@@ -47,5 +47,11 @@ separate file. This is text file in space separated format, and it contains the 
 #. Number of reads in this consensus, or 0 if this read was not used in consensus.
 #. Sequences and qualities for each target of this read.
 #. Sequences and qualities for each target of this consensus, or "-" sign if this read was not used in consensus.
+#. Levenshtein distances between this read and this consensus, separate values for all targets
+   (:code:`R1`, :code:`R2` etc), or -1 values if this read is not used in any consensus.
+#. Number of nucleotides that were removed from this read on quality trimming, separate values for all targets
+   (:code:`R1`, :code:`R2` etc).
+#. Number of nucleotides that were removed from this consensus on quality trimming, separate values for all targets
+   (:code:`R1`, :code:`R2` etc).
 
 Command line arguments reference for consensus action:
