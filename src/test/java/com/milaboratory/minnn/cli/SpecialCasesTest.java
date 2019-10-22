@@ -97,13 +97,16 @@ public class SpecialCasesTest {
     public void correctionSpeedTest() throws Exception {
         String inputFastqFiles = getBigOrSmallFastqTestFileNames("test01_R1.fastq.gz", "test01_R2.fastq.gz");
         String extractOutput = TEMP_DIR + "extracted.mif";
-        String correctOutput = TEMP_DIR + "corrected.mif";
+        String correctOutput1 = TEMP_DIR + "corrected1.mif";
+        String correctOutput2 = TEMP_DIR + "corrected2.mif";
         exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
                 + " --score-threshold -25 --bitap-max-errors 5"
                 + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
-        exec("correct -f --groups UMI --input " + extractOutput + " --output " + correctOutput
+        exec("correct -f --groups UMI --input " + extractOutput + " --output " + correctOutput1
                 + " --cluster-threshold 0.3");
-        for (String fileName : new String[] { extractOutput, correctOutput })
+        exec("correct -f --groups UMI --input " + extractOutput + " --output " + correctOutput2
+                + " --cluster-threshold 0.3 --disable-wildcards-collapsing");
+        for (String fileName : new String[] { extractOutput, correctOutput1, correctOutput2 })
             assertTrue(new File(fileName).delete());
     }
 

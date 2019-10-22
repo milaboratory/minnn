@@ -31,21 +31,50 @@ package com.milaboratory.minnn.correct;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 
-import java.util.Collection;
+import java.util.*;
 
-interface SequenceCounter extends Comparable<SequenceCounter> {
-    NSequenceWithQuality getSequence();
-    Collection<NucleotideSequence> getOriginalSequences();
-    int getIndex();
-    long getCount();
+final class SimpleSequenceCounter implements SequenceCounter {
+    private final NSequenceWithQuality seq;
+    private final Collection<NucleotideSequence> originalSequences;
+    private final int index;
+    long count;
 
-    @Override
-    default int compareTo(SequenceCounter other) {
-        return Long.compare(getCount(), other.getCount());
+    SimpleSequenceCounter(NucleotideSequence seq, int index) {
+        this.seq = new NSequenceWithQuality(seq);
+        this.originalSequences = Collections.singletonList(seq);
+        this.index = index;
     }
 
-    default int compareForTreeSet(SequenceCounter other) {
-        int comparisonResult = -compareTo(other);
-        return (comparisonResult == 0) ? Integer.compare(getIndex(), other.getIndex()) : comparisonResult;
+    @Override
+    public NSequenceWithQuality getSequence() {
+        return seq;
+    }
+
+    @Override
+    public Collection<NucleotideSequence> getOriginalSequences() {
+        return originalSequences;
+    }
+
+    @Override
+    public int getIndex() {
+        return index;
+    }
+
+    @Override
+    public long getCount() {
+        return count;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SequenceCounter that = (SequenceCounter)o;
+        return index == that.getIndex();
+    }
+
+    @Override
+    public int hashCode() {
+        return index;
     }
 }

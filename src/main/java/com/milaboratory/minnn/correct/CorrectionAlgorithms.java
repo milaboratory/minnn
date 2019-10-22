@@ -53,10 +53,11 @@ public final class CorrectionAlgorithms {
     public static CorrectionStats fullFileCorrect(
             MifReader pass1Reader, MifReader pass2Reader, MifWriter writer, MifWriter excludedBarcodesWriter,
             long inputReadsLimit, BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory,
-            LinkedHashSet<String> keyGroups, int maxUniqueBarcodes, int minCount) {
+            LinkedHashSet<String> keyGroups, int maxUniqueBarcodes, int minCount, boolean disableWildcardsCollapsing) {
         boolean filterByCount = (maxUniqueBarcodes > 0) || (minCount > 1);
         Set<GroupData> groupsData = keyGroups.stream().map(groupName -> new GroupData(groupName, filterByCount,
-                barcodeClusteringStrategyFactory.averageBarcodeLengthRequired())).collect(Collectors.toSet());
+                barcodeClusteringStrategyFactory.averageBarcodeLengthRequired(), disableWildcardsCollapsing))
+                .collect(Collectors.toSet());
         long totalReads = 0;
         long correctedReads = 0;
         long excludedReads = 0;
@@ -102,7 +103,7 @@ public final class CorrectionAlgorithms {
             MifReader reader, MifWriter writer, MifWriter excludedBarcodesWriter, long inputReadsLimit,
             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory,
             LinkedHashSet<String> primaryGroups, LinkedHashSet<String> keyGroups,
-            int maxUniqueBarcodes, int minCount) {
+            int maxUniqueBarcodes, int minCount, boolean disableWildcardsCollapsing) {
         AtomicLong totalReads = new AtomicLong(0);
         long correctedReads = 0;
         long excludedReads = 0;
@@ -152,7 +153,8 @@ public final class CorrectionAlgorithms {
                 correctionStarted = true;
             }
             ClusterStats stats = processCluster(cluster, writer, excludedBarcodesWriter,
-                    barcodeClusteringStrategyFactory, keyGroups, maxUniqueBarcodes, minCount);
+                    barcodeClusteringStrategyFactory, keyGroups, maxUniqueBarcodes, minCount,
+                    disableWildcardsCollapsing);
             correctedReads += stats.correctedReads;
             excludedReads += stats.excludedReads;
         }
@@ -164,7 +166,7 @@ public final class CorrectionAlgorithms {
             MifReader reader, MifWriter writer, MifWriter excludedBarcodesWriter, long inputReadsLimit,
             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory,
             LinkedHashSet<String> primaryGroups, LinkedHashSet<String> keyGroups,
-            int maxUniqueBarcodes, int minCount) {
+            int maxUniqueBarcodes, int minCount, boolean disableWildcardsCollapsing) {
         // keys: primary barcodes values; values: all reads that have this combination of barcodes values
         HashMap<LinkedHashMap<String, NucleotideSequence>, List<ParsedRead>> allClusters = new HashMap<>();
         long totalReads = 0;
@@ -189,7 +191,8 @@ public final class CorrectionAlgorithms {
                 correctionStarted = true;
             }
             ClusterStats stats = processCluster(cluster, writer, excludedBarcodesWriter,
-                    barcodeClusteringStrategyFactory, keyGroups, maxUniqueBarcodes, minCount);
+                    barcodeClusteringStrategyFactory, keyGroups, maxUniqueBarcodes, minCount,
+                    disableWildcardsCollapsing);
             correctedReads += stats.correctedReads;
             excludedReads += stats.excludedReads;
         }
@@ -244,7 +247,7 @@ public final class CorrectionAlgorithms {
                     NSequenceWithQuality headSequence = cluster.getHead().getSequence();
                     cluster.processAllChildren(child -> {
                         child.getHead().getOriginalSequences().forEach(seq ->
-                                groupData.correctionMap.put(seq, headSequence.getSequence()));
+                                groupData.correctionMap.put(seq, headSequence));
                         return true;
                     });
                 });
@@ -269,7 +272,7 @@ public final class CorrectionAlgorithms {
                     : groupData.notCorrectedBarcodeCounters.entrySet()) {
                 NucleotideSequence oldValue = barcodeValueEntry.getKey();
                 long oldCount = barcodeValueEntry.getValue().count;
-                NucleotideSequence newValue = groupData.correctionMap.get(oldValue);
+                NucleotideSequence newValue = groupData.correctionMap.get(oldValue).getSequence();
                 if (newValue == null)
                     newValue = oldValue;
                 RawSequenceCounter correctedSequenceCounter = correctedCounters.get(newValue);
@@ -304,14 +307,14 @@ public final class CorrectionAlgorithms {
         boolean excluded = false;
         for (GroupData groupData : groupsData) {
             MatchedGroup matchedGroup = parsedRead.getGroupByName(groupData.groupName);
-            NucleotideSequence oldValue = matchedGroup.getValue().getSequence();
-            NucleotideSequence correctValue = groupData.correctionMap.get(oldValue);
+            NSequenceWithQuality oldValue = matchedGroup.getValue();
+            NSequenceWithQuality correctValue = groupData.correctionMap.get(oldValue.getSequence());
             if (correctValue == null)
                 correctValue = oldValue;
-            isCorrection |= !correctValue.equals(oldValue);
+            isCorrection |= !correctValue.getSequence().equals(oldValue.getSequence());
             correctedGroups.add(new CorrectedGroup(groupData.groupName, correctValue));
             if (groupData.filterByCount)
-                excluded |= !groupData.includedBarcodes.contains(correctValue);
+                excluded |= !groupData.includedBarcodes.contains(correctValue.getSequence());
         }
 
         ArrayList<MatchedGroupEdge> newGroupEdges;
@@ -330,7 +333,7 @@ public final class CorrectionAlgorithms {
                     CorrectedGroup correctedGroup = correctedGroupsMap.get(currentGroupName);
                     newGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
                             matchedGroupEdge.getTargetId(), matchedGroupEdge.getGroupEdge(),
-                            new NSequenceWithQuality(correctedGroup.correctedValue)));
+                            correctedGroup.correctedValue));
                 }
             }
             numCorrectedBarcodes++;
@@ -362,16 +365,18 @@ public final class CorrectionAlgorithms {
      *                                          for filtering corrected barcodes by count
      * @param minCount                          minimal count of unique barcode, barcodes with lower counts will not
      *                                          be included
+     * @param disableWildcardsCollapsing        false: merge barcodes by wildcards, true: don't merge
      * @return                                  stats for cluster: number of corrected reads and number
      *                                          of excluded reads
      */
     private static ClusterStats processCluster(
             List<ParsedRead> cluster, MifWriter writer, MifWriter excludedBarcodesWriter,
             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, LinkedHashSet<String> keyGroups,
-            int maxUniqueBarcodes, int minCount) {
+            int maxUniqueBarcodes, int minCount, boolean disableWildcardsCollapsing) {
         boolean filterByCount = (maxUniqueBarcodes > 0) || (minCount > 1);
         Set<GroupData> groupsData = keyGroups.stream().map(groupName -> new GroupData(groupName, filterByCount,
-                barcodeClusteringStrategyFactory.averageBarcodeLengthRequired())).collect(Collectors.toSet());
+                barcodeClusteringStrategyFactory.averageBarcodeLengthRequired(), disableWildcardsCollapsing))
+                .collect(Collectors.toSet());
         long correctedReads = 0;
         long excludedReads = 0;
 
@@ -404,46 +409,66 @@ public final class CorrectionAlgorithms {
         final String groupName;
         final boolean filterByCount;
         final boolean averageBarcodeLengthRequired;
-        // largest counts are first in the tree
-        final TreeSet<SequenceCounter> sequenceCounters = new TreeSet<>(SequenceCounter::compareForTreeSet);
+        final boolean disableWildcardsCollapsing;
+        final Set<SequenceCounter> sequenceCounters;
         final HashMap<NucleotideSequence, SequenceCounter> counterBySeqCache = new HashMap<>();
         final Map<NucleotideSequence, RawSequenceCounter> notCorrectedBarcodeCounters;
-        // keys: not corrected sequences, values: corrected sequences
-        final Map<NucleotideSequence, NucleotideSequence> correctionMap = new HashMap<>();
+        // keys: not corrected sequences, values: corrected sequences with qualities
+        final Map<NucleotideSequence, NSequenceWithQuality> correctionMap = new HashMap<>();
         // barcodes that are not filtered out if filtering by count is enabled
         final Set<NucleotideSequence> includedBarcodes;
         long lengthSum = 0;
         long parsedReadsCount = 0;
 
-        GroupData(String groupName, boolean filterByCount, boolean averageBarcodeLengthRequired) {
+        GroupData(String groupName, boolean filterByCount, boolean averageBarcodeLengthRequired,
+                  boolean disableWildcardsCollapsing) {
             this.groupName = groupName;
             this.filterByCount = filterByCount;
             this.averageBarcodeLengthRequired = averageBarcodeLengthRequired;
+            this.disableWildcardsCollapsing = disableWildcardsCollapsing;
+            // maintain sorting order starting from largest counts if wildcards collapsing is enabled
+            this.sequenceCounters = disableWildcardsCollapsing ? new HashSet<>()
+                    : new TreeSet<>(SequenceCounter::compareForTreeSet);
             this.notCorrectedBarcodeCounters = filterByCount ? new HashMap<>() : null;
             this.includedBarcodes = filterByCount ? new HashSet<>() : null;
         }
 
         void processSequence(NSequenceWithQuality seqWithQuality) {
-            // try to add the sequence to any of the existing counters or create new counter
             NucleotideSequence seq = seqWithQuality.getSequence();
-            SequenceCounter cachedCounter = counterBySeqCache.get(seq);
-            if (cachedCounter != null) {
-                if (!cachedCounter.add(seqWithQuality))
-                    throw new IllegalStateException("Failed to add sequence " + seq + " to counter "
-                            + cachedCounter.getOriginalSequences() + " (count " + cachedCounter.getCount()
-                            + ", consensus sequence " + cachedCounter.getSequence() + ")!");
-            } else {
-                boolean matchingCounterFound = false;
-                for (SequenceCounter counter : sequenceCounters)
-                    if (counter.add(seqWithQuality)) {
-                        matchingCounterFound = true;
-                        counterBySeqCache.put(seq, counter);
-                        break;
-                    }
-                if (!matchingCounterFound) {
-                    SequenceCounter newCounter = new SequenceCounter(seqWithQuality, sequenceCounters.size());
+            if (disableWildcardsCollapsing) {
+                SimpleSequenceCounter cachedCounter = (SimpleSequenceCounter)(counterBySeqCache.get(seq));
+                if (cachedCounter == null) {
+                    SequenceCounter newCounter = new SimpleSequenceCounter(seq, sequenceCounters.size());
                     sequenceCounters.add(newCounter);
                     counterBySeqCache.put(seq, newCounter);
+                } else
+                    cachedCounter.count++;
+            } else {
+                // try to add the sequence to any of the existing counters or create new counter
+                BasicSequenceCounter cachedCounter = (BasicSequenceCounter)(counterBySeqCache.get(seq));
+                if (cachedCounter != null) {
+                    if (!cachedCounter.add(seqWithQuality))
+                        throw new IllegalStateException("Failed to add sequence " + seq + " to counter "
+                                + cachedCounter.getOriginalSequences() + " (count " + cachedCounter.getCount()
+                                + ", consensus sequence " + cachedCounter.getSequence() + ")!");
+                    else
+                        updateCountersSortingOrder(cachedCounter);
+                } else {
+                    boolean matchingCounterFound = false;
+                    /* maintaining sorting order of sequenceCounters is important for this loop,
+                       it must start from barcodes with big counts */
+                    for (SequenceCounter counter : sequenceCounters)
+                        if (((BasicSequenceCounter)counter).add(seqWithQuality)) {
+                            matchingCounterFound = true;
+                            updateCountersSortingOrder(counter);
+                            counterBySeqCache.put(seq, counter);
+                            break;
+                        }
+                    if (!matchingCounterFound) {
+                        SequenceCounter newCounter = new BasicSequenceCounter(seqWithQuality, sequenceCounters.size());
+                        sequenceCounters.add(newCounter);
+                        counterBySeqCache.put(seq, newCounter);
+                    }
                 }
             }
 
@@ -457,6 +482,11 @@ public final class CorrectionAlgorithms {
                 lengthSum += seqWithQuality.size();
 
             parsedReadsCount++;
+        }
+
+        private void updateCountersSortingOrder(SequenceCounter changedCounter) {
+            sequenceCounters.remove(changedCounter);
+            sequenceCounters.add(changedCounter);
         }
 
         Collection<SequenceCounter> getSequenceCounters() {
@@ -501,9 +531,9 @@ public final class CorrectionAlgorithms {
 
     private static class CorrectedGroup {
         final String groupName;
-        final NucleotideSequence correctedValue;
+        final NSequenceWithQuality correctedValue;
 
-        CorrectedGroup(String groupName, NucleotideSequence correctedValue) {
+        CorrectedGroup(String groupName, NSequenceWithQuality correctedValue) {
             this.groupName = groupName;
             this.correctedValue = correctedValue;
         }

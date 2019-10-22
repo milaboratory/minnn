@@ -113,15 +113,16 @@ public final class CorrectBarcodesIO {
                         "corrected again!");
             if (primaryGroups.size() == 0)
                 stats = fullFileCorrect(pass1Reader, pass2Reader, writer, excludedBarcodesWriter, inputReadsLimit,
-                        barcodeClusteringStrategyFactory, keyGroups, maxUniqueBarcodes, minCount);
+                        barcodeClusteringStrategyFactory, keyGroups, maxUniqueBarcodes, minCount,
+                        disableWildcardsCollapsing);
             else if (unsortedPrimaryGroups.size() == 0)
                 stats = sortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
                         barcodeClusteringStrategyFactory, primaryGroups, keyGroups, maxUniqueBarcodes,
-                        minCount);
+                        minCount, disableWildcardsCollapsing);
             else
                 stats = unsortedClustersCorrect(pass1Reader, writer, excludedBarcodesWriter, inputReadsLimit,
                         barcodeClusteringStrategyFactory, primaryGroups, keyGroups, maxUniqueBarcodes,
-                        minCount);
+                        minCount, disableWildcardsCollapsing);
             pass1Reader.close();
             writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
             if (excludedBarcodesWriter != null)
@@ -164,6 +165,9 @@ public final class CorrectBarcodesIO {
         jsonReportData.put("excludedBarcodesOutputFileName", excludedBarcodesOutputFileName);
         jsonReportData.put("groupNames", groupNames);
         jsonReportData.put("primaryGroups", primaryGroups);
+        jsonReportData.put("maxUniqueBarcodes", maxUniqueBarcodes);
+        jsonReportData.put("minCount", minCount);
+        jsonReportData.put("disableWildcardsCollapsing", disableWildcardsCollapsing);
         jsonReportData.put("elapsedTime", elapsedTime);
         jsonReportData.put("correctedReads", stats.correctedReads);
         jsonReportData.put("excludedReads", stats.excludedReads);

@@ -197,8 +197,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     private String excludedBarcodesOutputFileName = null;
 
     @Option(description = "Don't merge different barcodes that equal by wildcards (for example, AAAT and ANNT). " +
-            "It will improve performance. Can be used when there are no wildcards in barcodes, or when barcodes " +
-            "correction is not needed, and command is run only to filter barcodes by count.",
+            "This option also disables merging barcodes by quality. It improves performance significantly, and can " +
+            "be used when barcodes correction is not needed, and command is run only to filter barcodes by count.",
             names = {"--disable-wildcards-collapsing"})
     private boolean disableWildcardsCollapsing = false;
 
