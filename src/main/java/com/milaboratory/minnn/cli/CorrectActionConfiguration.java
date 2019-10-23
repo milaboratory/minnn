@@ -85,6 +85,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
         private float singleIndelProbability;
         private int maxUniqueBarcodes;
         private int minCount;
+        private boolean fairWildcardsCollapsing;
         private boolean disableWildcardsCollapsing;
         private long inputReadsLimit;
 
@@ -100,6 +101,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                 @JsonProperty("singleIndelProbability") float singleIndelProbability,
                 @JsonProperty("maxUniqueBarcodes") int maxUniqueBarcodes,
                 @JsonProperty("minCount") int minCount,
+                @JsonProperty("fairWildcardsCollapsing") boolean fairWildcardsCollapsing,
                 @JsonProperty("disableWildcardsCollapsing") boolean disableWildcardsCollapsing,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
             this.groupNames = groupNames;
@@ -112,6 +114,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.singleIndelProbability = singleIndelProbability;
             this.maxUniqueBarcodes = maxUniqueBarcodes;
             this.minCount = minCount;
+            this.fairWildcardsCollapsing = fairWildcardsCollapsing;
             this.disableWildcardsCollapsing = disableWildcardsCollapsing;
             this.inputReadsLimit = inputReadsLimit;
         }
@@ -196,6 +199,14 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.minCount = minCount;
         }
 
+        public boolean isFairWildcardsCollapsing() {
+            return fairWildcardsCollapsing;
+        }
+
+        public void setFairWildcardsCollapsing(boolean fairWildcardsCollapsing) {
+            this.fairWildcardsCollapsing = fairWildcardsCollapsing;
+        }
+
         public boolean isDisableWildcardsCollapsing() {
             return disableWildcardsCollapsing;
         }
@@ -225,6 +236,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (Float.compare(that.singleIndelProbability, singleIndelProbability) != 0) return false;
             if (maxUniqueBarcodes != that.maxUniqueBarcodes) return false;
             if (minCount != that.minCount) return false;
+            if (fairWildcardsCollapsing != that.fairWildcardsCollapsing) return false;
             if (disableWildcardsCollapsing != that.disableWildcardsCollapsing) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
             if (!Objects.equals(groupNames, that.groupNames)) return false;
@@ -245,6 +257,7 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                     ? Float.floatToIntBits(singleIndelProbability) : 0);
             result = 31 * result + maxUniqueBarcodes;
             result = 31 * result + minCount;
+            result = 31 * result + (fairWildcardsCollapsing ? 1 : 0);
             result = 31 * result + (disableWildcardsCollapsing ? 1 : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;

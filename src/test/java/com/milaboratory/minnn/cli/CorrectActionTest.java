@@ -196,14 +196,15 @@ public class CorrectActionTest {
                 String currentSecondaryOutput = TEMP_DIR + "correctedSecondary" + (i + 1) + ".mif";
                 exec("correct -f --groups G1 G2 --input " + currentInput + " --output " + currentPrimaryOutput
                         + " --max-errors-share 0.4 --cluster-threshold 0.4 --single-substitution-probability 0.002"
-                        + " --single-indel-probability 0.001");
+                        + " --single-indel-probability 0.001 --fair-wildcards-collapsing");
                 if (sorted)
                     exec("sort -f --groups G1 G2 --input " + currentPrimaryOutput
                             + " --output " + currentSortedOutput);
                 exec("correct -f --primary-groups G1 G2 --groups G3 G4 --input "
                         + (sorted ? currentSortedOutput : currentPrimaryOutput)
                         + " --output " + currentSecondaryOutput + " --max-errors-share 0.4 --cluster-threshold 0.4"
-                        + " --single-substitution-probability 0.002 --single-indel-probability 0.001");
+                        + " --single-substitution-probability 0.002 --single-indel-probability 0.001"
+                        + " --fair-wildcards-collapsing");
                 assertFileNotEquals(currentInput, currentSecondaryOutput);
                 if (i < 2) {
                     assertMifNotEqualsAsFastq(currentInput, currentSecondaryOutput, true);

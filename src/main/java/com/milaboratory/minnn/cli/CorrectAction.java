@@ -64,8 +64,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
                 new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability));
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, groupNames, primaryGroupNames, barcodeClusteringStrategyFactory, maxUniqueBarcodes,
-                minCount, excludedBarcodesOutputFileName, disableWildcardsCollapsing, inputReadsLimit, quiet,
-                reportFileName, jsonReportFileName);
+                minCount, excludedBarcodesOutputFileName, fairWildcardsCollapsing, disableWildcardsCollapsing,
+                inputReadsLimit, quiet, reportFileName, jsonReportFileName);
         correctBarcodesIO.go();
     }
 
@@ -80,6 +80,9 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
         if ((maxErrorsShare < 0) && (maxErrors < 0))
             throwValidationException("Both --max-errors and --max-errors-share are disabled (set to negative); " +
                     "enable at least one!");
+        if (fairWildcardsCollapsing && disableWildcardsCollapsing)
+            throwValidationException("Options --fair-wildcards-collapsing and --disable-wildcards-collapsing " +
+                    "must not be enabled simultaneously!");
     }
 
     @Override
@@ -111,7 +114,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
         return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
                 primaryGroupNames, maxErrorsShare, maxErrors, threshold, maxClusterDepth,
                 singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes, minCount,
-                disableWildcardsCollapsing, inputReadsLimit));
+                fairWildcardsCollapsing, disableWildcardsCollapsing, inputReadsLimit));
     }
 
     @Override
@@ -195,6 +198,12 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             "excluded barcodes will not be written anywhere.",
             names = {"--excluded-barcodes-output"})
     private String excludedBarcodesOutputFileName = null;
+
+    @Option(description = "Use slow but more precise method of merging for barcodes that equal by wildcards " +
+            "(for example, AAAT and ANNT). With this option barcodes will be sorted by count, and barcodes with " +
+            "high counts will be attempted to merge first.",
+            names = {"--fair-wildcards-collapsing"})
+    private boolean fairWildcardsCollapsing = false;
 
     @Option(description = "Don't merge different barcodes that equal by wildcards (for example, AAAT and ANNT). " +
             "This option also disables merging barcodes by quality. It improves performance significantly, and can " +
