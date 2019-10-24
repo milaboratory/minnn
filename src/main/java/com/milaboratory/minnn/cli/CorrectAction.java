@@ -201,7 +201,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
 
     @Option(description = "Use slow but more precise method of merging for barcodes that equal by wildcards " +
             "(for example, AAAT and ANNT). With this option barcodes will be sorted by count, and barcodes with " +
-            "high counts will be attempted to merge first.",
+            "high counts will be attempted to merge first. Also, this option enables keeping quality of corrected " +
+            "barcodes and saving barcodes with quality to the output.",
             names = {"--fair-wildcards-collapsing"})
     private boolean fairWildcardsCollapsing = false;
 
