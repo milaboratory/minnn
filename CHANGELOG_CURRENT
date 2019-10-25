@@ -1,0 +1,2 @@
+Correction performance improvements; --fair-wildcards-collapsing and --disable-wildcards-collapsing options
+Bugfixes and improvements for Consensus --original-read-stats argument; new data fields in the stats file
