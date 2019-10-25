@@ -68,6 +68,25 @@ to the previous layer. Maximum number of layers is specified by :code:`--max-clu
 :code:`--max-cluster-depth` is :code:`1` then there will be only 1 layer below the head; if
 :code:`--max-cluster-depth` is :code:`2`, there will be second layer clustered to the first layer etc.
 
+By default, if there are wildcards in barcodes, they will be merged to groups of barcodes that equal by wildcards;
+for example, barcodes :code:`AATG`, :code:`ANTG` and :code:`AANN` will be considered as a group of equal barcodes and
+replaced with value :code:`AATG` that contain less wildcards than the other barcodes in the group. For better
+performance, barcodes with wildcards are merged to first matching group of barcodes, without sorting. Also, to reduce
+the size of barcode correction table (and therefore reduce memory usage and improve performance), output barcodes are
+all saved with maximum quality. There is an option :code:`--fair-wildcards-collapsing` that allows to use more precise
+method of merging barcodes with wildcards, with sorting known barcodes by their count. Also, this option enables
+output barcodes quality calculation. However, correction with this option is slower and more memory consuming.
+
+:code:`--disable-wildcards-collapsing` option completely disables merging barcodes by wildcards and quality-based
+calculations. It greatly improves performance, but reduces correction precision; and barcodes with wildcards will be
+treated as different barcodes with this option. It is recommended to use this option with :code:`--max-errors 0` if you
+want to use Correct action to filter barcodes by count without performing the correction. Examples:
+
+.. code-block:: text
+
+   minnn correct --disable-wildcards-collapsing --max-errors 0 --max-unique-barcodes 1000 --input in.mif --output out.mif --groups UMI
+   minnn correct --disable-wildcards-collapsing --max-errors 0 --min-count 30 --input in.mif --output out.mif --groups G1 G2
+
 :code:`--primary-groups` argument means that barcodes must be corrected inside clusters that are formed from reads with
 the same values of the primary groups. Usage example is correcting UMI separately for each unique cell barcode. It is
 highly recommended to sort input MIF file by primary groups before correction because correction with unsorted primary
