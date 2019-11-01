@@ -99,8 +99,7 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         if (baseLetters.size() == 1)
             return baseLetters.get(0).toNSequenceWithQuality();
         ConsensusLetter consensusLetter = new ConsensusLetter(baseLetters.stream()
-                .map(SequenceWithAttributes::toNSequenceWithQuality).collect(Collectors.toList()),
-                false);
+                .map(SequenceWithAttributes::toNSequenceWithQuality).collect(Collectors.toList()));
         if (consensusLetter.isDeletionMaxCount())
             return NSequenceWithQuality.EMPTY;
         else
