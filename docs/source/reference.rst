@@ -133,6 +133,7 @@ sort
  --groups: Group names to use for sorting. Priority is in descending order.
  --input: Input file in MIF format. If not specified, stdin will be used.
  --output: Output file in MIF format. If not specified, stdout will be used.
+ -q, --quick: By default, reads with wildcards in any group will be moved to the end. With this option reads will be sorted without checking for wildcards. This is faster, but quick sorting is not suitable before Correct action. In other cases (for example, before Consensus action) quick sorting can be used.
  --chunk-size: Chunk size for sorter.
  --report: File to write report in human readable form. If not specified, report is displayed on screen only.
  --json-report: File to write command execution stats in JSON format.

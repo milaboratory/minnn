@@ -76,12 +76,14 @@ public final class StatPositionsIO {
     public void go() {
         long startTime = System.currentTimeMillis();
         ArrayList<String> correctedGroups;
-        ArrayList<String> sortedGroups;
+        ArrayList<String> quicklySortedGroups;
+        ArrayList<String> fullySortedGroups;
 
         try (MifReader reader = createReader()) {
             validateInputGroups(reader, groupList, true, "--groups");
             correctedGroups = reader.getCorrectedGroups();
-            sortedGroups = reader.getSortedGroups();
+            quicklySortedGroups = reader.getQuicklySortedGroups();
+            fullySortedGroups = reader.getFullySortedGroups();
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
@@ -147,10 +149,13 @@ public final class StatPositionsIO {
             report.append("Input MIF file is not corrected\n");
         else
             report.append("Groups ").append(correctedGroups).append(" in input MIF file are corrected\n");
-        if (sortedGroups.size() == 0)
+        if (quicklySortedGroups.size() == 0)
             report.append("Input MIF file is not sorted\n");
+        else if (fullySortedGroups.size() == 0)
+            report.append("Groups ").append(quicklySortedGroups).append(" in input MIF file are quickly sorted, " +
+                    "without moving groups with wildcards to the end\n");
         else
-            report.append("Groups ").append(sortedGroups).append(" in input MIF file are sorted\n");
+            report.append("Groups ").append(fullySortedGroups).append(" in input MIF file are sorted\n");
         report.append("Checked ").append(totalReads).append(" reads, ").append(totalReads * groupList.size())
                 .append(" groups\n");
         long countedGroups = table.stream().mapToLong(line -> line.count).sum();
@@ -163,7 +168,8 @@ public final class StatPositionsIO {
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("correctedGroups", correctedGroups);
-        jsonReportData.put("sortedGroups", sortedGroups);
+        jsonReportData.put("quicklySortedGroups", quicklySortedGroups);
+        jsonReportData.put("fullySortedGroups", fullySortedGroups);
         jsonReportData.put("elapsedTime", elapsedTime);
         jsonReportData.put("groupList", groupList);
         jsonReportData.put("countedGroups", countedGroups);
@@ -200,7 +206,7 @@ public final class StatPositionsIO {
             return "group.id read pos count percent";
     }
 
-    private class StatGroupsKey {
+    private static class StatGroupsKey {
         final String groupName;
         final String readId;
         final int position;

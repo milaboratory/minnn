@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
 
 public final class SortActionConfiguration implements ActionConfiguration {
-    private static final String SORT_ACTION_VERSION_ID = "1";
+    private static final String SORT_ACTION_VERSION_ID = "2";
     private final SortActionParameters sortParameters;
 
     @JsonCreator
@@ -76,13 +76,16 @@ public final class SortActionConfiguration implements ActionConfiguration {
     @Serializable(asJson = true)
     public static final class SortActionParameters implements java.io.Serializable {
         private List<String> sortGroupNames;
+        private boolean quick;
         private int chunkSize;
 
         @JsonCreator
         public SortActionParameters(
                 @JsonProperty("sortGroupNames") List<String> sortGroupNames,
+                @JsonProperty("quick") boolean quick,
                 @JsonProperty("chunkSize") int chunkSize) {
             this.sortGroupNames = sortGroupNames;
+            this.quick = quick;
             this.chunkSize = chunkSize;
         }
 
@@ -92,6 +95,14 @@ public final class SortActionConfiguration implements ActionConfiguration {
 
         public void setSortGroupNames(List<String> sortGroupNames) {
             this.sortGroupNames = sortGroupNames;
+        }
+
+        public boolean isQuick() {
+            return quick;
+        }
+
+        public void setQuick(boolean quick) {
+            this.quick = quick;
         }
 
         public int getChunkSize() {
@@ -107,6 +118,7 @@ public final class SortActionConfiguration implements ActionConfiguration {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             SortActionParameters that = (SortActionParameters)o;
+            if (quick != that.quick) return false;
             if (chunkSize != that.chunkSize) return false;
             return Objects.equals(sortGroupNames, that.sortGroupNames);
         }
@@ -114,6 +126,7 @@ public final class SortActionConfiguration implements ActionConfiguration {
         @Override
         public int hashCode() {
             int result = sortGroupNames != null ? sortGroupNames.hashCode() : 0;
+            result = 31 * result + (quick ? 1 : 0);
             result = 31 * result + chunkSize;
             return result;
         }

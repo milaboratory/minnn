@@ -102,10 +102,10 @@ public final class CorrectBarcodesIO {
                 validateInputGroups(pass1Reader, primaryGroups, false,
                         "--primary-groups");
             LinkedHashSet<String> keyGroups = new LinkedHashSet<>(groupNames);
-            if (!suppressWarnings && (pass1Reader.getSortedGroups().size() > 0) && (primaryGroups.size() == 0))
+            if (!suppressWarnings && (pass1Reader.getQuicklySortedGroups().size() > 0) && (primaryGroups.size() == 0))
                 System.err.println("WARNING: correcting sorted MIF file; output file will be unsorted!");
             LinkedHashSet<String> unsortedPrimaryGroups = new LinkedHashSet<>(primaryGroups);
-            unsortedPrimaryGroups.removeAll(pass1Reader.getSortedGroups());
+            unsortedPrimaryGroups.removeAll(pass1Reader.getQuicklySortedGroups());
             if (!suppressWarnings && (unsortedPrimaryGroups.size() > 0))
                 System.err.println("WARNING: correcting MIF file with unsorted primary groups " +
                         unsortedPrimaryGroups + "; correction will be slower and more memory consuming!");
@@ -183,7 +183,8 @@ public final class CorrectBarcodesIO {
         LinkedHashSet<String> allCorrectedGroups = new LinkedHashSet<>(inputHeader.getCorrectedGroups());
         allCorrectedGroups.addAll(groupNames);
         MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
-                new ArrayList<>(allCorrectedGroups), new ArrayList<>(), inputHeader.getGroupEdges());
+                new ArrayList<>(allCorrectedGroups), new ArrayList<>(), new ArrayList<>(),
+                inputHeader.getGroupEdges());
         if (excludedBarcodes)
             return (excludedBarcodesOutputFileName == null) ? null
                     : new MifWriter(excludedBarcodesOutputFileName, outputHeader);

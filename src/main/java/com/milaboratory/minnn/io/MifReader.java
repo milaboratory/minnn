@@ -59,7 +59,8 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private PipelineConfiguration pipelineConfiguration;
     private int numberOfTargets;
     private ArrayList<String> correctedGroups = new ArrayList<>();
-    private ArrayList<String> sortedGroups = new ArrayList<>();
+    private ArrayList<String> quicklySortedGroups = new ArrayList<>();
+    private ArrayList<String> fullySortedGroups = new ArrayList<>();
     private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
     private long firstReadSerializedLength = -1;
     private long originalNumberOfReads = -1;
@@ -102,9 +103,12 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         int correctedGroupsNum = input.readInt();
         for (int i = 0; i < correctedGroupsNum; i++)
             correctedGroups.add(input.readObject(String.class));
-        int sortedGroupsNum = input.readInt();
-        for (int i = 0; i < sortedGroupsNum; i++)
-            sortedGroups.add(input.readObject(String.class));
+        int quicklySortedGroupsNum = input.readInt();
+        for (int i = 0; i < quicklySortedGroupsNum; i++)
+            quicklySortedGroups.add(input.readObject(String.class));
+        int fullySortedGroupsNum = input.readInt();
+        for (int i = 0; i < fullySortedGroupsNum; i++)
+            fullySortedGroups.add(input.readObject(String.class));
         int groupEdgesNum = input.readInt();
         for (int i = 0; i < groupEdgesNum; i++) {
             GroupEdge groupEdge = input.readObject(GroupEdge.class);
@@ -175,8 +179,12 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         return correctedGroups;
     }
 
-    public ArrayList<String> getSortedGroups() {
-        return sortedGroups;
+    public ArrayList<String> getQuicklySortedGroups() {
+        return quicklySortedGroups;
+    }
+
+    public ArrayList<String> getFullySortedGroups() {
+        return fullySortedGroups;
     }
 
     public ArrayList<GroupEdge> getGroupEdges() {
@@ -184,7 +192,8 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     }
 
     public MifHeader getHeader() {
-        return new MifHeader(pipelineConfiguration, numberOfTargets, correctedGroups, sortedGroups, groupEdges);
+        return new MifHeader(pipelineConfiguration, numberOfTargets, correctedGroups, quicklySortedGroups,
+                fullySortedGroups, groupEdges);
     }
 
     public String getMifVersionInfo() {

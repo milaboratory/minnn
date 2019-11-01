@@ -81,7 +81,8 @@ public final class FilterIO {
         long matchedReads = 0;
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(new MifHeader(pipelineConfiguration, reader.getNumberOfTargets(),
-                     reader.getCorrectedGroups(), reader.getSortedGroups(), reader.getGroupEdges()))) {
+                     reader.getCorrectedGroups(), reader.getQuicklySortedGroups(), reader.getFullySortedGroups(),
+                     reader.getGroupEdges()))) {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Filtering reads", reader, System.err);
