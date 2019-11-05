@@ -53,6 +53,6 @@ public final class CorrectionQualityPreprocessor
             }
             calculatedGroupValues.put(currentGroup, builder.createAndDestroy());
         }
-        return new CorrectionQualityPreprocessingResult(calculatedGroupValues);
+        return new CorrectionQualityPreprocessingResult(calculatedGroupValues, correctionCluster.groupValues.size());
     }
 }

@@ -34,8 +34,11 @@ import java.util.*;
 
 public final class CorrectionQualityPreprocessingResult {
     public final Map<String, NSequenceWithQuality> groupValues;
+    public final int clusterSize;
 
-    public CorrectionQualityPreprocessingResult(Map<String, NSequenceWithQuality> groupValues) {
+    public CorrectionQualityPreprocessingResult(
+            Map<String, NSequenceWithQuality> groupValues, int clusterSize) {
         this.groupValues = groupValues;
+        this.clusterSize = clusterSize;
     }
 }

@@ -47,28 +47,50 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
-import static com.milaboratory.minnn.correct.WildcardsCollapsingMethod.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public final class CorrectionAlgorithms {
-    private final long inputReadsLimit;
     private final BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory;
     private final boolean averageBarcodeLengthRequired;
     private final int maxUniqueBarcodes;
     private final int minCount;
     private final boolean filterByCount;
-    private final WildcardsCollapsingMethod wildcardsCollapsingMethod;
+    private final boolean disableBarcodesQuality;
+    private final boolean disableWildcardsCollapsing;
+    private final float wildcardsCollapsingMergeThreshold;
 
     public CorrectionAlgorithms(
-            long inputReadsLimit, BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory,
-            int maxUniqueBarcodes, int minCount, WildcardsCollapsingMethod wildcardsCollapsingMethod) {
-        this.inputReadsLimit = inputReadsLimit;
+            BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, int maxUniqueBarcodes, int minCount,
+            boolean disableBarcodesQuality, boolean disableWildcardsCollapsing,
+            float wildcardsCollapsingMergeThreshold) {
         this.barcodeClusteringStrategyFactory = barcodeClusteringStrategyFactory;
         this.averageBarcodeLengthRequired = barcodeClusteringStrategyFactory.averageBarcodeLengthRequired();
         this.maxUniqueBarcodes = maxUniqueBarcodes;
         this.minCount = minCount;
         this.filterByCount = (maxUniqueBarcodes > 0) || (minCount > 1);
-        this.wildcardsCollapsingMethod = wildcardsCollapsingMethod;
+        this.disableBarcodesQuality = disableBarcodesQuality;
+        this.disableWildcardsCollapsing = disableWildcardsCollapsing;
+        this.wildcardsCollapsingMergeThreshold = wildcardsCollapsingMergeThreshold;
+    }
+
+    /**
+     * Perform wildcards collapsing, barcodes correction, filtering by barcodes count, then write corrected reads
+     * and reads that were filtered out.
+     *
+     * @param preprocessorPort          results of quality preprocessing:
+     *                                  barcodes from clusters with calculated quality
+     * @param parsedReadPort            port with raw parsed reads to correct barcodes in them:
+     *                                  2nd pass MIF reader in case of full file correction,
+     *                                  or cluster's list iterator in case of secondary barcodes correction
+     * @param writer                    MIF writer for corrected reads
+     * @param excludedBarcodesWriter    MIF writer for reads that were filtered out by barcodes count
+     * @param keyGroups                 group names in which we will correct barcodes
+     * @return                          correction stats: number of corrected reads and filtered out reads
+     */
+    public CorrectionStats correctAndWrite(
+            OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort, OutputPort<ParsedRead> parsedReadPort,
+            MifWriter writer, MifWriter excludedBarcodesWriter, LinkedHashSet<String> keyGroups) {
+
     }
 
     public CorrectionStats fullFileCorrect(

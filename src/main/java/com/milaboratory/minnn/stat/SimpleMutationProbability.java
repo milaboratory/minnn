@@ -95,7 +95,7 @@ public final class SimpleMutationProbability implements MutationProbability {
         return (float)(substitutionProbability.value);
     }
 
-    private class MutableDouble {
+    private static class MutableDouble {
         double value;
 
         MutableDouble(double value) {
@@ -103,7 +103,7 @@ public final class SimpleMutationProbability implements MutationProbability {
         }
     }
 
-    private class ProbabilityDistribution {
+    private static class ProbabilityDistribution {
         TObjectDoubleHashMap<NucleotideSequence> basicLettersProbabilities = new TObjectDoubleHashMap<>();
 
         ProbabilityDistribution(NSequenceWithQuality seq) {

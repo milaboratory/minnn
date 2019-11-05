@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
 
 public final class CorrectActionConfiguration implements ActionConfiguration {
-    private static final String CORRECT_ACTION_VERSION_ID = "4";
+    private static final String CORRECT_ACTION_VERSION_ID = "5";
     private final CorrectActionParameters correctParameters;
 
     @JsonCreator
@@ -85,9 +85,11 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
         private float singleIndelProbability;
         private int maxUniqueBarcodes;
         private int minCount;
-        private boolean fairWildcardsCollapsing;
+        private boolean disableBarcodesQuality;
         private boolean disableWildcardsCollapsing;
+        private float wildcardsCollapsingMergeThreshold;
         private long inputReadsLimit;
+        private int threads;
 
         @JsonCreator
         public CorrectActionParameters(
@@ -101,9 +103,11 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                 @JsonProperty("singleIndelProbability") float singleIndelProbability,
                 @JsonProperty("maxUniqueBarcodes") int maxUniqueBarcodes,
                 @JsonProperty("minCount") int minCount,
-                @JsonProperty("fairWildcardsCollapsing") boolean fairWildcardsCollapsing,
+                @JsonProperty("disableBarcodesQuality") boolean disableBarcodesQuality,
                 @JsonProperty("disableWildcardsCollapsing") boolean disableWildcardsCollapsing,
-                @JsonProperty("inputReadsLimit") long inputReadsLimit) {
+                @JsonProperty("wildcardsCollapsingMergeThreshold") float wildcardsCollapsingMergeThreshold,
+                @JsonProperty("inputReadsLimit") long inputReadsLimit,
+                @JsonProperty("threads") int threads) {
             this.groupNames = groupNames;
             this.primaryGroupNames = primaryGroupNames;
             this.maxErrorsShare = maxErrorsShare;
@@ -114,9 +118,11 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.singleIndelProbability = singleIndelProbability;
             this.maxUniqueBarcodes = maxUniqueBarcodes;
             this.minCount = minCount;
-            this.fairWildcardsCollapsing = fairWildcardsCollapsing;
+            this.disableBarcodesQuality = disableBarcodesQuality;
             this.disableWildcardsCollapsing = disableWildcardsCollapsing;
+            this.wildcardsCollapsingMergeThreshold = wildcardsCollapsingMergeThreshold;
             this.inputReadsLimit = inputReadsLimit;
+            this.threads = threads;
         }
 
         public List<String> getGroupNames() {
@@ -199,12 +205,12 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.minCount = minCount;
         }
 
-        public boolean isFairWildcardsCollapsing() {
-            return fairWildcardsCollapsing;
+        public boolean isDisableBarcodesQuality() {
+            return disableBarcodesQuality;
         }
 
-        public void setFairWildcardsCollapsing(boolean fairWildcardsCollapsing) {
-            this.fairWildcardsCollapsing = fairWildcardsCollapsing;
+        public void setDisableBarcodesQuality(boolean disableBarcodesQuality) {
+            this.disableBarcodesQuality = disableBarcodesQuality;
         }
 
         public boolean isDisableWildcardsCollapsing() {
@@ -215,12 +221,28 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.disableWildcardsCollapsing = disableWildcardsCollapsing;
         }
 
+        public float getWildcardsCollapsingMergeThreshold() {
+            return wildcardsCollapsingMergeThreshold;
+        }
+
+        public void setWildcardsCollapsingMergeThreshold(float wildcardsCollapsingMergeThreshold) {
+            this.wildcardsCollapsingMergeThreshold = wildcardsCollapsingMergeThreshold;
+        }
+
         public long getInputReadsLimit() {
             return inputReadsLimit;
         }
 
         public void setInputReadsLimit(long inputReadsLimit) {
             this.inputReadsLimit = inputReadsLimit;
+        }
+
+        public int getThreads() {
+            return threads;
+        }
+
+        public void setThreads(int threads) {
+            this.threads = threads;
         }
 
         @Override
@@ -236,9 +258,12 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (Float.compare(that.singleIndelProbability, singleIndelProbability) != 0) return false;
             if (maxUniqueBarcodes != that.maxUniqueBarcodes) return false;
             if (minCount != that.minCount) return false;
-            if (fairWildcardsCollapsing != that.fairWildcardsCollapsing) return false;
+            if (disableBarcodesQuality != that.disableBarcodesQuality) return false;
             if (disableWildcardsCollapsing != that.disableWildcardsCollapsing) return false;
+            if (Float.compare(that.wildcardsCollapsingMergeThreshold, wildcardsCollapsingMergeThreshold) != 0)
+                return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
+            if (threads != that.threads) return false;
             if (!Objects.equals(groupNames, that.groupNames)) return false;
             return Objects.equals(primaryGroupNames, that.primaryGroupNames);
         }
@@ -257,9 +282,12 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                     ? Float.floatToIntBits(singleIndelProbability) : 0);
             result = 31 * result + maxUniqueBarcodes;
             result = 31 * result + minCount;
-            result = 31 * result + (fairWildcardsCollapsing ? 1 : 0);
+            result = 31 * result + (disableBarcodesQuality ? 1 : 0);
             result = 31 * result + (disableWildcardsCollapsing ? 1 : 0);
+            result = 31 * result + (wildcardsCollapsingMergeThreshold != +0.0f
+                    ? Float.floatToIntBits(wildcardsCollapsingMergeThreshold) : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
+            result = 31 * result + threads;
             return result;
         }
 
