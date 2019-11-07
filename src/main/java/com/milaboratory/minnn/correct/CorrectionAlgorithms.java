@@ -74,24 +74,54 @@ public final class CorrectionAlgorithms {
     }
 
     /**
-     * Perform wildcards collapsing, barcodes correction, filtering by barcodes count, then write corrected reads
-     * and reads that were filtered out.
+     * Perform wildcards collapsing, barcodes correction, filtering by barcodes count, and prepare data that will be
+     * used for correction.
      *
      * @param preprocessorPort          results of quality preprocessing:
      *                                  barcodes from clusters with calculated quality
-     * @param parsedReadPort            port with raw parsed reads to correct barcodes in them:
+     * @param keyGroups                 group names in which we will correct barcodes
+     * @param orderedPortIndex          index for ordered output port, used in secondary barcodes correction
+     *                                  for parallel correction of multiple primary barcode clusters
+     * @return                          prepared correction data
+     */
+    public CorrectionData prepareCorrectionData(
+            OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort, LinkedHashSet<String> keyGroups,
+            long orderedPortIndex) {
+
+
+        return new CorrectionData(keyGroups, orderedPortIndex);
+    }
+
+    /**
+     * Perform correction using prepared data, then write corrected reads and reads that were filtered out.
+     *
+     * @param correctionData            all prepared data that is needed for correction and writing
+     * @param rawReadsPort              port with raw parsed reads to correct barcodes in them:
      *                                  2nd pass MIF reader in case of full file correction,
      *                                  or cluster's list iterator in case of secondary barcodes correction
      * @param writer                    MIF writer for corrected reads
      * @param excludedBarcodesWriter    MIF writer for reads that were filtered out by barcodes count
-     * @param keyGroups                 group names in which we will correct barcodes
      * @return                          correction stats: number of corrected reads and filtered out reads
      */
     public CorrectionStats correctAndWrite(
-            OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort, OutputPort<ParsedRead> parsedReadPort,
-            MifWriter writer, MifWriter excludedBarcodesWriter, LinkedHashSet<String> keyGroups) {
+            CorrectionData correctionData, OutputPort<ParsedRead> rawReadsPort,
+            MifWriter writer, MifWriter excludedBarcodesWriter) {
+        long correctedReads = 0;
+        long excludedReads = 0;
 
+        for (ParsedRead parsedRead : CUtils.it(rawReadsPort)) {
+            CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead, correctionData);
+            correctedReads += correctBarcodesResult.numCorrectedBarcodes;
+            if (correctBarcodesResult.excluded) {
+                if (excludedBarcodesWriter != null)
+                    excludedBarcodesWriter.write(correctBarcodesResult.parsedRead);
+                excludedReads++;
+            } else
+                writer.write(correctBarcodesResult.parsedRead);
+        }
+        return new CorrectionStats(correctedReads, excludedReads);
     }
+
 
     public CorrectionStats fullFileCorrect(
             MifReader pass1Reader, MifReader pass2Reader, MifWriter writer, MifWriter excludedBarcodesWriter,
@@ -318,13 +348,13 @@ public final class CorrectionAlgorithms {
     /**
      * Correct barcodes in the parsed read.
      *
-     * @param parsedRead    original parsed read
-     * @param groupsData    data structures for each group: each contains sequence counters, stats, correction map
-     *                      and included barcodes set (if filtering by count is enabled) for the group
-     * @return              parsed read with corrected barcodes, number of corrected barcodes and excluded flag
-     *                      (which is true if any of barcodes in this parsed read was filtered out by count)
+     * @param parsedRead        original parsed read
+     * @param correctionData    data structures for each group: each contains sequence counters, stats, correction map
+     *                          and included barcodes set (if filtering by count is enabled) for the group
+     * @return                  parsed read with corrected barcodes, number of corrected barcodes and excluded flag
+     *                          (which is true if any of barcodes in this parsed read was filtered out by count)
      */
-    private CorrectBarcodesResult correctBarcodes(ParsedRead parsedRead, Set<GroupData> groupsData) {
+    private CorrectBarcodesResult correctBarcodes(ParsedRead parsedRead, CorrectionData correctionData) {
         Map<String, NSeq> correctedGroups = new HashMap<>();
         boolean isCorrection = false;
         int numCorrectedBarcodes = 0;

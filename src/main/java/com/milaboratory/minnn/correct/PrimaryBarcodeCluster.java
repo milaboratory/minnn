@@ -28,19 +28,16 @@
  */
 package com.milaboratory.minnn.correct;
 
-import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.minnn.outputconverter.ParsedRead;
 
-import java.util.*;
+import java.util.List;
 
-public final class CorrectionQualityPreprocessingResult {
-    public final Map<String, NSequenceWithQuality> groupValues;
-    public final int clusterSize;
+public final class PrimaryBarcodeCluster {
+    public final List<ParsedRead> parsedReads;
     public final long orderedPortIndex;
 
-    public CorrectionQualityPreprocessingResult(
-            Map<String, NSequenceWithQuality> groupValues, int clusterSize, long orderedPortIndex) {
-        this.groupValues = groupValues;
-        this.clusterSize = clusterSize;
+    public PrimaryBarcodeCluster(List<ParsedRead> parsedReads, long orderedPortIndex) {
+        this.parsedReads = parsedReads;
         this.orderedPortIndex = orderedPortIndex;
     }
 }

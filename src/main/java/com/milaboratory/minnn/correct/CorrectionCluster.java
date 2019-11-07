@@ -34,7 +34,7 @@ import java.util.*;
 
 public final class CorrectionCluster {
     public final List<Map<String, NSequenceWithQuality>> groupValues = new ArrayList<>();
-    public final long orderedPortIndex;
+    final long orderedPortIndex;
 
     public CorrectionCluster(long orderedPortIndex) {
         this.orderedPortIndex = orderedPortIndex;

@@ -28,19 +28,14 @@
  */
 package com.milaboratory.minnn.correct;
 
-import com.milaboratory.core.sequence.NSequenceWithQuality;
-
 import java.util.*;
 
-public final class CorrectionQualityPreprocessingResult {
-    public final Map<String, NSequenceWithQuality> groupValues;
-    public final int clusterSize;
+public final class CorrectionData {
+    final LinkedHashSet<String> keyGroups;
     public final long orderedPortIndex;
 
-    public CorrectionQualityPreprocessingResult(
-            Map<String, NSequenceWithQuality> groupValues, int clusterSize, long orderedPortIndex) {
-        this.groupValues = groupValues;
-        this.clusterSize = clusterSize;
+    public CorrectionData(LinkedHashSet<String> keyGroups, long orderedPortIndex) {
+        this.keyGroups = keyGroups;
         this.orderedPortIndex = orderedPortIndex;
     }
 }

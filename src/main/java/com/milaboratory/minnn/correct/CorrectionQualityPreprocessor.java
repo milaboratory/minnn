@@ -53,6 +53,7 @@ public final class CorrectionQualityPreprocessor
             }
             calculatedGroupValues.put(currentGroup, builder.createAndDestroy());
         }
-        return new CorrectionQualityPreprocessingResult(calculatedGroupValues, correctionCluster.groupValues.size());
+        return new CorrectionQualityPreprocessingResult(calculatedGroupValues, correctionCluster.groupValues.size(),
+                correctionCluster.orderedPortIndex);
     }
 }
