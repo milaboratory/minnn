@@ -28,20 +28,25 @@
  */
 package com.milaboratory.minnn.correct;
 
+import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.core.sequence.NucleotideSequence;
+
 import java.util.*;
-import java.util.stream.Collectors;
 
-public final class CorrectionData {
-    final LinkedHashMap<String, CorrectionGroupData> keyGroupsData;
-    public final long orderedPortIndex;
-    long parsedReadsCount = 0;
+final class CorrectionGroupData {
+    // keys: not corrected sequences, values: corrected sequences
+    final Map<NucleotideSequence, NSequenceWithQuality> correctionMapWithQualities;
+    final Map<NucleotideSequence, NucleotideSequence> correctionMapWithoutQualities;
+    // counters for original not corrected barcodes, for filtering by count
+    final Map<NucleotideSequence, RawSequenceCounter> notCorrectedBarcodeCounters;
+    // barcodes that are not filtered out if filtering by count is enabled
+    final Set<NucleotideSequence> includedBarcodes;
+    long lengthSum = 0;
 
-    public CorrectionData(
-            LinkedHashSet<String> keyGroups, long orderedPortIndex,
-            boolean disableBarcodesQuality, boolean filterByCount) {
-        this.keyGroupsData = keyGroups.stream().collect(Collectors.toMap(
-                keyGroup -> keyGroup, keyGroup -> new CorrectionGroupData(disableBarcodesQuality, filterByCount),
-                (a, b) -> b, LinkedHashMap::new));
-        this.orderedPortIndex = orderedPortIndex;
+    CorrectionGroupData(boolean disableBarcodesQuality, boolean filterByCount) {
+        this.correctionMapWithQualities = disableBarcodesQuality ? null : new HashMap<>();
+        this.correctionMapWithoutQualities = disableBarcodesQuality ? new HashMap<>() : null;
+        this.notCorrectedBarcodeCounters = filterByCount ? new HashMap<>() : null;
+        this.includedBarcodes = filterByCount ? new HashSet<>() : null;
     }
 }

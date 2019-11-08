@@ -87,9 +87,113 @@ public final class CorrectionAlgorithms {
     public CorrectionData prepareCorrectionData(
             OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort, LinkedHashSet<String> keyGroups,
             long orderedPortIndex) {
+        CorrectionData correctionData = new CorrectionData(keyGroups, orderedPortIndex,
+                disableBarcodesQuality, filterByCount);
+        for (CorrectionQualityPreprocessingResult inputData : CUtils.it(preprocessorPort)) {
+            correctionData.parsedReadsCount += inputData.clusterSize;
+            for (Map.Entry<String, CorrectionGroupData> groupData : correctionData.keyGroupsData.entrySet()) {
+                String groupName = groupData.getKey();
+                CorrectionGroupData correctionGroupData = groupData.getValue();
+                NSequenceWithQuality seqWithQuality = inputData.groupValues.get(groupName);
+                NucleotideSequence seq = seqWithQuality.getSequence();
+                correctionGroupData.lengthSum += seq.size() * inputData.clusterSize;
 
 
-        return new CorrectionData(keyGroups, orderedPortIndex);
+            }
+        }
+
+
+        NucleotideSequence seq = seqWithQuality.getSequence();
+        switch (wildcardsCollapsingMethod) {
+            case FAIR_COLLAPSING:
+            {
+                // try to add the sequence to any of the existing counters or create new counter
+                BasicSequenceCounter cachedCounter = (BasicSequenceCounter)(counterBySeqCache.get(seq));
+                if (cachedCounter != null) {
+                    if (cachedCounter.add(seqWithQuality))
+                        updateCountersSortingOrder(cachedCounter);
+                    else
+                        throw new IllegalStateException("Failed to add sequence " + seq + " to counter "
+                                + cachedCounter.getOriginalSequences() + " (count " + cachedCounter.getCount()
+                                + ", consensus sequence " + cachedCounter.getSequence() + ")!");
+                } else {
+                    boolean matchingCounterFound = false;
+                            /* maintaining sorting order of sequenceCounters is important for this loop,
+                               it must start from barcodes with big counts */
+                    for (SequenceCounter counter : sequenceCounters)
+                        if (((BasicSequenceCounter)counter).add(seqWithQuality)) {
+                            matchingCounterFound = true;
+                            updateCountersSortingOrder(counter);
+                            counterBySeqCache.put(seq, counter);
+                            break;
+                        }
+                    if (!matchingCounterFound) {
+                        SequenceCounter newCounter = new BasicSequenceCounter(seqWithQuality,
+                                sequenceCounters.size());
+                        sequenceCounters.add(newCounter);
+                        counterBySeqCache.put(seq, newCounter);
+                    }
+                }
+            }
+            break;
+            case UNFAIR_COLLAPSING:
+            {
+                // try to add the sequence to any of the existing counters or create new counter
+                BasicSequenceCounter cachedCounter = (BasicSequenceCounter)(counterBySeqCache.get(seq));
+                if (cachedCounter != null) {
+                    if (!cachedCounter.add(seqWithQuality))
+                        throw new IllegalStateException("Failed to add sequence " + seq + " to counter "
+                                + cachedCounter.getOriginalSequences() + " (count " + cachedCounter.getCount()
+                                + ", consensus sequence " + cachedCounter.getSequence() + ")!");
+                } else {
+                    boolean matchingCounterFound = false;
+                    // unfair collapsing: try to merge barcode with first matching in unsorted set
+                    for (SequenceCounter counter : sequenceCounters)
+                        if (((BasicSequenceCounter)counter).add(seqWithQuality)) {
+                            matchingCounterFound = true;
+                            counterBySeqCache.put(seq, counter);
+                            break;
+                        }
+                    if (!matchingCounterFound) {
+                        SequenceCounter newCounter = new BasicSequenceCounter(seqWithQuality,
+                                sequenceCounters.size());
+                        sequenceCounters.add(newCounter);
+                        counterBySeqCache.put(seq, newCounter);
+                    }
+                }
+            }
+            break;
+            case DISABLED_COLLAPSING:
+            {
+                SimpleSequenceCounter cachedCounter = (SimpleSequenceCounter)(counterBySeqCache.get(seq));
+                if (cachedCounter == null) {
+                    SequenceCounter newCounter = new SimpleSequenceCounter(seq, sequenceCounters.size());
+                    sequenceCounters.add(newCounter);
+                    counterBySeqCache.put(seq, newCounter);
+                } else
+                    cachedCounter.count++;
+            }
+        }
+
+        // counting raw barcode sequences if filtering by count is enabled
+        if (filterByCount) {
+            notCorrectedBarcodeCounters.putIfAbsent(seq, new RawSequenceCounter(seq));
+            notCorrectedBarcodeCounters.get(seq).count++;
+        }
+
+        if (averageBarcodeLengthRequired)
+            lengthSum += seqWithQuality.size();
+
+        parsedReadsCount++;
+
+
+
+
+
+
+
+
+        return correctionData;
     }
 
     /**
@@ -121,6 +225,8 @@ public final class CorrectionAlgorithms {
         }
         return new CorrectionStats(correctedReads, excludedReads);
     }
+
+
 
 
     public CorrectionStats fullFileCorrect(
@@ -359,26 +465,29 @@ public final class CorrectionAlgorithms {
         boolean isCorrection = false;
         int numCorrectedBarcodes = 0;
         boolean excluded = false;
-        for (GroupData groupData : groupsData) {
-            MatchedGroup matchedGroup = parsedRead.getGroupByName(groupData.groupName);
-            if (wildcardsCollapsingMethod == FAIR_COLLAPSING) {
-                NSequenceWithQuality oldValue = matchedGroup.getValue();
-                NSequenceWithQuality correctValue = groupData.getCorrectedSequenceWithQuality(oldValue.getSequence());
-                if (correctValue == null)
-                    correctValue = oldValue;
-                isCorrection |= !correctValue.getSequence().equals(oldValue.getSequence());
-                correctedGroups.put(groupData.groupName, correctValue);
-                if (filterByCount)
-                    excluded |= !groupData.includedBarcodes.contains(correctValue.getSequence());
-            } else {
+        for (Map.Entry<String, CorrectionGroupData> groupData : correctionData.keyGroupsData.entrySet()) {
+            String groupName = groupData.getKey();
+            CorrectionGroupData correctionGroupData = groupData.getValue();
+            MatchedGroup matchedGroup = parsedRead.getGroupByName(groupName);
+            if (disableBarcodesQuality) {
                 NucleotideSequence oldValue = matchedGroup.getValue().getSequence();
-                NucleotideSequence correctValue = groupData.getCorrectedSequence(oldValue);
+                NucleotideSequence correctValue = correctionGroupData.correctionMapWithoutQualities.get(oldValue);
                 if (correctValue == null)
                     correctValue = oldValue;
                 isCorrection |= !correctValue.equals(oldValue);
-                correctedGroups.put(groupData.groupName, correctValue);
+                correctedGroups.put(groupName, correctValue);
                 if (filterByCount)
-                    excluded |= !groupData.includedBarcodes.contains(correctValue);
+                    excluded |= !correctionGroupData.includedBarcodes.contains(correctValue);
+            } else {
+                NSequenceWithQuality oldValue = matchedGroup.getValue();
+                NSequenceWithQuality correctValue = correctionGroupData.correctionMapWithQualities
+                        .get(oldValue.getSequence());
+                if (correctValue == null)
+                    correctValue = oldValue;
+                isCorrection |= !correctValue.getSequence().equals(oldValue.getSequence());
+                correctedGroups.put(groupName, correctValue);
+                if (filterByCount)
+                    excluded |= !correctionGroupData.includedBarcodes.contains(correctValue.getSequence());
             }
         }
 
@@ -387,16 +496,15 @@ public final class CorrectionAlgorithms {
             newGroupEdges = parsedRead.getMatchedGroupEdges();
         else {
             newGroupEdges = new ArrayList<>();
-            Set<String> keyGroups = groupsData.stream().map(data -> data.groupName).collect(Collectors.toSet());
+            Set<String> keyGroups = correctionData.keyGroupsData.keySet();
             for (MatchedGroupEdge matchedGroupEdge : parsedRead.getMatchedGroupEdges()) {
                 String currentGroupName = matchedGroupEdge.getGroupEdge().getGroupName();
                 if (!keyGroups.contains(currentGroupName))
                     newGroupEdges.add(matchedGroupEdge);
                 else {
-                    NSequenceWithQuality correctedValue = (wildcardsCollapsingMethod == FAIR_COLLAPSING)
-                            ? (NSequenceWithQuality)(correctedGroups.get(currentGroupName))
-                            : new NSequenceWithQuality(
-                                    (NucleotideSequence)(correctedGroups.get(currentGroupName)), DEFAULT_MAX_QUALITY);
+                    NSequenceWithQuality correctedValue = disableBarcodesQuality ? new NSequenceWithQuality(
+                            (NucleotideSequence)(correctedGroups.get(currentGroupName)), DEFAULT_MAX_QUALITY)
+                            : (NSequenceWithQuality)(correctedGroups.get(currentGroupName));
                     newGroupEdges.add(new MatchedGroupEdge(matchedGroupEdge.getTarget(),
                             matchedGroupEdge.getTargetId(), matchedGroupEdge.getGroupEdge(), correctedValue));
                 }
