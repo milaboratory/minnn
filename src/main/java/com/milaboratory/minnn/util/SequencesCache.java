@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.stat.StatUtils.*;
 
 public final class SequencesCache {
     private SequencesCache() {}
@@ -47,7 +48,8 @@ public final class SequencesCache {
     public static final HashMap<NucleotideSequence, Wildcard> wildcards = new HashMap<>();
     public static final TByteObjectHashMap<NucleotideSequence> wildcardCodeToSequence = new TByteObjectHashMap<>();
     public static final TCharObjectHashMap<Wildcard> charToWildcard = new TCharObjectHashMap<>();
-    public static final TObjectLongHashMap<NucleotideSequence> basicLettersMasks = new TObjectLongHashMap<>();
+    public static final long[] basicLettersMasks = new long[NucleotideSequence.ALPHABET.basicSize()];
+    public static final float[] qualityToLetterProbabilityCache = new float[DEFAULT_MAX_QUALITY + 1];
     private static TByteObjectHashMap<SequenceQuality> qualityCache = null;
     private static HashMap<NSequenceWithQuality, NSequenceWithQuality> seqWithQualityCache = null;
     private static TIntObjectHashMap<NucleotideSequenceCaseSensitive> sequencesOfN = null;
@@ -80,8 +82,11 @@ public final class SequencesCache {
             charToWildcard.put(wildcard.getSymbol(), wildcard);
         });
 
-        NucleotideSequence.ALPHABET.getAllWildcards().stream().filter(Wildcard::isBasic).forEach(wildcard ->
-                basicLettersMasks.put(wildcardCodeToSequence.get(wildcard.getCode()), wildcard.getBasicMask()));
+        for (byte i = 0; i < basicLettersMasks.length; i++)
+            basicLettersMasks[i] = NucleotideSequence.ALPHABET.codeToWildcard(i).getBasicMask();
+
+        for (byte i = 0; i <= DEFAULT_MAX_QUALITY; i++)
+            qualityToLetterProbabilityCache[i] = (float)(1 - qualityToProbability(i));
     }
 
     private static synchronized void initQualityCaches(boolean withSequences) {
