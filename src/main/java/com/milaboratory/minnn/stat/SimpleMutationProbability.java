@@ -29,14 +29,12 @@
 package com.milaboratory.minnn.stat;
 
 import com.milaboratory.core.sequence.*;
-import gnu.trove.map.hash.TObjectDoubleHashMap;
 
-import static com.milaboratory.core.mutations.Mutation.*;
-import static com.milaboratory.minnn.cli.Defaults.*;
-import static com.milaboratory.minnn.stat.StatUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
 public final class SimpleMutationProbability implements MutationProbability {
+    private static final byte basicSize = (byte)(NucleotideSequence.ALPHABET.basicSize());
+    private static final float badQualityBasicProbability = 1.0f / basicSize;
     private final float basicSubstitutionProbability;
     private final float indelProbability;
 
@@ -46,82 +44,45 @@ public final class SimpleMutationProbability implements MutationProbability {
     }
 
     @Override
-    public float mutationProbability(NSequenceWithQuality from, NSequenceWithQuality to) {
-        if ((from == NSequenceWithQuality.EMPTY) && (to == NSequenceWithQuality.EMPTY))
+    public float mutationProbability(byte from, byte fromQual, byte to, byte toQual) {
+        if ((from == -1) && (to == -1))
             throw new IllegalArgumentException("Mutation must not be insertion and deletion in the same time!");
-        else if ((from == NSequenceWithQuality.EMPTY) || (to == NSequenceWithQuality.EMPTY))
-            return indelProbability;
-        else
-            return calculateSubstitutionProbability(new ProbabilityDistribution(from),
-                    new ProbabilityDistribution(to));
-    }
-
-    @Override
-    public float mutationProbability(NucleotideSequence from, NucleotideSequence to) {
-        throw new IllegalStateException("Mutation probability with quality must be used!");
-    }
-
-    @Override
-    public float mutationProbability(int mutationCode, byte originalLetterQuality) {
-        if (isInDel(mutationCode))
+        else if ((from == -1) || (to == -1))
             return indelProbability;
         else {
-            ProbabilityDistribution from = new ProbabilityDistribution(getFromSymbol(mutationCode,
-                    NucleotideSequence.ALPHABET), originalLetterQuality);
-            ProbabilityDistribution to = new ProbabilityDistribution(getToSymbol(mutationCode,
-                    NucleotideSequence.ALPHABET), DEFAULT_MAX_QUALITY);
-            return calculateSubstitutionProbability(from, to);
-        }
-    }
+            float[] fromProbabilities = new float[basicSize];
+            float[] toProbabilities = new float[basicSize];
 
-    @Override
-    public float mutationProbability(int mutationCode) {
-        throw new IllegalStateException("Mutation probability with quality must be used!");
-    }
-
-    private float calculateSubstitutionProbability(ProbabilityDistribution from, ProbabilityDistribution to) {
-        MutableDouble substitutionProbability = new MutableDouble(0);
-        from.basicLettersProbabilities.forEachEntry((fromLetter, fromProbability) -> {
-            to.basicLettersProbabilities.forEachEntry((toLetter, toProbability) -> {
-                double combinationProbability = fromProbability * toProbability;
-                if (fromLetter == toLetter)
-                    substitutionProbability.value += combinationProbability;
+            for (int i = 0; i < basicSize; i++) {
+                float fromProbability = qualityToLetterProbabilityCache[fromQual];
+                Wildcard fromWildcard = NucleotideSequence.ALPHABET.codeToWildcard(from);
+                if (fromProbability < badQualityBasicProbability)
+                    fromProbabilities[i] = badQualityBasicProbability;
+                else if ((fromWildcard.getBasicMask() & basicLettersMasks[i]) == 0)
+                    fromProbabilities[i] = (1 - fromProbability) / (basicSize - fromWildcard.basicSize());
                 else
-                    substitutionProbability.value += combinationProbability * basicSubstitutionProbability;
-                return true;
-            });
-            return true;
-        });
-        return (float)(substitutionProbability.value);
-    }
+                    fromProbabilities[i] = fromProbability / fromWildcard.basicSize();
 
-    private static class MutableDouble {
-        double value;
-
-        MutableDouble(double value) {
-            this.value = value;
-        }
-    }
-
-    private static class ProbabilityDistribution {
-        TObjectDoubleHashMap<NucleotideSequence> basicLettersProbabilities = new TObjectDoubleHashMap<>();
-
-        ProbabilityDistribution(NSequenceWithQuality seq) {
-            this(seq.getSequence().symbolAt(0), seq.getQuality().value(0));
-        }
-
-        ProbabilityDistribution(char letter, byte letterQuality) {
-            Wildcard wildcard = charToWildcard.get(letter);
-            double letterProbability = 1 - qualityToProbability(letterQuality);
-            basicLettersMasks.forEachEntry((basicLetter, mask) -> {
-                if (letterProbability < 1.0 / basicLettersMasks.size())
-                    basicLettersProbabilities.put(basicLetter, 1.0 / basicLettersMasks.size());
+                float toProbability = qualityToLetterProbabilityCache[toQual];
+                Wildcard toWildcard = NucleotideSequence.ALPHABET.codeToWildcard(to);
+                if (toProbability < badQualityBasicProbability)
+                    toProbabilities[i] = badQualityBasicProbability;
+                else if ((toWildcard.getBasicMask() & basicLettersMasks[i]) == 0)
+                    toProbabilities[i] = (1 - toProbability) / (basicSize - toWildcard.basicSize());
                 else
-                    basicLettersProbabilities.put(basicLetter, ((mask & wildcard.getBasicMask()) == 0)
-                            ? (1 - letterProbability) / (basicLettersMasks.size() - wildcard.basicSize())
-                            : letterProbability / wildcard.basicSize());
-                return true;
-            });
+                    toProbabilities[i] = toProbability / toWildcard.basicSize();
+            }
+
+            float substitutionProbability = 0;
+            for (int i = 0; i < basicSize; i++)
+                for (int j = 0; j < basicSize; j++) {
+                    float combinationProbability = fromProbabilities[i] * toProbabilities[j];
+                    if (from == to)
+                        substitutionProbability += combinationProbability;
+                    else
+                        substitutionProbability += combinationProbability * basicSubstitutionProbability;
+                }
+            return substitutionProbability;
         }
     }
 }

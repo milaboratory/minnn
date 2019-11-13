@@ -28,13 +28,7 @@
  */
 package com.milaboratory.minnn.stat;
 
-import com.milaboratory.core.sequence.NSequenceWithQuality;
-import com.milaboratory.core.sequence.NucleotideSequence;
-
 public interface MutationProbability {
-    // from can be EMPTY, it means insertion; to can be EMPTY, it means deletion
-    float mutationProbability(NSequenceWithQuality from, NSequenceWithQuality to);
-    float mutationProbability(NucleotideSequence from, NucleotideSequence to);
-    float mutationProbability(int mutationCode, byte originalLetterQuality);
-    float mutationProbability(int mutationCode);
+    // from can be -1, it means insertion; to can be -1, it means deletion
+    float mutationProbability(byte from, byte fromQual, byte to, byte toQual);
 }

@@ -29,18 +29,18 @@
 package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.tree.TreeSearchParameters;
-import com.milaboratory.minnn.stat.MutationProbability;
+import com.milaboratory.minnn.stat.SimpleMutationProbability;
 
 public final class BarcodeClusteringStrategyFactory {
     private final float maxErrorsShare;
     private final int maxErrors;
     private final float threshold;
     private final int maxClusterDepth;
-    private final MutationProbability mutationProbability;
+    private final SimpleMutationProbability mutationProbability;
 
     public BarcodeClusteringStrategyFactory(
             float maxErrorsShare, int maxErrors, float threshold, int maxClusterDepth,
-            MutationProbability mutationProbability) {
+            SimpleMutationProbability mutationProbability) {
         this.maxErrorsShare = maxErrorsShare;
         this.maxErrors = maxErrors;
         this.threshold = threshold;
