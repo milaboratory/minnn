@@ -398,7 +398,24 @@ public final class CorrectBarcodesIO {
         };
     }
 
-    private OutputPort<ParsedRead> getParsedReadOutputPort(List<ParsedRead> currentCluster) {
+    private OutputPort<ParsedRead> getParsedReadPortForCluster(MifReader pass2Reader, int clusterSize) {
+        return new OutputPort<ParsedRead>() {
+            int currentIndex = 0;
+
+            @Override
+            public ParsedRead take() {
+                if (currentIndex == clusterSize)
+                    return null;
+                ParsedRead parsedRead = pass2Reader.take();
+                if (parsedRead == null)
+                    throw new IllegalStateException("pass2Reader returned less reads than pass1Reader!");
+                currentIndex++;
+                return parsedRead;
+            }
+        };
+    }
+
+    private OutputPort<ParsedRead> getParsedReadPortForCluster(List<ParsedRead> currentCluster) {
         return new OutputPort<ParsedRead>() {
             int currentIndex = 0;
 

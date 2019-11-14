@@ -47,6 +47,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.correct.CorrectionGroupData.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public final class CorrectionAlgorithms {
@@ -96,9 +97,29 @@ public final class CorrectionAlgorithms {
                 CorrectionGroupData correctionGroupData = groupData.getValue();
                 NSequenceWithQuality seqWithQuality = inputData.groupValues.get(groupName);
                 NucleotideSequence seq = seqWithQuality.getSequence();
-                correctionGroupData.lengthSum += seq.size() * inputData.clusterSize;
 
+                // counting raw barcode sequences if filtering by count is enabled
+                if (filterByCount) {
+                    Map<NucleotideSequence, RawSequenceCounter> rawBarcodeCounters =
+                            correctionGroupData.notCorrectedBarcodeCounters;
+                    rawBarcodeCounters.putIfAbsent(seq, new RawSequenceCounter(seq));
+                    rawBarcodeCounters.get(seq).count += inputData.clusterSize;
+                }
 
+                if (averageBarcodeLengthRequired)
+                    correctionGroupData.lengthSum += seq.size() * inputData.clusterSize;
+
+                if (disableWildcardsCollapsing) {
+                    SequenceWithCount sequenceWithCount = correctionGroupData.sequenceCounters.get(seq);
+                    if (sequenceWithCount == null) {
+                        SequenceWithCount newCounter = new SequenceWithCount(seqWithQuality, inputData.clusterSize,
+                                disableBarcodesQuality);
+                        correctionGroupData.sequenceCounters.put(seq, newCounter);
+                    } else
+                        sequenceWithCount.count += inputData.clusterSize;
+                } else {
+
+                }
             }
         }
 

@@ -93,7 +93,7 @@ final class BarcodeClusteringStrategy
     }
 
     @Override
-    public TreeSearchParameters getSearchParameters() {
+    public TreeSearchParameters getSearchParameters(Cluster<SequenceCounter> cluster) {
         return treeSearchParameters;
     }
 

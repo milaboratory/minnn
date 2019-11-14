@@ -28,12 +28,17 @@
  */
 package com.milaboratory.minnn.correct;
 
+import com.milaboratory.core.clustering.SequenceExtractor;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.Sequence;
 
 import java.util.*;
 
 final class CorrectionGroupData {
+    private final boolean disableBarcodesQuality;
+
+    public final Map<NucleotideSequence, SequenceWithCount> sequenceCounters = new HashMap<>();
     // keys: not corrected sequences, values: corrected sequences
     final Map<NucleotideSequence, NSequenceWithQuality> correctionMapWithQualities;
     final Map<NucleotideSequence, NucleotideSequence> correctionMapWithoutQualities;
@@ -44,9 +49,50 @@ final class CorrectionGroupData {
     long lengthSum = 0;
 
     CorrectionGroupData(boolean disableBarcodesQuality, boolean filterByCount) {
+        this.disableBarcodesQuality = disableBarcodesQuality;
         this.correctionMapWithQualities = disableBarcodesQuality ? null : new HashMap<>();
         this.correctionMapWithoutQualities = disableBarcodesQuality ? new HashMap<>() : null;
         this.notCorrectedBarcodeCounters = filterByCount ? new HashMap<>() : null;
         this.includedBarcodes = filterByCount ? new HashSet<>() : null;
+    }
+
+    static class SequenceWithCount {
+        final NSequenceWithQuality seqWithQuality;
+        final NucleotideSequence seqWithoutQuality;
+        long count;
+
+        SequenceWithCount(NSequenceWithQuality seqWithQuality, long count, boolean disableBarcodesQuality) {
+            this.seqWithQuality = disableBarcodesQuality ? null : seqWithQuality;
+            this.seqWithoutQuality = disableBarcodesQuality ? seqWithQuality.getSequence() : null;
+            this.count = count;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SequenceWithCount that = (SequenceWithCount)o;
+            if (!Objects.equals(seqWithQuality, that.seqWithQuality))
+                return false;
+            return Objects.equals(seqWithoutQuality, that.seqWithoutQuality);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = seqWithQuality != null ? seqWithQuality.hashCode() : 0;
+            result = result + (seqWithoutQuality != null ? seqWithoutQuality.hashCode() : 0);
+            return result;
+        }
+    }
+
+    class SequenceCounterExtractor<S extends Sequence> implements SequenceExtractor<SequenceWithCount, S> {
+        @Override
+        @SuppressWarnings("unchecked")
+        public S getSequence(SequenceWithCount sequenceWithCount) {
+            if (disableBarcodesQuality)
+                return (S)(sequenceWithCount.seqWithoutQuality);
+            else
+                return (S)(new SequenceWithQualityForClustering(sequenceWithCount.seqWithQuality));
+        }
     }
 }
