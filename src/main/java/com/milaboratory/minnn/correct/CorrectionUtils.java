@@ -29,24 +29,24 @@
 package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.sequence.*;
-import com.milaboratory.minnn.util.ConsensusLetter;
 
-import java.util.Arrays;
+import java.util.List;
+
+import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
 
 final class CorrectionUtils {
     private CorrectionUtils() {}
 
-    static NSequenceWithQuality mergeSequence(NSequenceWithQuality oldConsensus, NSequenceWithQuality newSequence) {
-        int maxLength = Math.max(oldConsensus.size(), newSequence.size());
-        NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
-        for (int positionIndex = 0; positionIndex < maxLength; positionIndex++) {
-            NSequenceWithQuality oldConsensusLetter = (positionIndex >= oldConsensus.size())
-                    ? NSequenceWithQuality.EMPTY : oldConsensus.getRange(positionIndex, positionIndex + 1);
-            NSequenceWithQuality newSequenceLetter = (positionIndex >= newSequence.size())
-                    ? NSequenceWithQuality.EMPTY : newSequence.getRange(positionIndex, positionIndex + 1);
-            ConsensusLetter consensusLetter = new ConsensusLetter(
-                    Arrays.asList(oldConsensusLetter, newSequenceLetter), true);
-            builder.append(consensusLetter.getConsensusLetter());
+    static SequenceQuality getConsensusQuality(List<SequenceQuality> qualities) {
+        if (qualities.size() == 1)
+            return qualities.get(0);
+        SequenceQualityBuilder builder = new SequenceQualityBuilder();
+        // this function assumes that sequences are equal, so lengths of qualities must be equal
+        for (int position = 0; position < qualities.get(0).size(); position++) {
+            int currentQuality = 0;
+            for (SequenceQuality quality : qualities)
+                currentQuality += quality.value(position);
+            builder.append((byte)Math.min(DEFAULT_MAX_QUALITY, currentQuality));
         }
         return builder.createAndDestroy();
     }

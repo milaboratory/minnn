@@ -237,7 +237,7 @@ public final class ReadProcessor {
             outputGroupEdges.add(new GroupEdge(groupName, false));
         });
         MifHeader mifHeader = new MifHeader(pipelineConfiguration, outputNumberOfTargets, new ArrayList<>(),
-                new ArrayList<>(), new ArrayList<>(), outputGroupEdges);
+                new ArrayList<>(), outputGroupEdges);
         if (mismatchedReads)
             return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
         else

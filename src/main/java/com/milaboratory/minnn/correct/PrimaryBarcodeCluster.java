@@ -28,16 +28,15 @@
  */
 package com.milaboratory.minnn.correct;
 
+import cc.redberry.pipe.OutputPort;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
-import java.util.List;
-
 public final class PrimaryBarcodeCluster {
-    public final List<ParsedRead> parsedReads;
+    public final OutputPort<ParsedRead> parsedReadOutputPort;
     public final long orderedPortIndex;
 
-    public PrimaryBarcodeCluster(List<ParsedRead> parsedReads, long orderedPortIndex) {
-        this.parsedReads = parsedReads;
+    public PrimaryBarcodeCluster(OutputPort<ParsedRead> parsedReadOutputPort, long orderedPortIndex) {
+        this.parsedReadOutputPort = parsedReadOutputPort;
         this.orderedPortIndex = orderedPortIndex;
     }
 }

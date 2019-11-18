@@ -190,7 +190,7 @@ public final class ConsensusIO {
             LinkedHashSet<String> notCorrectedGroups = new LinkedHashSet<>(consensusGroups);
             notCorrectedGroups.removeAll(reader.getCorrectedGroups());
             LinkedHashSet<String> notSortedGroups = new LinkedHashSet<>(consensusGroups);
-            notSortedGroups.removeAll(reader.getQuicklySortedGroups());
+            notSortedGroups.removeAll(reader.getSortedGroups());
             if (notCorrectedGroups.size() > 0)
                 displayWarning("WARNING: group(s) " + notCorrectedGroups + " not corrected, but used in " +
                         "consensus calculation!");
@@ -423,8 +423,7 @@ public final class ConsensusIO {
             System.err.println("Writing not matched reads...");
             try (MifWriter notUsedReadsWriter = new MifWriter(notUsedReadsOutputFileName, new MifHeader(
                     pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
-                    mifHeader.getQuicklySortedGroups(), mifHeader.getFullySortedGroups(),
-                    mifHeader.getGroupEdges()))) {
+                    mifHeader.getSortedGroups(), mifHeader.getGroupEdges()))) {
                 for (long readId = 0; readId < originalNumberOfReads; readId++) {
                     OriginalReadData currentReadData = originalReadsData.get(readId);
                     if ((currentReadData != null) && (currentReadData.status != USED_IN_CONSENSUS))
@@ -500,7 +499,7 @@ public final class ConsensusIO {
             });
         }
         newHeader = new MifHeader(pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
-                new ArrayList<>(), new ArrayList<>(), groupEdges);
+                new ArrayList<>(), groupEdges);
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), newHeader)
                 : new MifWriter(outputFileName, newHeader);
     }

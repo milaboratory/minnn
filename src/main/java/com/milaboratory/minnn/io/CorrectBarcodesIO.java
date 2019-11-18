@@ -110,15 +110,46 @@ public final class CorrectBarcodesIO {
         long startTime = System.currentTimeMillis();
         CorrectionStats stats;
         try (MifReader pass1Reader = new MifReader(inputFileName);
-             MifReader pass2Reader = (primaryGroups.size() == 0) ? new MifReader(inputFileName) : null;
+             MifReader pass2Reader = new MifReader(inputFileName);
              MifWriter writer = Objects.requireNonNull(createWriter(pass1Reader.getHeader(), false));
              MifWriter excludedBarcodesWriter = createWriter(pass1Reader.getHeader(), true)) {
             if (inputReadsLimit > 0) {
                 pass1Reader.setParsedReadsLimit(inputReadsLimit);
-                if (primaryGroups.size() == 0)
-                    Objects.requireNonNull(pass2Reader).setParsedReadsLimit(inputReadsLimit);
+                pass2Reader.setParsedReadsLimit(inputReadsLimit);
             }
+
             validateInputGroups(pass1Reader, keyGroups, false, "--groups");
+            validateInputGroups(pass1Reader, primaryGroups, false, "--primary-groups");
+            LinkedHashSet<String> groupsIntersection = new LinkedHashSet<>(keyGroups);
+            groupsIntersection.retainAll(primaryGroups);
+            if (groupsIntersection.size() > 0)
+                throw exitWithError("ERROR: Group(s) " + groupsIntersection +
+                        " specified in both --groups and --primary-groups arguments!");
+            LinkedHashSet<String> expectedSortingOrder = new LinkedHashSet<>();
+            List<String> actualSortingOrder = pass1Reader.getSortedGroups();
+            expectedSortingOrder.addAll(primaryGroups);
+            expectedSortingOrder.addAll(keyGroups);
+            int actualSortingOrderIndex = 0;
+            boolean orderIsCorrect = true;
+            for (String groupName : expectedSortingOrder) {
+                boolean groupIsFound = false;
+                while (orderIsCorrect && !groupIsFound) {
+                    if (actualSortingOrderIndex == actualSortingOrder.size()) {
+                        orderIsCorrect = false;
+                        break;
+                    }
+                    if (actualSortingOrder.get(actualSortingOrderIndex).equals(groupName))
+                        groupIsFound = true;
+                    else
+                        actualSortingOrderIndex++;
+                }
+            }
+            if (!orderIsCorrect)
+                throw exitWithError("ERROR: all groups used in correction must be sorted with sort command " +
+                        "in exactly the same order as they used in correct command. If --primary-groups argument " +
+                        "is used, primary groups must be sorted too and must be first in the list of groups in " +
+                        "--groups argument of sort command. Expected sorting order: " + expectedSortingOrder +
+                        ", actual sorting order found in the input: " + actualSortingOrder);
             List<String> correctedAgainGroups = keyGroups.stream().filter(gn -> pass1Reader.getCorrectedGroups()
                     .stream().anyMatch(gn::equals)).collect(Collectors.toList());
             if (!suppressWarnings && (correctedAgainGroups.size() != 0))
@@ -127,31 +158,15 @@ public final class CorrectBarcodesIO {
 
             if (primaryGroups.size() > 0) {
                 // secondary barcodes correction
-                validateInputGroups(pass1Reader, primaryGroups, false,
-                        "--primary-groups");
-                LinkedHashSet<String> unsortedPrimaryGroups = new LinkedHashSet<>(primaryGroups);
-                unsortedPrimaryGroups.removeAll(pass1Reader.getQuicklySortedGroups());
-                if (!suppressWarnings && (unsortedPrimaryGroups.size() > 0))
-                    System.err.println("WARNING: correcting MIF file with unsorted primary groups " +
-                            unsortedPrimaryGroups + "; correction will be slower and more memory consuming!");
-                SmartProgressReporter.startProgressReport((unsortedPrimaryGroups.size() > 0)
-                        ? "Reading input file into memory and counting barcodes" : "Counting barcodes",
-                        pass1Reader, System.err);
-                stats = performSecondaryBarcodesCorrection(
-                        getParsedReadOutputPort(pass1Reader, true), writer, excludedBarcodesWriter,
-                        unsortedPrimaryGroups.size() > 0);
+                SmartProgressReporter.startProgressReport("Counting barcodes", pass1Reader, System.err);
+                stats = performSecondaryBarcodesCorrection(getParsedReadOutputPort(
+                        pass1Reader, true), writer, excludedBarcodesWriter);
             } else {
                 // full file correction
-                LinkedHashSet<String> unsortedKeyGroups = new LinkedHashSet<>(keyGroups);
-                unsortedKeyGroups.removeAll(pass1Reader.getFullySortedGroups());
-                if (unsortedKeyGroups.size() > 0)
-                    System.err.println("WARNING: group(s) " + unsortedKeyGroups + " not sorted, but specified for " +
-                            "correction; correction will consume much more memory!");
                 SmartProgressReporter.startProgressReport("Counting barcodes and filling correction maps",
                         pass1Reader, System.err);
                 OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
-                        getParsedReadOutputPort(pass1Reader, true),
-                        unsortedKeyGroups.size() > 0, threads);
+                        getParsedReadOutputPort(pass1Reader, true));
                 CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
                         keyGroups, 0);
                 SmartProgressReporter.startProgressReport("Correcting barcodes", pass2Reader, System.err);
@@ -225,8 +240,7 @@ public final class CorrectBarcodesIO {
         LinkedHashSet<String> allCorrectedGroups = new LinkedHashSet<>(inputHeader.getCorrectedGroups());
         allCorrectedGroups.addAll(keyGroups);
         MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
-                new ArrayList<>(allCorrectedGroups), new ArrayList<>(), new ArrayList<>(),
-                inputHeader.getGroupEdges());
+                new ArrayList<>(allCorrectedGroups), new ArrayList<>(), inputHeader.getGroupEdges());
         if (excludedBarcodes)
             return (excludedBarcodesOutputFileName == null) ? null
                     : new MifWriter(excludedBarcodesOutputFileName, outputHeader);
@@ -240,40 +254,32 @@ public final class CorrectBarcodesIO {
      *
      * @param inputPort     port with parsed reads for input file (in case of full file correction)
      *                      or current cluster (in case of secondary barcodes correction)
-     * @param unsortedInput true if input is unsorted, so clusters cannot be created in lazy take() function
-     * @param threads       number of threads specified in command line or 1 if multi-threading is already
-     *                      used in outer port
      * @return              output port with quality preprocessor results
      */
     private OutputPort<CorrectionQualityPreprocessingResult> getPreprocessingResultOutputPort(
-            OutputPort<ParsedRead> inputPort, boolean unsortedInput, int threads) {
+            OutputPort<ParsedRead> inputPort) {
         OutputPort<CorrectionQualityPreprocessingResult> correctionPreprocessorPort;
-        if (!disableBarcodesQuality && unsortedInput) {
-            // read barcodes from the entire input into memory to create clusters
-            // keys: group names and values; values: created clusters
-            Map<LinkedHashMap<String, NucleotideSequence>, CorrectionCluster> allClusters = new HashMap<>();
-            AtomicLong orderedPortIndex = new AtomicLong(0);
-            for (ParsedRead parsedRead : CUtils.it(inputPort)) {
-                LinkedHashMap<String, NucleotideSequence> groups = extractKeyGroups(parsedRead);
-                allClusters.computeIfAbsent(groups,
-                        g -> new CorrectionCluster(orderedPortIndex.getAndIncrement()));
-                allClusters.get(groups).groupValues.add(extractGroupValues(parsedRead));
-            }
-            OutputPort<CorrectionCluster> clusterOutputPort = new OutputPort<CorrectionCluster>() {
-                Iterator<CorrectionCluster> clusters = allClusters.values().iterator();
+        if (!disableBarcodesQuality) {
+            // all groups are sorted; we can add input reads to the cluster while their group values are the same
+            correctionPreprocessorPort = new OutputPort<CorrectionQualityPreprocessingResult>() {
+                LinkedHashMap<String, NSequenceWithQuality> previousGroups = null;
+                int currentCounter = 0;
+                boolean finished = false;
 
                 @Override
-                public synchronized CorrectionCluster take() {
-                    if (!clusters.hasNext())
+                public CorrectionQualityPreprocessingResult take() {
+                    if (finished)
                         return null;
-                    return clusters.next();
+                    CorrectionQualityPreprocessingResult preparedResult = null;
+                    while (preparedResult == null) {
+
+                    }
+
+                    return preparedResult;
                 }
             };
-            OutputPort<CorrectionQualityPreprocessingResult> unorderedPort = new ParallelProcessor<>(clusterOutputPort,
-                    new CorrectionQualityPreprocessor(), threads);
-            correctionPreprocessorPort = new OrderedOutputPort<>(unorderedPort, result -> result.orderedPortIndex);
-        } else if (!disableBarcodesQuality) {
-            // all groups are sorted; we can add input reads to the cluster while their group values are the same
+
+
             OutputPort<CorrectionCluster> clusterOutputPort = new OutputPort<CorrectionCluster>() {
                 LinkedHashMap<String, NucleotideSequence> previousGroups = null;
                 CorrectionCluster currentCluster = new CorrectionCluster(0);
@@ -311,21 +317,6 @@ public final class CorrectBarcodesIO {
             OutputPort<CorrectionQualityPreprocessingResult> unorderedPort = new ParallelProcessor<>(clusterOutputPort,
                     new CorrectionQualityPreprocessor(), threads);
             correctionPreprocessorPort = new OrderedOutputPort<>(unorderedPort, result -> result.orderedPortIndex);
-        } else if (unsortedInput) {
-            // count all barcodes without calculating quality
-            TObjectIntHashMap<LinkedHashMap<String, NSequenceWithQuality>> allCounters = new TObjectIntHashMap<>();
-            for (ParsedRead parsedRead : CUtils.it(inputPort)) {
-                LinkedHashMap<String, NSequenceWithQuality> groups = extractKeyGroupsWithMaxQuality(parsedRead);
-                allCounters.adjustOrPutValue(groups, 1, 1);
-            }
-            correctionPreprocessorPort = new OutputPort<CorrectionQualityPreprocessingResult>() {
-                TObjectIntIterator<LinkedHashMap<String, NSequenceWithQuality>> counter = allCounters.iterator();
-
-                @Override
-                public CorrectionQualityPreprocessingResult take() {
-                    return new CorrectionQualityPreprocessingResult(counter.key(), counter.value(), 0);
-                }
-            };
         } else {
             // all groups are sorted; convert clusters to preprocessing results with maximal quality
             correctionPreprocessorPort = new OutputPort<CorrectionQualityPreprocessingResult>() {
@@ -415,17 +406,6 @@ public final class CorrectBarcodesIO {
         };
     }
 
-    private OutputPort<ParsedRead> getParsedReadPortForCluster(List<ParsedRead> currentCluster) {
-        return new OutputPort<ParsedRead>() {
-            int currentIndex = 0;
-
-            @Override
-            public ParsedRead take() {
-                return (currentIndex == currentCluster.size()) ? null : currentCluster.get(currentIndex++);
-            }
-        };
-    }
-
     private LinkedHashMap<String, NucleotideSequence> extractKeyGroups(ParsedRead parsedRead) {
         LinkedHashMap<String, NucleotideSequence> extractedKeyGroups = new LinkedHashMap<>();
         for (String keyGroup : keyGroups)
@@ -461,74 +441,48 @@ public final class CorrectBarcodesIO {
         OutputPort<PrimaryBarcodeCluster> clusterOutputPort;
         AtomicLong orderedPortIndex = new AtomicLong(0);
 
-        if (unsortedInput) {
-            // keys: primary barcodes values; values: all reads that have this combination of barcodes values
-            HashMap<LinkedHashMap<String, NucleotideSequence>, PrimaryBarcodeCluster> allClusters = new HashMap<>();
+        // TODO: remake for completely sorted input
+        clusterOutputPort = new OutputPort<PrimaryBarcodeCluster>() {
+            LinkedHashMap<String, NucleotideSequence> previousGroups = null;
+            PrimaryBarcodeCluster currentCluster = new PrimaryBarcodeCluster(new FillableListParsedReadPort(),
+                    orderedPortIndex.getAndIncrement());
+            boolean correctionStarted = false;
+            boolean finished = false;
 
-            for (ParsedRead parsedRead : CUtils.it(inputPort)) {
-                LinkedHashMap<String, NucleotideSequence> primaryGroups = extractPrimaryGroups(parsedRead);
-                allClusters.putIfAbsent(primaryGroups, new PrimaryBarcodeCluster(
-                        new ArrayList<>(), orderedPortIndex.getAndIncrement()));
-                allClusters.get(primaryGroups).parsedReads.add(parsedRead);
-            }
-
-            clusterOutputPort = new OutputPort<PrimaryBarcodeCluster>() {
-                Iterator<PrimaryBarcodeCluster> clusters = allClusters.values().iterator();
-                boolean correctionStarted = false;
-
-                @Override
-                public synchronized PrimaryBarcodeCluster take() {
-                    if (!correctionStarted) {
-                        SmartProgressReporter.startProgressReport("Correcting barcodes", writer, System.err);
-                        correctionStarted = true;
-                    }
-                    if (!clusters.hasNext())
-                        return null;
-                    return clusters.next();
+            @Override
+            public synchronized PrimaryBarcodeCluster take() {
+                if (!correctionStarted) {
+                    SmartProgressReporter.startProgressReport("Correcting barcodes", writer, System.err);
+                    correctionStarted = true;
                 }
-            };
-        } else {
-            clusterOutputPort = new OutputPort<PrimaryBarcodeCluster>() {
-                LinkedHashMap<String, NucleotideSequence> previousGroups = null;
-                PrimaryBarcodeCluster currentCluster = new PrimaryBarcodeCluster(new ArrayList<>(),
-                        orderedPortIndex.getAndIncrement());
-                boolean correctionStarted = false;
-                boolean finished = false;
-
-                @Override
-                public synchronized PrimaryBarcodeCluster take() {
-                    if (!correctionStarted) {
-                        SmartProgressReporter.startProgressReport("Correcting barcodes", writer, System.err);
-                        correctionStarted = true;
-                    }
-                    if (finished)
-                        return null;
-                    PrimaryBarcodeCluster preparedCluster = null;
-                    while (preparedCluster == null) {
-                        ParsedRead parsedRead = inputPort.take();
-                        if (parsedRead != null) {
-                            LinkedHashMap<String, NucleotideSequence> currentGroups = extractPrimaryGroups(parsedRead);
-                            if (!currentGroups.equals(previousGroups)) {
-                                if (previousGroups != null) {
-                                    preparedCluster = currentCluster;
-                                    currentCluster = new PrimaryBarcodeCluster(new ArrayList<>(),
-                                            orderedPortIndex.getAndIncrement());
-                                }
-                                previousGroups = currentGroups;
+                if (finished)
+                    return null;
+                PrimaryBarcodeCluster preparedCluster = null;
+                while (preparedCluster == null) {
+                    ParsedRead parsedRead = inputPort.take();
+                    if (parsedRead != null) {
+                        LinkedHashMap<String, NucleotideSequence> currentGroups = extractPrimaryGroups(parsedRead);
+                        if (!currentGroups.equals(previousGroups)) {
+                            if (previousGroups != null) {
+                                preparedCluster = currentCluster;
+                                currentCluster = new PrimaryBarcodeCluster(new FillableListParsedReadPort(),
+                                        orderedPortIndex.getAndIncrement());
                             }
-                            currentCluster.parsedReads.add(parsedRead);
-                        } else {
-                            finished = true;
-                            if (previousGroups != null)
-                                return currentCluster;
-                            else
-                                return null;
+                            previousGroups = currentGroups;
                         }
+                        ((FillableListParsedReadPort)(currentCluster.parsedReadOutputPort)).fillableList.
+                                add(parsedRead);
+                    } else {
+                        finished = true;
+                        if (previousGroups != null)
+                            return currentCluster;
+                        else
+                            return null;
                     }
-                    return preparedCluster;
                 }
-            };
-        }
+                return preparedCluster;
+            }
+        };
 
         long correctedReads = 0;
         long excludedReads = 0;
@@ -549,7 +503,11 @@ public final class CorrectBarcodesIO {
         @Override
         public ProcessedPrimaryBarcodeCluster process(PrimaryBarcodeCluster primaryBarcodeCluster) {
             OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
-                    getParsedReadOutputPort(primaryBarcodeCluster.parsedReads), true, 1);
+                    primaryBarcodeCluster.parsedReadOutputPort, true, 1);
+            // if we saved all reads in memory, use them as raw reads source
+            List<ParsedRead> savedReads = (primaryBarcodeCluster.parsedReadOutputPort
+                    instanceof FillableListParsedReadPort)
+                    ? ((FillableListParsedReadPort)(primaryBarcodeCluster.parsedReadOutputPort)).fillableList : null;
             return new ProcessedPrimaryBarcodeCluster(primaryBarcodeCluster.parsedReads,
                     correctionAlgorithms.prepareCorrectionData(preprocessorPort, keyGroups,
                             primaryBarcodeCluster.orderedPortIndex));
@@ -563,6 +521,16 @@ public final class CorrectBarcodesIO {
         ProcessedPrimaryBarcodeCluster(List<ParsedRead> parsedReads, CorrectionData correctionData) {
             this.parsedReads = parsedReads;
             this.correctionData = correctionData;
+        }
+    }
+
+    private static class FillableListParsedReadPort implements OutputPort<ParsedRead> {
+        final List<ParsedRead> fillableList = new ArrayList<>();
+        int currentIndex = 0;
+
+        @Override
+        public ParsedRead take() {
+            return (currentIndex == fillableList.size()) ? null : fillableList.get(currentIndex++);
         }
     }
 }

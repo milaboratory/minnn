@@ -43,7 +43,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
@@ -57,24 +56,20 @@ public final class SorterIO {
     private final String inputFileName;
     private final String outputFileName;
     private final List<String> sortGroupNames;
-    private final boolean quick;
     private final int chunkSize;
-    private final boolean suppressWarnings;
     private final String reportFileName;
     private final String jsonReportFileName;
     private final File tmpFile;
 
     public SorterIO(
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
-            List<String> sortGroupNames, boolean quick, int chunkSize, boolean suppressWarnings,
-            String reportFileName, String jsonReportFileName, String tmpFile) {
+            List<String> sortGroupNames, int chunkSize, String reportFileName, String jsonReportFileName,
+            String tmpFile) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.sortGroupNames = sortGroupNames;
-        this.quick = quick;
         this.chunkSize = (chunkSize == -1) ? estimateChunkSize() : chunkSize;
-        this.suppressWarnings = suppressWarnings;
         this.reportFileName = reportFileName;
         this.jsonReportFileName = jsonReportFileName;
         this.tmpFile = (tmpFile != null) ? new File(tmpFile) : TempFileManager.getTempFile((outputFileName == null)
@@ -88,12 +83,7 @@ public final class SorterIO {
              MifWriter writer = createWriter(reader.getHeader())) {
             validateInputGroups(reader, sortGroupNames, true, "--groups");
             SmartProgressReporter.startProgressReport("Reading", reader, System.err);
-            List<String> notCorrectedGroups = sortGroupNames.stream().filter(gn -> reader.getCorrectedGroups().stream()
-                    .noneMatch(gn::equals)).collect(Collectors.toList());
-            if (!suppressWarnings && quick && (notCorrectedGroups.size() != 0))
-                System.err.println("WARNING: group(s) " + notCorrectedGroups + " not corrected before quick sorting!");
-            OutputPortCloseable<ParsedRead> sorted = Sorter.sort(reader,
-                    quick ? new ParsedReadQuickComparator() : new ParsedReadFullComparator(), chunkSize,
+            OutputPortCloseable<ParsedRead> sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
                     new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);
             SmartProgressReporter.startProgressReport("Writing", writer, System.err);
             for (ParsedRead parsedRead : CUtils.it(sorted)) {
@@ -122,9 +112,6 @@ public final class SorterIO {
             reportFileHeader.append("Output is to stdout\n");
         else
             reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
-        if (quick)
-            reportFileHeader
-                    .append("Quick sorting performed: reads with wildcards in groups were not moved to the end\n");
         reportFileHeader.append("Sorted groups: ").append(sortGroupNames).append('\n');
 
         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -135,7 +122,6 @@ public final class SorterIO {
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("sortGroupNames", sortGroupNames);
-        jsonReportData.put("quick", quick);
         jsonReportData.put("elapsedTime", elapsedTime);
         jsonReportData.put("totalReads", totalReads);
         jsonReportData.put("chunkSize", chunkSize);
@@ -150,8 +136,7 @@ public final class SorterIO {
 
     private MifWriter createWriter(MifHeader inputHeader) throws IOException {
         MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
-                inputHeader.getCorrectedGroups(), new ArrayList<>(sortGroupNames),
-                quick ? new ArrayList<>() : new ArrayList<>(sortGroupNames), inputHeader.getGroupEdges());
+                inputHeader.getCorrectedGroups(), new ArrayList<>(sortGroupNames), inputHeader.getGroupEdges());
         return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
                 : new MifWriter(outputFileName, outputHeader);
     }
@@ -168,28 +153,8 @@ public final class SorterIO {
         return (int)(Math.max(DEFAULT_SORT_MIN_CHUNK_SIZE, Math.min(DEFAULT_SORT_MAX_CHUNK_SIZE, chunkSize)));
     }
 
-    private class ParsedReadQuickComparator implements Comparator<ParsedRead> {
-        @Override
-        public int compare(ParsedRead parsedRead1, ParsedRead parsedRead2) {
-            for (String groupName : sortGroupNames) {
-                NSequenceWithQuality read1Value = parsedRead1.getBestMatch().getGroupValue(groupName);
-                NSequenceWithQuality read2Value = parsedRead2.getBestMatch().getGroupValue(groupName);
-                if ((read1Value == null) && (read2Value != null))
-                    return -1;
-                else if ((read1Value != null) && (read2Value == null))
-                    return 1;
-                else if (read1Value != null) {
-                    int compareValue = read1Value.getSequence().compareTo(read2Value.getSequence());
-                    if (compareValue != 0)
-                        return compareValue;
-                }
-            }
-            return 0;
-        }
-    }
-
     // comparator that moves reads with wildcards in any group to the end
-    private class ParsedReadFullComparator implements Comparator<ParsedRead> {
+    private class ParsedReadComparator implements Comparator<ParsedRead> {
         @Override
         public int compare(ParsedRead parsedRead1, ParsedRead parsedRead2) {
             boolean firstContainsWildcards = false;

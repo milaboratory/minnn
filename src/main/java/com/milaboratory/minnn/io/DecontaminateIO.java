@@ -138,8 +138,7 @@ public final class DecontaminateIO {
 
     private MifWriter createWriter(MifHeader inputHeader, boolean excludedBarcodes) throws IOException {
         MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
-                inputHeader.getCorrectedGroups(), inputHeader.getQuicklySortedGroups(),
-                inputHeader.getFullySortedGroups(), inputHeader.getGroupEdges());
+                inputHeader.getCorrectedGroups(), inputHeader.getSortedGroups(), inputHeader.getGroupEdges());
         if (excludedBarcodes)
             return (excludedBarcodesOutputFileName == null) ? null
                     : new MifWriter(excludedBarcodesOutputFileName, outputHeader);

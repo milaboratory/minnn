@@ -55,7 +55,7 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
     @Override
     public void run1() {
         SorterIO sorterIO = new SorterIO(getFullPipelineConfiguration(), inputFileName, outputFileName,
-                sortGroupNames, quick, chunkSize, quiet, reportFileName, jsonReportFileName, tmpFile);
+                sortGroupNames, chunkSize, reportFileName, jsonReportFileName, tmpFile);
         sorterIO.go();
     }
 
@@ -96,7 +96,7 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
 
     @Override
     public ActionConfiguration getConfiguration() {
-        return new SortActionConfiguration(new SortActionConfiguration.SortActionParameters(sortGroupNames, quick,
+        return new SortActionConfiguration(new SortActionConfiguration.SortActionParameters(sortGroupNames,
                 chunkSize));
     }
 
@@ -123,13 +123,6 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
     @Option(description = OUT_FILE_OR_STDOUT,
             names = {"--output"})
     private String outputFileName = null;
-
-    @Option(description = "By default, reads with wildcards in any group will be moved to the end. With this option " +
-            "reads will be sorted without checking for wildcards. This is slightly faster, but quick sorting is not " +
-            "suitable before Correct action. In other cases (for example, before Consensus action) quick sorting " +
-            "can be used.",
-            names = {"-q", "--quick"})
-    private boolean quick = false;
 
     @Option(description = "Chunk size for sorter.",
             names = {"--chunk-size"})

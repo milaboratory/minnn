@@ -74,6 +74,7 @@ public final class MifToFastqIO {
         this.jsonReportFileName = jsonReportFileName;
     }
 
+    @SuppressWarnings("unchecked")
     public void go() {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;

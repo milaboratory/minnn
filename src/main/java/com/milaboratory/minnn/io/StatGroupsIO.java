@@ -81,14 +81,12 @@ public final class StatGroupsIO {
     public void go() {
         long startTime = System.currentTimeMillis();
         ArrayList<String> correctedGroups;
-        ArrayList<String> quicklySortedGroups;
-        ArrayList<String> fullySortedGroups;
+        ArrayList<String> sortedGroups;
 
         try (MifReader reader = createReader()) {
             validateInputGroups(reader, groupList, true, "--groups");
             correctedGroups = reader.getCorrectedGroups();
-            quicklySortedGroups = reader.getQuicklySortedGroups();
-            fullySortedGroups = reader.getFullySortedGroups();
+            sortedGroups = reader.getSortedGroups();
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Processing", reader, System.err);
@@ -153,13 +151,10 @@ public final class StatGroupsIO {
             report.append("Input MIF file is not corrected\n");
         else
             report.append("Groups ").append(correctedGroups).append(" in input MIF file are corrected\n");
-        if (quicklySortedGroups.size() == 0)
+        if (sortedGroups.size() == 0)
             report.append("Input MIF file is not sorted\n");
-        else if (fullySortedGroups.size() == 0)
-            report.append("Groups ").append(quicklySortedGroups).append(" in input MIF file are quickly sorted, " +
-                    "without moving groups with wildcards to the end\n");
         else
-            report.append("Groups ").append(fullySortedGroups).append(" in input MIF file are sorted\n");
+            report.append("Groups ").append(sortedGroups).append(" in input MIF file are sorted\n");
         report.append("Checked ").append(totalReads).append(" reads\n");
         long countedReads = table.stream().mapToLong(line -> line.count).sum();
         if (totalReads > 0)
@@ -171,8 +166,7 @@ public final class StatGroupsIO {
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("correctedGroups", correctedGroups);
-        jsonReportData.put("quicklySortedGroups", quicklySortedGroups);
-        jsonReportData.put("fullySortedGroups", fullySortedGroups);
+        jsonReportData.put("sortedGroups", sortedGroups);
         jsonReportData.put("elapsedTime", elapsedTime);
         jsonReportData.put("groupList", groupList);
         jsonReportData.put("countedReads", countedReads);

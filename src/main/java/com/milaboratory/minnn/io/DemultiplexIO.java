@@ -89,7 +89,7 @@ public final class DemultiplexIO {
         try (MifReader reader = new MifReader(inputFileName);
              PrintStream logWriter = new PrintStream(new FileOutputStream(logFileName))) {
             header = new MifHeader(pipelineConfiguration, reader.getNumberOfTargets(), reader.getCorrectedGroups(),
-                    reader.getQuicklySortedGroups(), reader.getFullySortedGroups(), reader.getGroupEdges());
+                    reader.getSortedGroups(), reader.getGroupEdges());
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Demultiplexing reads", reader, System.err);

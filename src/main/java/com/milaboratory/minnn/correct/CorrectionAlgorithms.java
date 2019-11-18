@@ -221,9 +221,7 @@ public final class CorrectionAlgorithms {
      * Perform correction using prepared data, then write corrected reads and reads that were filtered out.
      *
      * @param correctionData            all prepared data that is needed for correction and writing
-     * @param rawReadsPort              port with raw parsed reads to correct barcodes in them:
-     *                                  2nd pass MIF reader in case of full file correction,
-     *                                  or cluster's list iterator in case of secondary barcodes correction
+     * @param rawReadsPort              port (MIF reader) with raw parsed reads to correct barcodes in them
      * @param writer                    MIF writer for corrected reads
      * @param excludedBarcodesWriter    MIF writer for reads that were filtered out by barcodes count
      * @return                          correction stats: number of corrected reads and filtered out reads
@@ -234,7 +232,10 @@ public final class CorrectionAlgorithms {
         long correctedReads = 0;
         long excludedReads = 0;
 
-        for (ParsedRead parsedRead : CUtils.it(rawReadsPort)) {
+        for (int i = 0; i < correctionData.parsedReadsCount; i++) {
+            ParsedRead parsedRead = rawReadsPort.take();
+            if (parsedRead == null)
+                throw new IllegalStateException("pass2Reader returned less reads than pass1Reader!");
             CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead, correctionData);
             correctedReads += correctBarcodesResult.numCorrectedBarcodes;
             if (correctBarcodesResult.excluded) {

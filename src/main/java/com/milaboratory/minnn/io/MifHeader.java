@@ -37,19 +37,16 @@ public class MifHeader {
     private final PipelineConfiguration pipelineConfiguration;
     private final int numberOfTargets;
     private final ArrayList<String> correctedGroups;
-    private final ArrayList<String> quicklySortedGroups;
-    private final ArrayList<String> fullySortedGroups;
+    private final ArrayList<String> sortedGroups;
     private final ArrayList<GroupEdge> groupEdges;
 
-    public MifHeader(
-            PipelineConfiguration pipelineConfiguration, int numberOfTargets, ArrayList<String> correctedGroups,
-            ArrayList<String> quicklySortedGroups, ArrayList<String> fullySortedGroups,
-            ArrayList<GroupEdge> groupEdges) {
+    public MifHeader(PipelineConfiguration pipelineConfiguration, int numberOfTargets,
+                     ArrayList<String> correctedGroups, ArrayList<String> sortedGroups,
+                     ArrayList<GroupEdge> groupEdges) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.numberOfTargets = numberOfTargets;
         this.correctedGroups = correctedGroups;
-        this.quicklySortedGroups = quicklySortedGroups;
-        this.fullySortedGroups = fullySortedGroups;
+        this.sortedGroups = sortedGroups;
         this.groupEdges = groupEdges;
     }
 
@@ -65,12 +62,8 @@ public class MifHeader {
         return correctedGroups;
     }
 
-    public ArrayList<String> getQuicklySortedGroups() {
-        return quicklySortedGroups;
-    }
-
-    public ArrayList<String> getFullySortedGroups() {
-        return fullySortedGroups;
+    public ArrayList<String> getSortedGroups() {
+        return sortedGroups;
     }
 
     public ArrayList<GroupEdge> getGroupEdges() {
