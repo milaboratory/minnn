@@ -85,8 +85,6 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
         private float singleIndelProbability;
         private int maxUniqueBarcodes;
         private int minCount;
-        private boolean disableBarcodesQuality;
-        private boolean disableWildcardsCollapsing;
         private float wildcardsCollapsingMergeThreshold;
         private long inputReadsLimit;
         private int threads;
@@ -103,8 +101,6 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                 @JsonProperty("singleIndelProbability") float singleIndelProbability,
                 @JsonProperty("maxUniqueBarcodes") int maxUniqueBarcodes,
                 @JsonProperty("minCount") int minCount,
-                @JsonProperty("disableBarcodesQuality") boolean disableBarcodesQuality,
-                @JsonProperty("disableWildcardsCollapsing") boolean disableWildcardsCollapsing,
                 @JsonProperty("wildcardsCollapsingMergeThreshold") float wildcardsCollapsingMergeThreshold,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit,
                 @JsonProperty("threads") int threads) {
@@ -118,8 +114,6 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.singleIndelProbability = singleIndelProbability;
             this.maxUniqueBarcodes = maxUniqueBarcodes;
             this.minCount = minCount;
-            this.disableBarcodesQuality = disableBarcodesQuality;
-            this.disableWildcardsCollapsing = disableWildcardsCollapsing;
             this.wildcardsCollapsingMergeThreshold = wildcardsCollapsingMergeThreshold;
             this.inputReadsLimit = inputReadsLimit;
             this.threads = threads;
@@ -205,22 +199,6 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             this.minCount = minCount;
         }
 
-        public boolean isDisableBarcodesQuality() {
-            return disableBarcodesQuality;
-        }
-
-        public void setDisableBarcodesQuality(boolean disableBarcodesQuality) {
-            this.disableBarcodesQuality = disableBarcodesQuality;
-        }
-
-        public boolean isDisableWildcardsCollapsing() {
-            return disableWildcardsCollapsing;
-        }
-
-        public void setDisableWildcardsCollapsing(boolean disableWildcardsCollapsing) {
-            this.disableWildcardsCollapsing = disableWildcardsCollapsing;
-        }
-
         public float getWildcardsCollapsingMergeThreshold() {
             return wildcardsCollapsingMergeThreshold;
         }
@@ -258,8 +236,6 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
             if (Float.compare(that.singleIndelProbability, singleIndelProbability) != 0) return false;
             if (maxUniqueBarcodes != that.maxUniqueBarcodes) return false;
             if (minCount != that.minCount) return false;
-            if (disableBarcodesQuality != that.disableBarcodesQuality) return false;
-            if (disableWildcardsCollapsing != that.disableWildcardsCollapsing) return false;
             if (Float.compare(that.wildcardsCollapsingMergeThreshold, wildcardsCollapsingMergeThreshold) != 0)
                 return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
@@ -282,8 +258,6 @@ public final class CorrectActionConfiguration implements ActionConfiguration {
                     ? Float.floatToIntBits(singleIndelProbability) : 0);
             result = 31 * result + maxUniqueBarcodes;
             result = 31 * result + minCount;
-            result = 31 * result + (disableBarcodesQuality ? 1 : 0);
-            result = 31 * result + (disableWildcardsCollapsing ? 1 : 0);
             result = 31 * result + (wildcardsCollapsingMergeThreshold != +0.0f
                     ? Float.floatToIntBits(wildcardsCollapsingMergeThreshold) : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));

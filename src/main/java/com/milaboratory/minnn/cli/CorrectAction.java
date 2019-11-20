@@ -64,8 +64,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
                 new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability));
         CorrectBarcodesIO correctBarcodesIO = new CorrectBarcodesIO(getFullPipelineConfiguration(), inputFileName,
                 outputFileName, groupNames, primaryGroupNames, barcodeClusteringStrategyFactory, maxUniqueBarcodes,
-                minCount, excludedBarcodesOutputFileName, disableBarcodesQuality || quick,
-                disableWildcardsCollapsing || quick, wildcardsCollapsingMergeThreshold,
+                minCount, excludedBarcodesOutputFileName, wildcardsCollapsingMergeThreshold,
                 inputReadsLimit, quiet, threads, reportFileName, jsonReportFileName);
         correctBarcodesIO.go();
     }
@@ -112,9 +111,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
         return new CorrectActionConfiguration(new CorrectActionConfiguration.CorrectActionParameters(groupNames,
                 primaryGroupNames, maxErrorsShare, maxErrors, threshold, maxClusterDepth,
                 singleSubstitutionProbability, singleIndelProbability, maxUniqueBarcodes, minCount,
-                disableBarcodesQuality || quick,
-                disableWildcardsCollapsing || quick, wildcardsCollapsingMergeThreshold,
-                inputReadsLimit, threads));
+                wildcardsCollapsingMergeThreshold, inputReadsLimit, threads));
     }
 
     @Override
@@ -184,35 +181,17 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             names = {"--single-indel-probability"})
     private float singleIndelProbability = DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY;
 
-    @Option(description = "Maximal number of unique barcodes that will be included into output. Reads containing " +
-            "barcodes with biggest counts will be included, reads with barcodes with smaller counts will be " +
-            "excluded. Value 0 turns off this feature: if this argument is 0, all barcodes will be included.",
+    @Option(description = MAX_UNIQUE_BARCODES,
             names = {"--max-unique-barcodes"})
     private int maxUniqueBarcodes = 0;
 
-    @Option(description = "Barcodes with count less than specified will not be included in the output.",
+    @Option(description = MIN_COUNT,
             names = {"--min-count"})
     private int minCount = 0;
 
-    @Option(description = "Output file for reads with barcodes excluded by count. If not specified, reads with " +
-            "excluded barcodes will not be written anywhere.",
+    @Option(description = EXCLUDED_BARCODES_OUTPUT,
             names = {"--excluded-barcodes-output"})
     private String excludedBarcodesOutputFileName = null;
-
-    @Option(description = "Don't use quality for barcodes. It improves speed, but reduces correction precision.",
-            names = {"--disable-barcodes-quality"})
-    private boolean disableBarcodesQuality = false;
-
-    @Option(description = "Don't merge different barcodes that equal by wildcards (for example, AAAT and ANNT). " +
-            "It improves performance, but wildcards in barcodes are treated as different pure nucleotide letters.",
-            names = {"--disable-wildcards-collapsing"})
-    private boolean disableWildcardsCollapsing = false;
-
-    @Option(description = "This option works like both --disable-barcodes-quality and " +
-            "--disable-wildcards-collapsing. It us useful when barcodes correction is not needed, and command " +
-            "is run only to filter barcodes by count.",
-            names = {"-q", "--quick"})
-    private boolean quick = false;
 
     @Option(description = "On wildcards collapsing stage, when merging cluster of barcodes with pure letter in " +
             "a position and cluster of barcodes with wildcard in that position, clusters will be merged if " +
@@ -225,8 +204,8 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             names = {"-n", "--number-of-reads"})
     private long inputReadsLimit = 0;
 
-    @Option(description = "Number of threads for barcodes quality calculation. Not used if " +
-            "--disable-barcodes-quality option is present.",
+    @Option(description = "Number of threads for barcodes correction. Multi-threading is used only with " +
+            "--primary-groups argument: correction for different primary groups can be performed in parallel.",
             names = "--threads")
     private int threads = DEFAULT_THREADS;
 

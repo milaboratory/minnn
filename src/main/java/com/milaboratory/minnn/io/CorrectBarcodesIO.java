@@ -39,8 +39,6 @@ import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.minnn.correct.*;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.util.SmartProgressReporter;
-import gnu.trove.iterator.TObjectIntIterator;
-import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.io.IOException;
 import java.util.*;
@@ -65,8 +63,6 @@ public final class CorrectBarcodesIO {
     private final int maxUniqueBarcodes;
     private final int minCount;
     private final String excludedBarcodesOutputFileName;
-    private final boolean disableBarcodesQuality;
-    private final boolean disableWildcardsCollapsing;
     private final float wildcardsCollapsingMergeThreshold;
     private final long inputReadsLimit;
     private final boolean suppressWarnings;
@@ -81,13 +77,11 @@ public final class CorrectBarcodesIO {
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
             List<String> groupNames, List<String> primaryGroupNames,
             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, int maxUniqueBarcodes, int minCount,
-            String excludedBarcodesOutputFileName, boolean disableBarcodesQuality, boolean disableWildcardsCollapsing,
-            float wildcardsCollapsingMergeThreshold, long inputReadsLimit, boolean suppressWarnings, int threads,
-            String reportFileName, String jsonReportFileName) {
+            String excludedBarcodesOutputFileName, float wildcardsCollapsingMergeThreshold, long inputReadsLimit,
+            boolean suppressWarnings, int threads, String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.correctionAlgorithms = new CorrectionAlgorithms(barcodeClusteringStrategyFactory,
-                maxUniqueBarcodes, minCount, disableBarcodesQuality, disableWildcardsCollapsing,
-                wildcardsCollapsingMergeThreshold);
+                maxUniqueBarcodes, minCount, wildcardsCollapsingMergeThreshold);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.keyGroups = new LinkedHashSet<>(groupNames);
@@ -96,8 +90,6 @@ public final class CorrectBarcodesIO {
         this.maxUniqueBarcodes = maxUniqueBarcodes;
         this.minCount = minCount;
         this.excludedBarcodesOutputFileName = excludedBarcodesOutputFileName;
-        this.disableBarcodesQuality = disableBarcodesQuality;
-        this.disableWildcardsCollapsing = disableWildcardsCollapsing;
         this.wildcardsCollapsingMergeThreshold = wildcardsCollapsingMergeThreshold;
         this.inputReadsLimit = inputReadsLimit;
         this.suppressWarnings = suppressWarnings;

@@ -61,6 +61,13 @@ class CommonDescriptions {
             "--max-errors-share and --max-errors parameters, and set the other one to -1. Negative value means that " +
             "this max errors calculation method is disabled. If both methods are enabled, the lowest calculated " +
             "value of max errors is used.";
+    static final String MAX_UNIQUE_BARCODES = "Maximal number of unique barcodes that will be included into output. " +
+            "Reads containing barcodes with biggest counts will be included, reads with barcodes with smaller " +
+            "counts will be excluded. Value 0 turns off this feature: if this argument is 0, all barcodes will be " +
+            "included.";
+    static final String MIN_COUNT = "Barcodes with count less than specified will not be included in the output.";
+    static final String EXCLUDED_BARCODES_OUTPUT = "Output file for reads with barcodes excluded by count. " +
+            "If not specified, reads with excluded barcodes will not be written anywhere.";
     static final String CONSENSUS_GROUP_LIST = "List of groups that represent barcodes. All these groups must be " +
             "sorted with \"sort\" action.";
     static final String SKIPPED_FRACTION_TO_REPEAT = "Fraction of reads skipped by score threshold that must start " +
