@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
 
 public final class FilterActionConfiguration implements ActionConfiguration {
-    private static final String FILTER_ACTION_VERSION_ID = "2";
+    private static final String FILTER_ACTION_VERSION_ID = "3";
     private final FilterActionParameters filterParameters;
 
     @JsonCreator
@@ -77,6 +77,7 @@ public final class FilterActionConfiguration implements ActionConfiguration {
     public static final class FilterActionParameters implements java.io.Serializable {
         private String filterQuery;
         private LinkedHashMap<String, String> barcodeWhitelistFiles;
+        private LinkedHashMap<String, String> barcodeWhitelistPatternFiles;
         private boolean fairSorting;
         private long inputReadsLimit;
 
@@ -84,6 +85,8 @@ public final class FilterActionConfiguration implements ActionConfiguration {
         public FilterActionParameters(
                 @JsonProperty("filterQuery") String filterQuery,
                 @JsonProperty("barcodeWhitelistFiles") LinkedHashMap<String, String> barcodeWhitelistFiles,
+                @JsonProperty("barcodeWhitelistPatternFiles")
+                        LinkedHashMap<String, String> barcodeWhitelistPatternFiles,
                 @JsonProperty("fairSorting") boolean fairSorting,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
             this.filterQuery = filterQuery;
@@ -106,6 +109,14 @@ public final class FilterActionConfiguration implements ActionConfiguration {
 
         public void setBarcodeWhitelistFiles(LinkedHashMap<String, String> barcodeWhitelistFiles) {
             this.barcodeWhitelistFiles = barcodeWhitelistFiles;
+        }
+
+        public LinkedHashMap<String, String> getBarcodeWhitelistPatternFiles() {
+            return barcodeWhitelistPatternFiles;
+        }
+
+        public void setBarcodeWhitelistPatternFiles(LinkedHashMap<String, String> barcodeWhitelistPatternFiles) {
+            this.barcodeWhitelistPatternFiles = barcodeWhitelistPatternFiles;
         }
 
         public boolean isFairSorting() {
@@ -132,13 +143,17 @@ public final class FilterActionConfiguration implements ActionConfiguration {
             if (fairSorting != that.fairSorting) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
             if (!Objects.equals(filterQuery, that.filterQuery)) return false;
-            return Objects.equals(barcodeWhitelistFiles, that.barcodeWhitelistFiles);
+            if (!Objects.equals(barcodeWhitelistFiles, that.barcodeWhitelistFiles))
+                return false;
+            return Objects.equals(barcodeWhitelistPatternFiles, that.barcodeWhitelistPatternFiles);
         }
 
         @Override
         public int hashCode() {
             int result = filterQuery != null ? filterQuery.hashCode() : 0;
             result = 31 * result + (barcodeWhitelistFiles != null ? barcodeWhitelistFiles.hashCode() : 0);
+            result = 31 * result + (barcodeWhitelistPatternFiles != null
+                    ? barcodeWhitelistPatternFiles.hashCode() : 0);
             result = 31 * result + (fairSorting ? 1 : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;

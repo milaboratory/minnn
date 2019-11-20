@@ -139,14 +139,19 @@ public class FilterActionTest {
         String inputFile = getExampleMif("twosided");
         String outputFile1 = TEMP_DIR + "filterOutput1.mif";
         String outputFile2 = TEMP_DIR + "filterOutput2.mif";
-        String whitelist1 = EXAMPLES_PATH + "filter_whitelists/whitelist1.txt";
-        String whitelist2 = EXAMPLES_PATH + "filter_whitelists/whitelist2.txt";
+        String whitelist1 = EXAMPLES_PATH + "filter_whitelists/whitelist-1.txt";
+        String whitelistPatterns1 = EXAMPLES_PATH + "filter_whitelists/whitelist-patterns-1.txt";
+        String whitelistPatterns2 = EXAMPLES_PATH + "filter_whitelists/whitelist-patterns-2.txt";
+        assertOutputContains(true, "23092", () -> callableExec("filter -f --input " + inputFile
+                + " --output " + outputFile1 + " --whitelist G1=" + whitelist1));
         for (String fairSorting : new String[] { "", " --fair-sorting" }) {
             assertOutputContains(true, "276", () -> callableExec("filter -f" + fairSorting
-                    + " --input " + inputFile + " --output " + outputFile1 + " --whitelist G1=" + whitelist1));
+                    + " --input " + inputFile + " --output " + outputFile1
+                    + " --whitelist-patterns G1=" + whitelistPatterns1));
             assertOutputContains(true, "matched 1 reads", () -> callableExec("filter -f"
                     + fairSorting + " --input " + inputFile + " --output " + outputFile2
-                    + " --whitelist R2=" + whitelist2 + " --whitelist G1=" + whitelist1 + " \"G2~'nnc'|Len(G4)=5\""));
+                    + " --whitelist-patterns R2=" + whitelistPatterns2
+                    + " --whitelist-patterns G1=" + whitelistPatterns1 + " \"G2~'nnc'|Len(G4)=5\""));
         }
 
         try {
