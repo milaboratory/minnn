@@ -423,8 +423,7 @@ public final class CorrectionAlgorithms {
                 Clustering<SequenceCounter, SequenceWithQualityForClustering> clustering = new Clustering<>(
                         groupData.getSequenceCounters(), sequenceCounterExtractor,
                         barcodeClusteringStrategyFactory.createStrategy(
-                                (float)(groupData.lengthSum) / groupData.parsedReadsCount),
-                        MutationGuideForClustering.INSTANCE);
+                                (float)(groupData.lengthSum) / groupData.parsedReadsCount));
                 if (reportProgress)
                     SmartProgressReporter.startProgressReport("Clustering barcodes in group "
                                     + groupData.groupName, clustering, System.err);

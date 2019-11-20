@@ -72,14 +72,44 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
                 throw exitWithError("Filter query not parsed: " + filterQuery);
             readFilters.add(parsedReadFilter);
         }
-        if (barcodeWhitelistFiles != null)
-            for (HashMap.Entry<String, String> entry : barcodeWhitelistFiles.entrySet()) {
-                List<String> currentWhitelist = readLines(entry.getValue());
-                ReadFilter currentReadFilter = new OrReadFilter(currentWhitelist.stream()
-                        .map(query -> new PatternReadFilter(entry.getKey(), query, fairSorting))
-                        .collect(Collectors.toList()));
-                readFilters.add(currentReadFilter);
+        if ((barcodeWhitelistFiles != null) || (barcodeWhitelistPatternFiles != null)) {
+            HashMap<String, List<ReadFilter>> whitelistsForGroups = new HashMap<>();
+            if (barcodeWhitelistFiles != null) {
+                for (HashMap.Entry<String, String> entry : barcodeWhitelistFiles.entrySet()) {
+                    String groupName = entry.getKey();
+                    List<String> currentWhitelist = readLines(entry.getValue());
+                    ReadFilter currentFilter = new WhitelistReadFilter(groupName, currentWhitelist);
+                    if (whitelistsForGroups.containsKey(groupName))
+                        whitelistsForGroups.get(groupName).add(currentFilter);
+                    else {
+                        List<ReadFilter> whitelistsForCurrentGroup = new ArrayList<>();
+                        whitelistsForCurrentGroup.add(currentFilter);
+                        whitelistsForGroups.put(groupName, whitelistsForCurrentGroup);
+                    }
+                }
             }
+            if (barcodeWhitelistPatternFiles != null) {
+                for (HashMap.Entry<String, String> entry : barcodeWhitelistPatternFiles.entrySet()) {
+                    String groupName = entry.getKey();
+                    List<String> currentWhitelist = readLines(entry.getValue());
+                    // TODO: change OrReadFilter to OrOperator
+                    ReadFilter currentFilter = new OrReadFilter(currentWhitelist.stream()
+                            .map(query -> new PatternReadFilter(entry.getKey(), query, fairSorting))
+                            .collect(Collectors.toList()));
+                    if (whitelistsForGroups.containsKey(groupName))
+                        whitelistsForGroups.get(groupName).add(currentFilter);
+                    else {
+                        List<ReadFilter> whitelistsForCurrentGroup = new ArrayList<>();
+                        whitelistsForCurrentGroup.add(currentFilter);
+                        whitelistsForGroups.put(groupName, whitelistsForCurrentGroup);
+                    }
+                }
+            }
+            for (List<ReadFilter> whitelistsForGroup : whitelistsForGroups.values()) {
+                readFilters.add((whitelistsForGroup.size() == 1) ? whitelistsForGroup.get(0)
+                        : new OrReadFilter(whitelistsForGroup));
+            }
+        }
         ReadFilter finalReadFilter = (readFilters.size() == 1) ? readFilters.get(0) : new AndReadFilter(readFilters);
         FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), finalReadFilter,
                 (filterQueryList == null) ? null : String.join("", filterQueryList),
@@ -94,7 +124,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Override
     public void validate() {
-        if ((filterQueryList == null) && (barcodeWhitelistFiles == null))
+        if ((filterQueryList == null) && (barcodeWhitelistFiles == null) && (barcodeWhitelistPatternFiles == null))
             throwValidationException("Filter query is not specified!");
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
     }
@@ -106,6 +136,8 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
             inputFileNames.add(inputFileName);
         if (barcodeWhitelistFiles != null)
             inputFileNames.addAll(barcodeWhitelistFiles.values());
+        if (barcodeWhitelistPatternFiles != null)
+            inputFileNames.addAll(barcodeWhitelistPatternFiles.values());
         return inputFileNames;
     }
 
@@ -130,7 +162,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
     public ActionConfiguration getConfiguration() {
         return new FilterActionConfiguration(new FilterActionConfiguration.FilterActionParameters(
                 (filterQueryList == null) ? null : String.join("", filterQueryList),
-                barcodeWhitelistFiles, fairSorting, inputReadsLimit));
+                barcodeWhitelistFiles, barcodeWhitelistPatternFiles, fairSorting, inputReadsLimit));
     }
 
     @Override
@@ -156,13 +188,23 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
     private String outputFileName = null;
 
     @Option(description = "Barcode Whitelist Options: Barcode names and names of corresponding files with " +
-            "whitelists. Whitelist files must contain barcode values or queries with MiNNN pattern syntax, " +
-            "one value or query on the line. This is more convenient way for specifying OR operator when there are " +
-            "many operands. So, for example, instead of using \"BC1~'AAA' | BC1~'GGG' | BC1~'CCC'\" query, option " +
-            "--whitelist BC1=options_BC1.txt can be used, where options_BC1.txt must contain AAA, GGG and CCC lines.",
+            "whitelists. Whitelist files must contain barcode values, one value on the line. For example, " +
+            "--whitelist BC1=options_BC1.txt can be used, where options_BC1.txt contains AAA, GGG and CCC lines: " +
+            "they are whitelist options for barcode BC1.",
             names = {"--whitelist"},
             arity = "1")
     private LinkedHashMap<String, String> barcodeWhitelistFiles = null;
+
+    @Option(description = "Barcode Whitelist Pattern Options: Barcode names and names of corresponding files with " +
+            "whitelists. Whitelist files must contain barcode values or queries with MiNNN pattern syntax, " +
+            "one value or query on the line. This is more convenient way for specifying OR operator when there are " +
+            "many operands. So, for example, instead of using \"BC1~'^AAA' | BC1~'^GGG' | BC1~'^CCC$'\" query, " +
+            "option --whitelist-patterns BC2=options_BC2.txt can be used, where options_BC2.txt must contain " +
+            "^AAA, ^GGG and ^CCC$ lines. If multiple --whitelist and --whitelist-patterns options specified for " +
+            "the same barcode, then barcode is considered matching if at least 1 whitelist contains it.",
+            names = {"--whitelist-patterns"},
+            arity = "1")
+    private LinkedHashMap<String, String> barcodeWhitelistPatternFiles = null;
 
     @Option(description = FAIR_SORTING,
             names = {"--fair-sorting"})

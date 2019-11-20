@@ -35,6 +35,7 @@ import com.milaboratory.core.mutations.Mutation;
 import com.milaboratory.core.mutations.MutationType;
 import com.milaboratory.core.mutations.Mutations;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.core.tree.MutationGuide;
 import com.milaboratory.core.tree.NeighborhoodIterator;
 import com.milaboratory.core.tree.TreeSearchParameters;
 import com.milaboratory.minnn.stat.SimpleMutationProbability;
@@ -95,6 +96,11 @@ final class BarcodeClusteringStrategy
     @Override
     public TreeSearchParameters getSearchParameters(Cluster<SequenceCounter> cluster) {
         return treeSearchParameters;
+    }
+
+    @Override
+    public MutationGuide<SequenceWithQualityForClustering> getMutationGuide(Cluster<SequenceCounter> cluster) {
+        return MutationGuideForClustering.INSTANCE;
     }
 
     @Override
