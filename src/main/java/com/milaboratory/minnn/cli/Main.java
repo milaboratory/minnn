@@ -46,6 +46,7 @@ import static com.milaboratory.minnn.cli.Defaults.APP_NAME;
 import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
+import static com.milaboratory.minnn.cli.FilterByCountAction.FILTER_BY_COUNT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.GenerateDocsAction.GENERATE_DOCS_ACTION_NAME;
 import static com.milaboratory.minnn.cli.MifToFastqAction.MIF_TO_FASTQ_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ReportAction.REPORT_ACTION_NAME;
@@ -133,6 +134,7 @@ public final class Main {
                 .addSubcommand(STAT_POSITIONS_ACTION_NAME, StatPositionsAction.class)
                 .addSubcommand(SORT_ACTION_NAME, SortAction.class)
                 .addSubcommand(CORRECT_ACTION_NAME, CorrectAction.class)
+                .addSubcommand(FILTER_BY_COUNT_ACTION_NAME, FilterByCountAction.class)
                 .addSubcommand(CONSENSUS_SINGLE_CELL_ACTION_NAME, ConsensusSingleCellAction.class)
                 .addSubcommand(CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME, ConsensusDoubleMultiAlignAction.class)
                 .addSubcommand(MIF_TO_FASTQ_ACTION_NAME, MifToFastqAction.class)

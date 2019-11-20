@@ -337,7 +337,7 @@ public final class CorrectBarcodesIO {
                             if (!currentGroups.equals(previousGroups)) {
                                 if (previousGroups != null) {
                                     preparedResult = new CorrectionQualityPreprocessingResult(
-                                            previousGroups, currentCounter, 0);
+                                            previousGroups, currentCounter);
                                     currentCounter = 0;
                                 }
                                 previousGroups = currentGroups;

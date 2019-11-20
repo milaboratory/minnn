@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 public final class CorrectionData {
     final LinkedHashMap<String, CorrectionGroupData> keyGroupsData;
-    public final long orderedPortIndex;
     long parsedReadsCount = 0;
 
     public CorrectionData(
@@ -42,6 +41,5 @@ public final class CorrectionData {
         this.keyGroupsData = keyGroups.stream().collect(Collectors.toMap(
                 keyGroup -> keyGroup, keyGroup -> new CorrectionGroupData(disableBarcodesQuality, filterByCount),
                 (a, b) -> b, LinkedHashMap::new));
-        this.orderedPortIndex = orderedPortIndex;
     }
 }

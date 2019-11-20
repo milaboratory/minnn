@@ -26,24 +26,27 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.correct;
+package com.milaboratory.minnn.cli;
 
-import com.milaboratory.core.sequence.Wildcard;
-import com.milaboratory.core.tree.MutationGuide;
+import com.milaboratory.cli.ACommandWithSmartOverwrite;
+import picocli.CommandLine.*;
 
-import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
+import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.cli.FilterByCountAction.FILTER_BY_COUNT_ACTION_NAME;
+import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
+import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
 
-final class WildcardsMutationGuide implements MutationGuide<SequenceWithQualityForClustering> {
-    @Override
-    public boolean allowMutation(SequenceWithQualityForClustering reference, int position, byte type, byte to) {
-        if (type != 0)
-            return false;
-        byte from = reference.codeAt(position);
-        if (ALPHABET.isWildcard(from) || ALPHABET.isWildcard(to)) {
-            Wildcard w1 = ALPHABET.codeToWildcard(from);
-            Wildcard w2 = ALPHABET.codeToWildcard(to);
-            return w1.intersectsWith(w2);
-        } else
-            return false;
+@Command(name = FILTER_BY_COUNT_ACTION_NAME,
+        sortOptions = false,
+        showDefaultValues = true,
+        separator = " ",
+        description = "Correct errors in barcodes, and replace all barcodes with corrected variants.")
+public final class FilterByCountAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
+    public static final String FILTER_BY_COUNT_ACTION_NAME = "filter-by-count";
+
+    public FilterByCountAction() {
+        super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
     }
+
+
 }
