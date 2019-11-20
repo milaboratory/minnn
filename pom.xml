@@ -32,13 +32,13 @@
 
     <groupId>com.milaboratory</groupId>
     <artifactId>minnn</artifactId>
-    <version>8.0.1-SNAPSHOT</version>
+    <version>8.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>minnn</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <milib.version>1.12-SNAPSHOT</milib.version>
+        <milib.version>1.13-SNAPSHOT</milib.version>
     </properties>
 
     <dependencies>

@@ -185,6 +185,7 @@ public class CorrectActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void preparedMifClustersTest() throws Exception {
         for (boolean sorted : new boolean[] { true, false }) {
