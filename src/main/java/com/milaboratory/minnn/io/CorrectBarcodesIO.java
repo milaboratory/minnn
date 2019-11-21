@@ -45,11 +45,11 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
-import static com.milaboratory.minnn.util.SequencesCache.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -148,6 +148,11 @@ public final class CorrectBarcodesIO {
                 System.err.println("WARNING: group(s) " + correctedAgainGroups + " already corrected and will be " +
                         "corrected again!");
 
+            SmartProgressReporter.startProgressReport("Counting barcodes", pass1Reader, System.err);
+            OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
+                    getParsedReadOutputPort(pass1Reader, true));
+
+
             if (primaryGroups.size() > 0) {
                 // secondary barcodes correction
                 SmartProgressReporter.startProgressReport("Counting barcodes", pass1Reader, System.err);
@@ -199,7 +204,7 @@ public final class CorrectBarcodesIO {
         report.append("Reads with corrected barcodes: ").append(stats.correctedReads).append(" (")
                 .append(floatFormat.format(percent)).append("%)\n");
         if (stats.excludedReads > 0)
-            report.append("Reads excluded by too low barcode count: ").append(stats.excludedReads).append(" (")
+            report.append("Reads excluded by low barcode count: ").append(stats.excludedReads).append(" (")
                     .append(floatFormat.format((float)stats.excludedReads / totalReads.get() * 100)).append("%)\n");
         if (totalNucleotides.get() > 0)
             report.append("Wildcards in barcodes: ").append(totalWildcards).append(" (")
@@ -214,8 +219,6 @@ public final class CorrectBarcodesIO {
         jsonReportData.put("primaryGroups", primaryGroups);
         jsonReportData.put("maxUniqueBarcodes", maxUniqueBarcodes);
         jsonReportData.put("minCount", minCount);
-        jsonReportData.put("disableBarcodesQuality", disableBarcodesQuality);
-        jsonReportData.put("disableWildcardsCollapsing", disableWildcardsCollapsing);
         jsonReportData.put("wildcardsCollapsingMergeThreshold", wildcardsCollapsingMergeThreshold);
         jsonReportData.put("elapsedTime", elapsedTime);
         jsonReportData.put("correctedReads", stats.correctedReads);
@@ -241,15 +244,7 @@ public final class CorrectBarcodesIO {
                     : new MifWriter(outputFileName, outputHeader);
     }
 
-    /**
-     * Prepare output port for quality preprocessor.
-     *
-     * @param inputPort     port with parsed reads for input file (in case of full file correction)
-     *                      or current cluster (in case of secondary barcodes correction)
-     * @return              output port with quality preprocessor results
-     */
-    private OutputPort<CorrectionQualityPreprocessingResult> getPreprocessingResultOutputPort(
-            OutputPort<ParsedRead> inputPort) {
+    private OutputPort<CorrectionQualityPreprocessingResult> getPreprocessingResultOutputPort(MifReader pass1Reader) {
         OutputPort<CorrectionQualityPreprocessingResult> correctionPreprocessorPort;
         if (!disableBarcodesQuality) {
             // all groups are sorted; we can add input reads to the cluster while their group values are the same
@@ -371,7 +366,7 @@ public final class CorrectBarcodesIO {
                         totalNucleotides.getAndAdd(seq.size());
                         int wildcardsCount = 0;
                         for (int i = 0; i < seq.size(); i++)
-                            if (charToWildcard.get(seq.symbolAt(i)).basicSize() > 1)
+                            if (ALPHABET.codeToWildcard(seq.codeAt(i)).basicSize() > 1)
                                 wildcardsCount++;
                         totalWildcards.getAndAdd(wildcardsCount);
                     });

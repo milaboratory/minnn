@@ -34,7 +34,7 @@ import com.milaboratory.minnn.outputconverter.ParsedRead;
 
 import java.util.*;
 
-import static com.milaboratory.minnn.util.SequencesCache.*;
+import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public final class WhitelistReadFilter implements ReadFilter {
@@ -82,14 +82,14 @@ public final class WhitelistReadFilter implements ReadFilter {
         WildcardSequence(NucleotideSequence seq) {
             this.letters = new Wildcard[seq.size()];
             for (int i = 0; i < seq.size(); i++)
-                letters[i] = codeToWildcard[seq.codeAt(i)];
+                letters[i] = ALPHABET.codeToWildcard(seq.codeAt(i));
         }
 
         boolean equalsByWildcards(NucleotideSequence seq) {
             if (letters.length != seq.size())
                 return false;
             for (int i = 0; i < letters.length; i++)
-                if (!letters[i].intersectsWith(codeToWildcard[seq.codeAt(i)]))
+                if (!letters[i].intersectsWith(ALPHABET.codeToWildcard(seq.codeAt(i))))
                     return false;
             return true;
         }

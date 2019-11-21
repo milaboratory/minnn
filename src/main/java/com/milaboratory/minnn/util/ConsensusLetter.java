@@ -34,6 +34,7 @@ import com.milaboratory.core.sequence.Wildcard;
 
 import java.util.*;
 
+import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.stat.StatUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
@@ -127,9 +128,9 @@ public class ConsensusLetter {
             if (letter == NSequenceWithQuality.EMPTY)
                 counts[majorBasesEmptyIndex]++;
             else if (letter.getSequence().containsWildcards()) {
-                Wildcard wildcard = wildcards.get(letter.getSequence());
+                Wildcard wildcard = ALPHABET.codeToWildcard(letter.getSequence().codeAt(0));
                 for (int i = 0; i < wildcard.basicSize(); i++) {
-                    NucleotideSequence currentBasicLetter = wildcardCodeToSequence.get(wildcard.getMatchingCode(i));
+                    NucleotideSequence currentBasicLetter = codeToSequence[wildcard.getMatchingCode(i)];
                     counts[majorBasesIndexes.get(currentBasicLetter)]++;
                 }
             } else
@@ -154,10 +155,9 @@ public class ConsensusLetter {
                         }
                     } else {
                         if (letter.containsWildcards()) {
-                            Wildcard wildcard = wildcards.get(letter);
+                            Wildcard wildcard = ALPHABET.codeToWildcard(letter.codeAt(0));
                             for (int i = 0; i < wildcard.basicSize(); i++) {
-                                NucleotideSequence currentBasicLetter = wildcardCodeToSequence
-                                        .get(wildcard.getMatchingCode(i));
+                                NucleotideSequence currentBasicLetter = codeToSequence[wildcard.getMatchingCode(i)];
                                 stats.add(new LetterStats(currentBasicLetter,
                                         (double)quality / wildcard.basicSize()));
                             }

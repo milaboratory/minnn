@@ -28,24 +28,38 @@
  */
 package com.milaboratory.minnn.correct;
 
-import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 
-import java.util.Collection;
+import java.util.Objects;
 
-interface SequenceCounter extends Comparable<SequenceCounter> {
-    NSequenceWithQuality getSequence();
-    Collection<NucleotideSequence> getOriginalSequences();
-    int getIndex();
-    long getCount();
+public final class SequenceCounter implements Comparable<SequenceCounter> {
+    public final NucleotideSequence seq;
+    public long count;
 
-    @Override
-    default int compareTo(SequenceCounter other) {
-        return Long.compare(getCount(), other.getCount());
+    public SequenceCounter(NucleotideSequence seq) {
+        this.seq = Objects.requireNonNull(seq);
+        count = 0;
     }
 
-    default int compareForTreeSet(SequenceCounter other) {
-        int comparisonResult = -compareTo(other);
-        return (comparisonResult == 0) ? Integer.compare(getIndex(), other.getIndex()) : comparisonResult;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SequenceCounter that = (SequenceCounter)o;
+        return seq.equals(that.seq);
+    }
+
+    @Override
+    public int hashCode() {
+        return seq.hashCode();
+    }
+
+    // compareTo is reversed to start from bigger counts
+    @Override
+    public int compareTo(SequenceCounter other) {
+        int comparisonResult = -Long.compare(count, other.count);
+        // disable equal counts because they lead to objects loss in TreeSet
+        return (comparisonResult == 0) ? Long.compare(System.identityHashCode(this), System.identityHashCode(other))
+                : comparisonResult;
     }
 }

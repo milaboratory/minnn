@@ -38,7 +38,7 @@ import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.correct.CorrectionUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
-final class BasicSequenceCounter implements SequenceCounter {
+final class _BasicSequenceCounter implements SequenceCounter {
     private NSequenceWithQuality consensusSequence;
     private final Set<NucleotideSequence> uniqueOriginalSequences = new HashSet<>();
     private final int index;

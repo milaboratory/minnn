@@ -28,9 +28,21 @@
  */
 package com.milaboratory.minnn.io;
 
+import cc.redberry.pipe.CUtils;
 import com.milaboratory.cli.PipelineConfiguration;
+import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.minnn.correct.SequenceCounter;
+import com.milaboratory.minnn.outputconverter.ParsedRead;
+import com.milaboratory.util.SmartProgressReporter;
 
+import java.io.IOException;
 import java.util.*;
+
+import static com.milaboratory.minnn.cli.CliUtils.*;
+import static com.milaboratory.minnn.io.ReportWriter.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.SystemUtils.*;
+import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
 public final class FilterByCountIO {
     private final PipelineConfiguration pipelineConfiguration;
@@ -43,7 +55,9 @@ public final class FilterByCountIO {
     private final long inputReadsLimit;
     private final String reportFileName;
     private final String jsonReportFileName;
+    private final Map<String, Set<NucleotideSequence>> includedBarcodes = new HashMap<>();
     private long totalReads = 0;
+    private long excludedReads = 0;
 
     public FilterByCountIO(
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
@@ -62,6 +76,121 @@ public final class FilterByCountIO {
     }
 
     public void go() {
+        long startTime = System.currentTimeMillis();
+        try (MifReader pass1Reader = new MifReader(inputFileName);
+             MifReader pass2Reader = new MifReader(inputFileName);
+             MifWriter writer = Objects.requireNonNull(createWriter(pass1Reader.getHeader(), false));
+             MifWriter excludedBarcodesWriter = createWriter(pass1Reader.getHeader(), true)) {
+            if (inputReadsLimit > 0) {
+                pass1Reader.setParsedReadsLimit(inputReadsLimit);
+                pass2Reader.setParsedReadsLimit(inputReadsLimit);
+            }
+            validateInputGroups(pass1Reader, keyGroups, false, "--groups");
 
+            SmartProgressReporter.startProgressReport("Counting barcodes", pass1Reader, System.err);
+            calculateIncludedBarcodes(pass1Reader);
+
+            SmartProgressReporter.startProgressReport("Filtering by count", pass2Reader, System.err);
+            for (ParsedRead parsedRead : CUtils.it(pass2Reader)) {
+                boolean excluded = false;
+                for (String currentGroup : keyGroups)
+                    if (!includedBarcodes.get(currentGroup)
+                            .contains(parsedRead.getGroupValue(currentGroup).getSequence())) {
+                        excluded = true;
+                        break;
+                    }
+                if (excluded) {
+                    if (excludedBarcodesWriter != null)
+                        excludedBarcodesWriter.write(parsedRead);
+                    excludedReads++;
+                } else
+                    writer.write(parsedRead);
+                if (++totalReads == inputReadsLimit)
+                    break;
+            }
+
+            pass1Reader.close();
+            writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
+            if (excludedBarcodesWriter != null)
+                excludedBarcodesWriter.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
+        } catch (IOException e) {
+            throw exitWithError(e.getMessage());
+        }
+
+        StringBuilder reportFileHeader = new StringBuilder();
+        StringBuilder report = new StringBuilder();
+        LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
+
+        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
+        reportFileHeader.append("Report for Filter by Count command:\n");
+        reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
+        if (outputFileName == null)
+            reportFileHeader.append("Output is to stdout\n");
+        else
+            reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
+        if (excludedBarcodesOutputFileName != null)
+            reportFileHeader.append("Output file for excluded reads: ").append(excludedBarcodesOutputFileName)
+                    .append('\n');
+        reportFileHeader.append("Corrected groups: ").append(keyGroups).append('\n');
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
+        report.append("Processed ").append(totalReads).append(" reads").append('\n');
+        if (excludedReads > 0)
+            report.append("Reads excluded by low barcode count: ").append(excludedReads).append(" (")
+                    .append(floatFormat.format((float)excludedReads / totalReads * 100)).append("%)\n");
+
+        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("inputFileName", inputFileName);
+        jsonReportData.put("outputFileName", outputFileName);
+        jsonReportData.put("excludedBarcodesOutputFileName", excludedBarcodesOutputFileName);
+        jsonReportData.put("keyGroups", keyGroups);
+        jsonReportData.put("maxUniqueBarcodes", maxUniqueBarcodes);
+        jsonReportData.put("minCount", minCount);
+        jsonReportData.put("elapsedTime", elapsedTime);
+        jsonReportData.put("excludedReads", excludedReads);
+        jsonReportData.put("totalReads", totalReads);
+
+        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        jsonReport(jsonReportFileName, jsonReportData);
+    }
+
+    private MifWriter createWriter(MifHeader inputHeader, boolean excludedBarcodes) throws IOException {
+        MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
+                inputHeader.getCorrectedGroups(), inputHeader.getSortedGroups(), inputHeader.getGroupEdges());
+        if (excludedBarcodes)
+            return (excludedBarcodesOutputFileName == null) ? null
+                    : new MifWriter(excludedBarcodesOutputFileName, outputHeader);
+        else
+            return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
+                    : new MifWriter(outputFileName, outputHeader);
+    }
+
+    private void calculateIncludedBarcodes(MifReader pass1Reader) {
+        Map<String, Map<NucleotideSequence, SequenceCounter>> sequenceCounters = new HashMap<>();
+        for (String groupName : keyGroups) {
+            sequenceCounters.put(groupName, new HashMap<>());
+            includedBarcodes.put(groupName, new HashSet<>());
+        }
+        long processedReads = 0;
+        for (ParsedRead parsedRead : CUtils.it(pass1Reader)) {
+            for (String groupName : keyGroups) {
+                Map<NucleotideSequence, SequenceCounter> currentGroupCounters = sequenceCounters.get(groupName);
+                NucleotideSequence seq = parsedRead.getGroupValue(groupName).getSequence();
+                currentGroupCounters.putIfAbsent(seq, new SequenceCounter(seq));
+                currentGroupCounters.get(seq).count++;
+            }
+            if (++processedReads == inputReadsLimit)
+                break;
+        }
+        // filtering by count
+        int maxUniqueBarcodesLimit = (maxUniqueBarcodes == 0) ? Integer.MAX_VALUE : maxUniqueBarcodes;
+        for (String groupName : keyGroups) {
+            Map<NucleotideSequence, SequenceCounter> currentGroupCounters = sequenceCounters.get(groupName);
+            Set<NucleotideSequence> currentGroupIncludedBarcodes = includedBarcodes.get(groupName);
+            new TreeSet<>(currentGroupCounters.values()).stream()
+                    .limit(maxUniqueBarcodesLimit).filter(counter -> counter.count >= minCount)
+                    .map(counter -> counter.seq).forEach(currentGroupIncludedBarcodes::add);
+        }
     }
 }

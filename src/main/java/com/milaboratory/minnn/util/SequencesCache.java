@@ -46,10 +46,7 @@ public final class SequencesCache {
     public static final TObjectIntHashMap<NucleotideSequence> majorBasesIndexes = new TObjectIntHashMap<>();
     public static final int majorBasesEmptyIndex;
     public static final List<NucleotideSequence> allLetters = new ArrayList<>();
-    public static final HashMap<NucleotideSequence, Wildcard> wildcards = new HashMap<>();
-    public static final TByteObjectHashMap<NucleotideSequence> wildcardCodeToSequence = new TByteObjectHashMap<>();
-    public static final TCharObjectHashMap<Wildcard> charToWildcard = new TCharObjectHashMap<>();
-    public static final Wildcard[] codeToWildcard = new Wildcard[ALPHABET.size()];
+    public static final NucleotideSequence[] codeToSequence = new NucleotideSequence[ALPHABET.size()];
     public static final long[] basicLettersMasks = new long[ALPHABET.basicSize()];
     public static final float[] qualityToLetterProbabilityCache = new float[DEFAULT_MAX_QUALITY + 1];
     private static TByteObjectHashMap<SequenceQuality> qualityCache = null;
@@ -79,10 +76,7 @@ public final class SequencesCache {
             String letter = String.valueOf(wildcard.getSymbol());
             NucleotideSequence sequence = sequencesCache.get(new NucleotideSequence(letter));
             allLetters.add(sequence);
-            wildcards.put(sequence, wildcard);
-            wildcardCodeToSequence.put(wildcard.getCode(), sequence);
-            charToWildcard.put(wildcard.getSymbol(), wildcard);
-            codeToWildcard[wildcard.getCode()] = wildcard;
+            codeToSequence[wildcard.getCode()] = sequence;
         });
 
         for (byte i = 0; i < basicLettersMasks.length; i++)

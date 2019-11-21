@@ -43,7 +43,7 @@ final class CorrectionGroupData {
     final Map<NucleotideSequence, NSequenceWithQuality> correctionMapWithQualities;
     final Map<NucleotideSequence, NucleotideSequence> correctionMapWithoutQualities;
     // counters for original not corrected barcodes, for filtering by count
-    final Map<NucleotideSequence, RawSequenceCounter> notCorrectedBarcodeCounters;
+    final Map<NucleotideSequence, SequenceCounter> notCorrectedBarcodeCounters;
     // barcodes that are not filtered out if filtering by count is enabled
     final Set<NucleotideSequence> includedBarcodes;
     long lengthSum = 0;
