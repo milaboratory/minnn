@@ -29,16 +29,31 @@
 package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.SequenceQualityBuilder;
 
 import java.util.*;
+
+import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
 
 public final class CorrectionQualityPreprocessingResult {
     public final Map<String, NSequenceWithQuality> groupValues;
     public final int clusterSize;
+    public final Map<String, NucleotideSequence> primaryGroups;
 
     public CorrectionQualityPreprocessingResult(
-            Map<String, NSequenceWithQuality> groupValues, int clusterSize, long orderedPortIndex) {
-        this.groupValues = groupValues;
+            Map<String, NucleotideSequence> groupSequences, Map<String, long[]> groupQualities, int clusterSize,
+            Map<String, NucleotideSequence> primaryGroups) {
+        this.groupValues = new HashMap<>();
+        for (Map.Entry<String, NucleotideSequence> entry : groupSequences.entrySet()) {
+            String groupName = entry.getKey();
+            NucleotideSequence seq = entry.getValue();
+            SequenceQualityBuilder builder = new SequenceQualityBuilder();
+            for (int i = 0; i < seq.size(); i++)
+                builder.append((byte)Math.min(DEFAULT_MAX_QUALITY, groupQualities.get(groupName)[i]));
+            this.groupValues.put(groupName, new NSequenceWithQuality(seq, builder.createAndDestroy()));
+        }
         this.clusterSize = clusterSize;
+        this.primaryGroups = primaryGroups;
     }
 }

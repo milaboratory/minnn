@@ -43,7 +43,7 @@ import com.milaboratory.minnn.stat.SimpleMutationProbability;
 import java.util.Objects;
 
 final class BarcodeClusteringStrategy
-        implements ClusteringStrategy<SequenceCounter, SequenceWithQualityForClustering> {
+        implements ClusteringStrategy<SequenceWithQualityAndCount, SequenceWithQualityForClustering> {
     private final TreeSearchParameters treeSearchParameters;
     private final float threshold;
     private final int maxClusterDepth;
@@ -61,14 +61,14 @@ final class BarcodeClusteringStrategy
 
     @Override
     public boolean canAddToCluster(
-            Cluster<SequenceCounter> cluster, SequenceCounter minorSequenceCounter,
-            NeighborhoodIterator<SequenceWithQualityForClustering, SequenceCounter[]> iterator) {
+            Cluster<SequenceWithQualityAndCount> cluster, SequenceWithQualityAndCount minorSequenceCounter,
+            NeighborhoodIterator<SequenceWithQualityForClustering, SequenceWithQualityAndCount[]> iterator) {
         Alignment<SequenceWithQualityForClustering> currentAlignment = iterator.getCurrentAlignment();
         Mutations<SequenceWithQualityForClustering> currentMutations = currentAlignment.getAbsoluteMutations();
         NSequenceWithQuality seq1 = currentAlignment.getSequence1().nSequenceWithQuality;
-        NSequenceWithQuality seq2 = minorSequenceCounter.getSequence();
-        long majorClusterCount = cluster.getHead().getCount();
-        long minorClusterCount = minorSequenceCounter.getCount();
+        NSequenceWithQuality seq2 = minorSequenceCounter.seq;
+        long majorClusterCount = cluster.getHead().count;
+        long minorClusterCount = minorSequenceCounter.count;
         float expected = majorClusterCount;
         for (int i = 0; i < currentMutations.size(); i++) {
             MutationType mutationType = Objects.requireNonNull(Mutation.getType(currentMutations.getMutation(i)));
@@ -94,12 +94,13 @@ final class BarcodeClusteringStrategy
     }
 
     @Override
-    public TreeSearchParameters getSearchParameters(Cluster<SequenceCounter> cluster) {
+    public TreeSearchParameters getSearchParameters(Cluster<SequenceWithQualityAndCount> cluster) {
         return treeSearchParameters;
     }
 
     @Override
-    public MutationGuide<SequenceWithQualityForClustering> getMutationGuide(Cluster<SequenceCounter> cluster) {
+    public MutationGuide<SequenceWithQualityForClustering> getMutationGuide(
+            Cluster<SequenceWithQualityAndCount> cluster) {
         return MutationGuideForClustering.INSTANCE;
     }
 
@@ -109,7 +110,7 @@ final class BarcodeClusteringStrategy
     }
 
     @Override
-    public int compare(SequenceCounter c1, SequenceCounter c2) {
-        return c1.compareTo(c2);
+    public int compare(SequenceWithQualityAndCount s1, SequenceWithQualityAndCount s2) {
+        return Long.compare(s1.count, s2.count);
     }
 }

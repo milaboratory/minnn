@@ -56,21 +56,16 @@ public final class CorrectionAlgorithms {
     private final int maxUniqueBarcodes;
     private final int minCount;
     private final boolean filterByCount;
-    private final boolean disableBarcodesQuality;
-    private final boolean disableWildcardsCollapsing;
     private final float wildcardsCollapsingMergeThreshold;
 
     public CorrectionAlgorithms(
             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, int maxUniqueBarcodes, int minCount,
-            boolean disableBarcodesQuality, boolean disableWildcardsCollapsing,
             float wildcardsCollapsingMergeThreshold) {
         this.barcodeClusteringStrategyFactory = barcodeClusteringStrategyFactory;
         this.averageBarcodeLengthRequired = barcodeClusteringStrategyFactory.averageBarcodeLengthRequired();
         this.maxUniqueBarcodes = maxUniqueBarcodes;
         this.minCount = minCount;
         this.filterByCount = (maxUniqueBarcodes > 0) || (minCount > 1);
-        this.disableBarcodesQuality = disableBarcodesQuality;
-        this.disableWildcardsCollapsing = disableWildcardsCollapsing;
         this.wildcardsCollapsingMergeThreshold = wildcardsCollapsingMergeThreshold;
     }
 
@@ -100,9 +95,9 @@ public final class CorrectionAlgorithms {
 
                 // counting raw barcode sequences if filtering by count is enabled
                 if (filterByCount) {
-                    Map<NucleotideSequence, RawSequenceCounter> rawBarcodeCounters =
+                    Map<NucleotideSequence, SequenceCounter> rawBarcodeCounters =
                             correctionGroupData.notCorrectedBarcodeCounters;
-                    rawBarcodeCounters.putIfAbsent(seq, new RawSequenceCounter(seq));
+                    rawBarcodeCounters.putIfAbsent(seq, new SequenceCounter(seq));
                     rawBarcodeCounters.get(seq).count += inputData.clusterSize;
                 }
 
@@ -198,7 +193,7 @@ public final class CorrectionAlgorithms {
 
         // counting raw barcode sequences if filtering by count is enabled
         if (filterByCount) {
-            notCorrectedBarcodeCounters.putIfAbsent(seq, new RawSequenceCounter(seq));
+            notCorrectedBarcodeCounters.putIfAbsent(seq, new SequenceCounter(seq));
             notCorrectedBarcodeCounters.get(seq).count++;
         }
 
@@ -420,7 +415,7 @@ public final class CorrectionAlgorithms {
         SequenceCounterExtractor sequenceCounterExtractor = new SequenceCounterExtractor();
         for (GroupData groupData : groupsData) {
             if (groupData.parsedReadsCount > 0) {
-                Clustering<SequenceCounter, SequenceWithQualityForClustering> clustering = new Clustering<>(
+                Clustering<SequenceWithQualityAndCount, SequenceWithQualityForClustering> clustering = new Clustering<>(
                         groupData.getSequenceCounters(), sequenceCounterExtractor,
                         barcodeClusteringStrategyFactory.createStrategy(
                                 (float)(groupData.lengthSum) / groupData.parsedReadsCount));
@@ -449,16 +444,16 @@ public final class CorrectionAlgorithms {
     private void filterByCount(Set<GroupData> groupsData) {
         // counting corrected barcodes by not corrected barcodes counts
         for (GroupData groupData : groupsData) {
-            Map<NucleotideSequence, RawSequenceCounter> correctedCounters = new HashMap<>();
-            for (Map.Entry<NucleotideSequence, RawSequenceCounter> barcodeValueEntry
+            Map<NucleotideSequence, SequenceCounter> correctedCounters = new HashMap<>();
+            for (Map.Entry<NucleotideSequence, SequenceCounter> barcodeValueEntry
                     : groupData.notCorrectedBarcodeCounters.entrySet()) {
                 NucleotideSequence oldValue = barcodeValueEntry.getKey();
                 long oldCount = barcodeValueEntry.getValue().count;
                 NucleotideSequence correctedOldValue = groupData.getCorrectedSequence(oldValue);
                 NucleotideSequence newValue = (correctedOldValue == null) ? oldValue : correctedOldValue;
-                RawSequenceCounter correctedSequenceCounter = correctedCounters.get(newValue);
+                SequenceCounter correctedSequenceCounter = correctedCounters.get(newValue);
                 if (correctedSequenceCounter == null) {
-                    RawSequenceCounter newCounter = new RawSequenceCounter(newValue);
+                    SequenceCounter newCounter = new SequenceCounter(newValue);
                     newCounter.count = oldCount;
                     correctedCounters.put(newValue, newCounter);
                 } else
@@ -592,7 +587,7 @@ public final class CorrectionAlgorithms {
         final String groupName;
         final Set<SequenceCounter> sequenceCounters;
         final HashMap<NucleotideSequence, SequenceCounter> counterBySeqCache = new HashMap<>();
-        final Map<NucleotideSequence, RawSequenceCounter> notCorrectedBarcodeCounters;
+        final Map<NucleotideSequence, SequenceCounter> notCorrectedBarcodeCounters;
         // keys: not corrected sequences, values: corrected sequences
         private final Map<NucleotideSequence, NucleotideSequence> correctionMapWithoutQualities;
         private final Map<NucleotideSequence, NSequenceWithQuality> correctionMapWithQualities;
@@ -692,7 +687,7 @@ public final class CorrectionAlgorithms {
 
             // counting raw barcode sequences if filtering by count is enabled
             if (filterByCount) {
-                notCorrectedBarcodeCounters.putIfAbsent(seq, new RawSequenceCounter(seq));
+                notCorrectedBarcodeCounters.putIfAbsent(seq, new SequenceCounter(seq));
                 notCorrectedBarcodeCounters.get(seq).count++;
             }
 

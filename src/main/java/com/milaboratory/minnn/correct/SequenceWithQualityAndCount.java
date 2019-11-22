@@ -28,19 +28,29 @@
  */
 package com.milaboratory.minnn.correct;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.milaboratory.core.sequence.NSequenceWithQuality;
 
-public final class CorrectionData {
-    final LinkedHashMap<String, CorrectionGroupData> keyGroupsData;
-    public final long orderedPortIndex;
-    long parsedReadsCount = 0;
+import java.util.Objects;
 
-    public CorrectionData(
-            LinkedHashSet<String> keyGroups, long orderedPortIndex, boolean filterByCount) {
-        this.keyGroupsData = keyGroups.stream().collect(Collectors.toMap(
-                keyGroup -> keyGroup, keyGroup -> new CorrectionGroupData(filterByCount),
-                (a, b) -> b, LinkedHashMap::new));
-        this.orderedPortIndex = orderedPortIndex;
+final class SequenceWithQualityAndCount {
+    final NSequenceWithQuality seq;
+    long count;
+
+    SequenceWithQualityAndCount(NSequenceWithQuality seq) {
+        this.seq = Objects.requireNonNull(seq);
+        count = 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SequenceWithQualityAndCount that = (SequenceWithQualityAndCount)o;
+        return seq.equals(that.seq);
+    }
+
+    @Override
+    public int hashCode() {
+        return seq.hashCode();
     }
 }
