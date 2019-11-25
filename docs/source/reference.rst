@@ -114,9 +114,9 @@ correct
  --max-unique-barcodes: Maximal number of unique barcodes that will be included into output. Reads containing barcodes with biggest counts will be included, reads with barcodes with smaller counts will be excluded. Value 0 turns off this feature: if this argument is 0, all barcodes will be included.
  --min-count: Barcodes with count less than specified will not be included in the output.
  --excluded-barcodes-output: Output file for reads with barcodes excluded by count. If not specified, reads with excluded barcodes will not be written anywhere.
- --fair-wildcards-collapsing: Use slow but more precise method of merging for barcodes that equal by wildcards (for example, AAAT and ANNT). With this option barcodes will be sorted by count, and barcodes with high counts will be attempted to merge first. Also, this option enables keeping quality of corrected barcodes and saving barcodes with quality to the output.
- --disable-wildcards-collapsing: Don't merge different barcodes that equal by wildcards (for example, AAAT and ANNT). This option also disables merging barcodes by quality. It improves performance significantly, and can be used when barcodes correction is not needed, and command is run only to filter barcodes by count.
+ -w, --wildcards-collapsing-merge-threshold: On wildcards collapsing stage, when merging cluster of barcodes with pure letter in a position and cluster of barcodes with wildcard in that position, clusters will be merged if pure letter cluster size multiplied on this threshold is greater or equal to wildcard cluster size, otherwise clusters will be treated as different barcodes.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
+ --threads: Number of threads for barcodes correction. Multi-threading is used only with --primary-groups argument: correction for different primary groups can be performed in parallel.
  --report: File to write report in human readable form. If not specified, report is displayed on screen only.
  --json-report: File to write command execution stats in JSON format.
  --overwrite-if-required: Overwrite output file if it is corrupted or if it was generated from different input file or with different parameters. -f / --force-overwrite overrides this option.
@@ -134,7 +134,6 @@ sort
  --groups: Group names to use for sorting. Priority is in descending order.
  --input: Input file in MIF format. If not specified, stdin will be used.
  --output: Output file in MIF format. If not specified, stdout will be used.
- -q, --quick: By default, reads with wildcards in any group will be moved to the end. With this option reads will be sorted without checking for wildcards. This is faster, but quick sorting is not suitable before Correct action. In other cases (for example, before Consensus action) quick sorting can be used.
  --chunk-size: Chunk size for sorter.
  --report: File to write report in human readable form. If not specified, report is displayed on screen only.
  --json-report: File to write command execution stats in JSON format.

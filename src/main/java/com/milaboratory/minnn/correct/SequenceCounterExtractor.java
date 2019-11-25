@@ -30,8 +30,8 @@ package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.clustering.SequenceExtractor;
 
-final class SequenceCounterExtractor
-        implements SequenceExtractor<SequenceWithQualityAndCount, SequenceWithQualityForClustering> {
+final class SequenceCounterExtractor<S extends SequenceWithQualityAndCount>
+        implements SequenceExtractor<S, SequenceWithQualityForClustering> {
     @Override
     public SequenceWithQualityForClustering getSequence(SequenceWithQualityAndCount s) {
         return new SequenceWithQualityForClustering(s.seq);

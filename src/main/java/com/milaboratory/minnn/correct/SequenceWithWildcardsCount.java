@@ -31,21 +31,18 @@ package com.milaboratory.minnn.correct;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideSequence;
 
-import java.util.Collection;
+import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 
-interface _SequenceCounter extends Comparable<SequenceCounter> {
-    NSequenceWithQuality getSequence();
-    Collection<NucleotideSequence> getOriginalSequences();
-    int getIndex();
-    long getCount();
+final class SequenceWithWildcardsCount extends SequenceWithQualityAndCount {
+    final int wildcardsCount;
 
-    @Override
-    default int compareTo(SequenceCounter other) {
-        return Long.compare(getCount(), other.getCount());
-    }
-
-    default int compareForTreeSet(SequenceCounter other) {
-        int comparisonResult = -compareTo(other);
-        return (comparisonResult == 0) ? Integer.compare(getIndex(), other.getIndex()) : comparisonResult;
+    SequenceWithWildcardsCount(NSequenceWithQuality seqWithQuality) {
+        super(seqWithQuality);
+        NucleotideSequence seq = seqWithQuality.getSequence();
+        int wildcardsCount = 0;
+        for (int i = 0; i < seq.size(); i++)
+            if (ALPHABET.isWildcard(seq.getSequence().codeAt(i)))
+                wildcardsCount++;
+        this.wildcardsCount = wildcardsCount;
     }
 }

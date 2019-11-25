@@ -42,6 +42,8 @@ import com.milaboratory.minnn.stat.SimpleMutationProbability;
 
 import java.util.Objects;
 
+import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
+
 final class BarcodeClusteringStrategy
         implements ClusteringStrategy<SequenceWithQualityAndCount, SequenceWithQualityForClustering> {
     private final TreeSearchParameters treeSearchParameters;
@@ -70,6 +72,7 @@ final class BarcodeClusteringStrategy
         long majorClusterCount = cluster.getHead().count;
         long minorClusterCount = minorSequenceCounter.count;
         float expected = majorClusterCount;
+        boolean equalByWildcards = currentMutations.countOfIndels() == 0;
         for (int i = 0; i < currentMutations.size(); i++) {
             MutationType mutationType = Objects.requireNonNull(Mutation.getType(currentMutations.getMutation(i)));
             switch (mutationType) {
@@ -81,6 +84,7 @@ final class BarcodeClusteringStrategy
                     byte to = seq2.getSequence().codeAt(position2);
                     byte toQual = seq2.getQuality().value(position2);
                     expected *= mutationProbability.mutationProbability(from, fromQual, to, toQual);
+                    equalByWildcards &= ALPHABET.codeToWildcard(from).intersectsWith(ALPHABET.codeToWildcard(to));
                     break;
                 case Insertion:
                 case Deletion:
@@ -90,7 +94,8 @@ final class BarcodeClusteringStrategy
                     throw new IllegalStateException("Wrong mutation type: " + mutationType);
             }
         }
-        return (minorClusterCount <= expected) && ((float)minorClusterCount / majorClusterCount < threshold);
+        return !equalByWildcards && (minorClusterCount <= expected)
+                && ((float)minorClusterCount / majorClusterCount < threshold);
     }
 
     @Override

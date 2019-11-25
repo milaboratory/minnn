@@ -271,7 +271,7 @@ public final class CorrectBarcodesIO {
                             currentQualities.put(keyGroup, groupValue.getQuality());
                         }
                         LinkedHashMap<String, NucleotideSequence> currentPrimaryGroups;
-                        if (previousPrimaryGroups.size() > 0) {
+                        if (primaryGroups.size() > 0) {
                             currentPrimaryGroups = new LinkedHashMap<>();
                             for (String primaryGroup : primaryGroups)
                                 currentPrimaryGroups.put(primaryGroup,

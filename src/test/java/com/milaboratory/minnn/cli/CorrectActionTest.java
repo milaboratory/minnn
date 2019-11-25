@@ -51,53 +51,66 @@ public class CorrectActionTest {
     public void randomTest() throws Exception {
         String startFile = TEMP_DIR + "correctStart.mif";
         String inputFile = TEMP_DIR + "correctInput.mif";
+        String sortedFile = TEMP_DIR + "correctInputSorted.mif";
         String outputFile = TEMP_DIR + "correctOutput.mif";
         for (int i = 0; i < 50; i++) {
             createRandomMifFile(startFile);
             exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                     + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
+            sortFile(inputFile, sortedFile, "G1 G2");
             exec("correct -f --max-errors-share " + (rg.nextInt(10) / 10f)
                     + " --max-errors " + (rg.nextInt(5) - 1) + " --max-unique-barcodes " + rg.nextInt(10)
                     + " --cluster-threshold " + (rg.nextFloat() * 0.98 + 0.01)
-                    + " --input " + inputFile + " --output " + outputFile + " --groups G1 G2");
-            assertFileNotEquals(inputFile, outputFile);
+                    + " --input " + sortedFile + " --output " + outputFile + " --groups G1 G2");
+            assertFileNotEquals(sortedFile, outputFile);
         }
-        for (String fileName : new String[] { startFile, inputFile, outputFile })
+        for (String fileName : new String[] { startFile, inputFile, sortedFile, outputFile })
             assertTrue(new File(fileName).delete());
     }
 
     @Test
     public void preparedMifTest() throws Exception {
         String inputFile = getExampleMif("twosided");
+        String sortedInputFile = TEMP_DIR + "sorted.mif";
+        assertOutputContains(true, "ERROR", () -> callableExec("correct -f --input " + inputFile
+                + " --groups G1 --output " + sortedInputFile));
+        sortFile(inputFile, sortedInputFile, "G1 G2 G3 G4");
         assertOutputContains(true, "Error", () -> callableExec("correct -f --output " + inputFile
                 + " --groups G1"));
-        assertOutputContains(true, "Error", () -> callableExec("correct -f --input " + inputFile
-                + " --output " + inputFile));
+        assertOutputContains(true, "Error", () -> callableExec("correct -f"
+                + " --input " + sortedInputFile + " --output " + inputFile));
         for (int i = 0; i <= 1; i++) {
             String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
+            String currentSortedFile = TEMP_DIR + "sorted" + (i + 1) + ".mif";
             String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
-            assertOutputContains(true, "Error", () -> callableExec("correct -f --input " + inputFile
-                    + " --output " + currentOutput + " --groups G1 --max-errors-share -1"));
-            exec("correct -f --groups G1 G2 G3 G4 --input " + currentInput + " --output " + currentOutput
+            sortFile(currentInput, currentSortedFile, "G1 G2 G3 G4");
+            assertOutputContains(true, "Error", () -> callableExec("correct -f" +
+                    " --input " + currentSortedFile + " --output " + currentOutput +
+                    " --groups G1 --max-errors-share -1"));
+            exec("correct -f --groups G1 G2 G3 G4 --input " + currentSortedFile + " --output " + currentOutput
                     + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
                     + " --single-indel-probability 0.001 --max-errors 3 --max-errors-share -1");
-            assertFileNotEquals(currentInput, currentOutput);
+            assertFileNotEquals(currentSortedFile, currentOutput);
             if (i == 0) {
-                assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
+                assertMifNotEqualsAsFastq(currentSortedFile, currentOutput, true);
             } else
-                assertMifEqualsAsFastq(currentInput, currentOutput, true);
+                assertMifEqualsAsFastq(currentSortedFile, currentOutput, true);
         }
-        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct3.mif --max-errors 0"
+        exec("correct -f --input " + sortedInputFile + " --output " + TEMP_DIR + "correct3.mif --max-errors 0"
                 + " --groups G1 G2 G3 G4");
-        assertFileNotEquals(inputFile, TEMP_DIR + "correct3.mif");
-        assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct3.mif", true);
-        exec("correct -f --input " + inputFile + " --output " + TEMP_DIR + "correct4.mif --max-errors 0" +
-                " --groups G1 G2 G3 G4 --max-errors-share 0.5");
+        assertFileNotEquals(sortedInputFile, TEMP_DIR + "correct3.mif");
+        assertMifEqualsAsFastq(sortedInputFile, TEMP_DIR + "correct3.mif", true);
+        exec("correct -f --input " + sortedInputFile + " --output " + TEMP_DIR + "correct4.mif"
+                + " --max-errors 0 --groups G1 G2 G3 G4 --max-errors-share 0.5");
         assertFileNotEquals(TEMP_DIR + "correct3.mif", TEMP_DIR + "correct4.mif");
-        assertMifEqualsAsFastq(inputFile, TEMP_DIR + "correct4.mif", true);
+        assertMifEqualsAsFastq(sortedInputFile, TEMP_DIR + "correct4.mif", true);
         assertTrue(new File(inputFile).delete());
-        for (int i = 1; i <= 4; i++)
+        assertTrue(new File(sortedInputFile).delete());
+        for (int i = 1; i <= 4; i++) {
+            if (i <= 2)
+                assertTrue(new File(TEMP_DIR + "sorted" + i + ".mif").delete());
             assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
+        }
     }
 
     @Test
@@ -185,7 +198,6 @@ public class CorrectActionTest {
             assertTrue(new File(fileName).delete());
     }
 
-    @Ignore
     @Test
     public void preparedMifClustersTest() throws Exception {
         for (boolean sorted : new boolean[] { true, false }) {

@@ -30,7 +30,7 @@ package com.milaboratory.minnn.correct;
 
 import com.milaboratory.core.tree.MutationGuide;
 
-class MutationGuideForClustering implements MutationGuide<SequenceWithQualityForClustering> {
+final class MutationGuideForClustering implements MutationGuide<SequenceWithQualityForClustering> {
     static MutationGuideForClustering INSTANCE = new MutationGuideForClustering();
 
     private MutationGuideForClustering() {}

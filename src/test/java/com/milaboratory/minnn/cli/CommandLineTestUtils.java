@@ -94,4 +94,8 @@ public class CommandLineTestUtils {
         for (String tempFile : tempFiles)
             assertTrue(new File(tempFile).delete());
     }
+
+    public static void sortFile(String inputFile, String outputFile, String groups) {
+        exec("sort -f --input " + inputFile + " --output " + outputFile + " --groups " + groups);
+    }
 }

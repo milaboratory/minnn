@@ -32,7 +32,7 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 
 import java.util.Objects;
 
-final class SequenceWithQualityAndCount {
+class SequenceWithQualityAndCount {
     final NSequenceWithQuality seq;
     long count;
 

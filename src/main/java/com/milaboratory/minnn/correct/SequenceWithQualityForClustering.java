@@ -43,6 +43,7 @@ class SequenceWithQualityForClustering extends Sequence<SequenceWithQualityForCl
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Alphabet<SequenceWithQualityForClustering> getAlphabet() {
         return (Alphabet)(NucleotideSequence.ALPHABET);
     }

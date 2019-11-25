@@ -33,7 +33,11 @@ import com.milaboratory.core.tree.MutationGuide;
 
 import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 
-final class WildcardsMutationGuide implements MutationGuide<SequenceWithQualityForClustering> {
+final class MutationGuideForWildcards implements MutationGuide<SequenceWithQualityForClustering> {
+    static MutationGuideForWildcards INSTANCE = new MutationGuideForWildcards();
+
+    private MutationGuideForWildcards() {}
+
     @Override
     public boolean allowMutation(SequenceWithQualityForClustering reference, int position, byte type, byte to) {
         if (type != 0)
