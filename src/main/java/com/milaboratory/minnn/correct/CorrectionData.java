@@ -35,6 +35,8 @@ public final class CorrectionData {
     final LinkedHashMap<String, CorrectionGroupData> keyGroupsData;
     public final long orderedPortIndex;
     long parsedReadsCount = 0;
+    long totalWildcardsCount = 0;
+    long totalNucleotidesCount = 0;
 
     public CorrectionData(
             LinkedHashSet<String> keyGroups, long orderedPortIndex, boolean filterByCount) {

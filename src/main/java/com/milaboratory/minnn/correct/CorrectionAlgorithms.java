@@ -94,6 +94,8 @@ public final class CorrectionAlgorithms {
                 SequenceWithWildcardsCount currentCounter = new SequenceWithWildcardsCount(seqWithQuality);
                 currentCounter.count = inputData.clusterSize;
                 correctionGroupData.wildcardCounters.add(currentCounter);
+                correctionData.totalWildcardsCount += currentCounter.wildcardsCount * inputData.clusterSize;
+                correctionData.totalNucleotidesCount += seq.size() * inputData.clusterSize;
 
                 // counting raw barcode sequences if filtering by count is enabled
                 if (filterByCount) {
@@ -166,6 +168,8 @@ public final class CorrectionAlgorithms {
                     return true;
                 });
             });
+            groupData.sequenceCounters = null;
+            groupData.originalSequencesWithWildcards = null;
         }
 
         if (filterByCount) {
@@ -173,6 +177,7 @@ public final class CorrectionAlgorithms {
                 System.err.println("Filtering corrected barcodes by count...");
             // calculating which barcodes must be included or excluded, saving results to correctionData
             filterByCount(correctionData);
+            correctionData.keyGroupsData.values().forEach(groupData -> groupData.notCorrectedBarcodeCounters = null);
         }
 
         return correctionData;
@@ -206,7 +211,8 @@ public final class CorrectionAlgorithms {
             } else
                 writer.write(correctBarcodesResult.parsedRead);
         }
-        return new CorrectionStats(correctedReads, excludedReads);
+        return new CorrectionStats(correctedReads, excludedReads,
+                correctionData.totalWildcardsCount, correctionData.totalNucleotidesCount);
     }
 
     private static NSequenceWithQuality mergeSequences(List<NSequenceWithQuality> originalSequences) {

@@ -31,9 +31,13 @@ package com.milaboratory.minnn.correct;
 public final class CorrectionStats {
     public final long correctedReads;
     public final long excludedReads;
+    public final long totalWildcards;
+    public final long totalNucleotides;
 
-    public CorrectionStats(long correctedReads, long excludedReads) {
+    public CorrectionStats(long correctedReads, long excludedReads, long totalWildcards, long totalNucleotides) {
         this.correctedReads = correctedReads;
         this.excludedReads = excludedReads;
+        this.totalWildcards = totalWildcards;
+        this.totalNucleotides = totalNucleotides;
     }
 }

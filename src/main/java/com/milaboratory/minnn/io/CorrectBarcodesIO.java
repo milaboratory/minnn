@@ -46,7 +46,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
@@ -70,8 +69,6 @@ public final class CorrectBarcodesIO {
     private final String reportFileName;
     private final String jsonReportFileName;
     private final AtomicLong totalReads = new AtomicLong(0);
-    private final AtomicLong totalWildcards = new AtomicLong(0);
-    private final AtomicLong totalNucleotides = new AtomicLong(0);
 
     public CorrectBarcodesIO(
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
@@ -148,24 +145,27 @@ public final class CorrectBarcodesIO {
                 System.err.println("WARNING: group(s) " + correctedAgainGroups + " already corrected and will be " +
                         "corrected again!");
 
-            SmartProgressReporter.startProgressReport("Counting barcodes", pass1Reader, System.err);
             OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
-                    pass1Reader);
-            SmartProgressReporter.startProgressReport("Correcting barcodes", pass2Reader, System.err);
-            OutputPort<ParsedRead> pass2RawReadsPort = getParsedReadOutputPort(pass2Reader, true);
+                    getParsedReadOutputPort(pass1Reader, "Counting barcodes", false));
+            OutputPort<ParsedRead> pass2RawReadsPort = getParsedReadOutputPort(
+                    pass2Reader, "Correcting barcodes", true);
 
             if (primaryGroups.size() > 0) {
                 // secondary barcodes correction
                 OutputPort<CorrectionData> correctionDataPort = performSecondaryBarcodesCorrection(preprocessorPort);
                 long correctedReads = 0;
                 long excludedReads = 0;
+                long totalWildcards = 0;
+                long totalNucleotides = 0;
                 for (CorrectionData correctionData : CUtils.it(correctionDataPort)) {
                     CorrectionStats statsForCurrentPrimaryGroups = correctionAlgorithms.correctAndWrite(
                             correctionData, pass2RawReadsPort, writer, excludedBarcodesWriter);
                     correctedReads += statsForCurrentPrimaryGroups.correctedReads;
                     excludedReads += statsForCurrentPrimaryGroups.excludedReads;
+                    totalWildcards += statsForCurrentPrimaryGroups.totalWildcards;
+                    totalNucleotides += statsForCurrentPrimaryGroups.totalNucleotides;
                 }
-                stats = new CorrectionStats(correctedReads, excludedReads);
+                stats = new CorrectionStats(correctedReads, excludedReads, totalWildcards, totalNucleotides);
             } else {
                 // full file correction
                 CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
@@ -208,9 +208,9 @@ public final class CorrectBarcodesIO {
         if (stats.excludedReads > 0)
             report.append("Reads excluded by low barcode count: ").append(stats.excludedReads).append(" (")
                     .append(floatFormat.format((float)stats.excludedReads / totalReads.get() * 100)).append("%)\n");
-        if (totalNucleotides.get() > 0)
-            report.append("Wildcards in barcodes: ").append(totalWildcards).append(" (")
-                    .append(floatFormat.format((float)totalWildcards.get() / totalNucleotides.get() * 100))
+        if (stats.totalNucleotides > 0)
+            report.append("Wildcards in barcodes: ").append(stats.totalWildcards).append(" (")
+                    .append(floatFormat.format((float)stats.totalWildcards / stats.totalNucleotides * 100))
                     .append("% of all letters in barcodes)\n");
 
         jsonReportData.put("version", getShortestVersionString());
@@ -226,8 +226,8 @@ public final class CorrectBarcodesIO {
         jsonReportData.put("correctedReads", stats.correctedReads);
         jsonReportData.put("excludedReads", stats.excludedReads);
         jsonReportData.put("totalReads", totalReads);
-        jsonReportData.put("totalWildcards", totalWildcards);
-        jsonReportData.put("totalNucleotides", totalNucleotides);
+        jsonReportData.put("totalWildcards", stats.totalWildcards);
+        jsonReportData.put("totalNucleotides", stats.totalNucleotides);
 
         humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
         jsonReport(jsonReportFileName, jsonReportData);
@@ -246,8 +246,8 @@ public final class CorrectBarcodesIO {
                     : new MifWriter(outputFileName, outputHeader);
     }
 
-    private OutputPort<CorrectionQualityPreprocessingResult> getPreprocessingResultOutputPort(MifReader pass1Reader) {
-        OutputPort<ParsedRead> inputPort = getParsedReadOutputPort(pass1Reader, false);
+    private OutputPort<CorrectionQualityPreprocessingResult> getPreprocessingResultOutputPort(
+            OutputPort<ParsedRead> inputPort) {
         return new OutputPort<CorrectionQualityPreprocessingResult>() {
             LinkedHashMap<String, NucleotideSequence> previousGroups = null;
             LinkedHashMap<String, NucleotideSequence> previousPrimaryGroups = null;
@@ -311,32 +311,50 @@ public final class CorrectBarcodesIO {
     }
 
     /**
-     * Get port with parsed reads: MIF reader with inputReadsLimit checking and wildcard stats calculation.
+     * Get port with parsed reads: MIF reader with inputReadsLimit checking.
      *
-     * @param mifReader                 MIF reader
-     * @param countStatsForWildcards    true if stats for wildcards count and total nucleotides count must be
-     *                                  calculated on this stage (used only for 2nd pass MIF reader)
-     * @return                          output port with parsed reads
+     * @param mifReader             MIF reader
+     * @param progressReportHint    text to display in progress report messages
+     * @param updateTotalReads      update total reads counter
+     * @return                      output port with parsed reads
      */
-    private OutputPort<ParsedRead> getParsedReadOutputPort(MifReader mifReader, boolean countStatsForWildcards) {
-        return () -> {
-            ParsedRead parsedRead = ((inputReadsLimit == 0) || (totalReads.get() < inputReadsLimit))
-                    ? mifReader.take() : null;
-            if (parsedRead != null) {
-                if (countStatsForWildcards)
-                    parsedRead.getGroups().stream().filter(g -> keyGroups.contains(g.getGroupName())).forEach(g -> {
-                        NucleotideSequence seq = g.getValue().getSequence();
-                        totalNucleotides.getAndAdd(seq.size());
-                        int wildcardsCount = 0;
-                        for (int i = 0; i < seq.size(); i++)
-                            if (ALPHABET.codeToWildcard(seq.codeAt(i)).basicSize() > 1)
-                                wildcardsCount++;
-                        totalWildcards.getAndAdd(wildcardsCount);
-                    });
-                totalReads.getAndIncrement();
-            }
-            return parsedRead;
-        };
+    private OutputPort<ParsedRead> getParsedReadOutputPort(
+            MifReader mifReader, String progressReportHint, boolean updateTotalReads) {
+        if (updateTotalReads)
+            return new OutputPort<ParsedRead>() {
+                boolean progressReportingStarted = false;
+
+                @Override
+                public ParsedRead take() {
+                    if (!progressReportingStarted) {
+                        SmartProgressReporter.startProgressReport(progressReportHint, mifReader, System.err);
+                        progressReportingStarted = true;
+                    }
+                    ParsedRead parsedRead = ((inputReadsLimit == 0) || (totalReads.get() < inputReadsLimit))
+                            ? mifReader.take() : null;
+                    if (parsedRead != null)
+                        totalReads.getAndIncrement();
+                    return parsedRead;
+                }
+            };
+        else
+            return new OutputPort<ParsedRead>() {
+                long takenReads = 0;
+                boolean progressReportingStarted = false;
+
+                @Override
+                public ParsedRead take() {
+                    if (!progressReportingStarted) {
+                        SmartProgressReporter.startProgressReport(progressReportHint, mifReader, System.err);
+                        progressReportingStarted = true;
+                    }
+                    ParsedRead parsedRead = ((inputReadsLimit == 0) || (takenReads < inputReadsLimit))
+                            ? mifReader.take() : null;
+                    if (parsedRead != null)
+                        takenReads++;
+                    return parsedRead;
+                }
+            };
     }
 
     private OutputPort<CorrectionData> performSecondaryBarcodesCorrection(

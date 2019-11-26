@@ -37,13 +37,13 @@ final class CorrectionGroupData {
     // intermediate counters for wildcards clustering
     Set<SequenceWithWildcardsCount> wildcardCounters = new HashSet<>();
     // counters for final clustering for correction
-    final Set<SequenceWithQualityAndCount> sequenceCounters = new HashSet<>();
+    Set<SequenceWithQualityAndCount> sequenceCounters = new HashSet<>();
     // keys: sequences after wildcards collapsing, values: original sequences that were collapsed by wildcards
-    final Map<NucleotideSequence, Set<NucleotideSequence>> originalSequencesWithWildcards = new HashMap<>();
+    Map<NucleotideSequence, Set<NucleotideSequence>> originalSequencesWithWildcards = new HashMap<>();
     // keys: not corrected sequences, values: corrected sequences
     final Map<NucleotideSequence, NSequenceWithQuality> correctionMap = new HashMap<>();
     // counters for original not corrected barcodes, for filtering by count
-    final Map<NucleotideSequence, SequenceCounter> notCorrectedBarcodeCounters;
+    Map<NucleotideSequence, SequenceCounter> notCorrectedBarcodeCounters;
     // barcodes that are not filtered out if filtering by count is enabled
     final Set<NucleotideSequence> includedBarcodes;
     long lengthSum = 0;
