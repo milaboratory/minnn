@@ -31,6 +31,7 @@ package com.milaboratory.minnn.pattern;
 import com.milaboratory.core.Range;
 import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
+import com.milaboratory.core.sequence.NucleotideAlphabetCaseSensitive;
 import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
 
 import java.util.*;
@@ -179,7 +180,7 @@ public final class PatternUtils {
      */
     public static int firstUppercase(NucleotideSequenceCaseSensitive sequence) {
         for (int i = 0; i < sequence.size(); i++)
-            if (Character.isUpperCase(sequence.symbolAt(i)))
+            if (NucleotideAlphabetCaseSensitive.isUpperCase(sequence.codeAt(i)))
                 return i;
         return -1;
     }
@@ -192,7 +193,7 @@ public final class PatternUtils {
      */
     public static int lastUppercase(NucleotideSequenceCaseSensitive sequence) {
         for (int i = sequence.size() - 1; i >= 0; i--)
-            if (Character.isUpperCase(sequence.symbolAt(i)))
+            if (NucleotideAlphabetCaseSensitive.isUpperCase(sequence.codeAt(i)))
                 return i;
         return -1;
     }

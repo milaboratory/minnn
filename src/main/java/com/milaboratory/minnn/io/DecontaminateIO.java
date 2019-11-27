@@ -163,23 +163,26 @@ public final class DecontaminateIO {
                     .map(name -> parsedRead.getGroupValue(name).getSequence()).collect(Collectors.toSet());
             Set<NucleotideSequence> primaryGroupValues = primaryGroupNames.stream()
                     .map(name -> parsedRead.getGroupValue(name).getSequence()).collect(Collectors.toSet());
-            if (barcodeCombinationsCache.containsKey(groupValues))
-                groupValues = barcodeCombinationsCache.get(groupValues);
+            Set<NucleotideSequence> cachedGroupValues = barcodeCombinationsCache.get(groupValues);
+            if (cachedGroupValues != null)
+                groupValues = cachedGroupValues;
             else
                 barcodeCombinationsCache.put(groupValues, groupValues);
-            if (barcodeCombinationsCache.containsKey(primaryGroupValues))
-                primaryGroupValues = barcodeCombinationsCache.get(primaryGroupValues);
+            Set<NucleotideSequence> cachedPrimaryGroupValues = barcodeCombinationsCache.get(primaryGroupValues);
+            if (cachedPrimaryGroupValues != null)
+                primaryGroupValues = cachedPrimaryGroupValues;
             else
                 barcodeCombinationsCache.put(primaryGroupValues, primaryGroupValues);
 
-            if (allCounts.containsKey(groupValues)) {
-                Map<Set<NucleotideSequence>, BarcodeCountInCell> currentBarcodeCounts = allCounts.get(groupValues);
-                if (currentBarcodeCounts.containsKey(primaryGroupValues))
-                    currentBarcodeCounts.get(primaryGroupValues).count++;
+            Map<Set<NucleotideSequence>, BarcodeCountInCell> currentBarcodeCounts = allCounts.get(groupValues);
+            if (currentBarcodeCounts != null) {
+                BarcodeCountInCell countInCurrentCell = currentBarcodeCounts.get(primaryGroupValues);
+                if (countInCurrentCell != null)
+                    countInCurrentCell.count++;
                 else
                     currentBarcodeCounts.put(primaryGroupValues, new BarcodeCountInCell(primaryGroupValues));
             } else {
-                Map<Set<NucleotideSequence>, BarcodeCountInCell> currentBarcodeCounts = new HashMap<>();
+                currentBarcodeCounts = new HashMap<>();
                 currentBarcodeCounts.put(primaryGroupValues, new BarcodeCountInCell(primaryGroupValues));
                 allCounts.put(groupValues, currentBarcodeCounts);
             }

@@ -160,9 +160,10 @@ public final class CorrectionAlgorithms {
                 NSequenceWithQuality headSequence = cluster.getHead().seq;
                 cluster.processAllChildren(child -> {
                     NucleotideSequence childSequence = child.getHead().seq.getSequence();
-                    if (groupData.originalSequencesWithWildcards.containsKey(childSequence))
-                        groupData.originalSequencesWithWildcards.get(childSequence)
-                                .forEach(seq -> groupData.correctionMap.put(seq, headSequence));
+                    Set<NucleotideSequence> originalSequences = groupData.originalSequencesWithWildcards
+                            .get(childSequence);
+                    if (originalSequences != null)
+                        originalSequences.forEach(seq -> groupData.correctionMap.put(seq, headSequence));
                     else
                         groupData.correctionMap.put(childSequence, headSequence);
                     return true;
@@ -251,8 +252,8 @@ public final class CorrectionAlgorithms {
                     : groupData.notCorrectedBarcodeCounters.entrySet()) {
                 NucleotideSequence oldValue = barcodeValueEntry.getKey();
                 long oldCount = barcodeValueEntry.getValue().count;
-                NucleotideSequence newValue = groupData.correctionMap.containsKey(oldValue)
-                        ? groupData.correctionMap.get(oldValue).getSequence() : oldValue;
+                NSequenceWithQuality correctedOldValue = groupData.correctionMap.get(oldValue);
+                NucleotideSequence newValue = (correctedOldValue == null) ? oldValue : correctedOldValue.getSequence();
                 SequenceCounter correctedSequenceCounter = correctedCounters.get(newValue);
                 if (correctedSequenceCounter == null) {
                     SequenceCounter newCounter = new SequenceCounter(newValue);

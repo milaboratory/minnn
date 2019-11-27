@@ -224,7 +224,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             throw new IllegalArgumentException("seq1: " + seq1 + ", seq2: " + seq2 + ", kmerLength = " + kmerLength);
         int diff = 0;
         for (int i = 0; i < kmerLength; i++)
-            if (seq1.symbolAt(i) != seq2.symbolAt(i))
+            if (seq1.codeAt(i) != seq2.codeAt(i))
                 diff++;
         return diff;
     }

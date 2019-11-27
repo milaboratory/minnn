@@ -79,10 +79,11 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
                     String groupName = entry.getKey();
                     List<String> currentWhitelist = readLines(entry.getValue());
                     ReadFilter currentFilter = new WhitelistReadFilter(groupName, currentWhitelist);
-                    if (whitelistsForGroups.containsKey(groupName))
-                        whitelistsForGroups.get(groupName).add(currentFilter);
+                    List<ReadFilter> whitelistsForCurrentGroup = whitelistsForGroups.get(groupName);
+                    if (whitelistsForCurrentGroup != null)
+                        whitelistsForCurrentGroup.add(currentFilter);
                     else {
-                        List<ReadFilter> whitelistsForCurrentGroup = new ArrayList<>();
+                        whitelistsForCurrentGroup = new ArrayList<>();
                         whitelistsForCurrentGroup.add(currentFilter);
                         whitelistsForGroups.put(groupName, whitelistsForCurrentGroup);
                     }

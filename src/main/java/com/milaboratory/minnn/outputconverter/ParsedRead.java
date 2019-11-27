@@ -336,8 +336,9 @@ public final class ParsedRead {
     }
 
     private String generateReadDescription(boolean copyOriginalHeaders, String outputGroupName) {
-        if (commentsCache.containsKey(outputGroupName))
-            return commentsCache.get(outputGroupName);
+        String cachedDescription = commentsCache.get(outputGroupName);
+        if (cachedDescription != null)
+            return cachedDescription;
 
         String readDescription;
         if (bestMatch == null) {
@@ -346,11 +347,12 @@ public final class ParsedRead {
         } else {
             TreeSet<FastqCommentGroup> commentGroups = new TreeSet<>();
             for (String groupName : notDefaultGroupsFromHeader) {
-                if (innerRangesCache.containsKey(groupName)) {
-                    HashMap<String, Range> innerRanges = innerRangesCache.get(outputGroupName);
-                    if (innerRanges.containsKey(groupName))
+                HashMap<String, Range> innerRanges = innerRangesCache.get(outputGroupName);
+                if (innerRanges != null) {
+                    Range currentGroupRange = innerRanges.get(groupName);
+                    if (currentGroupRange != null)
                         commentGroups.add(new FastqCommentGroup(groupName, true, true,
-                                getGroupValue(groupName), innerRanges.get(groupName)));
+                                getGroupValue(groupName), currentGroupRange));
                     else
                         commentGroups.add(new FastqCommentGroup(groupName, getGroupValue(groupName)));
                 } else {

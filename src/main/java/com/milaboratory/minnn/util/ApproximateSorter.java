@@ -102,10 +102,9 @@ public final class ApproximateSorter {
                         for (MatchedGroupEdge matchedGroupEdge : match.getMatchedGroupEdgesByPattern(i)) {
                             // put only unique R1, R2... group edges to avoid duplicates
                             GroupEdge groupEdge = matchedGroupEdge.getGroupEdge();
-                            if (!matchedGroupEdges.containsKey(groupEdge))
-                                matchedGroupEdges.put(groupEdge, new MatchedGroupEdge(matchedGroupEdge.getTarget(),
-                                        matchedGroupEdge.getTargetId(), patternIndex, groupEdge,
-                                        matchedGroupEdge.getPosition()));
+                            matchedGroupEdges.putIfAbsent(groupEdge, new MatchedGroupEdge(matchedGroupEdge.getTarget(),
+                                    matchedGroupEdge.getTargetId(), patternIndex, groupEdge,
+                                    matchedGroupEdge.getPosition()));
                         }
                         patternIndex++;
                     }

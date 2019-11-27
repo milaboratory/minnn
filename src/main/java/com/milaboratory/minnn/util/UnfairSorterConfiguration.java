@@ -38,7 +38,7 @@ import java.util.HashMap;
 public final class UnfairSorterConfiguration {
     private UnfairSorterConfiguration() {}
 
-    public static final HashMap<Class, Integer> unfairSorterPortLimits = new HashMap<>();
+    public static final HashMap<Class<? extends Pattern>, Integer> unfairSorterPortLimits = new HashMap<>();
     public static final TCharIntHashMap lettersComplexity = new TCharIntHashMap();
     public static final int lowerCaseExtraComplexity = 3;
     static {

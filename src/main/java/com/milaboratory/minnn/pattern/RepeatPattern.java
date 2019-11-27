@@ -137,8 +137,8 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
 
     @Override
     public int estimateMinLength() {
-        return Math.max(1, minRepeats - (Character.isLowerCase(patternSeq.symbolAt(0)) ? conf.bitapMaxErrors
-                : 0));
+        return Math.max(1, minRepeats - (NucleotideAlphabetCaseSensitive.isLowerCase(patternSeq.codeAt(0))
+                ? conf.bitapMaxErrors : 0));
     }
 
     @Override
@@ -146,12 +146,13 @@ public final class RepeatPattern extends SinglePattern implements CanBeSingleSeq
         if (maxRepeats == Integer.MAX_VALUE)
             return -1;
         else
-            return maxRepeats + (Character.isLowerCase(patternSeq.symbolAt(0)) ? conf.bitapMaxErrors : 0);
+            return maxRepeats + (NucleotideAlphabetCaseSensitive.isLowerCase(patternSeq.codeAt(0))
+                    ? conf.bitapMaxErrors : 0);
     }
 
     @Override
     public int estimateMaxOverlap() {
-        return Character.isUpperCase(patternSeq.symbolAt(0)) ? 0 : maxRepeats - 1;
+        return NucleotideAlphabetCaseSensitive.isUpperCase(patternSeq.codeAt(0)) ? 0 : maxRepeats - 1;
     }
 
     @Override
