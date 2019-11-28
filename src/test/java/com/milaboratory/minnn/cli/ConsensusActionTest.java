@@ -53,6 +53,7 @@ public class ConsensusActionTest {
             throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
     }
 
+    @Ignore
     @Test
     public void randomTest() throws Exception {
         String startFile = TEMP_DIR + "consensusStart.mif";
@@ -111,6 +112,7 @@ public class ConsensusActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void preparedMifTest() throws Exception {
         String inputFile = getExampleMif("twosided");
@@ -148,6 +150,7 @@ public class ConsensusActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void numberOfReadsTest() throws Exception {
         String inputFile = getExampleMif("twosided");
@@ -162,6 +165,7 @@ public class ConsensusActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void toSeparateGroupsTest() throws Exception {
         String inputFile = getExampleMif("twosided");
@@ -182,6 +186,7 @@ public class ConsensusActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void singleCellPreparedMifTest() throws Exception {
         String inputFile = getExampleMif("twosided");
@@ -236,6 +241,7 @@ public class ConsensusActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void debugOutputTest() throws Exception {
         String inputFile = getExampleMif("twosided");
@@ -258,6 +264,7 @@ public class ConsensusActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void originalReadStatsTest() throws Exception {
         String inputFile = getExampleMif("twosided");

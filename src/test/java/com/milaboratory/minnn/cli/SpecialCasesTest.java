@@ -93,6 +93,7 @@ public class SpecialCasesTest {
         assertTrue(new File(outputFile).delete());
     }
 
+    @Ignore
     @Test
     public void correctionSpeedTest() throws Exception {
         String inputFastqFiles = getBigOrSmallFastqTestFileNames("test01_R1.fastq.gz", "test01_R2.fastq.gz");
@@ -157,6 +158,7 @@ public class SpecialCasesTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void numberOfReadsChangeTest() throws Exception {
         String suffix = "-special-case-3.mif";
@@ -175,6 +177,7 @@ public class SpecialCasesTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void readsNestedOverrideTest() throws Exception {
         String suffix = "-special-case-4.mif";

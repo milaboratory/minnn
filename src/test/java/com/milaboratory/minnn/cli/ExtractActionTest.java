@@ -177,6 +177,7 @@ public class ExtractActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void descriptionGroupsTest() throws Exception {
         String inputFile = getExampleMif("twosided");
@@ -223,6 +224,7 @@ public class ExtractActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void groupsOverrideTest() throws Exception {
         String r1 = EXAMPLES_PATH + "positional/polyfid10_R1.fastq.gz";

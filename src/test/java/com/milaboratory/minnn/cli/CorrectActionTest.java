@@ -113,6 +113,7 @@ public class CorrectActionTest {
         }
     }
 
+    @Ignore
     @Test
     public void maxUniqueBarcodesTest() throws Exception {
         String inputFile = getExampleMif("twosided");
@@ -144,6 +145,7 @@ public class CorrectActionTest {
         }
     }
 
+    @Ignore
     @Test
     public void minCountTest() throws Exception {
         String inputFile = getExampleMif("twosided");
@@ -170,6 +172,7 @@ public class CorrectActionTest {
             assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
     }
 
+    @Ignore
     @Test
     public void randomSortedClustersTest() throws Exception {
         String startFile = TEMP_DIR + "correctStart.mif";
@@ -198,6 +201,7 @@ public class CorrectActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Ignore
     @Test
     public void preparedMifClustersTest() throws Exception {
         for (boolean sorted : new boolean[] { true, false }) {
