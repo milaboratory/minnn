@@ -20,6 +20,6 @@ minnn filter -n 10000 --input ${prefix}_extracted.mif "MinGroupQuality(UMI)=7 & 
 
 prefix=pipes_correct_test1
 minnn extract --input ${input} --pattern "^(UMI:NNNNNNNN)\*" --output ${prefix}_extracted.mif
-minnn sort --input --input ${prefix}_extracted.mif --output ${prefix}_sorted1.mif --groups UMI
+minnn sort --input ${prefix}_extracted.mif --output ${prefix}_sorted1.mif --groups UMI
 minnn correct -n 10000 --input ${prefix}_sorted1.mif --groups UMI |
     minnn sort --groups UMI --output ${prefix}_sorted2.mif
