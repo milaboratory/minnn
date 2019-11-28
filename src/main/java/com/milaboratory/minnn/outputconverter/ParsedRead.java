@@ -347,8 +347,8 @@ public final class ParsedRead {
         } else {
             TreeSet<FastqCommentGroup> commentGroups = new TreeSet<>();
             for (String groupName : notDefaultGroupsFromHeader) {
-                HashMap<String, Range> innerRanges = innerRangesCache.get(outputGroupName);
-                if (innerRanges != null) {
+                if (innerRangesCache.containsKey(groupName)) {
+                    HashMap<String, Range> innerRanges = innerRangesCache.get(outputGroupName);
                     Range currentGroupRange = innerRanges.get(groupName);
                     if (currentGroupRange != null)
                         commentGroups.add(new FastqCommentGroup(groupName, true, true,
