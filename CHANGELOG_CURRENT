@@ -1,0 +1,3 @@
+Correct action update, great performance improvements and interface change; correction now requires the input file to be sorted
+New action "filter-by-count" to filter barcodes by count without changing them
+Update for Filter action: simple barcodes whitelists are used by default, and whitelists with patterns can be used with --whitelist-patterns option
