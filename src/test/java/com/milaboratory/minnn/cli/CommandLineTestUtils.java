@@ -60,12 +60,26 @@ public class CommandLineTestUtils {
                 + " --pattern \"" + randomPattern.toString() + "\"");
     }
 
+    public static void sortFile(String inputFile, String outputFile, String groups) {
+        exec("sort -f --input " + inputFile + " --output " + outputFile + " --groups " + groups);
+    }
+
     public static void assertMifEqualsAsFastq(String mif1, String mif2, boolean withR2) throws Exception {
         checkFastqEquality(mif1, mif2, withR2, true);
     }
 
     public static void assertMifNotEqualsAsFastq(String mif1, String mif2, boolean withR2) throws Exception {
         checkFastqEquality(mif1, mif2, withR2, false);
+    }
+
+    public static void assertMifEqualsAsSortedFastq(
+            String mif1, String mif2, boolean withR2, String groups) throws Exception {
+        checkSortedFastqEquality(mif1, mif2, withR2, groups, true);
+    }
+
+    public static void assertMifNotEqualsAsSortedFastq(
+            String mif1, String mif2, boolean withR2, String groups) throws Exception {
+        checkSortedFastqEquality(mif1, mif2, withR2, groups, false);
     }
 
     private static void checkFastqEquality(String mif1, String mif2, boolean withR2, boolean equals) throws Exception {
@@ -95,7 +109,14 @@ public class CommandLineTestUtils {
             assertTrue(new File(tempFile).delete());
     }
 
-    public static void sortFile(String inputFile, String outputFile, String groups) {
-        exec("sort -f --input " + inputFile + " --output " + outputFile + " --groups " + groups);
+    private static void checkSortedFastqEquality(
+            String mif1, String mif2, boolean withR2, String groups, boolean equals) throws Exception {
+        String sorted1 = TEMP_DIR + "_sorted1.mif";
+        String sorted2 = TEMP_DIR + "_sorted2.mif";
+        sortFile(mif1, sorted1, groups);
+        sortFile(mif2, sorted2, groups);
+        checkFastqEquality(sorted1, sorted2, withR2, equals);
+        for (String tempFile : new String[] { sorted1, sorted2 })
+            assertTrue(new File(tempFile).delete());
     }
 }
