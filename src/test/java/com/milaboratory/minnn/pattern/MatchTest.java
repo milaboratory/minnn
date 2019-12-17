@@ -69,8 +69,8 @@ public class MatchTest {
         MatchIntermediate testMatch2 = new MatchIntermediate(2, -5,
                 -1, -1, testMatchedGroupEdges2, testMatchedRanges2);
 
-        assertEquals(1, testMatch1.getNumberOfPatterns());
-        assertEquals(2, testMatch2.getNumberOfPatterns());
+        assertEquals(1, testMatch1.getNumberOfTargets());
+        assertEquals(2, testMatch2.getNumberOfTargets());
         assertEquals(-10, testMatch1.getScore());
         assertEquals(-5, testMatch2.getScore());
         assertEquals(new Range(0, 9), testMatch1.getMatchedRange(0).getRange());

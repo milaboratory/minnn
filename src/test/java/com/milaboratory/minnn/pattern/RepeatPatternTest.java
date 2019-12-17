@@ -79,7 +79,7 @@ public class RepeatPatternTest {
                 assertEquals(nseq, results[i].getBestMatch(fairSorting).getMatchedRange().getTarget());
                 assertTrue(results[i].isFound());
                 assertEquals((i < 3) ? 25 : 7, countMatches(results[i], true));
-                assertEquals(1, results[i].getBestMatch(fairSorting).getNumberOfPatterns());
+                assertEquals(1, results[i].getBestMatch(fairSorting).getNumberOfTargets());
                 assertEquals(1, results[i].getBestMatch(fairSorting).getMatchedRanges().length);
                 assertEquals(0, results[i].getBestMatch(fairSorting).getMatchedGroupEdges().size());
             }

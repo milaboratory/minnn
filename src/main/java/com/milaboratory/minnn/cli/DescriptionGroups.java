@@ -60,7 +60,7 @@ public final class DescriptionGroups {
             return oldBestMatch;
         }
         ArrayList<MatchedGroupEdge> matchedGroupEdges = oldBestMatch.getMatchedGroupEdges();
-        int numberOfTargets = oldBestMatch.getNumberOfPatterns();
+        int numberOfTargets = oldBestMatch.getNumberOfTargets();
         for (HashMap.Entry<String, GroupPattern> entry : regexPatterns.entrySet()) {
             String groupName = entry.getKey();
             NSequenceWithQuality seq = null;

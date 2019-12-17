@@ -78,7 +78,7 @@ public final class MatchIntermediate extends Match {
      * @return MatchedRange with patternIndex 0
      */
     public MatchedRange getMatchedRange() {
-        if (numberOfPatterns != 1)
+        if (numberOfTargets != 1)
             throw new IllegalStateException("Multiple pattern. Use getMatchedRange(int) instead.");
         return matchedRanges[0];
     }

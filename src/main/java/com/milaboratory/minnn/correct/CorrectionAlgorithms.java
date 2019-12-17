@@ -208,7 +208,8 @@ public final class CorrectionAlgorithms {
             if (parsedRead == null)
                 throw new IllegalStateException("pass2Reader returned less reads than pass1Reader!");
             CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead, correctionData);
-            correctedReads += correctBarcodesResult.numCorrectedBarcodes;
+            if (correctBarcodesResult.corrected)
+                correctedReads++;
             if (correctBarcodesResult.excluded) {
                 if (excludedBarcodesWriter != null)
                     excludedBarcodesWriter.write(correctBarcodesResult.parsedRead);
@@ -394,10 +395,9 @@ public final class CorrectionAlgorithms {
      * @return                  parsed read with corrected barcodes, number of corrected barcodes and excluded flag
      *                          (which is true if any of barcodes in this parsed read was filtered out by count)
      */
-    private CorrectBarcodesResult correctBarcodes(ParsedRead parsedRead, CorrectionData correctionData) {
+    CorrectBarcodesResult correctBarcodes(ParsedRead parsedRead, CorrectionData correctionData) {
         Map<String, NSequenceWithQuality> correctedGroups = new HashMap<>();
         boolean isCorrection = false;
-        int numCorrectedBarcodes = 0;
         boolean excluded = false;
         for (Map.Entry<String, CorrectionGroupData> groupData : correctionData.keyGroupsData.entrySet()) {
             String groupName = groupData.getKey();
@@ -428,7 +428,6 @@ public final class CorrectionAlgorithms {
                             matchedGroupEdge.getTargetId(), matchedGroupEdge.getGroupEdge(),
                             correctedGroups.get(currentGroupName)));
             }
-            numCorrectedBarcodes++;
         }
 
         Set<String> defaultGroups = parsedRead.getDefaultGroupNames();
@@ -440,18 +439,18 @@ public final class CorrectionAlgorithms {
                     + ", got " + newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
                     .filter(defaultGroups::contains).collect(Collectors.toList()));
         return new CorrectBarcodesResult(new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(),
-                parsedRead.getRawNumberOfTargetsOverride(), newMatch, 0), numCorrectedBarcodes,
+                parsedRead.getRawNumberOfTargetsOverride(), newMatch, 0), isCorrection,
                 excluded);
     }
 
-    private static class CorrectBarcodesResult {
+    static class CorrectBarcodesResult {
         final ParsedRead parsedRead;
-        final int numCorrectedBarcodes;
+        final boolean corrected;
         final boolean excluded;
 
-        CorrectBarcodesResult(ParsedRead parsedRead, int numCorrectedBarcodes, boolean excluded) {
+        CorrectBarcodesResult(ParsedRead parsedRead, boolean corrected, boolean excluded) {
             this.parsedRead = parsedRead;
-            this.numCorrectedBarcodes = numCorrectedBarcodes;
+            this.corrected = corrected;
             this.excluded = excluded;
         }
     }

@@ -68,7 +68,7 @@ public class FuzzyMatchPatternTest {
             assertEquals(nseq, result.getBestMatch().getMatchedRange().getTarget());
             assertTrue(result.isFound());
             assertEquals(1, countMatches(result, true));
-            assertEquals(1, result.getBestMatch().getNumberOfPatterns());
+            assertEquals(1, result.getBestMatch().getNumberOfTargets());
             assertEquals(1, result.getBestMatch().getMatchedRanges().length);
             assertEquals(0, result.getBestMatch().getMatchedGroupEdges().size());
         }

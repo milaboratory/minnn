@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 
 @Serializable(by = IO.MatchSerializer.class)
 public class Match {
-    protected final int numberOfPatterns;
+    protected final int numberOfTargets;
     protected final long score;
     protected final ArrayList<MatchedGroupEdge> matchedGroupEdges;
     private ArrayList<MatchedGroup> groups = null;
@@ -51,12 +51,12 @@ public class Match {
     /**
      * Serializable final match for single- or multi-pattern.
      *
-     * @param numberOfPatterns      number of patterns in multi-pattern, or 1 if it is single pattern
+     * @param numberOfTargets       number of targets (R1, R2 etc)
      * @param score                 match score
      * @param matchedGroupEdges     list of matched group edges
      */
-    public Match(int numberOfPatterns, long score, ArrayList<MatchedGroupEdge> matchedGroupEdges) {
-        this.numberOfPatterns = numberOfPatterns;
+    public Match(int numberOfTargets, long score, ArrayList<MatchedGroupEdge> matchedGroupEdges) {
+        this.numberOfTargets = numberOfTargets;
         this.score = score;
         this.matchedGroupEdges = matchedGroupEdges;
     }
@@ -65,8 +65,8 @@ public class Match {
      * Return MatchedGroupEdge by name and isStart flag.
      *
      * @param groupName group name
-     * @param isStart flag, true if it must be group start, false if must be group end
-     * @return MatchedRange for specified pattern
+     * @param isStart   flag, true if it must be group start, false if must be group end
+     * @return          MatchedRange for specified pattern
      */
     public MatchedGroupEdge getMatchedGroupEdge(String groupName, boolean isStart) {
         if (matchedGroupEdgesCache == null)
@@ -95,8 +95,8 @@ public class Match {
         return matchedGroupEdges;
     }
 
-    public int getNumberOfPatterns() {
-        return numberOfPatterns;
+    public int getNumberOfTargets() {
+        return numberOfTargets;
     }
 
     public long getScore() {
@@ -164,14 +164,14 @@ public class Match {
     }
 
     public static void write(PrimitivO output, Match object) {
-        output.writeVarIntZigZag(object.getNumberOfPatterns());
+        output.writeVarIntZigZag(object.getNumberOfTargets());
         output.writeVarLongZigZag(object.getScore());
         output.writeVarIntZigZag(object.getMatchedGroupEdges().size());
         for (MatchedGroupEdge matchedGroupEdge : object.getMatchedGroupEdges())
             output.writeObject(matchedGroupEdge);
     }
 
-    private class MatchedGroupEdgeIndex {
+    private static class MatchedGroupEdgeIndex {
         private final String groupName;
         private final boolean isStart;
 

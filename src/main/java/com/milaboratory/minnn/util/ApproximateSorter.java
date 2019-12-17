@@ -72,8 +72,8 @@ public final class ApproximateSorter {
      * Get combined match from a group of input matches. It uses multipleReads flag to determine how to combine matches
      * (by combining ranges for single read or by numbering the matched ranges for multiple reads).
      *
-     * @param matches input matches
-     * @return combined match
+     * @param matches   input matches
+     * @return          combined match
      */
     private MatchIntermediate combineMatches(MatchIntermediate... matches) {
         if (conf.multipleReads) {
@@ -89,7 +89,7 @@ public final class ApproximateSorter {
                     } else throw new IllegalStateException(
                             "Found null match when MatchValidationType doesn't allow them");
                 } else allMatchesAreNull = false;
-                for (int i = 0; i < match.getNumberOfPatterns(); i++) {
+                for (int i = 0; i < match.getNumberOfTargets(); i++) {
                     MatchedRange currentMatchedRange = match.getMatchedRange(i);
                     if (currentMatchedRange instanceof NullMatchedRange) {
                         if (match.getMatchedGroupEdgesByPattern(i).size() > 0)
