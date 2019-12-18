@@ -36,7 +36,6 @@ import com.milaboratory.core.io.sequence.fastq.SingleFastqReader;
 import com.milaboratory.core.io.sequence.fastq.SingleFastqWriter;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.pattern.*;
-import com.milaboratory.test.TestUtil;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -51,6 +50,7 @@ import java.util.zip.GZIPOutputStream;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.invertCoordinate;
 import static com.milaboratory.minnn.util.CommonTestUtils.RandomStringType.*;
+import static com.milaboratory.test.TestUtil.randomSequence;
 import static org.junit.Assert.*;
 
 public class CommonTestUtils {
@@ -71,6 +71,14 @@ public class CommonTestUtils {
         return countPortValues(matchingResult.getMatches(fair));
     }
 
+    public static NSequenceWithQuality randomSeqWithQuality(int length, boolean basicLettersOnly) {
+        NucleotideSequence randomSeq = randomSequence(NucleotideSequence.ALPHABET, length, length, basicLettersOnly);
+        SequenceQualityBuilder randomQualityBuilder = new SequenceQualityBuilder();
+        IntStream.range(0, length)
+                .forEach(i -> randomQualityBuilder.append((byte)(rg.nextInt(DEFAULT_MAX_QUALITY) + 1)));
+        return new NSequenceWithQuality(randomSeq, randomQualityBuilder.createAndDestroy());
+    }
+
     public static NucleotideSequenceCaseSensitive makeRandomInsertions(NucleotideSequenceCaseSensitive seq,
                                                                        int number) {
         NucleotideSequenceCaseSensitive result = seq;
@@ -80,7 +88,7 @@ public class CommonTestUtils {
             currentLength = seq.size() + i;
             currentInsertPosition = rg.nextInt(currentLength);
             result = SequencesUtils.concatenate(result.getRange(0, currentInsertPosition),
-                    TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, 1, 1),
+                    randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, 1, 1),
                     result.getRange(currentInsertPosition, currentLength));
         }
         return result;
@@ -108,7 +116,7 @@ public class CommonTestUtils {
         for (int i = 0; i < number; i++) {
             currentPosition = rg.nextInt(seq.size());
             result = SequencesUtils.concatenate(result.getRange(0, currentPosition),
-                    TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, 1, 1),
+                    randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, 1, 1),
                     result.getRange(currentPosition + 1, seq.size()));
         }
         return result;
@@ -290,7 +298,7 @@ public class CommonTestUtils {
         int length = rg.nextInt(150) + 1;
         RandomBorders randomBorders = new RandomBorders(length);
         RandomCuts randomCuts = new RandomCuts(length);
-        NucleotideSequenceCaseSensitive seq = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
+        NucleotideSequenceCaseSensitive seq = randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                 length, length);
         return new FuzzyMatchPattern(patternConfiguration, seq, randomCuts.left, randomCuts.right,
                 randomBorders.left, randomBorders.right,
@@ -302,7 +310,7 @@ public class CommonTestUtils {
         int minRepeats = rg.nextInt(10) + 1;
         int maxRepeats = rg.nextInt(100) + minRepeats;
         RandomBorders randomBorders = new RandomBorders(maxRepeats);
-        NucleotideSequenceCaseSensitive seq = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
+        NucleotideSequenceCaseSensitive seq = randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                 1, 1);
         if (Character.toUpperCase(seq.toString().charAt(0)) == 'N')
             return new RepeatNPattern(patternConfiguration, minRepeats, maxRepeats,
