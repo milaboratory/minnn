@@ -162,12 +162,16 @@ public final class CorrectionAlgorithms {
                         clustering, System.err);
             clustering.performClustering().forEach(cluster -> {
                 NSequenceWithQuality headSequence = cluster.getHead().seq;
+                Set<NucleotideSequence> headOriginalSequences = groupData.originalSequencesWithWildcards
+                        .get(headSequence.getSequence());
+                if (headOriginalSequences != null)
+                    headOriginalSequences.forEach(seq -> groupData.correctionMap.put(seq, headSequence));
                 cluster.processAllChildren(child -> {
                     NucleotideSequence childSequence = child.getHead().seq.getSequence();
-                    Set<NucleotideSequence> originalSequences = groupData.originalSequencesWithWildcards
+                    Set<NucleotideSequence> childOriginalSequences = groupData.originalSequencesWithWildcards
                             .get(childSequence);
-                    if (originalSequences != null)
-                        originalSequences.forEach(seq -> groupData.correctionMap.put(seq, headSequence));
+                    if (childOriginalSequences != null)
+                        childOriginalSequences.forEach(seq -> groupData.correctionMap.put(seq, headSequence));
                     else
                         groupData.correctionMap.put(childSequence, headSequence);
                     return true;
