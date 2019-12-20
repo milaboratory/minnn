@@ -52,14 +52,18 @@ import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
 
 public class CorrectionAlgorithmsTest {
-    private static final BarcodeClusteringStrategyFactory simpleClusteringStrategyFactory
-            = new BarcodeClusteringStrategyFactory(0.12f, 0, 1, 2,
-            new SimpleMutationProbability(0.1f, 0.02f));
     private static final CorrectionAlgorithms simpleCorrectionAlgorithms = new CorrectionAlgorithms(
-            simpleClusteringStrategyFactory, 0, 0, 10);
+            new BarcodeClusteringStrategyFactory(0.12f, 0, 1, 2,
+                    new SimpleMutationProbability(0.1f, 0.02f)),
+            0, 0, 10);
+    private static final CorrectionAlgorithms strictCorrectionAlgorithms = new CorrectionAlgorithms(
+            new BarcodeClusteringStrategyFactory(0, 10, 1, 2,
+                    new SimpleMutationProbability(1, 1)),
+            0, 0, 10);
 
     @Test
     public void simpleRandomTest() {
+        CorrectionAlgorithms correctionAlgorithms = strictCorrectionAlgorithms;
         for (int i = 0; i < 1000; i++) {
             CorrectionTestData testData = generateSimpleRandomTestData();
             OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
@@ -68,27 +72,41 @@ public class CorrectionAlgorithmsTest {
             List<CorrectBarcodesResult> results = new ArrayList<>();
             if (testData.primaryGroups.size() > 0) {
                 OutputPort<CorrectionData> correctionDataPort = performSecondaryBarcodesCorrection(preprocessorPort,
-                        simpleCorrectionAlgorithms, testData.keyGroups, rg.nextInt(10) + 1);
+                        correctionAlgorithms, testData.keyGroups, rg.nextInt(10) + 1);
                 for (CorrectionData correctionData : CUtils.it(correctionDataPort))
                     for (int j = 0; j < correctionData.parsedReadsCount; j++) {
                         ParsedRead parsedRead = Objects.requireNonNull(parsedReadsPort.take());
-                        results.add(simpleCorrectionAlgorithms.correctBarcodes(parsedRead, correctionData));
+                        results.add(correctionAlgorithms.correctBarcodes(parsedRead, correctionData));
                     }
             } else {
-                CorrectionData correctionData = simpleCorrectionAlgorithms.prepareCorrectionData(preprocessorPort,
+                CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
                         testData.keyGroups, 0);
+                correctionData.keyGroupsData.forEach((key, value) -> {
+                    System.out.println(key);
+                    System.out.println(value.correctionMap);
+                });
+
                 streamPort(parsedReadsPort).forEach(parsedRead ->
-                        results.add(simpleCorrectionAlgorithms.correctBarcodes(parsedRead, correctionData)));
+                        results.add(correctionAlgorithms.correctBarcodes(parsedRead, correctionData)));
             }
+            System.out.println(testData.inputSequences);
+            System.out.println(testData.groups);
+            System.out.println(testData.expectedSequences);
+            System.out.println(results.stream().map(data -> data.parsedRead.getMatchTarget((byte)1))
+                    .collect(Collectors.toList()));
             testData.assertCorrectionResults(results);
         }
     }
 
     private static CorrectionTestData generateSimpleRandomTestData() {
-        int numberOfTargets = rg.nextInt(4) + 1;
-        int numberOfKeyGroups = rg.nextInt(6) + 1;
-        int numberOfPrimaryGroups = rg.nextInt(3);
-        int totalNumberOfGroups = numberOfKeyGroups + numberOfPrimaryGroups + rg.nextInt(3);
+//        int numberOfTargets = rg.nextInt(4) + 1;
+//        int numberOfKeyGroups = rg.nextInt(6) + 1;
+//        int numberOfPrimaryGroups = rg.nextInt(3);
+        int numberOfTargets = 1;
+        int numberOfKeyGroups = 1;
+        int numberOfPrimaryGroups = 0;
+//        int totalNumberOfGroups = numberOfKeyGroups + numberOfPrimaryGroups + rg.nextInt(3);
+        int totalNumberOfGroups = numberOfKeyGroups;
         List<String> keyGroups = IntStream.rangeClosed(1, numberOfKeyGroups).mapToObj(i -> "G" + i)
                 .collect(Collectors.toList());
         List<String> primaryGroups = IntStream.rangeClosed(1, numberOfPrimaryGroups).mapToObj(i -> "PG" + i)
@@ -157,7 +175,21 @@ public class CorrectionAlgorithmsTest {
     }
 
     private static ReadWithGroups mutate(ReadWithGroups input, int numErrors) {
-        ReadWithGroups output = new ReadWithGroups();
+        ReadWithGroups output = input;
+        int totalMutations = 0;
+        while (totalMutations < numErrors) {
+            List<String> keyGroupNames = input.groups.keySet().stream()
+                    .filter(groupName -> groupName.charAt(0) == 'G').collect(Collectors.toList());
+            String randomGroupName = keyGroupNames.get(rg.nextInt(keyGroupNames.size()));
+            GroupCoordinates groupCoordinates = input.groups.get(randomGroupName);
+            NSequenceWithQuality target = input.targetSequences.get(groupCoordinates.targetId);
+            NSequenceWithQuality groupValue = target.getRange(groupCoordinates.start, groupCoordinates.end);
+            int currentMutationsNum = rg.nextInt(numErrors - totalMutations) + 1;
+            NSequenceWithQuality mutatedGroupValue = makeRandomErrors(groupValue, currentMutationsNum);
+            output = output.getReadWithChangedGroup(randomGroupName, mutatedGroupValue);
+            totalMutations += currentMutationsNum;
+        }
+        return output;
     }
 
     private static List<ReadWithGroups> createPrimaryGroupClusters(ReadWithGroups input, int numClusters) {
@@ -177,19 +209,10 @@ public class CorrectionAlgorithmsTest {
         }
         List<ReadWithGroups> updatedSequencesForClusters = new ArrayList<>();
         for (PrimaryGroups cluster : clusters) {
-            ReadWithGroups currentReadWithGroups = new ReadWithGroups();
-            TByteObjectHashMap<NSequenceWithQuality> currentTargetSequences = currentReadWithGroups.targetSequences;
-            currentTargetSequences.putAll(input.targetSequences);
-            currentReadWithGroups.groups.putAll(input.groups);
-            for (String groupName : cluster.groupValues.keySet()) {
-                GroupCoordinates groupCoordinates = primaryGroups.get(groupName);
-                NSequenceWithQuality currentTargetSeq = currentTargetSequences.get(groupCoordinates.targetId);
-                NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
-                builder.append(currentTargetSeq.getRange(0, groupCoordinates.start));
-                builder.append(cluster.groupValues.get(groupName));
-                builder.append(currentTargetSeq.getRange(groupCoordinates.end, currentTargetSeq.size()));
-                currentTargetSequences.put(groupCoordinates.targetId, builder.createAndDestroy());
-            }
+            ReadWithGroups currentReadWithGroups = input;
+            for (Map.Entry<String, NSequenceWithQuality> entry : cluster.groupValues.entrySet())
+                currentReadWithGroups = currentReadWithGroups.getReadWithChangedGroup(
+                        entry.getKey(), entry.getValue());
             updatedSequencesForClusters.add(currentReadWithGroups);
         }
         return updatedSequencesForClusters;
@@ -307,11 +330,43 @@ public class CorrectionAlgorithmsTest {
             this.start = start;
             this.end = end;
         }
+
+        @Override
+        public String toString() {
+            return "{" + targetId + ":" + start + "-" + end + '}';
+        }
     }
 
     private static class ReadWithGroups {
         final TByteObjectHashMap<NSequenceWithQuality> targetSequences = new TByteObjectHashMap<>();
         final Map<String, GroupCoordinates> groups = new HashMap<>();
+
+        ReadWithGroups getReadWithChangedGroup(String groupName, NSequenceWithQuality newValue) {
+            GroupCoordinates groupCoordinates = groups.get(groupName);
+            NSequenceWithQuality target = targetSequences.get(groupCoordinates.targetId);
+            NSequenceWithQualityBuilder newTarget = new NSequenceWithQualityBuilder();
+            newTarget.append(target.getRange(0, groupCoordinates.start));
+            newTarget.append(newValue);
+            newTarget.append(target.getRange(groupCoordinates.end, target.size()));
+            ReadWithGroups newReadWithGroups = new ReadWithGroups();
+            newReadWithGroups.targetSequences.putAll(targetSequences);
+            newReadWithGroups.targetSequences.put(groupCoordinates.targetId, newTarget.createAndDestroy());
+            Map<String, GroupCoordinates> newGroups = newReadWithGroups.groups;
+            for (Map.Entry<String, GroupCoordinates> entry : groups.entrySet()) {
+                GroupCoordinates currentEntryCoordinates = entry.getValue();
+                if (currentEntryCoordinates.targetId != groupCoordinates.targetId)
+                    newGroups.put(entry.getKey(), currentEntryCoordinates);
+                else {
+                    int lengthDiff = newValue.size() - (groupCoordinates.end - groupCoordinates.start);
+                    int newStart = (currentEntryCoordinates.start >= groupCoordinates.end)
+                            ? currentEntryCoordinates.start + lengthDiff : currentEntryCoordinates.start;
+                    int newEnd = (currentEntryCoordinates.end >= groupCoordinates.end)
+                            ? currentEntryCoordinates.end + lengthDiff : currentEntryCoordinates.end;
+                    newGroups.put(entry.getKey(), new GroupCoordinates(groupCoordinates.targetId, newStart, newEnd));
+                }
+            }
+            return newReadWithGroups;
+        }
     }
 
     private static class PrimaryGroups {

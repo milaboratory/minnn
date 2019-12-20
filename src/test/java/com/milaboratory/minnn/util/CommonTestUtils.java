@@ -47,6 +47,7 @@ import java.util.stream.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.milaboratory.core.sequence.SequencesUtils.concatenate;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.invertCoordinate;
 import static com.milaboratory.minnn.util.CommonTestUtils.RandomStringType.*;
@@ -79,66 +80,70 @@ public class CommonTestUtils {
         return new NSequenceWithQuality(randomSeq, randomQualityBuilder.createAndDestroy());
     }
 
-    public static NucleotideSequenceCaseSensitive makeRandomInsertions(NucleotideSequenceCaseSensitive seq,
-                                                                       int number) {
-        NucleotideSequenceCaseSensitive result = seq;
+    @SuppressWarnings("unchecked")
+    public static <S extends Seq<S>> S randomSeq(S sampleInstance, int length) {
+        if (sampleInstance instanceof NucleotideSequenceCaseSensitive)
+            return (S)randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, length, length);
+        else if (sampleInstance instanceof NucleotideSequence)
+            return (S)randomSequence(NucleotideSequence.ALPHABET, length, length);
+        else if (sampleInstance instanceof NSequenceWithQuality)
+            return (S)randomSeqWithQuality(length, false);
+        else
+            throw new IllegalArgumentException(sampleInstance.getClass().toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <S extends Seq<S>> S makeRandomInsertions(S seq, int number) {
+        S result = seq;
         int currentLength;
         int currentInsertPosition;
         for (int i = 0; i < number; i++) {
             currentLength = seq.size() + i;
-            currentInsertPosition = rg.nextInt(currentLength);
-            result = SequencesUtils.concatenate(result.getRange(0, currentInsertPosition),
-                    randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, 1, 1),
+            currentInsertPosition = (currentLength == 0) ? 0 : rg.nextInt(currentLength);
+            result = concatenate(result.getRange(0, currentInsertPosition), randomSeq(seq, 1),
                     result.getRange(currentInsertPosition, currentLength));
         }
         return result;
     }
 
-    public static NucleotideSequenceCaseSensitive makeRandomDeletions(NucleotideSequenceCaseSensitive seq,
-                                                                      int number) {
+    @SuppressWarnings("unchecked")
+    public static <S extends Seq<S>> S makeRandomDeletions(S seq, int number) {
         assertTrue(seq.size() > number);
-        NucleotideSequenceCaseSensitive result = seq;
+        S result = seq;
         int currentLength;
         int currentDeletePosition;
         for (int i = 0; i < number; i++) {
             currentLength = seq.size() - i;
             currentDeletePosition = rg.nextInt(currentLength);
-            result = SequencesUtils.concatenate(result.getRange(0, currentDeletePosition),
+            result = concatenate(result.getRange(0, currentDeletePosition),
                     result.getRange(currentDeletePosition + 1, currentLength));
         }
         return result;
     }
 
-    public static NucleotideSequenceCaseSensitive makeRandomReplacements(NucleotideSequenceCaseSensitive seq,
-                                                                         int number) {
-        NucleotideSequenceCaseSensitive result = seq;
+    @SuppressWarnings("unchecked")
+    public static <S extends Seq<S>> S makeRandomSubstitutions(S seq, int number) {
+        assertTrue(seq.size() > 0);
+        S result = seq;
         int currentPosition;
         for (int i = 0; i < number; i++) {
             currentPosition = rg.nextInt(seq.size());
-            result = SequencesUtils.concatenate(result.getRange(0, currentPosition),
-                    randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, 1, 1),
+            result = concatenate(result.getRange(0, currentPosition), randomSeq(seq, 1),
                     result.getRange(currentPosition + 1, seq.size()));
         }
         return result;
     }
 
-    public static NucleotideSequenceCaseSensitive makeRandomErrors(NucleotideSequenceCaseSensitive seq, int number) {
-        NucleotideSequenceCaseSensitive result = seq;
-        for (int i = 0; i < number; i++) {
-            switch (rg.nextInt(3)) {
-                case 0:
-                    result = makeRandomInsertions(result, 1);
-                    break;
-                case 1:
-                    if (result.size() < 2) break;
-                    result = makeRandomDeletions(result, 1);
-                    break;
-                case 2:
-                    result = makeRandomReplacements(result, 1);
-                    break;
-            }
-        }
-        return result;
+    public static <S extends Seq<S>> S makeRandomErrors(S seq, int number) {
+        assertTrue(seq.size() > 0);
+        if (number == 0)
+            return seq;
+        int numSubstitutions = rg.nextInt(number + 1);
+        int numDeletions = Math.min(seq.size() - 1, rg.nextInt(number - numSubstitutions + 1));
+        int numInsertions = number - numSubstitutions - numDeletions;
+        S result = makeRandomSubstitutions(seq, numSubstitutions);
+        result = makeRandomDeletions(result, numDeletions);
+        return makeRandomInsertions(result, numInsertions);
     }
 
     public static NucleotideSequenceCaseSensitive toLowerCase(NucleotideSequenceCaseSensitive seq) {
