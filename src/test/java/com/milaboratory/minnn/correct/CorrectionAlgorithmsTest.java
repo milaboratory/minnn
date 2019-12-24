@@ -57,9 +57,67 @@ public class CorrectionAlgorithmsTest {
                     new SimpleMutationProbability(0.1f, 0.02f)),
             0, 0, 10);
     private static final CorrectionAlgorithms strictCorrectionAlgorithms = new CorrectionAlgorithms(
-            new BarcodeClusteringStrategyFactory(0, 10, 1, 2,
+            new BarcodeClusteringStrategyFactory(-1, 10, 1, 2,
                     new SimpleMutationProbability(1, 1)),
             0, 0, 10);
+
+    @Test
+    public void simpleTests() {
+        LinkedHashSet<String> keyGroups0 = new LinkedHashSet<>(Arrays.asList("G1", "G2", "G3", "G4", "G5", "G6"));
+        List<TByteObjectHashMap<NSequenceWithQuality>> inputSequences0 = new ArrayList<>();
+        List<Map<String, GroupCoordinates>> groups0 = new ArrayList<>();
+        List<Map<String, NucleotideSequence>> expectedCorrectedGroupValues0 = new ArrayList<>();
+
+        TByteObjectHashMap<NSequenceWithQuality> sequencesT0R_0_1 = new TByteObjectHashMap<>();
+        Map<String, GroupCoordinates> groupsT0R_0_2 = new HashMap<>();
+        Map<String, NucleotideSequence> expectedT0R_0_2 = new HashMap<>();
+        sequencesT0R_0_1.put((byte)1, new NSequenceWithQuality("AATAAGTCGTCC", "%9SS7IOITX27"));
+        sequencesT0R_0_1.put((byte)2, new NSequenceWithQuality(
+                "GTTCCTGGCGTCCCTCCTGCCCGAGCTTACAA", "\"X7%%$',4'D[(*DU<JQZO9)88%V@X/OY"));
+        sequencesT0R_0_1.put((byte)3, new NSequenceWithQuality("TACAAACAA", ">:0NA(2W0"));
+        sequencesT0R_0_1.put((byte)4, new NSequenceWithQuality(
+                "AGCAGTCCGCACCACCAGCT", ";IH=MX\"-E55#HO[H(>-["));
+        groupsT0R_0_2.put("G1", new GroupCoordinates((byte)2, 2, 10));
+        groupsT0R_0_2.put("G2", new GroupCoordinates((byte)2, 14, 19));
+        groupsT0R_0_2.put("G3", new GroupCoordinates((byte)4, 2, 7));
+        groupsT0R_0_2.put("G4", new GroupCoordinates((byte)2, 23, 30));
+        groupsT0R_0_2.put("G5", new GroupCoordinates((byte)4, 12, 19));
+        groupsT0R_0_2.put("G6", new GroupCoordinates((byte)3, 0, 5));
+        expectedT0R_0_2.put("G1", new NucleotideSequence("TCCTGGCG"));
+        expectedT0R_0_2.put("G2", new NucleotideSequence("TCCTG"));
+        expectedT0R_0_2.put("G3", new NucleotideSequence("CAGTC"));
+        expectedT0R_0_2.put("G4", new NucleotideSequence("AGCTTAC"));
+        expectedT0R_0_2.put("G5", new NucleotideSequence("CACCAGC"));
+        expectedT0R_0_2.put("G6", new NucleotideSequence("TACAA"));
+        inputSequences0.add(sequencesT0R_0_1);
+        groups0.add(groupsT0R_0_2);
+        expectedCorrectedGroupValues0.add(expectedT0R_0_2);
+        inputSequences0.add(sequencesT0R_0_1);
+        groups0.add(groupsT0R_0_2);
+        expectedCorrectedGroupValues0.add(expectedT0R_0_2);
+
+        TByteObjectHashMap<NSequenceWithQuality> sequencesT0R2 = new TByteObjectHashMap<>();
+        sequencesT0R2.put((byte)1, sequencesT0R_0_1.get((byte)1));
+        sequencesT0R2.put((byte)2, new NSequenceWithQuality(
+                "GTTCCTGGCGTCCCNDGSTCCCGAGCTTACAA", "\"X7%%$',4'D[(*$9-.DZO9)88%V@X/OY"));
+        sequencesT0R2.put((byte)3, sequencesT0R_0_1.get((byte)3));
+        sequencesT0R2.put((byte)4, new NSequenceWithQuality(
+                "AGCSBTCCGCACCACCAGCT", ";IH$AX\"-E55#HO[H(>-["));
+        inputSequences0.add(sequencesT0R2);
+        groups0.add(groupsT0R_0_2);
+        expectedCorrectedGroupValues0.add(expectedT0R_0_2);
+
+        CorrectionTestData testData = new CorrectionTestData(inputSequences0.size(), keyGroups0, new LinkedHashSet<>(),
+                inputSequences0, groups0, expectedCorrectedGroupValues0);
+        OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
+                testData.getInputPort(), testData.keyGroups, testData.primaryGroups);
+        CorrectionData correctionData = strictCorrectionAlgorithms.prepareCorrectionData(preprocessorPort,
+                testData.keyGroups, 0);
+        List<CorrectBarcodesResult> results = streamPort(testData.getInputPort())
+                .map(parsedRead -> strictCorrectionAlgorithms.correctBarcodes(parsedRead, correctionData))
+                .collect(Collectors.toList());
+        testData.assertCorrectionResults(results);
+    }
 
     @Test
     public void simpleRandomTest() {
@@ -73,14 +131,21 @@ public class CorrectionAlgorithmsTest {
             if (testData.primaryGroups.size() > 0) {
                 OutputPort<CorrectionData> correctionDataPort = performSecondaryBarcodesCorrection(preprocessorPort,
                         correctionAlgorithms, testData.keyGroups, rg.nextInt(10) + 1);
-                for (CorrectionData correctionData : CUtils.it(correctionDataPort))
+                for (CorrectionData correctionData : CUtils.it(correctionDataPort)) {
                     for (int j = 0; j < correctionData.parsedReadsCount; j++) {
                         ParsedRead parsedRead = Objects.requireNonNull(parsedReadsPort.take());
                         results.add(correctionAlgorithms.correctBarcodes(parsedRead, correctionData));
                     }
+                    System.out.println("\n\n");
+                    correctionData.keyGroupsData.forEach((key, value) -> {
+                        System.out.println(key);
+                        System.out.println(value.correctionMap);
+                    });
+                }
             } else {
                 CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
                         testData.keyGroups, 0);
+                System.out.println("\n\n");
                 correctionData.keyGroupsData.forEach((key, value) -> {
                     System.out.println(key);
                     System.out.println(value.correctionMap);
@@ -89,24 +154,20 @@ public class CorrectionAlgorithmsTest {
                 streamPort(parsedReadsPort).forEach(parsedRead ->
                         results.add(correctionAlgorithms.correctBarcodes(parsedRead, correctionData)));
             }
-            System.out.println(testData.inputSequences);
-            System.out.println(testData.groups);
-            System.out.println(testData.expectedSequences);
-            System.out.println(results.stream().map(data -> data.parsedRead.getMatchTarget((byte)1))
+            System.out.println(testData.inputReadsWithGroups.stream().map(r -> r.targetSequences)
                     .collect(Collectors.toList()));
+            System.out.println(testData.inputReadsWithGroups.stream().map(r -> r.groups).collect(Collectors.toList()));
+            System.out.println(testData.expectedCorrectedGroupValues);
             testData.assertCorrectionResults(results);
         }
     }
 
     private static CorrectionTestData generateSimpleRandomTestData() {
-//        int numberOfTargets = rg.nextInt(4) + 1;
-//        int numberOfKeyGroups = rg.nextInt(6) + 1;
+        int numberOfTargets = rg.nextInt(4) + 1;
+        int numberOfKeyGroups = rg.nextInt(6) + 1;
 //        int numberOfPrimaryGroups = rg.nextInt(3);
-        int numberOfTargets = 1;
-        int numberOfKeyGroups = 1;
-        int numberOfPrimaryGroups = 0;
-//        int totalNumberOfGroups = numberOfKeyGroups + numberOfPrimaryGroups + rg.nextInt(3);
-        int totalNumberOfGroups = numberOfKeyGroups;
+        int numberOfPrimaryGroups = 2;
+        int totalNumberOfGroups = numberOfKeyGroups + numberOfPrimaryGroups + rg.nextInt(3);
         List<String> keyGroups = IntStream.rangeClosed(1, numberOfKeyGroups).mapToObj(i -> "G" + i)
                 .collect(Collectors.toList());
         List<String> primaryGroups = IntStream.rangeClosed(1, numberOfPrimaryGroups).mapToObj(i -> "PG" + i)
@@ -147,7 +208,7 @@ public class CorrectionAlgorithmsTest {
 
         List<TByteObjectHashMap<NSequenceWithQuality>> preparedInputSequences = new ArrayList<>();
         List<Map<String, GroupCoordinates>> preparedGroups = new ArrayList<>();
-        List<TByteObjectHashMap<NucleotideSequence>> preparedExpectedSequences = new ArrayList<>();
+        List<Map<String, NucleotideSequence>> preparedExpectedGroups = new ArrayList<>();
 
         for (ReadWithGroups currentReadWithGroups : clusters) {
             int mutatedSequencesNum = rg.nextInt(10);
@@ -165,13 +226,13 @@ public class CorrectionAlgorithmsTest {
                     preparedInputSequences.add(mutatedReadWithGroups.targetSequences);
                     preparedGroups.add(mutatedReadWithGroups.groups);
                 }
-                preparedExpectedSequences.add(removeQuality(currentReadWithGroups.targetSequences));
+                preparedExpectedGroups.add(currentReadWithGroups.getSequencesForGroups(keyGroups));
                 generatedSeqCount++;
             }
         }
 
         return new CorrectionTestData(numberOfTargets, new LinkedHashSet<>(keyGroups),
-                new LinkedHashSet<>(primaryGroups), preparedInputSequences, preparedGroups, preparedExpectedSequences);
+                new LinkedHashSet<>(primaryGroups), preparedInputSequences, preparedGroups, preparedExpectedGroups);
     }
 
     private static ReadWithGroups mutate(ReadWithGroups input, int numErrors) {
@@ -218,36 +279,33 @@ public class CorrectionAlgorithmsTest {
         return updatedSequencesForClusters;
     }
 
-    private static TByteObjectHashMap<NucleotideSequence> removeQuality(
-            TByteObjectHashMap<NSequenceWithQuality> targetSequences) {
-        TByteObjectHashMap<NucleotideSequence> result = new TByteObjectHashMap<>();
-        targetSequences.forEachEntry((key, value) -> {
-            result.put(key, value.getSequence());
-            return true;
-        });
-        return result;
-    }
-
     private static class CorrectionTestData {
         final int numberOfTargets;
         final LinkedHashSet<String> keyGroups;
         final LinkedHashSet<String> primaryGroups;
-        // keys: targetIds, starting from 1 (numbers after "R" in R1, R2 etc)
-        final List<TByteObjectHashMap<NSequenceWithQuality>> inputSequences;
-        final List<Map<String, GroupCoordinates>> groups;
-        final List<TByteObjectHashMap<NucleotideSequence>> expectedSequences;
+        final List<ReadWithGroups> inputReadsWithGroups;
+        final List<Map<String, NucleotideSequence>> expectedCorrectedGroupValues;
 
         CorrectionTestData(
                 int numberOfTargets, LinkedHashSet<String> keyGroups, LinkedHashSet<String> primaryGroups,
                 List<TByteObjectHashMap<NSequenceWithQuality>> inputSequences,
                 List<Map<String, GroupCoordinates>> groups,
-                List<TByteObjectHashMap<NucleotideSequence>> expectedSequences) {
+                List<Map<String, NucleotideSequence>> expectedCorrectedGroupValues) {
+            ParsedRead.clearStaticCache();
             this.numberOfTargets = numberOfTargets;
             this.keyGroups = keyGroups;
             this.primaryGroups = primaryGroups;
-            this.inputSequences = inputSequences;
-            this.groups = groups;
-            this.expectedSequences = expectedSequences;
+            this.expectedCorrectedGroupValues = expectedCorrectedGroupValues;
+            assertEquals(inputSequences.size(), groups.size());
+            assertEquals(inputSequences.size(), expectedCorrectedGroupValues.size());
+            List<ReadWithGroups> inputReadsWithGroups = new ArrayList<>();
+            for (int i = 0; i < inputSequences.size(); i++) {
+                ReadWithGroups readWithGroups = new ReadWithGroups();
+                readWithGroups.targetSequences.putAll(inputSequences.get(i));
+                readWithGroups.groups.putAll(groups.get(i));
+                inputReadsWithGroups.add(readWithGroups);
+            }
+            this.inputReadsWithGroups = inputReadsWithGroups;
         }
 
         OutputPort<ParsedRead> getInputPort() {
@@ -256,41 +314,41 @@ public class CorrectionAlgorithmsTest {
 
                 @Override
                 public ParsedRead take() {
-                    if (counter == inputSequences.size())
+                    if (counter == inputReadsWithGroups.size())
                         return null;
+                    ReadWithGroups currentReadWithGroups = inputReadsWithGroups.get(counter);
+                    TByteObjectHashMap<NSequenceWithQuality> inputSequences = currentReadWithGroups.targetSequences;
+                    Map<String, GroupCoordinates> groups = currentReadWithGroups.groups;
                     SequenceRead originalRead;
                     switch (numberOfTargets) {
                         case 1:
-                            originalRead = new SingleReadImpl(
-                                    counter, inputSequences.get(counter).get((byte)1), "");
+                            originalRead = new SingleReadImpl(counter, inputSequences.get((byte)1), "");
                             break;
                         case 2:
                             originalRead = new PairedRead(
-                                    new SingleReadImpl(
-                                            counter, inputSequences.get(counter).get((byte)1), ""),
-                                    new SingleReadImpl(
-                                            counter, inputSequences.get(counter).get((byte)2), ""));
+                                    new SingleReadImpl(counter, inputSequences.get((byte)1), ""),
+                                    new SingleReadImpl(counter, inputSequences.get((byte)2), ""));
                             break;
                         default:
                             SingleRead[] originalReads = new SingleRead[numberOfTargets];
                             for (int i = 0; i < numberOfTargets; i++)
                                 originalReads[i] = new SingleReadImpl(
-                                        counter, inputSequences.get(counter).get((byte)(i + 1)), "");
+                                        counter, inputSequences.get((byte)(i + 1)), "");
                             originalRead = new MultiRead(originalReads);
                     }
                     ArrayList<MatchedGroupEdge> matchedGroupEdges = new ArrayList<>();
                     for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
-                        NSequenceWithQuality target = inputSequences.get(counter).get(targetId);
+                        NSequenceWithQuality target = inputSequences.get(targetId);
                         String groupName = "R" + targetId;
                         matchedGroupEdges.add(new MatchedGroupEdge(target, targetId,
                                 new GroupEdge(groupName, true), 0));
                         matchedGroupEdges.add(new MatchedGroupEdge(target, targetId,
                                 new GroupEdge(groupName, false), target.size()));
                     }
-                    for (Map.Entry<String, GroupCoordinates> groupEntry : groups.get(counter).entrySet()) {
+                    for (Map.Entry<String, GroupCoordinates> groupEntry : groups.entrySet()) {
                         String groupName = groupEntry.getKey();
                         GroupCoordinates groupCoordinates = groupEntry.getValue();
-                        NSequenceWithQuality target = inputSequences.get(counter).get(groupCoordinates.targetId);
+                        NSequenceWithQuality target = inputSequences.get(groupCoordinates.targetId);
                         matchedGroupEdges.add(new MatchedGroupEdge(target, groupCoordinates.targetId,
                                 new GroupEdge(groupName, true), groupCoordinates.start));
                         matchedGroupEdges.add(new MatchedGroupEdge(target, groupCoordinates.targetId,
@@ -298,6 +356,8 @@ public class CorrectionAlgorithmsTest {
                     }
                     Match bestMatch = new Match(numberOfTargets, 0, matchedGroupEdges);
                     counter++;
+                    ParsedRead parsedRead = new ParsedRead(originalRead, false, -1,
+                            bestMatch, 0);
                     return new ParsedRead(originalRead, false, -1,
                             bestMatch, 0);
                 }
@@ -305,16 +365,19 @@ public class CorrectionAlgorithmsTest {
         }
 
         void assertCorrectionResults(List<CorrectBarcodesResult> results) {
-            assertEquals(expectedSequences.size(), results.size());
+            assertEquals(expectedCorrectedGroupValues.size(), results.size());
             for (int i = 0; i < results.size(); i++) {
-                TByteObjectHashMap<NucleotideSequence> actualSequences = new TByteObjectHashMap<>();
+                Map<String, NucleotideSequence> currentExpectedGroupValues = expectedCorrectedGroupValues.get(i);
+                Map<String, NucleotideSequence> currentInputGroupValues = inputReadsWithGroups.get(i)
+                        .getSequencesForGroups(keyGroups);
                 boolean expectedCorrection = false;
-                for (byte targetId = 1; targetId <= numberOfTargets; targetId++) {
-                    actualSequences.put(targetId, results.get(i).parsedRead.getMatchTarget(targetId).getSequence());
-                    expectedCorrection |= (expectedSequences.get(i).get(targetId).getSequence()
-                            != inputSequences.get(i).get(targetId).getSequence());
+                for (Map.Entry<String, NucleotideSequence> entry : currentExpectedGroupValues.entrySet()) {
+                    NucleotideSequence expectedResult = entry.getValue();
+                    NucleotideSequence actualResult = results.get(i).parsedRead
+                            .getGroupValue(entry.getKey()).getSequence();
+                    assertEquals(expectedResult, actualResult);
+                    expectedCorrection |= !expectedResult.equals(currentInputGroupValues.get(entry.getKey()));
                 }
-                assertEquals(expectedSequences.get(i), actualSequences);
                 assertEquals(expectedCorrection, results.get(i).corrected);
             }
         }
@@ -338,6 +401,7 @@ public class CorrectionAlgorithmsTest {
     }
 
     private static class ReadWithGroups {
+        // keys: targetIds, starting from 1 (numbers after "R" in R1, R2 etc)
         final TByteObjectHashMap<NSequenceWithQuality> targetSequences = new TByteObjectHashMap<>();
         final Map<String, GroupCoordinates> groups = new HashMap<>();
 
@@ -366,6 +430,17 @@ public class CorrectionAlgorithmsTest {
                 }
             }
             return newReadWithGroups;
+        }
+
+        Map<String, NucleotideSequence> getSequencesForGroups(Collection<String> keyGroups) {
+            Map<String, NucleotideSequence> results = new HashMap<>();
+            for (String groupName : keyGroups) {
+                GroupCoordinates groupCoordinates = groups.get(groupName);
+                NucleotideSequence targetSeq = targetSequences.get(groupCoordinates.targetId).getSequence();
+                NucleotideSequence groupValue = targetSeq.getRange(groupCoordinates.start, groupCoordinates.end);
+                results.put(groupName, groupValue);
+            }
+            return results;
         }
     }
 
