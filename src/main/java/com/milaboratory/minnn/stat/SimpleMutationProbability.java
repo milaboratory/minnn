@@ -53,30 +53,37 @@ public final class SimpleMutationProbability implements MutationProbability {
             float[] fromProbabilities = new float[basicSize];
             float[] toProbabilities = new float[basicSize];
 
+            float fromProbabilitiesSum = 0;
+            float toProbabilitiesSum = 0;
             for (int i = 0; i < basicSize; i++) {
                 float fromProbability = qualityToLetterProbabilityCache[fromQual];
                 Wildcard fromWildcard = NucleotideSequence.ALPHABET.codeToWildcard(from);
                 if (fromProbability < badQualityBasicProbability)
-                    fromProbabilities[i] = badQualityBasicProbability;
+                    fromProbability = badQualityBasicProbability;
                 else if ((fromWildcard.getBasicMask() & basicLettersMasks[i]) == 0)
-                    fromProbabilities[i] = (1 - fromProbability) / (basicSize - fromWildcard.basicSize());
+                    fromProbability = (1 - fromProbability) / (basicSize - fromWildcard.basicSize());
                 else
-                    fromProbabilities[i] = fromProbability / fromWildcard.basicSize();
+                    fromProbability = fromProbability / fromWildcard.basicSize();
+                fromProbabilities[i] = fromProbability;
+                fromProbabilitiesSum += fromProbability;
 
                 float toProbability = qualityToLetterProbabilityCache[toQual];
                 Wildcard toWildcard = NucleotideSequence.ALPHABET.codeToWildcard(to);
                 if (toProbability < badQualityBasicProbability)
-                    toProbabilities[i] = badQualityBasicProbability;
+                    toProbability = badQualityBasicProbability;
                 else if ((toWildcard.getBasicMask() & basicLettersMasks[i]) == 0)
-                    toProbabilities[i] = (1 - toProbability) / (basicSize - toWildcard.basicSize());
+                    toProbability = (1 - toProbability) / (basicSize - toWildcard.basicSize());
                 else
-                    toProbabilities[i] = toProbability / toWildcard.basicSize();
+                    toProbability = toProbability / toWildcard.basicSize();
+                toProbabilities[i] = toProbability;
+                toProbabilitiesSum += toProbability;
             }
 
             float substitutionProbability = 0;
             for (int i = 0; i < basicSize; i++)
                 for (int j = 0; j < basicSize; j++) {
-                    float combinationProbability = fromProbabilities[i] * toProbabilities[j];
+                    float combinationProbability = fromProbabilities[i] * toProbabilities[j]
+                            / fromProbabilitiesSum / toProbabilitiesSum;
                     if (from == to)
                         substitutionProbability += combinationProbability;
                     else
