@@ -257,7 +257,8 @@ public final class CorrectionAlgorithms {
                                         parsedRead.getGroupValue(primaryGroup).getSequence());
                         } else
                             currentPrimaryGroups = null;
-                        if (!currentGroups.equals(previousGroups)) {
+                        if (!Objects.equals(currentPrimaryGroups, previousPrimaryGroups)
+                                || !currentGroups.equals(previousGroups)) {
                             if (previousGroups != null) {
                                 preparedResult = new CorrectionQualityPreprocessingResult(previousGroups,
                                         currentClusterSumQualities, currentCounter, previousPrimaryGroups);
