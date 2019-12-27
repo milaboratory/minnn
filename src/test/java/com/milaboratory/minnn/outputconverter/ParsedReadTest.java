@@ -79,7 +79,6 @@ public class ParsedReadTest {
         }
     }};
 
-    @Ignore
     @Test
     public void retargetTest() {
         ParsedRead newParsedRead = testParsedRead.retarget("R1", "R2", "R3", "G3-1", "G1-2", "G1-1");
@@ -123,10 +122,7 @@ public class ParsedReadTest {
 
         final Match finalTargetMatch = testParsedRead.retarget("G1-1").getBestMatch();
         assertEquals(1, finalTargetMatch.getNumberOfTargets());
-        assertException(IllegalStateException.class, () -> {
-            finalTargetMatch.getMatchedGroupEdge("G3-1", true);
-            return null;
-        });
+        assertEquals(-1, finalTargetMatch.getMatchedGroupEdge("G3-1", true).getPosition());
         targetGroupEdges = finalTargetMatch.getMatchedGroupEdges();
         expectedValues = new String[] { "G1-1", "G1-1" };
         expectedPositions = new int[] { 0, 1 };

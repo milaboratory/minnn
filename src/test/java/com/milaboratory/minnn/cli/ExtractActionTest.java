@@ -177,13 +177,13 @@ public class ExtractActionTest {
             assertTrue(new File(fileName).delete());
     }
 
-    @Ignore
     @Test
     public void descriptionGroupsTest() throws Exception {
         String inputFile = getExampleMif("twosided");
         String fastqR1 = TEMP_DIR + "desc_group_test_R1.fastq";
         String fastqR2 = TEMP_DIR + "desc_group_test_R2.fastq";
         String extracted = TEMP_DIR + "desc_group_test_extracted.mif";
+        String sorted = TEMP_DIR + "desc_group_test_sorted.mif";
         String corrected = TEMP_DIR + "desc_group_test_corrected.mif";
         String consensus = TEMP_DIR + "desc_group_test_consensus.mif";
         String extractToFastqR1 = TEMP_DIR + "desc_group_test_extracted_R1.fastq";
@@ -195,13 +195,14 @@ public class ExtractActionTest {
         exec("extract -f --input " + fastqR1 + " " + fastqR2 + " --output " + extracted
                 + " --description-group DG1='(?<=G1~)[a-zA-Z]*(?=~)' --pattern \"(G1:cccnn)\\*\""
                 + " --description-group DG4='G4~(?<seq>[a-zA-Z]*)~(?<qual>.*?)\\{' --score-threshold 0");
-        exec("correct -f --input " + extracted + " --output " + corrected + " --groups G1 DG4");
+        sortFile(extracted, sorted, "G1 DG4");
+        exec("correct -f --input " + sorted + " --output " + corrected + " --groups G1 DG4");
         exec("consensus -f --input " + corrected + " --output " + consensus + " --groups DG1 G1 DG4");
         exec("mif2fastq -f --input " + extracted
                 + " --group R1=" + extractToFastqR1 + " R2=" + extractToFastqR2);
         exec("mif2fastq -f --input " + consensus
                 + " --group R1=" + consensusToFastqR1 + " --group R2=" + consensusToFastqR2);
-        for (String fileName : new String[] { inputFile, fastqR1, fastqR2, extracted, corrected, consensus,
+        for (String fileName : new String[] { inputFile, fastqR1, fastqR2, extracted, sorted, corrected, consensus,
                 extractToFastqR1, extractToFastqR2, consensusToFastqR1, consensusToFastqR2 })
             assertTrue(new File(fileName).delete());
     }
@@ -224,23 +225,24 @@ public class ExtractActionTest {
             assertTrue(new File(fileName).delete());
     }
 
-    @Ignore
     @Test
     public void groupsOverrideTest() throws Exception {
         String r1 = EXAMPLES_PATH + "positional/polyfid10_R1.fastq.gz";
         String r2 = EXAMPLES_PATH + "positional/polyfid10_R2.fastq.gz";
         String extractedFile = TEMP_DIR + "groups_override_extracted.mif";
+        String sortedFile1 = TEMP_DIR + "groups_override_sorted1.mif";
         String correctedFile = TEMP_DIR + "groups_override_corrected.mif";
-        String sortedFile = TEMP_DIR + "groups_override_sorted.mif";
+        String sortedFile2 = TEMP_DIR + "groups_override_sorted2.mif";
         String consensusFile = TEMP_DIR + "groups_override_consensus.mif";
         exec("extract -f --input " + r1 + " " + r2 + " --output " + extractedFile + " --score-threshold -100"
                 + " --pattern \"^(R1:(G1:NNN))aac\\cctc(R2:aaa)(R3:t(G3:tt)t)$\" --bitap-max-errors 10");
-        exec("correct -f --input " + extractedFile + " --output " + correctedFile + " --groups G1 G3");
-        exec("sort -f --input " + correctedFile + " --output " + sortedFile + " --groups G1 G3");
-        exec("consensus -f --input " + sortedFile + " --output " + consensusFile + " --groups G1 G3"
+        sortFile(extractedFile, sortedFile1, "G1 G3");
+        exec("correct -f --input " + sortedFile1 + " --output " + correctedFile + " --groups G1 G3");
+        sortFile(correctedFile, sortedFile2, "G1 G3");
+        exec("consensus -f --input " + sortedFile2 + " --output " + consensusFile + " --groups G1 G3"
                 + " --min-good-sequence-length 2 --reads-min-good-sequence-length 2"
                 + " --kmer-length 2 --trim-window-size 2 --reads-trim-window-size 2");
-        for (String fileName : new String[] { extractedFile, correctedFile, sortedFile, consensusFile })
+        for (String fileName : new String[] { extractedFile, sortedFile1, correctedFile, sortedFile2, consensusFile })
             assertTrue(new File(fileName).delete());
     }
 }

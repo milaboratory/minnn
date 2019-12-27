@@ -79,38 +79,48 @@ public class CorrectActionTest {
                 + " --groups G1"));
         assertOutputContains(true, "Error", () -> callableExec("correct -f"
                 + " --input " + sortedInputFile + " --output " + inputFile));
-        for (int i = 0; i <= 1; i++) {
-            String currentInput = (i == 0) ? inputFile : TEMP_DIR + "correct" + i + ".mif";
-            String currentSortedFile = TEMP_DIR + "sorted" + (i + 1) + ".mif";
-            String currentOutput = TEMP_DIR + "correct" + (i + 1) + ".mif";
-            sortFile(currentInput, currentSortedFile, "G1 G2 G3 G4");
+        for (int i = 0; i <= 2; i++) {
+            String currentInputTest1 = (i == 0) ? inputFile : TEMP_DIR + "correct_t1_" + i + ".mif";
+            String currentInputTest2 = (i == 0) ? inputFile : TEMP_DIR + "correct_t2_" + i + ".mif";
+            String currentSortedFileTest1 = TEMP_DIR + "sorted_t1_" + (i + 1) + ".mif";
+            String currentSortedFileTest2 = TEMP_DIR + "sorted_t2_" + (i + 1) + ".mif";
+            String currentOutputTest1 = TEMP_DIR + "correct_t1_" + (i + 1) + ".mif";
+            String currentOutputTest2 = TEMP_DIR + "correct_t2_" + (i + 1) + ".mif";
+            String currentOutputTest3 = TEMP_DIR + "correct_t3_" + (i + 1) + ".mif";
+            sortFile(currentInputTest1, currentSortedFileTest1, "G1 G2 G3 G4");
+            sortFile(currentInputTest2, currentSortedFileTest2, "G1 G2 G3 G4");
             assertOutputContains(true, "Error", () -> callableExec("correct -f" +
-                    " --input " + currentSortedFile + " --output " + currentOutput +
+                    " --input " + currentSortedFileTest1 + " --output " + currentOutputTest1 +
                     " --groups G1 --max-errors-share -1"));
-            exec("correct -f --groups G1 G2 G3 G4 --input " + currentSortedFile + " --output " + currentOutput
+            exec("correct -f --groups G1 G2 G3 G4 --input " + currentSortedFileTest1
+                    + " --output " + currentOutputTest1
                     + " --cluster-threshold 0.4 --single-substitution-probability 0.002"
                     + " --single-indel-probability 0.001 --max-errors 3 --max-errors-share -1");
-            assertFileNotEquals(currentSortedFile, currentOutput);
-            if (i == 0) {
-                assertMifNotEqualsAsFastq(currentSortedFile, currentOutput, true);
-            } else
-                assertMifEqualsAsFastq(currentSortedFile, currentOutput, true);
+            assertFileNotEquals(currentSortedFileTest1, currentOutputTest1);
+            if (i < 2)
+                assertMifNotEqualsAsFastq(currentSortedFileTest1, currentOutputTest1, true);
+            else
+                assertMifEqualsAsFastq(currentSortedFileTest1, currentOutputTest1, true);
+            exec("correct -f --input " + currentSortedFileTest2 + " --output " + currentOutputTest2
+                    + " --max-errors 0 --groups G1 G2 G3 G4");
+            assertFileNotEquals(currentSortedFileTest2, currentOutputTest2);
+            if (i < 2)
+                assertMifNotEqualsAsFastq(currentSortedFileTest2, currentOutputTest2, true);
+            else
+                assertMifEqualsAsFastq(currentSortedFileTest2, currentOutputTest2, true);
+            exec("correct -f --input " + currentSortedFileTest2 + " --output " + currentOutputTest3
+                    + " --max-errors 0 --groups G1 G2 G3 G4 --max-errors-share 0.5");
+            assertFileNotEquals(currentOutputTest2, currentOutputTest3);
+            assertMifEqualsAsFastq(currentOutputTest2, currentOutputTest3, true);
         }
-        exec("correct -f --input " + sortedInputFile + " --output " + TEMP_DIR + "correct3.mif --max-errors 0"
-                + " --groups G1 G2 G3 G4");
-        assertFileNotEquals(sortedInputFile, TEMP_DIR + "correct3.mif");
-        assertMifEqualsAsFastq(sortedInputFile, TEMP_DIR + "correct3.mif", true);
-        exec("correct -f --input " + sortedInputFile + " --output " + TEMP_DIR + "correct4.mif"
-                + " --max-errors 0 --groups G1 G2 G3 G4 --max-errors-share 0.5");
-        assertFileNotEquals(TEMP_DIR + "correct3.mif", TEMP_DIR + "correct4.mif");
-        assertMifEqualsAsFastq(sortedInputFile, TEMP_DIR + "correct4.mif", true);
         assertTrue(new File(inputFile).delete());
         assertTrue(new File(sortedInputFile).delete());
-        for (int i = 1; i <= 4; i++) {
-            if (i <= 2)
-                assertTrue(new File(TEMP_DIR + "sorted" + i + ".mif").delete());
-            assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
-        }
+        for (int i = 1; i <= 3; i++)
+            for (int j = 1; j <= 3; j++) {
+                if (j < 3)
+                    assertTrue(new File(TEMP_DIR + "sorted_t" + j + "_" + i + ".mif").delete());
+                assertTrue(new File(TEMP_DIR + "correct_t" + j + "_" + i + ".mif").delete());
+            }
     }
 
     @Test
@@ -160,9 +170,9 @@ public class CorrectActionTest {
         String inputFile = getExampleMif("twosided");
         String sortedInputFile = TEMP_DIR + "sorted.mif";
         sortFile(inputFile, sortedInputFile, "G3 G4");
-        for (int i = 0; i < 10; i++) {
+        for (int i = 1; i < 10; i++) {
             String currentInput;
-            if (i == 0)
+            if (i == 1)
                 currentInput = sortedInputFile;
             else {
                 currentInput = TEMP_DIR + "correct" + i + "_sorted.mif";
@@ -173,10 +183,7 @@ public class CorrectActionTest {
                 exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
                         + " --max-errors 0 --min-count " + (int)Math.pow(i, 2));
                 assertFileNotEquals(currentInput, currentOutput);
-                if (i <= 1)
-                    assertMifEqualsAsFastq(currentInput, currentOutput, true);
-                else
-                    assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
+                assertMifNotEqualsAsFastq(currentInput, currentOutput, true);
             } else {
                 exec("correct -f --groups G3 G4 --input " + currentInput + " --output " + currentOutput
                         + " --max-errors 0 --min-count 1");
@@ -186,7 +193,7 @@ public class CorrectActionTest {
         }
         assertTrue(new File(inputFile).delete());
         assertTrue(new File(sortedInputFile).delete());
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 2; i <= 10; i++) {
             assertTrue(new File(TEMP_DIR + "correct" + i + ".mif").delete());
             if (i < 10)
                 assertTrue(new File(TEMP_DIR + "correct" + i + "_sorted.mif").delete());
@@ -234,12 +241,12 @@ public class CorrectActionTest {
             String currentSecondaryOutput = TEMP_DIR + "correctedSecondary" + (i + 1) + ".mif";
             sortFile(currentInput, currentSortedInput, "G1 G2");
             exec("correct -f --groups G1 G2 --input " + currentSortedInput
-                    + " --output " + currentPrimaryOutput + " --max-errors-share 0.4 --cluster-threshold 0.4"
-                    + " --single-substitution-probability 0.002 --single-indel-probability 0.001");
+                    + " --output " + currentPrimaryOutput + " --max-errors-share 0.3 --cluster-threshold 0.4"
+                    + " --single-substitution-probability 0.001 --single-indel-probability 0.0005");
             sortFile(currentPrimaryOutput, currentSortedOutput, "G1 G2 G3 G4");
             exec("correct -f --primary-groups G1 G2 --groups G3 G4 --input " + currentSortedOutput
-                    + " --output " + currentSecondaryOutput + " --max-errors-share 0.4 --cluster-threshold 0.4"
-                    + " --single-substitution-probability 0.002 --single-indel-probability 0.001");
+                    + " --output " + currentSecondaryOutput + " --max-errors-share 0.3 --cluster-threshold 0.4"
+                    + " --single-substitution-probability 0.001 --single-indel-probability 0.0005");
             assertFileNotEquals(currentSortedInput, currentSecondaryOutput);
             if (i < 2)
                 assertMifNotEqualsAsSortedFastq(currentSortedInput, currentSecondaryOutput, true,
