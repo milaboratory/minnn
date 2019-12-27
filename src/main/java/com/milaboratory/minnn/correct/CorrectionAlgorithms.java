@@ -205,6 +205,7 @@ public final class CorrectionAlgorithms {
             CorrectionData correctionData, OutputPort<ParsedRead> rawReadsPort,
             MifWriter writer, MifWriter excludedBarcodesWriter) {
         long correctedReads = 0;
+        long updatedQualityReads = 0;
         long excludedReads = 0;
 
         for (int i = 0; i < correctionData.parsedReadsCount; i++) {
@@ -214,6 +215,10 @@ public final class CorrectionAlgorithms {
             CorrectBarcodesResult correctBarcodesResult = correctBarcodes(parsedRead, correctionData);
             if (correctBarcodesResult.corrected)
                 correctedReads++;
+            else if (correctBarcodesResult.qualityUpdated) {
+                // count reads with not changed sequences, but updated qualities
+                updatedQualityReads++;
+            }
             if (correctBarcodesResult.excluded) {
                 if (excludedBarcodesWriter != null)
                     excludedBarcodesWriter.write(correctBarcodesResult.parsedRead);
@@ -221,7 +226,7 @@ public final class CorrectionAlgorithms {
             } else
                 writer.write(correctBarcodesResult.parsedRead);
         }
-        return new CorrectionStats(correctedReads, excludedReads,
+        return new CorrectionStats(correctedReads, updatedQualityReads, excludedReads,
                 correctionData.totalWildcardsCount, correctionData.totalNucleotidesCount);
     }
 
@@ -403,6 +408,7 @@ public final class CorrectionAlgorithms {
     CorrectBarcodesResult correctBarcodes(ParsedRead parsedRead, CorrectionData correctionData) {
         Map<String, NSequenceWithQuality> correctedGroups = new HashMap<>();
         boolean isCorrection = false;
+        boolean isQualityUpdate = false;
         boolean excluded = false;
         for (Map.Entry<String, CorrectionGroupData> groupData : correctionData.keyGroupsData.entrySet()) {
             String groupName = groupData.getKey();
@@ -413,13 +419,14 @@ public final class CorrectionAlgorithms {
             if (correctValue == null)
                 correctValue = oldValue;
             isCorrection |= !correctValue.getSequence().equals(oldValue.getSequence());
+            isQualityUpdate |= !correctValue.equals(oldValue);
             correctedGroups.put(groupName, correctValue);
             if (filterByCount)
                 excluded |= !correctionGroupData.includedBarcodes.contains(correctValue.getSequence());
         }
 
         ArrayList<MatchedGroupEdge> newGroupEdges;
-        if (!isCorrection)
+        if (!isQualityUpdate)
             newGroupEdges = parsedRead.getMatchedGroupEdges();
         else {
             newGroupEdges = new ArrayList<>();
@@ -444,18 +451,20 @@ public final class CorrectionAlgorithms {
                     + ", got " + newMatch.getGroups().stream().map(MatchedGroup::getGroupName)
                     .filter(defaultGroups::contains).collect(Collectors.toList()));
         return new CorrectBarcodesResult(new ParsedRead(parsedRead.getOriginalRead(), parsedRead.isReverseMatch(),
-                parsedRead.getRawNumberOfTargetsOverride(), newMatch, 0), isCorrection,
-                excluded);
+                parsedRead.getRawNumberOfTargetsOverride(), newMatch, 0),
+                isCorrection, isQualityUpdate, excluded);
     }
 
     static class CorrectBarcodesResult {
         final ParsedRead parsedRead;
         final boolean corrected;
+        final boolean qualityUpdated;
         final boolean excluded;
 
-        CorrectBarcodesResult(ParsedRead parsedRead, boolean corrected, boolean excluded) {
+        CorrectBarcodesResult(ParsedRead parsedRead, boolean corrected, boolean qualityUpdated, boolean excluded) {
             this.parsedRead = parsedRead;
             this.corrected = corrected;
+            this.qualityUpdated = qualityUpdated;
             this.excluded = excluded;
         }
     }

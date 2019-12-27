@@ -151,6 +151,7 @@ public final class CorrectBarcodesIO {
                 OutputPort<CorrectionData> correctionDataPort = performSecondaryBarcodesCorrection(preprocessorPort,
                         correctionAlgorithms, keyGroups, threads);
                 long correctedReads = 0;
+                long updatedQualityReads = 0;
                 long excludedReads = 0;
                 long totalWildcards = 0;
                 long totalNucleotides = 0;
@@ -158,11 +159,13 @@ public final class CorrectBarcodesIO {
                     CorrectionStats statsForCurrentPrimaryGroups = correctionAlgorithms.correctAndWrite(
                             correctionData, pass2RawReadsPort, writer, excludedBarcodesWriter);
                     correctedReads += statsForCurrentPrimaryGroups.correctedReads;
+                    updatedQualityReads += statsForCurrentPrimaryGroups.updatedQualityReads;
                     excludedReads += statsForCurrentPrimaryGroups.excludedReads;
                     totalWildcards += statsForCurrentPrimaryGroups.totalWildcards;
                     totalNucleotides += statsForCurrentPrimaryGroups.totalNucleotides;
                 }
-                stats = new CorrectionStats(correctedReads, excludedReads, totalWildcards, totalNucleotides);
+                stats = new CorrectionStats(correctedReads, updatedQualityReads, excludedReads,
+                        totalWildcards, totalNucleotides);
             } else {
                 // full file correction
                 CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
@@ -198,10 +201,15 @@ public final class CorrectBarcodesIO {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
-        float percent = (totalReads.get() == 0) ? 0 : (float)stats.correctedReads / totalReads.get() * 100;
+        float correctedPercent = (totalReads.get() == 0) ? 0 : (float)stats.correctedReads / totalReads.get() * 100;
         report.append("Processed ").append(totalReads).append(" reads").append('\n');
         report.append("Reads with corrected barcodes: ").append(stats.correctedReads).append(" (")
-                .append(floatFormat.format(percent)).append("%)\n");
+                .append(floatFormat.format(correctedPercent)).append("%)\n");
+        float qualityUpdatedPercent = (totalReads.get() == 0)
+                ? 0 : (float)stats.updatedQualityReads / totalReads.get() * 100;
+        report.append("Reads with not changed barcode sequences, but updated qualities: ")
+                .append(stats.updatedQualityReads).append(" (")
+                .append(floatFormat.format(qualityUpdatedPercent)).append("%)\n");
         if (stats.excludedReads > 0)
             report.append("Reads excluded by low barcode count: ").append(stats.excludedReads).append(" (")
                     .append(floatFormat.format((float)stats.excludedReads / totalReads.get() * 100)).append("%)\n");
@@ -221,6 +229,7 @@ public final class CorrectBarcodesIO {
         jsonReportData.put("wildcardsCollapsingMergeThreshold", wildcardsCollapsingMergeThreshold);
         jsonReportData.put("elapsedTime", elapsedTime);
         jsonReportData.put("correctedReads", stats.correctedReads);
+        jsonReportData.put("updatedQualityReads", stats.updatedQualityReads);
         jsonReportData.put("excludedReads", stats.excludedReads);
         jsonReportData.put("totalReads", totalReads);
         jsonReportData.put("totalWildcards", stats.totalWildcards);
