@@ -32,9 +32,9 @@ import com.milaboratory.core.sequence.*;
 import gnu.trove.map.hash.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
+import static com.milaboratory.core.sequence.NucleotideSequence.*;
+import static com.milaboratory.core.sequence.SequencesUtils.concatenate;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.stat.StatUtils.*;
 
@@ -42,11 +42,6 @@ public final class SequencesCache {
     private SequencesCache() {}
 
     public static final HashMap<NucleotideSequence, NucleotideSequence> sequencesCache = new HashMap<>();
-    public static final NucleotideSequence[] consensusMajorBases;
-    public static final TObjectIntHashMap<NucleotideSequence> majorBasesIndexes = new TObjectIntHashMap<>();
-    public static final int majorBasesEmptyIndex;
-    public static final List<NucleotideSequence> allLetters = new ArrayList<>();
-    public static final NucleotideSequence[] codeToSequence = new NucleotideSequence[ALPHABET.size()];
     public static final long[] basicLettersMasks = new long[ALPHABET.basicSize()];
     public static final float[] qualityToLetterProbabilityCache = new float[DEFAULT_MAX_QUALITY + 1];
     private static TByteObjectHashMap<SequenceQuality> qualityCache = null;
@@ -56,28 +51,11 @@ public final class SequencesCache {
             sequencesOfCharacters = null;
 
     static {
-        List<String> alphabet = ALPHABET.getAllWildcards().stream()
-                .map(wildcard -> String.valueOf(wildcard.getSymbol())).collect(Collectors.toList());
-        alphabet.stream().map(NucleotideSequence::new).forEach(seq -> sequencesCache.put(seq, seq));
-        alphabet.forEach(first -> alphabet.forEach(second -> {
-            NucleotideSequence currentSequence = new NucleotideSequence(first + second);
+        Arrays.stream(ONE_LETTER_SEQUENCES).forEach(seq -> sequencesCache.put(seq, seq));
+        Arrays.stream(ONE_LETTER_SEQUENCES).forEach(first -> Arrays.stream(ONE_LETTER_SEQUENCES).forEach(second -> {
+            NucleotideSequence currentSequence = concatenate(first, second);
             sequencesCache.put(currentSequence, currentSequence);
         }));
-
-        consensusMajorBases = new NucleotideSequence[] {
-                sequencesCache.get(new NucleotideSequence("A")), sequencesCache.get(new NucleotideSequence("T")),
-                sequencesCache.get(new NucleotideSequence("G")), sequencesCache.get(new NucleotideSequence("C")),
-                NucleotideSequence.EMPTY };
-        for (int i = 0; i < consensusMajorBases.length; i++)
-            majorBasesIndexes.put(consensusMajorBases[i], i);
-        majorBasesEmptyIndex = majorBasesIndexes.get(NucleotideSequence.EMPTY);
-
-        ALPHABET.getAllWildcards().forEach(wildcard -> {
-            String letter = String.valueOf(wildcard.getSymbol());
-            NucleotideSequence sequence = sequencesCache.get(new NucleotideSequence(letter));
-            allLetters.add(sequence);
-            codeToSequence[wildcard.getCode()] = sequence;
-        });
 
         for (byte i = 0; i < basicLettersMasks.length; i++)
             basicLettersMasks[i] = ALPHABET.codeToWildcard(i).getBasicMask();
@@ -97,7 +75,7 @@ public final class SequencesCache {
                 if (qualityCache == null)
                     newQualityCache.put(quality, qualObject);
                 if (withSequences)
-                    allLetters.forEach(seq -> {
+                    Arrays.stream(ONE_LETTER_SEQUENCES).forEach(seq -> {
                         NSequenceWithQuality nSequenceWithQuality = new NSequenceWithQuality(seq, qualObject);
                         newSeqWithQualityCache.put(nSequenceWithQuality, nSequenceWithQuality);
                     });

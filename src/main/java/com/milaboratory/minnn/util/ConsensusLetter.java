@@ -34,16 +34,19 @@ import com.milaboratory.core.sequence.Wildcard;
 
 import java.util.*;
 
-import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
+import static com.milaboratory.core.sequence.NucleotideSequence.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.stat.StatUtils.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
+import static java.util.stream.Stream.*;
 
 /**
  * Helper class for merging multiple letters with quality into one consensus letter.
  */
 public class ConsensusLetter {
     private static final HashMap<NSequenceWithQuality, List<LetterStats>> statsCache = new HashMap<>();
+    // major bases are basic letters and EMPTY
+    private static final int consensusMajorBasesNum = ALPHABET.basicSize() + 1;
 
     private final List<NSequenceWithQuality> inputLetters;
     private final long[] letterCounts;
@@ -67,19 +70,19 @@ public class ConsensusLetter {
     }
 
     public boolean isDeletionMaxCount() {
-        for (long letterCount : letterCounts)
-            if (letterCount > letterCounts[majorBasesEmptyIndex])
+        for (int i = 0; i < ALPHABET.basicSize(); i++)
+            if (letterCounts[i] > letterCounts[consensusMajorBasesNum - 1])
                 return false;
         return true;
     }
 
     private static NSequenceWithQuality calculateConsensusLetter(long[] letterCounts, List<LetterStats> letterStats) {
-        double gamma = 1.0 / (consensusMajorBases.length - 1);
+        double gamma = 1.0 / ALPHABET.basicSize();
         NucleotideSequence bestLetterSequence = null;
         double bestLetterQuality = -1;
 
-        for (int i = 0; i < 4; i++) {
-            NucleotideSequence letterOption = consensusMajorBases[i];   // don't count for empty option
+        for (byte i = 0; i < ALPHABET.basicSize(); i++) {
+            NucleotideSequence letterOption = ONE_LETTER_SEQUENCES[i];  // don't count for empty option
             double product = Math.pow(gamma, -letterCounts[i]);
             for (LetterStats currentStats : letterStats) {
                 double errorProbability = qualityToProbability(Math.max(DEFAULT_BAD_QUALITY, currentStats.quality));
@@ -123,18 +126,16 @@ public class ConsensusLetter {
     }
 
     private static long[] calculateBasicLettersCounts(List<NSequenceWithQuality> letters) {
-        long[] counts = new long[consensusMajorBases.length];
+        long[] counts = new long[consensusMajorBasesNum];
         letters.forEach(letter -> {
             if (letter == NSequenceWithQuality.EMPTY)
-                counts[majorBasesEmptyIndex]++;
+                counts[consensusMajorBasesNum - 1]++;
             else if (letter.getSequence().containsWildcards()) {
                 Wildcard wildcard = ALPHABET.codeToWildcard(letter.getSequence().codeAt(0));
-                for (int i = 0; i < wildcard.basicSize(); i++) {
-                    NucleotideSequence currentBasicLetter = codeToSequence[wildcard.getMatchingCode(i)];
-                    counts[majorBasesIndexes.get(currentBasicLetter)]++;
-                }
+                for (int i = 0; i < wildcard.basicSize(); i++)
+                    counts[wildcard.getMatchingCode(i)]++;
             } else
-                counts[majorBasesIndexes.get(letter.getSequence())]++;
+                counts[letter.getSequence().codeAt(0)]++;
         });
         return counts;
     }
@@ -142,22 +143,21 @@ public class ConsensusLetter {
     private static synchronized void initStatsCache() {
         if (statsCache.isEmpty()) {
             // calculating counts and stats for all letters with all possible qualities
-            List<NucleotideSequence> allLettersWithEmpty = new ArrayList<>(allLetters);
-            allLettersWithEmpty.add(NucleotideSequence.EMPTY);
-            allLettersWithEmpty.forEach(letter -> {
+            concat(Arrays.stream(ONE_LETTER_SEQUENCES), of(EMPTY)).forEach(letter -> {
                 for (byte quality = 0; quality <= DEFAULT_MAX_QUALITY; quality++) {
                     List<LetterStats> stats = new ArrayList<>();
-                    if (letter == NucleotideSequence.EMPTY) {
+                    if (letter == EMPTY) {
                         // EMPTY comes without quality, so add only one entry to the cache
                         if (quality == 0) {
-                            stats.add(new LetterStats(NucleotideSequence.EMPTY, DEFAULT_BAD_QUALITY));
+                            stats.add(new LetterStats(EMPTY, DEFAULT_BAD_QUALITY));
                             statsCache.put(NSequenceWithQuality.EMPTY, stats);
                         }
                     } else {
                         if (letter.containsWildcards()) {
                             Wildcard wildcard = ALPHABET.codeToWildcard(letter.codeAt(0));
                             for (int i = 0; i < wildcard.basicSize(); i++) {
-                                NucleotideSequence currentBasicLetter = codeToSequence[wildcard.getMatchingCode(i)];
+                                NucleotideSequence currentBasicLetter = ONE_LETTER_SEQUENCES[
+                                        wildcard.getMatchingCode(i)];
                                 stats.add(new LetterStats(currentBasicLetter,
                                         (double)quality / wildcard.basicSize()));
                             }

@@ -30,10 +30,11 @@ package com.milaboratory.minnn.stat;
 
 import com.milaboratory.core.sequence.*;
 
+import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
 public final class SimpleMutationProbability implements MutationProbability {
-    private static final byte basicSize = (byte)(NucleotideSequence.ALPHABET.basicSize());
+    private static final byte basicSize = (byte)(ALPHABET.basicSize());
     private static final float badQualityBasicProbability = 1.0f / basicSize;
     private final float basicSubstitutionProbability;
     private final float indelProbability;
@@ -57,7 +58,7 @@ public final class SimpleMutationProbability implements MutationProbability {
             float toProbabilitiesSum = 0;
             for (int i = 0; i < basicSize; i++) {
                 float fromProbability = qualityToLetterProbabilityCache[fromQual];
-                Wildcard fromWildcard = NucleotideSequence.ALPHABET.codeToWildcard(from);
+                Wildcard fromWildcard = ALPHABET.codeToWildcard(from);
                 if (fromProbability < badQualityBasicProbability)
                     fromProbability = badQualityBasicProbability;
                 else if ((fromWildcard.getBasicMask() & basicLettersMasks[i]) == 0)
@@ -68,7 +69,7 @@ public final class SimpleMutationProbability implements MutationProbability {
                 fromProbabilitiesSum += fromProbability;
 
                 float toProbability = qualityToLetterProbabilityCache[toQual];
-                Wildcard toWildcard = NucleotideSequence.ALPHABET.codeToWildcard(to);
+                Wildcard toWildcard = ALPHABET.codeToWildcard(to);
                 if (toProbability < badQualityBasicProbability)
                     toProbability = badQualityBasicProbability;
                 else if ((toWildcard.getBasicMask() & basicLettersMasks[i]) == 0)
