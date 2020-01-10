@@ -32,6 +32,7 @@ import com.milaboratory.minnn.io.MinnnDataFormat;
 
 import static com.milaboratory.core.sequence.SequenceQuality.*;
 import static com.milaboratory.minnn.io.MinnnDataFormat.*;
+import static com.milaboratory.minnn.parser.Parser.PARSER_BUILTIN_READ_GROUPS_NUM;
 
 public final class Defaults {
     private Defaults() {}
@@ -83,6 +84,7 @@ public final class Defaults {
     public final static int BITAP_MAX_LENGTH = 63;
     public final static int SEQUENCES_OF_CHARACTERS_CACHE_SIZE = 100;
     public final static int SEQUENCES_OF_N_CACHE_SIZE = 1000;
+    public final static byte BUILTIN_READ_GROUPS_NUM = PARSER_BUILTIN_READ_GROUPS_NUM;
     public final static double OVERFLOW_PROTECTION_MIN = 1E-100D;
     public final static double OVERFLOW_PROTECTION_MAX = 1E100D;
 }

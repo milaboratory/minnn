@@ -116,7 +116,7 @@ public final class AnyPattern extends SinglePattern {
                 MatchedRange matchedRange = new MatchedRange(target, targetId, 0, new Range(from, to));
                 ArrayList<MatchedGroupEdge> matchedGroupEdges = groupEdges.stream().map(ge -> {
                     byte matchedGroupTargetId = conf.defaultGroupsOverride
-                            ? defaultGroupIds.getOrDefault(ge.getGroupName(), (byte)-1) : targetId;
+                            ? defaultGroupIds.get(ge.getGroupName()) : targetId;
                     return new MatchedGroupEdge(target, matchedGroupTargetId, 0, ge,
                             ge.isStart() ? 0 : target.size());
                 }).collect(Collectors.toCollection(ArrayList::new));
