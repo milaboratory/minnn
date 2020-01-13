@@ -94,6 +94,13 @@ final class BarcodeClusteringStrategy
                     throw new IllegalStateException("Wrong mutation type: " + mutationType);
             }
         }
+        System.out.println("canAddToCluster():");
+        System.out.println(seq1 + " <= " + seq2);
+        System.out.println("major: " + majorClusterCount + ", minor: " + minorClusterCount);
+        System.out.println("expected minor count: " + expected);
+        System.out.println("equalByWildcards: " + equalByWildcards);
+        System.out.println("result: " + (!equalByWildcards && (minorClusterCount <= expected)
+                && ((float)minorClusterCount / majorClusterCount < threshold)) + "\n");
         return !equalByWildcards && (minorClusterCount <= expected)
                 && ((float)minorClusterCount / majorClusterCount < threshold);
     }

@@ -34,6 +34,8 @@ import com.milaboratory.core.alignment.*;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.io.sequence.fastq.SingleFastqReader;
 import com.milaboratory.core.io.sequence.fastq.SingleFastqWriter;
+import com.milaboratory.core.mutations.Mutation;
+import com.milaboratory.core.mutations.Mutations;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.pattern.*;
 
@@ -47,6 +49,7 @@ import java.util.stream.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.milaboratory.core.mutations.Mutation.*;
 import static com.milaboratory.core.sequence.SequencesUtils.concatenate;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.invertCoordinate;
@@ -72,12 +75,79 @@ public class CommonTestUtils {
         return countPortValues(matchingResult.getMatches(fair));
     }
 
+    public static NSequenceWithQuality mutateSeqWithRandomQuality(
+            NSequenceWithQuality originalSeqWithQuality, Mutations<NucleotideSequence> mutations) {
+        Alphabet<NucleotideSequence> alphabet = NucleotideSequence.ALPHABET;
+        NucleotideSequence originalSeq = originalSeqWithQuality.getSequence();
+        SequenceQuality originalQual = originalSeqWithQuality.getQuality();
+        NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
+        int pointer = 0;
+        int mutPointer = 0;
+        int mut;
+        byte qualityAtPointer;
+        while (pointer < originalSeq.size() || mutPointer < mutations.size()) {
+            if (mutPointer < mutations.size()
+                    && ((mut = mutations.getMutation(mutPointer)) >>> POSITION_OFFSET) <= pointer)
+                switch (mut & MUTATION_TYPE_MASK) {
+                    case RAW_MUTATION_TYPE_SUBSTITUTION:
+                        if (((mut >> FROM_OFFSET) & LETTER_MASK) != originalSeq.codeAt(pointer))
+                            throw new IllegalArgumentException("Mutation = " + Mutation.toString(alphabet, mut) +
+                                    " but seq[" + pointer + "]=" + originalSeq.symbolAt(pointer));
+                        qualityAtPointer = originalQual.value(pointer);
+                        ++pointer;
+                        builder.append(new NSequenceWithQuality(
+                                new NucleotideSequence(new byte[] { (byte)(mut & LETTER_MASK) }),
+                                (byte)(rg.nextInt(qualityAtPointer + 1))));
+                        ++mutPointer;
+                        break;
+                    case RAW_MUTATION_TYPE_DELETION:
+                        if (((mut >> FROM_OFFSET) & LETTER_MASK) != originalSeq.codeAt(pointer))
+                            throw new IllegalArgumentException("Mutation = " + Mutation.toString(alphabet, mut) +
+                                    " but seq[" + pointer + "]=" + originalSeq.symbolAt(pointer));
+                        ++pointer;
+                        ++mutPointer;
+                        break;
+                    case RAW_MUTATION_TYPE_INSERTION:
+                        if (pointer >= originalSeq.size())
+                            qualityAtPointer = originalQual.value(originalQual.size() - 1);
+                        else
+                            qualityAtPointer = originalQual.value(pointer);
+                        builder.append(new NSequenceWithQuality(
+                                new NucleotideSequence(new byte[] { (byte)(mut & LETTER_MASK) }),
+                                (byte)(rg.nextInt(qualityAtPointer + 1))));
+                        ++mutPointer;
+                        break;
+                }
+            else {
+                builder.append(originalSeqWithQuality.getRange(pointer, pointer + 1));
+                pointer++;
+            }
+        }
+        return builder.createAndDestroy();
+    }
+
     public static NSequenceWithQuality randomSeqWithQuality(int length, boolean basicLettersOnly) {
         NucleotideSequence randomSeq = randomSequence(NucleotideSequence.ALPHABET, length, length, basicLettersOnly);
         SequenceQualityBuilder randomQualityBuilder = new SequenceQualityBuilder();
         IntStream.range(0, length)
                 .forEach(i -> randomQualityBuilder.append((byte)(rg.nextInt(DEFAULT_MAX_QUALITY) + 1)));
         return new NSequenceWithQuality(randomSeq, randomQualityBuilder.createAndDestroy());
+    }
+
+    public static NSequenceWithQuality randomSeqWithWildcardShare(int length, float wildcardShare) {
+        NucleotideAlphabet alphabet = NucleotideSequence.ALPHABET;
+        NucleotideSequence basicSeq = randomSequence(alphabet, length, length, true);
+        NucleotideSequence seqWithWildcards = randomSequence(alphabet, length, length, false);
+        float alphabetWildcardShare = 1 - (float)alphabet.basicSize() / alphabet.size();
+        float wildcardSeqShare = wildcardShare / alphabetWildcardShare;
+        NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
+        for (int i = 0; i < length; i++) {
+            NucleotideSequence seq = (rg.nextFloat() < wildcardSeqShare) ? seqWithWildcards.getRange(i, i + 1)
+                    : basicSeq.getRange(i, i + 1);
+            SequenceQuality qual = new SequenceQuality(new byte[] { (byte)(rg.nextInt(DEFAULT_MAX_QUALITY) + 1) });
+            builder.append(new NSequenceWithQuality(seq, qual));
+        }
+        return builder.createAndDestroy();
     }
 
     @SuppressWarnings("unchecked")
@@ -164,6 +234,16 @@ public class CommonTestUtils {
         for (int i = 0; i < length; i++)
             quality[i] = (byte)(rg.nextInt(DEFAULT_GOOD_QUALITY + 1 - DEFAULT_BAD_QUALITY) + DEFAULT_BAD_QUALITY);
         return new NSequenceWithQuality(new NucleotideSequence(seq), new SequenceQuality(quality));
+    }
+
+    public static boolean equalByWildcards(NucleotideSequence seq1, NucleotideSequence seq2) {
+        if (seq1.size() != seq2.size())
+            return false;
+        for (int i = 0; i < seq1.size(); i++)
+            if (!NucleotideSequence.ALPHABET.codeToWildcard(seq1.codeAt(i))
+                    .intersectsWith(NucleotideSequence.ALPHABET.codeToWildcard(seq2.codeAt(i))))
+                return false;
+        return true;
     }
 
     public static PatternAndTargetAlignmentScoring getTestScoring() {

@@ -31,6 +31,8 @@ package com.milaboratory.minnn.correct;
 import cc.redberry.pipe.CUtils;
 import cc.redberry.pipe.OutputPort;
 import com.milaboratory.core.io.sequence.*;
+import com.milaboratory.core.mutations.Mutations;
+import com.milaboratory.core.mutations.generator.NucleotideMutationModel;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NSequenceWithQualityBuilder;
 import com.milaboratory.core.sequence.NucleotideSequence;
@@ -48,13 +50,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.milaboratory.core.mutations.generator.MutationModels.getEmpiricalNucleotideMutationModel;
+import static com.milaboratory.core.mutations.generator.MutationsGenerator.generateMutations;
+import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.correct.CorrectionAlgorithms.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
 
 public class CorrectionAlgorithmsTest {
     private static final CorrectionAlgorithms simpleCorrectionAlgorithms = new CorrectionAlgorithms(
-            new BarcodeClusteringStrategyFactory(0.12f, 0, 1, 2,
+            new BarcodeClusteringStrategyFactory(0.12f, -1, 1, 2,
                     new SimpleMutationProbability(0.1f, 0.02f)),
             0, 0, 10);
     private static final CorrectionAlgorithms strictCorrectionAlgorithms = new CorrectionAlgorithms(
@@ -228,6 +233,132 @@ public class CorrectionAlgorithmsTest {
         }
     }
 
+    @Test
+    public void mutationsCorrectionTest() {
+        CorrectionAlgorithms correctionAlgorithms = simpleCorrectionAlgorithms;
+        NucleotideMutationModel mutationModel = getEmpiricalNucleotideMutationModel();
+        for (int i = 0; i < 10; i++) {
+            int numberOfBarcodes = rg.nextInt(100) + 2;
+            int[] barcodeNumInstances = new int[numberOfBarcodes];
+            for (int j = 0; j < numberOfBarcodes; j++)
+                barcodeNumInstances[j] = rg.nextInt(100) + 1;
+
+            // generating original sequences with barcodes
+            boolean withWildcards = rg.nextBoolean();
+            float wildcardShare = rg.nextFloat() * 0.2f + 0.2f;
+            int originalSequencesLength = rg.nextInt(10) + 30;
+            int barcodesLength = withWildcards ? rg.nextInt(15) + 9 : rg.nextInt(20) + 4;
+            List<NSequenceWithQuality> originalSequences = new ArrayList<>();
+            List<GroupCoordinates> barcodeCoordinates = new ArrayList<>();
+            for (int j = 0; j < numberOfBarcodes; j++) {
+                NSequenceWithQuality randomSeq = withWildcards
+                        ? randomSeqWithWildcardShare(originalSequencesLength, wildcardShare)
+                        : randomSeqWithQuality(originalSequencesLength, true);
+                int barcodeStart = rg.nextInt(originalSequencesLength - barcodesLength + 1);
+                int barcodeEnd = barcodeStart + barcodesLength;
+                for (int k = 0; k < barcodeNumInstances[j]; k++) {
+                    originalSequences.add(randomSeq);
+                    barcodeCoordinates.add(new GroupCoordinates((byte)1, barcodeStart, barcodeEnd));
+                }
+            }
+
+            // generating sequences with mutated barcodes
+            int order = 0;
+            List<ReadWithGroupsAndOrder> mutatedReads = new ArrayList<>();
+            for (int j = 0; j < numberOfBarcodes; j++) {
+                NSequenceWithQuality originalSequence = originalSequences.get(order);
+                GroupCoordinates originalCoordinates = barcodeCoordinates.get(order);
+                NSequenceWithQuality originalBarcodeValue = originalSequence.getRange(
+                        originalCoordinates.start, originalCoordinates.end);
+                List<ReadWithGroupsAndOrder> currentBarcodeMutatedReads = new ArrayList<>();
+                for (int k = 0; k < barcodeNumInstances[j]; k++) {
+                    ReadWithGroups currentRead = new ReadWithGroups();
+                    currentRead.targetSequences.put((byte)1, originalSequence);
+                    currentRead.groups.put("G", originalCoordinates);
+                    // mutating one of the previous barcode values
+                    NSequenceWithQuality barcodeValueAfterMutations;
+                    if (k == 0)
+                        barcodeValueAfterMutations = originalBarcodeValue;
+                    else {
+                        NSequenceWithQuality barcodeValueBeforeMutations = currentBarcodeMutatedReads
+                                .get(rg.nextInt(k)).readWithGroups.getGroupValue("G");
+                        Mutations<NucleotideSequence> currentBarcodeMutations = generateMutations(
+                                barcodeValueBeforeMutations.getSequence(), mutationModel);
+                        barcodeValueAfterMutations = mutateSeqWithRandomQuality(barcodeValueBeforeMutations,
+                                currentBarcodeMutations);
+                    }
+                    // adding read with mutated barcode to list
+                    currentBarcodeMutatedReads.add(new ReadWithGroupsAndOrder(
+                            currentRead.getReadWithChangedGroup("G", barcodeValueAfterMutations),
+                            "G", order++));
+                }
+                mutatedReads.addAll(currentBarcodeMutatedReads);
+            }
+
+            List<ReadWithGroupsAndOrder> unsortedMutatedReads = new ArrayList<>(mutatedReads);
+            Collections.sort(mutatedReads);
+            CorrectionTestData testData = new CorrectionTestData("G", mutatedReads);
+
+            // correcting barcodes
+            OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
+                    testData.getInputPort(), testData.keyGroups, testData.primaryGroups);
+            OutputPort<ParsedRead> parsedReadsPort = testData.getInputPort();
+            CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
+                    testData.keyGroups, 0);
+            for (Map.Entry<NucleotideSequence, NSequenceWithQuality> entry
+                    : correctionData.keyGroupsData.get("G").correctionMap.entrySet()) {
+                if (!entry.getKey().equals(entry.getValue().getSequence())) {
+                    System.out.println("Correction: " + entry.getKey() + " => " + entry.getValue().getSequence());
+                    System.out.println("Equal by wildcards: "
+                            + equalByWildcards(entry.getKey(), entry.getValue().getSequence()) + "\n");
+                }
+            }
+            List<CorrectBarcodesResult> results = streamPort(parsedReadsPort).map(parsedRead ->
+                    correctionAlgorithms.correctBarcodes(parsedRead, correctionData)).collect(Collectors.toList());
+
+            // extracting corrected barcodes and restoring original order
+            List<NSequenceWithQuality> correctedBarcodes = results.stream()
+                    .map(r -> r.parsedRead.getGroupValue("G")).collect(Collectors.toList());
+            NSequenceWithQuality[] correctedBarcodesWithOriginalOrder = new NSequenceWithQuality[mutatedReads.size()];
+            for (int newOrder = 0; newOrder < mutatedReads.size(); newOrder++) {
+                int originalOrder = mutatedReads.get(newOrder).originalOrder;
+                correctedBarcodesWithOriginalOrder[originalOrder] = correctedBarcodes.get(newOrder);
+            }
+
+            // calculating stats
+            int matchingMutatedReads = 0;
+            int matchingCorrectedReads = 0;
+            for (int readIndex = 0; readIndex < originalSequences.size(); readIndex++) {
+                GroupCoordinates originalBarcodeCoordinates = barcodeCoordinates.get(readIndex);
+                NucleotideSequence originalBarcodeSeq = originalSequences.get(readIndex)
+                        .getRange(originalBarcodeCoordinates.start, originalBarcodeCoordinates.end).getSequence();
+                NucleotideSequence mutatedBarcodeSeq = unsortedMutatedReads.get(readIndex).readWithGroups
+                        .getGroupValue("G").getSequence();
+                NucleotideSequence correctedBarcodeSeq = correctedBarcodesWithOriginalOrder[readIndex].getSequence();
+                if (equalByWildcards(originalBarcodeSeq, mutatedBarcodeSeq)
+                        && !equalByWildcards(originalBarcodeSeq, correctedBarcodeSeq)) {
+                    System.out.println("Original: " + originalBarcodeSeq);
+                    System.out.println("Mutated: " + mutatedBarcodeSeq);
+                    System.out.println("Corrected: " + correctedBarcodeSeq + "\n");
+                }
+                if (equalByWildcards(originalBarcodeSeq, mutatedBarcodeSeq))
+                    matchingMutatedReads++;
+                if (equalByWildcards(originalBarcodeSeq, correctedBarcodeSeq))
+                    matchingCorrectedReads++;
+            }
+            float matchingMutatedPercent = (float)matchingMutatedReads / originalSequences.size() * 100;
+            float matchingCorrectedPercent = (float)matchingCorrectedReads / originalSequences.size() * 100;
+            System.out.println("Number of unique barcodes: " + numberOfBarcodes);
+            System.out.println("Number of reads: " + originalSequences.size());
+            System.out.println("Wildcards share in barcodes: " + (withWildcards ? wildcardShare : 0));
+            System.out.println("Mutated reads that match the original: " + matchingMutatedReads + " ("
+                    + floatFormat.format(matchingMutatedPercent) + "%)");
+            System.out.println("Corrected reads that match the original: " + matchingCorrectedReads + " ("
+                    + floatFormat.format(matchingCorrectedPercent) + "%)");
+            System.out.println();
+        }
+    }
+
     private static CorrectionTestData generateSimpleRandomTestData() {
         int numberOfTargets = rg.nextInt(4) + 1;
         int numberOfKeyGroups = rg.nextInt(6) + 1;
@@ -351,6 +482,33 @@ public class CorrectionAlgorithmsTest {
         final List<ReadWithGroups> inputReadsWithGroups;
         final List<Map<String, NucleotideSequence>> expectedCorrectedGroupValues;
 
+        // simplified constructor for single group in single target without expected corrected values
+        CorrectionTestData(
+                String keyGroupName, List<NSequenceWithQuality> inputSequences, List<GroupCoordinates> groups) {
+            this(1, new LinkedHashSet<>(Collections.singleton(keyGroupName)), new LinkedHashSet<>(),
+                    inputSequences.stream().map(seq -> {
+                        TByteObjectHashMap<NSequenceWithQuality> map = new TByteObjectHashMap<>();
+                        map.put((byte)1, seq);
+                        return map;
+                    }).collect(Collectors.toList()),
+                    groups.stream().map(coordinates -> {
+                        Map<String, GroupCoordinates> map = new HashMap<>();
+                        map.put(keyGroupName, coordinates);
+                        return map;
+                    }).collect(Collectors.toList()), null);
+        }
+
+        // single group in single target, no expected values; data is prepared in ReadWithGroupAndOrder objects
+        CorrectionTestData(String keyGroupName, List<ReadWithGroupsAndOrder> readsWithSavedOrder) {
+            ParsedRead.clearStaticCache();
+            this.numberOfTargets = 1;
+            this.keyGroups = new LinkedHashSet<>(Collections.singleton(keyGroupName));
+            this.primaryGroups = new LinkedHashSet<>();
+            this.expectedCorrectedGroupValues = null;
+            this.inputReadsWithGroups = readsWithSavedOrder.stream().map(r -> r.readWithGroups)
+                    .collect(Collectors.toList());
+        }
+
         CorrectionTestData(
                 int numberOfTargets, LinkedHashSet<String> keyGroups, LinkedHashSet<String> primaryGroups,
                 List<TByteObjectHashMap<NSequenceWithQuality>> inputSequences,
@@ -362,7 +520,6 @@ public class CorrectionAlgorithmsTest {
             this.primaryGroups = primaryGroups;
             this.expectedCorrectedGroupValues = expectedCorrectedGroupValues;
             assertEquals(inputSequences.size(), groups.size());
-            assertEquals(inputSequences.size(), expectedCorrectedGroupValues.size());
             List<ReadWithGroups> inputReadsWithGroups = new ArrayList<>();
             for (int i = 0; i < inputSequences.size(); i++) {
                 ReadWithGroups readWithGroups = new ReadWithGroups();
@@ -428,6 +585,7 @@ public class CorrectionAlgorithmsTest {
         }
 
         void assertCorrectionResults(List<CorrectBarcodesResult> results) {
+            assertEquals(inputReadsWithGroups.size(), expectedCorrectedGroupValues.size());
             assertEquals(expectedCorrectedGroupValues.size(), results.size());
             for (int i = 0; i < results.size(); i++) {
                 Map<String, NucleotideSequence> currentExpectedGroupValues = expectedCorrectedGroupValues.get(i);
@@ -505,6 +663,12 @@ public class CorrectionAlgorithmsTest {
             }
             return results;
         }
+
+        NSequenceWithQuality getGroupValue(String groupName) {
+            GroupCoordinates groupCoordinates = groups.get(groupName);
+            NSequenceWithQuality targetSeq = targetSequences.get(groupCoordinates.targetId);
+            return targetSeq.getRange(groupCoordinates.start, groupCoordinates.end);
+        }
     }
 
     private static class PrimaryGroups {
@@ -530,6 +694,25 @@ public class CorrectionAlgorithmsTest {
         @Override
         public int hashCode() {
             return groupValues.keySet().hashCode();
+        }
+    }
+
+    // these reads can be sorted by values of key group, and original order of reads will be stored
+    private static class ReadWithGroupsAndOrder implements Comparable<ReadWithGroupsAndOrder> {
+        final ReadWithGroups readWithGroups;
+        final String keyGroupValue;
+        final int originalOrder;
+
+        ReadWithGroupsAndOrder(ReadWithGroups readWithGroups, String keyGroupName, int originalOrder) {
+            this.readWithGroups = readWithGroups;
+            this.keyGroupValue = readWithGroups.getSequencesForGroups(Collections.singleton(keyGroupName))
+                    .get(keyGroupName).toString();
+            this.originalOrder = originalOrder;
+        }
+
+        @Override
+        public int compareTo(ReadWithGroupsAndOrder other) {
+            return keyGroupValue.compareTo(other.keyGroupValue);
         }
     }
 }
