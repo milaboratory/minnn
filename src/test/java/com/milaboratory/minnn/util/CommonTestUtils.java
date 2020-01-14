@@ -136,14 +136,12 @@ public class CommonTestUtils {
 
     public static NSequenceWithQuality randomSeqWithWildcardShare(int length, float wildcardShare) {
         NucleotideAlphabet alphabet = NucleotideSequence.ALPHABET;
-        NucleotideSequence basicSeq = randomSequence(alphabet, length, length, true);
-        NucleotideSequence seqWithWildcards = randomSequence(alphabet, length, length, false);
-        float alphabetWildcardShare = 1 - (float)alphabet.basicSize() / alphabet.size();
-        float wildcardSeqShare = wildcardShare / alphabetWildcardShare;
         NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
         for (int i = 0; i < length; i++) {
-            NucleotideSequence seq = (rg.nextFloat() < wildcardSeqShare) ? seqWithWildcards.getRange(i, i + 1)
-                    : basicSeq.getRange(i, i + 1);
+            int letter = (rg.nextFloat() < wildcardShare)
+                    ? rg.nextInt(alphabet.size() - alphabet.basicSize()) + alphabet.basicSize()
+                    : rg.nextInt(alphabet.basicSize());
+            NucleotideSequence seq = new NucleotideSequence(new byte[] { (byte)letter });
             SequenceQuality qual = new SequenceQuality(new byte[] { (byte)(rg.nextInt(DEFAULT_MAX_QUALITY) + 1) });
             builder.append(new NSequenceWithQuality(seq, qual));
         }

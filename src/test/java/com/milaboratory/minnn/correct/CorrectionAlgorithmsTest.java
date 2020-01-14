@@ -46,22 +46,23 @@ import gnu.trove.map.hash.TByteObjectHashMap;
 import org.junit.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 import static com.milaboratory.core.mutations.generator.MutationModels.getEmpiricalNucleotideMutationModel;
 import static com.milaboratory.core.mutations.generator.MutationsGenerator.generateMutations;
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.correct.CorrectionAlgorithms.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
 
 public class CorrectionAlgorithmsTest {
     private static final CorrectionAlgorithms simpleCorrectionAlgorithms = new CorrectionAlgorithms(
-            new BarcodeClusteringStrategyFactory(0.12f, -1, 1, 2,
-                    new SimpleMutationProbability(0.1f, 0.02f)),
-            0, 0, 10);
+            new BarcodeClusteringStrategyFactory(DEFAULT_MAX_ERRORS_SHARE, -1,
+                    DEFAULT_CORRECT_CLUSTER_THRESHOLD, DEFAULT_CORRECT_MAX_CLUSTER_DEPTH,
+                    new SimpleMutationProbability(DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY,
+                            DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY)),
+            0, 0, DEFAULT_CORRECT_WILDCARDS_COLLAPSING_MERGE_THRESHOLD);
     private static final CorrectionAlgorithms strictCorrectionAlgorithms = new CorrectionAlgorithms(
             new BarcodeClusteringStrategyFactory(-1, 10, 1, 2,
                     new SimpleMutationProbability(1, 1)),
@@ -328,6 +329,8 @@ public class CorrectionAlgorithmsTest {
             // calculating stats
             int matchingMutatedReads = 0;
             int matchingCorrectedReads = 0;
+            int wronglyCorrectedReads = 0;
+            LinkedHashSet<TestResultSequences> testResultSequences = new LinkedHashSet<>();
             for (int readIndex = 0; readIndex < originalSequences.size(); readIndex++) {
                 GroupCoordinates originalBarcodeCoordinates = barcodeCoordinates.get(readIndex);
                 NucleotideSequence originalBarcodeSeq = originalSequences.get(readIndex)
@@ -337,26 +340,46 @@ public class CorrectionAlgorithmsTest {
                 NucleotideSequence correctedBarcodeSeq = correctedBarcodesWithOriginalOrder[readIndex].getSequence();
                 if (equalByWildcards(originalBarcodeSeq, mutatedBarcodeSeq)
                         && !equalByWildcards(originalBarcodeSeq, correctedBarcodeSeq)) {
-                    System.out.println("Original: " + originalBarcodeSeq);
-                    System.out.println("Mutated: " + mutatedBarcodeSeq);
-                    System.out.println("Corrected: " + correctedBarcodeSeq + "\n");
+                    testResultSequences.add(new TestResultSequences(
+                            originalBarcodeSeq, mutatedBarcodeSeq, correctedBarcodeSeq));
+                    wronglyCorrectedReads++;
                 }
                 if (equalByWildcards(originalBarcodeSeq, mutatedBarcodeSeq))
                     matchingMutatedReads++;
                 if (equalByWildcards(originalBarcodeSeq, correctedBarcodeSeq))
                     matchingCorrectedReads++;
             }
+            if (wronglyCorrectedReads > 0) {
+                System.out.println("Wrongly corrected sequences:\n");
+                testResultSequences.forEach(TestResultSequences::print);
+            }
             float matchingMutatedPercent = (float)matchingMutatedReads / originalSequences.size() * 100;
             float matchingCorrectedPercent = (float)matchingCorrectedReads / originalSequences.size() * 100;
+            float wronglyCorrectedPercent = (float)wronglyCorrectedReads / originalSequences.size() * 100;
             System.out.println("Number of unique barcodes: " + numberOfBarcodes);
             System.out.println("Number of reads: " + originalSequences.size());
             System.out.println("Wildcards share in barcodes: " + (withWildcards ? wildcardShare : 0));
-            System.out.println("Mutated reads that match the original: " + matchingMutatedReads + " ("
+            System.out.println("Maximum allowed errors in correction: " + calculateMaxErrors(testData, "G",
+                    DEFAULT_MAX_ERRORS_SHARE));
+            System.out.println("Clustering depth: " + DEFAULT_CORRECT_MAX_CLUSTER_DEPTH);
+            System.out.println("Mutated barcodes that match the original: " + matchingMutatedReads + " ("
                     + floatFormat.format(matchingMutatedPercent) + "%)");
-            System.out.println("Corrected reads that match the original: " + matchingCorrectedReads + " ("
+            System.out.println("Corrected barcodes that match the original: " + matchingCorrectedReads + " ("
                     + floatFormat.format(matchingCorrectedPercent) + "%)");
+            System.out.println("Wrongly corrected barcodes: " + wronglyCorrectedReads + " ("
+                    + floatFormat.format(wronglyCorrectedPercent) + "%)");
             System.out.println();
         }
+    }
+
+    private static int calculateMaxErrors(CorrectionTestData testData, String groupName, float maxErrorsShare) {
+        long lengthSum = 0;
+        int numberOfReads = 0;
+        for (ParsedRead parsedRead : CUtils.it(testData.getInputPort())) {
+            lengthSum += parsedRead.getGroupValue(groupName).size();
+            numberOfReads++;
+        }
+        return Math.max(1, Math.round(maxErrorsShare * lengthSum / numberOfReads));
     }
 
     private static CorrectionTestData generateSimpleRandomTestData() {
@@ -713,6 +736,42 @@ public class CorrectionAlgorithmsTest {
         @Override
         public int compareTo(ReadWithGroupsAndOrder other) {
             return keyGroupValue.compareTo(other.keyGroupValue);
+        }
+    }
+
+    private static class TestResultSequences {
+        final NucleotideSequence original;
+        final NucleotideSequence mutated;
+        final NucleotideSequence corrected;
+
+        TestResultSequences(NucleotideSequence original, NucleotideSequence mutated, NucleotideSequence corrected) {
+            this.original = original;
+            this.mutated = mutated;
+            this.corrected = corrected;
+        }
+
+        void print() {
+            System.out.println("Original: " + original);
+            System.out.println("Mutated: " + mutated);
+            System.out.println("Corrected: " + corrected + "\n");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TestResultSequences that = (TestResultSequences)o;
+            if (!Objects.equals(original, that.original)) return false;
+            if (!Objects.equals(mutated, that.mutated)) return false;
+            return Objects.equals(corrected, that.corrected);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = original != null ? original.hashCode() : 0;
+            result = 31 * result + (mutated != null ? mutated.hashCode() : 0);
+            result = 31 * result + (corrected != null ? corrected.hashCode() : 0);
+            return result;
         }
     }
 }
