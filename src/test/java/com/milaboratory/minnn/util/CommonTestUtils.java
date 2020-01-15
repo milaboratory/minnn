@@ -75,6 +75,10 @@ public class CommonTestUtils {
         return countPortValues(matchingResult.getMatches(fair));
     }
 
+    public static double getRandomLogNormal(double mean, double dev) {
+        return Math.exp(rg.nextGaussian() * dev + mean);
+    }
+
     public static NSequenceWithQuality mutateSeqWithRandomQuality(
             NSequenceWithQuality originalSeqWithQuality, Mutations<NucleotideSequence> mutations) {
         Alphabet<NucleotideSequence> alphabet = NucleotideSequence.ALPHABET;

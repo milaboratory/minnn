@@ -57,12 +57,6 @@ import static com.milaboratory.minnn.util.CommonTestUtils.*;
 import static org.junit.Assert.*;
 
 public class CorrectionAlgorithmsTest {
-    private static final CorrectionAlgorithms simpleCorrectionAlgorithms = new CorrectionAlgorithms(
-            new BarcodeClusteringStrategyFactory(DEFAULT_MAX_ERRORS_SHARE, -1,
-                    DEFAULT_CORRECT_CLUSTER_THRESHOLD, DEFAULT_CORRECT_MAX_CLUSTER_DEPTH,
-                    new SimpleMutationProbability(DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY,
-                            DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY)),
-            0, 0, DEFAULT_CORRECT_WILDCARDS_COLLAPSING_MERGE_THRESHOLD);
     private static final CorrectionAlgorithms strictCorrectionAlgorithms = new CorrectionAlgorithms(
             new BarcodeClusteringStrategyFactory(-1, 10, 1, 2,
                     new SimpleMutationProbability(1, 1)),
@@ -235,141 +229,173 @@ public class CorrectionAlgorithmsTest {
     }
 
     @Test
-    public void mutationsCorrectionTest() {
-        CorrectionAlgorithms correctionAlgorithms = simpleCorrectionAlgorithms;
-        NucleotideMutationModel mutationModel = getEmpiricalNucleotideMutationModel();
+    public void shortBarcodesMutationsTest() {
+        float mutationProbabilitiesMultiplier = 0.5f;
+        int numberOfBarcodes = 60;
+        int maxNumberOfInstances = 15000;
+        int barcodesLength = 5;
+        CorrectionTestStats stats = mutationsCorrectionTest(DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY,
+                DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY, DEFAULT_MAX_ERRORS_SHARE,
+                DEFAULT_CORRECT_MAX_CLUSTER_DEPTH, mutationProbabilitiesMultiplier, numberOfBarcodes,
+                maxNumberOfInstances, false, barcodesLength);
+        stats.printCorrectionMap();
+        stats.print();
+    }
+
+    @Test
+    public void longBarcodesMutationsTest() {
+        float mutationProbabilitiesMultiplier = 1f;
+        int numberOfBarcodes = 100;
+        int maxNumberOfInstances = 15000;
+        int barcodesLength = 14;
+        CorrectionTestStats stats = mutationsCorrectionTest(DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY,
+                DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY, DEFAULT_MAX_ERRORS_SHARE,
+                DEFAULT_CORRECT_MAX_CLUSTER_DEPTH, mutationProbabilitiesMultiplier, numberOfBarcodes,
+                maxNumberOfInstances, false, barcodesLength);
+        stats.printCorrectionMap();
+        stats.print();
+    }
+
+    @Test
+    public void barcodesWithWildcardsMutationsTest() {
+        float mutationProbabilitiesMultiplier = 1f;
+        int numberOfBarcodes = 100;
+        int maxNumberOfInstances = 15000;
+        int barcodesLength = 14;
+        CorrectionTestStats stats = mutationsCorrectionTest(DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY,
+                DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY, DEFAULT_MAX_ERRORS_SHARE,
+                DEFAULT_CORRECT_MAX_CLUSTER_DEPTH, mutationProbabilitiesMultiplier, numberOfBarcodes,
+                maxNumberOfInstances, true, barcodesLength);
+        stats.printCorrectionMap();
+        stats.print();
+    }
+
+    @Test
+    public void randomMutationsTest() {
         for (int i = 0; i < 10; i++) {
+            float mutationProbabilitiesMultiplier = rg.nextFloat() * 0.75f + 0.25f;
             int numberOfBarcodes = rg.nextInt(100) + 2;
-            int[] barcodeNumInstances = new int[numberOfBarcodes];
-            for (int j = 0; j < numberOfBarcodes; j++)
-                barcodeNumInstances[j] = rg.nextInt(100) + 1;
-
-            // generating original sequences with barcodes
+            int maxNumberOfInstances = rg.nextInt(10000) + 10000;
             boolean withWildcards = rg.nextBoolean();
-            float wildcardShare = rg.nextFloat() * 0.2f + 0.2f;
-            int originalSequencesLength = rg.nextInt(10) + 30;
             int barcodesLength = withWildcards ? rg.nextInt(15) + 9 : rg.nextInt(20) + 4;
-            List<NSequenceWithQuality> originalSequences = new ArrayList<>();
-            List<GroupCoordinates> barcodeCoordinates = new ArrayList<>();
-            for (int j = 0; j < numberOfBarcodes; j++) {
-                NSequenceWithQuality randomSeq = withWildcards
-                        ? randomSeqWithWildcardShare(originalSequencesLength, wildcardShare)
-                        : randomSeqWithQuality(originalSequencesLength, true);
-                int barcodeStart = rg.nextInt(originalSequencesLength - barcodesLength + 1);
-                int barcodeEnd = barcodeStart + barcodesLength;
-                for (int k = 0; k < barcodeNumInstances[j]; k++) {
-                    originalSequences.add(randomSeq);
-                    barcodeCoordinates.add(new GroupCoordinates((byte)1, barcodeStart, barcodeEnd));
-                }
-            }
-
-            // generating sequences with mutated barcodes
-            int order = 0;
-            List<ReadWithGroupsAndOrder> mutatedReads = new ArrayList<>();
-            for (int j = 0; j < numberOfBarcodes; j++) {
-                NSequenceWithQuality originalSequence = originalSequences.get(order);
-                GroupCoordinates originalCoordinates = barcodeCoordinates.get(order);
-                NSequenceWithQuality originalBarcodeValue = originalSequence.getRange(
-                        originalCoordinates.start, originalCoordinates.end);
-                List<ReadWithGroupsAndOrder> currentBarcodeMutatedReads = new ArrayList<>();
-                for (int k = 0; k < barcodeNumInstances[j]; k++) {
-                    ReadWithGroups currentRead = new ReadWithGroups();
-                    currentRead.targetSequences.put((byte)1, originalSequence);
-                    currentRead.groups.put("G", originalCoordinates);
-                    // mutating one of the previous barcode values
-                    NSequenceWithQuality barcodeValueAfterMutations;
-                    if (k == 0)
-                        barcodeValueAfterMutations = originalBarcodeValue;
-                    else {
-                        NSequenceWithQuality barcodeValueBeforeMutations = currentBarcodeMutatedReads
-                                .get(rg.nextInt(k)).readWithGroups.getGroupValue("G");
-                        Mutations<NucleotideSequence> currentBarcodeMutations = generateMutations(
-                                barcodeValueBeforeMutations.getSequence(), mutationModel);
-                        barcodeValueAfterMutations = mutateSeqWithRandomQuality(barcodeValueBeforeMutations,
-                                currentBarcodeMutations);
-                    }
-                    // adding read with mutated barcode to list
-                    currentBarcodeMutatedReads.add(new ReadWithGroupsAndOrder(
-                            currentRead.getReadWithChangedGroup("G", barcodeValueAfterMutations),
-                            "G", order++));
-                }
-                mutatedReads.addAll(currentBarcodeMutatedReads);
-            }
-
-            List<ReadWithGroupsAndOrder> unsortedMutatedReads = new ArrayList<>(mutatedReads);
-            Collections.sort(mutatedReads);
-            CorrectionTestData testData = new CorrectionTestData("G", mutatedReads);
-
-            // correcting barcodes
-            OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
-                    testData.getInputPort(), testData.keyGroups, testData.primaryGroups);
-            OutputPort<ParsedRead> parsedReadsPort = testData.getInputPort();
-            CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
-                    testData.keyGroups, 0);
-            for (Map.Entry<NucleotideSequence, NSequenceWithQuality> entry
-                    : correctionData.keyGroupsData.get("G").correctionMap.entrySet()) {
-                if (!entry.getKey().equals(entry.getValue().getSequence())) {
-                    System.out.println("Correction: " + entry.getKey() + " => " + entry.getValue().getSequence());
-                    System.out.println("Equal by wildcards: "
-                            + equalByWildcards(entry.getKey(), entry.getValue().getSequence()) + "\n");
-                }
-            }
-            List<CorrectBarcodesResult> results = streamPort(parsedReadsPort).map(parsedRead ->
-                    correctionAlgorithms.correctBarcodes(parsedRead, correctionData)).collect(Collectors.toList());
-
-            // extracting corrected barcodes and restoring original order
-            List<NSequenceWithQuality> correctedBarcodes = results.stream()
-                    .map(r -> r.parsedRead.getGroupValue("G")).collect(Collectors.toList());
-            NSequenceWithQuality[] correctedBarcodesWithOriginalOrder = new NSequenceWithQuality[mutatedReads.size()];
-            for (int newOrder = 0; newOrder < mutatedReads.size(); newOrder++) {
-                int originalOrder = mutatedReads.get(newOrder).originalOrder;
-                correctedBarcodesWithOriginalOrder[originalOrder] = correctedBarcodes.get(newOrder);
-            }
-
-            // calculating stats
-            int matchingMutatedReads = 0;
-            int matchingCorrectedReads = 0;
-            int wronglyCorrectedReads = 0;
-            LinkedHashSet<TestResultSequences> testResultSequences = new LinkedHashSet<>();
-            for (int readIndex = 0; readIndex < originalSequences.size(); readIndex++) {
-                GroupCoordinates originalBarcodeCoordinates = barcodeCoordinates.get(readIndex);
-                NucleotideSequence originalBarcodeSeq = originalSequences.get(readIndex)
-                        .getRange(originalBarcodeCoordinates.start, originalBarcodeCoordinates.end).getSequence();
-                NucleotideSequence mutatedBarcodeSeq = unsortedMutatedReads.get(readIndex).readWithGroups
-                        .getGroupValue("G").getSequence();
-                NucleotideSequence correctedBarcodeSeq = correctedBarcodesWithOriginalOrder[readIndex].getSequence();
-                if (equalByWildcards(originalBarcodeSeq, mutatedBarcodeSeq)
-                        && !equalByWildcards(originalBarcodeSeq, correctedBarcodeSeq)) {
-                    testResultSequences.add(new TestResultSequences(
-                            originalBarcodeSeq, mutatedBarcodeSeq, correctedBarcodeSeq));
-                    wronglyCorrectedReads++;
-                }
-                if (equalByWildcards(originalBarcodeSeq, mutatedBarcodeSeq))
-                    matchingMutatedReads++;
-                if (equalByWildcards(originalBarcodeSeq, correctedBarcodeSeq))
-                    matchingCorrectedReads++;
-            }
-            if (wronglyCorrectedReads > 0) {
-                System.out.println("Wrongly corrected sequences:\n");
-                testResultSequences.forEach(TestResultSequences::print);
-            }
-            float matchingMutatedPercent = (float)matchingMutatedReads / originalSequences.size() * 100;
-            float matchingCorrectedPercent = (float)matchingCorrectedReads / originalSequences.size() * 100;
-            float wronglyCorrectedPercent = (float)wronglyCorrectedReads / originalSequences.size() * 100;
-            System.out.println("Number of unique barcodes: " + numberOfBarcodes);
-            System.out.println("Number of reads: " + originalSequences.size());
-            System.out.println("Wildcards share in barcodes: " + (withWildcards ? wildcardShare : 0));
-            System.out.println("Maximum allowed errors in correction: " + calculateMaxErrors(testData, "G",
-                    DEFAULT_MAX_ERRORS_SHARE));
-            System.out.println("Clustering depth: " + DEFAULT_CORRECT_MAX_CLUSTER_DEPTH);
-            System.out.println("Mutated barcodes that match the original: " + matchingMutatedReads + " ("
-                    + floatFormat.format(matchingMutatedPercent) + "%)");
-            System.out.println("Corrected barcodes that match the original: " + matchingCorrectedReads + " ("
-                    + floatFormat.format(matchingCorrectedPercent) + "%)");
-            System.out.println("Wrongly corrected barcodes: " + wronglyCorrectedReads + " ("
-                    + floatFormat.format(wronglyCorrectedPercent) + "%)");
-            System.out.println();
+            CorrectionTestStats stats = mutationsCorrectionTest(DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY,
+                    DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY, DEFAULT_MAX_ERRORS_SHARE,
+                    DEFAULT_CORRECT_MAX_CLUSTER_DEPTH, mutationProbabilitiesMultiplier, numberOfBarcodes,
+                    maxNumberOfInstances, withWildcards, barcodesLength);
+            stats.printCorrectionMap();
+            stats.print();
         }
+    }
+
+    private static CorrectionTestStats mutationsCorrectionTest(
+            float singleSubstitutionProbability, float singleIndelProbability, float maxErrorsShare,
+            int maxClusterDepth, float mutationProbabilitiesMultiplier, int numberOfBarcodes, int maxNumberOfInstances,
+            boolean withWildcards, int barcodesLength) {
+        CorrectionAlgorithms correctionAlgorithms = new CorrectionAlgorithms(
+                new BarcodeClusteringStrategyFactory(maxErrorsShare, -1, DEFAULT_CORRECT_CLUSTER_THRESHOLD,
+                        maxClusterDepth,
+                        new SimpleMutationProbability(singleSubstitutionProbability, singleIndelProbability)),
+                0, 0, DEFAULT_CORRECT_WILDCARDS_COLLAPSING_MERGE_THRESHOLD);
+        NucleotideMutationModel mutationModel = getEmpiricalNucleotideMutationModel()
+                .multiplyProbabilities(mutationProbabilitiesMultiplier);
+        int[] barcodeNumInstances = new int[numberOfBarcodes];
+        for (int j = 0; j < numberOfBarcodes; j++)
+            barcodeNumInstances[j] = Math.max(1, Math.min(maxNumberOfInstances, (int)getRandomLogNormal(
+                    Math.log(maxNumberOfInstances) / 3, Math.log(maxNumberOfInstances) / 3)));
+
+        // generating original sequences with barcodes
+        float wildcardShare = withWildcards ? rg.nextFloat() * 0.2f + 0.2f : 0;
+        int originalSequencesLength = barcodesLength + rg.nextInt(20) + 10;
+        List<NSequenceWithQuality> originalSequences = new ArrayList<>();
+        List<GroupCoordinates> barcodeCoordinates = new ArrayList<>();
+        for (int j = 0; j < numberOfBarcodes; j++) {
+            NSequenceWithQuality randomSeq = withWildcards
+                    ? randomSeqWithWildcardShare(originalSequencesLength, wildcardShare)
+                    : randomSeqWithQuality(originalSequencesLength, true);
+            int barcodeStart = rg.nextInt(originalSequencesLength - barcodesLength + 1);
+            int barcodeEnd = barcodeStart + barcodesLength;
+            for (int k = 0; k < barcodeNumInstances[j]; k++) {
+                originalSequences.add(randomSeq);
+                barcodeCoordinates.add(new GroupCoordinates((byte)1, barcodeStart, barcodeEnd));
+            }
+        }
+
+        // generating sequences with mutated barcodes
+        int order = 0;
+        List<ReadWithGroupsAndOrder> mutatedReads = new ArrayList<>();
+        for (int j = 0; j < numberOfBarcodes; j++) {
+            NSequenceWithQuality originalSequence = originalSequences.get(order);
+            GroupCoordinates originalCoordinates = barcodeCoordinates.get(order);
+            List<ReadWithGroupsAndOrder> currentBarcodeMutatedReads = new ArrayList<>();
+            ReadWithGroups currentOriginalRead = new ReadWithGroups();
+            currentOriginalRead.targetSequences.put((byte)1, originalSequence);
+            currentOriginalRead.groups.put("G", originalCoordinates);
+            for (ReadWithGroups mutatedRead : createPCRMutatedReads(
+                    mutationModel, currentOriginalRead, "G", barcodeNumInstances[j]))
+                currentBarcodeMutatedReads.add(new ReadWithGroupsAndOrder(mutatedRead, "G", order++));
+            mutatedReads.addAll(currentBarcodeMutatedReads);
+        }
+
+        List<ReadWithGroupsAndOrder> unsortedMutatedReads = new ArrayList<>(mutatedReads);
+        Collections.sort(mutatedReads);
+        CorrectionTestData testData = new CorrectionTestData("G", mutatedReads);
+
+        // correcting barcodes
+        OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
+                testData.getInputPort(), testData.keyGroups, testData.primaryGroups);
+        OutputPort<ParsedRead> parsedReadsPort = testData.getInputPort();
+        CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
+                testData.keyGroups, 0);
+        LinkedHashMap<NucleotideSequence, NucleotideSequence> correctionMap = new LinkedHashMap<>();
+        for (Map.Entry<NucleotideSequence, NSequenceWithQuality> entry
+                : correctionData.keyGroupsData.get("G").correctionMap.entrySet()) {
+            if (!entry.getKey().equals(entry.getValue().getSequence()))
+                correctionMap.put(entry.getKey(), entry.getValue().getSequence());
+        }
+        List<CorrectBarcodesResult> results = streamPort(parsedReadsPort).map(parsedRead ->
+                correctionAlgorithms.correctBarcodes(parsedRead, correctionData)).collect(Collectors.toList());
+
+        // extracting corrected barcodes and restoring original order
+        List<NSequenceWithQuality> correctedBarcodes = results.stream()
+                .map(r -> r.parsedRead.getGroupValue("G")).collect(Collectors.toList());
+        NSequenceWithQuality[] correctedBarcodesWithOriginalOrder = new NSequenceWithQuality[mutatedReads.size()];
+        for (int newOrder = 0; newOrder < mutatedReads.size(); newOrder++) {
+            int originalOrder = mutatedReads.get(newOrder).originalOrder;
+            correctedBarcodesWithOriginalOrder[originalOrder] = correctedBarcodes.get(newOrder);
+        }
+
+        // calculating stats
+        int matchingMutatedReads = 0;
+        int matchingCorrectedReads = 0;
+        int wronglyCorrectedReads = 0;
+        LinkedHashSet<TestResultSequences> wronglyCorrectedSequences = new LinkedHashSet<>();
+        Set<NucleotideSequence> uniqueBarcodesAfterMutation = new HashSet<>();
+        Set<NucleotideSequence> uniqueBarcodesAfterCorrection = new HashSet<>();
+        for (int readIndex = 0; readIndex < originalSequences.size(); readIndex++) {
+            GroupCoordinates originalBarcodeCoordinates = barcodeCoordinates.get(readIndex);
+            NucleotideSequence originalBarcodeSeq = originalSequences.get(readIndex)
+                    .getRange(originalBarcodeCoordinates.start, originalBarcodeCoordinates.end).getSequence();
+            NucleotideSequence mutatedBarcodeSeq = unsortedMutatedReads.get(readIndex).readWithGroups
+                    .getGroupValue("G").getSequence();
+            NucleotideSequence correctedBarcodeSeq = correctedBarcodesWithOriginalOrder[readIndex].getSequence();
+            uniqueBarcodesAfterMutation.add(mutatedBarcodeSeq);
+            uniqueBarcodesAfterCorrection.add(correctedBarcodeSeq);
+            if (equalByWildcards(originalBarcodeSeq, mutatedBarcodeSeq)
+                    && !equalByWildcards(originalBarcodeSeq, correctedBarcodeSeq)) {
+                wronglyCorrectedSequences.add(new TestResultSequences(
+                        originalBarcodeSeq, mutatedBarcodeSeq, correctedBarcodeSeq));
+                wronglyCorrectedReads++;
+            }
+            if (equalByWildcards(originalBarcodeSeq, mutatedBarcodeSeq))
+                matchingMutatedReads++;
+            if (equalByWildcards(originalBarcodeSeq, correctedBarcodeSeq))
+                matchingCorrectedReads++;
+        }
+        return new CorrectionTestStats(originalSequences.size(), matchingMutatedReads, matchingCorrectedReads,
+                wronglyCorrectedReads, wronglyCorrectedSequences, numberOfBarcodes, uniqueBarcodesAfterMutation.size(),
+                uniqueBarcodesAfterCorrection.size(), wildcardShare,
+                calculateMaxErrors(testData, "G", maxErrorsShare), maxClusterDepth,
+                mutationProbabilitiesMultiplier, barcodeNumInstances, correctionMap);
     }
 
     private static int calculateMaxErrors(CorrectionTestData testData, String groupName, float maxErrorsShare) {
@@ -380,6 +406,28 @@ public class CorrectionAlgorithmsTest {
             numberOfReads++;
         }
         return Math.max(1, Math.round(maxErrorsShare * lengthSum / numberOfReads));
+    }
+
+    private static List<ReadWithGroups> createPCRMutatedReads(
+            NucleotideMutationModel mutationModel, ReadWithGroups originalRead, String barcodeGroup, int quantity) {
+        List<ReadWithGroups> mutatedReads = new ArrayList<>();
+        for (int i = 0; i < 2; i++)
+            mutatedReads.add(originalRead);
+        while (mutatedReads.size() < quantity) {
+            List<ReadWithGroups> thisIterationReads = new ArrayList<>();
+            for (ReadWithGroups previousIterationRead : mutatedReads) {
+                NSequenceWithQuality barcodeValueBeforeMutations = previousIterationRead.getGroupValue(barcodeGroup);
+                Mutations<NucleotideSequence> mutations = generateMutations(
+                        barcodeValueBeforeMutations.getSequence(), mutationModel);
+                NSequenceWithQuality barcodeValueAfterMutations = mutateSeqWithRandomQuality(
+                        barcodeValueBeforeMutations, mutations);
+                thisIterationReads.add(previousIterationRead.getReadWithChangedGroup(barcodeGroup,
+                        barcodeValueAfterMutations));
+            }
+            mutatedReads.addAll(thisIterationReads);
+        }
+        Collections.shuffle(mutatedReads);
+        return mutatedReads.stream().limit(quantity).collect(Collectors.toList());
     }
 
     private static CorrectionTestData generateSimpleRandomTestData() {
@@ -736,6 +784,82 @@ public class CorrectionAlgorithmsTest {
         @Override
         public int compareTo(ReadWithGroupsAndOrder other) {
             return keyGroupValue.compareTo(other.keyGroupValue);
+        }
+    }
+
+    private static class CorrectionTestStats {
+        final int numberOfReads;
+        final int matchingMutatedReads;
+        final int matchingCorrectedReads;
+        final int wronglyCorrectedReads;
+        final Collection<TestResultSequences> wronglyCorrectedSequences;
+        final float matchingMutatedPercent;
+        final float matchingCorrectedPercent;
+        final float wronglyCorrectedPercent;
+        final int uniqueBarcodesOriginal;
+        final int uniqueBarcodesAfterMutation;
+        final int uniqueBarcodesAfterCorrection;
+        final float wildcardsShareInBarcodes;
+        final int maxErrors;
+        final int clusteringDepth;
+        final float probabilitiesMultiplier;
+        final int[] barcodeCounts;
+        final LinkedHashMap<NucleotideSequence, NucleotideSequence> correctionMap;
+
+        CorrectionTestStats(
+                int numberOfReads, int matchingMutatedReads, int matchingCorrectedReads, int wronglyCorrectedReads,
+                Collection<TestResultSequences> wronglyCorrectedSequences,
+                int uniqueBarcodesOriginal, int uniqueBarcodesAfterMutation, int uniqueBarcodesAfterCorrection,
+                float wildcardsShareInBarcodes, int maxErrors, int clusteringDepth, float probabilitiesMultiplier,
+                int[] barcodeCounts, LinkedHashMap<NucleotideSequence, NucleotideSequence> correctionMap) {
+            this.numberOfReads = numberOfReads;
+            this.matchingMutatedReads = matchingMutatedReads;
+            this.matchingCorrectedReads = matchingCorrectedReads;
+            this.matchingMutatedPercent = (float)matchingMutatedReads / numberOfReads * 100;
+            this.matchingCorrectedPercent = (float)matchingCorrectedReads / numberOfReads * 100;
+            this.wronglyCorrectedPercent = (float)wronglyCorrectedReads / numberOfReads * 100;
+            this.wronglyCorrectedReads = wronglyCorrectedReads;
+            this.wronglyCorrectedSequences = wronglyCorrectedSequences;
+            this.uniqueBarcodesOriginal = uniqueBarcodesOriginal;
+            this.uniqueBarcodesAfterMutation = uniqueBarcodesAfterMutation;
+            this.uniqueBarcodesAfterCorrection = uniqueBarcodesAfterCorrection;
+            this.wildcardsShareInBarcodes = wildcardsShareInBarcodes;
+            this.maxErrors = maxErrors;
+            this.clusteringDepth = clusteringDepth;
+            this.probabilitiesMultiplier = probabilitiesMultiplier;
+            this.barcodeCounts = barcodeCounts;
+            this.correctionMap = correctionMap;
+        }
+
+        void print() {
+            if (wronglyCorrectedReads > 0) {
+                System.out.println("Wrongly corrected sequences:\n");
+                wronglyCorrectedSequences.forEach(TestResultSequences::print);
+            }
+            System.out.println("Original number of unique barcodes: " + uniqueBarcodesOriginal);
+            System.out.println("Number of unique barcodes after mutation: " + uniqueBarcodesAfterMutation);
+            System.out.println("Number of unique barcodes after correction: " + uniqueBarcodesAfterCorrection);
+            System.out.println("Number of reads: " + numberOfReads);
+            System.out.println("Barcode counts: " + Arrays.stream(barcodeCounts)
+                    .boxed().sorted((c1, c2) -> Long.compare(c2, c1)).collect(Collectors.toList()));
+            System.out.println("Wildcards share in barcodes: " + wildcardsShareInBarcodes);
+            System.out.println("Maximum allowed errors in correction: " + maxErrors);
+            System.out.println("Clustering depth: " + clusteringDepth);
+            System.out.println("Mutation model probabilities multiplier: " + probabilitiesMultiplier);
+            System.out.println("Mutated barcodes that match the original: " + matchingMutatedReads + " ("
+                    + floatFormat.format(matchingMutatedPercent) + "%)");
+            System.out.println("Corrected barcodes that match the original: " + matchingCorrectedReads + " ("
+                    + floatFormat.format(matchingCorrectedPercent) + "%)");
+            System.out.println("Wrongly corrected barcodes: " + wronglyCorrectedReads + " ("
+                    + floatFormat.format(wronglyCorrectedPercent) + "%)\n");
+        }
+
+        void printCorrectionMap() {
+            for (Map.Entry<NucleotideSequence, NucleotideSequence> entry : correctionMap.entrySet()) {
+                System.out.println("Correction: " + entry.getKey() + " => " + entry.getValue().getSequence());
+                System.out.println("Equal by wildcards: "
+                        + equalByWildcards(entry.getKey(), entry.getValue().getSequence()) + "\n");
+            }
         }
     }
 
