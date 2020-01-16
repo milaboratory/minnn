@@ -101,7 +101,7 @@ public class CommonTestUtils {
                         ++pointer;
                         builder.append(new NSequenceWithQuality(
                                 new NucleotideSequence(new byte[] { (byte)(mut & LETTER_MASK) }),
-                                (byte)(rg.nextInt(qualityAtPointer + 1))));
+                                qualityAtPointer));
                         ++mutPointer;
                         break;
                     case RAW_MUTATION_TYPE_DELETION:
@@ -118,7 +118,7 @@ public class CommonTestUtils {
                             qualityAtPointer = originalQual.value(pointer);
                         builder.append(new NSequenceWithQuality(
                                 new NucleotideSequence(new byte[] { (byte)(mut & LETTER_MASK) }),
-                                (byte)(rg.nextInt(qualityAtPointer + 1))));
+                                qualityAtPointer));
                         ++mutPointer;
                         break;
                 }
@@ -138,12 +138,12 @@ public class CommonTestUtils {
         return new NSequenceWithQuality(randomSeq, randomQualityBuilder.createAndDestroy());
     }
 
-    public static NSequenceWithQuality randomSeqWithWildcardShare(int length, float wildcardShare) {
+    public static NSequenceWithQuality randomSeqWithWildcardShare(int length, float wildcardShare, boolean onlyN) {
         NucleotideAlphabet alphabet = NucleotideSequence.ALPHABET;
         NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
         for (int i = 0; i < length; i++) {
-            int letter = (rg.nextFloat() < wildcardShare)
-                    ? rg.nextInt(alphabet.size() - alphabet.basicSize()) + alphabet.basicSize()
+            int letter = (rg.nextFloat() < wildcardShare) ? (onlyN ? alphabet.symbolToCode('N')
+                    : rg.nextInt(alphabet.size() - alphabet.basicSize()) + alphabet.basicSize())
                     : rg.nextInt(alphabet.basicSize());
             NucleotideSequence seq = new NucleotideSequence(new byte[] { (byte)letter });
             SequenceQuality qual = new SequenceQuality(new byte[] { (byte)(rg.nextInt(DEFAULT_MAX_QUALITY) + 1) });
