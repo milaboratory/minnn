@@ -56,6 +56,7 @@ import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.correct.CorrectionAlgorithms.*;
 import static com.milaboratory.minnn.correct.CorrectionAlgorithmsTest.WildcardsOption.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
+import static com.milaboratory.minnn.util.CommonUtils.*;
 import static org.junit.Assert.*;
 
 public class CorrectionAlgorithmsTest {
@@ -324,9 +325,10 @@ public class CorrectionAlgorithmsTest {
         float wildcardShare = (wildcardsOption == NO_WILDCARDS) ? 0 : rg.nextFloat() * 0.2f + 0.2f;
         int originalSequencesLength = barcodesLength + rg.nextInt(20) + 10;
         List<NSequenceWithQuality> originalSequences = new ArrayList<>();
-        Set<NucleotideSequence> uniqueBarcodeSequences = new HashSet<>();
+        UniqueSequencesSet uniqueBarcodeSequences = new UniqueSequencesSet();
         List<GroupCoordinates> barcodeCoordinates = new ArrayList<>();
         int j = 0;
+        int failuresCount = 0;
         while (uniqueBarcodeSequences.size() < numberOfBarcodes) {
             NSequenceWithQuality randomSeq;
             switch (wildcardsOption) {
@@ -351,6 +353,16 @@ public class CorrectionAlgorithmsTest {
                     barcodeCoordinates.add(new GroupCoordinates((byte)1, barcodeStart, barcodeEnd));
                 }
                 j++;
+            } else
+                failuresCount++;
+            if (failuresCount > numberOfBarcodes * 10) {
+                /* restart barcodes generation if barcode with too many wildcards is in set,
+                 * and it prevents generation of required number of unique barcodes */
+                uniqueBarcodeSequences.clear();
+                originalSequences.clear();
+                barcodeCoordinates.clear();
+                j = 0;
+                failuresCount = 0;
             }
         }
 
@@ -945,9 +957,7 @@ public class CorrectionAlgorithmsTest {
         void print() {
             System.out.println("Original: " + original);
             System.out.println("Mutated: " + mutated);
-            System.out.println("Corrected: " + corrected);
-            System.out.println("Corrected equals by wildcards to original: "
-                    + equalByWildcards(original, corrected) + "\n");
+            System.out.println("Corrected: " + corrected + "\n");
         }
 
         @Override

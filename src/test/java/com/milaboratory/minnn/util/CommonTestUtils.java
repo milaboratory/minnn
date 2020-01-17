@@ -238,16 +238,6 @@ public class CommonTestUtils {
         return new NSequenceWithQuality(new NucleotideSequence(seq), new SequenceQuality(quality));
     }
 
-    public static boolean equalByWildcards(NucleotideSequence seq1, NucleotideSequence seq2) {
-        if (seq1.size() != seq2.size())
-            return false;
-        for (int i = 0; i < seq1.size(); i++)
-            if (!NucleotideSequence.ALPHABET.codeToWildcard(seq1.codeAt(i))
-                    .intersectsWith(NucleotideSequence.ALPHABET.codeToWildcard(seq2.codeAt(i))))
-                return false;
-        return true;
-    }
-
     public static PatternAndTargetAlignmentScoring getTestScoring() {
         return new PatternAndTargetAlignmentScoring(0, -9, -10,
                 -9, DEFAULT_GOOD_QUALITY, DEFAULT_BAD_QUALITY, 0);
