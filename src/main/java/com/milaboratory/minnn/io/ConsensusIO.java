@@ -87,9 +87,8 @@ public final class ConsensusIO {
     private final int kmerLength;
     private final int kmerMaxOffset;
     private final int kmerMatchMaxErrors;
-    private final String reportFileName;
+    private final PrintStream reportFileOutputStream;
     private final String jsonReportFileName;
-    private final StringBuilder reportedWarnings = new StringBuilder();
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
@@ -141,7 +140,14 @@ public final class ConsensusIO {
         this.kmerLength = kmerLength;
         this.kmerMaxOffset = kmerMaxOffset;
         this.kmerMatchMaxErrors = kmerMatchMaxErrors;
-        this.reportFileName = reportFileName;
+        if (reportFileName == null)
+            this.reportFileOutputStream = null;
+        else
+            try {
+                this.reportFileOutputStream = new PrintStream(new FileOutputStream(reportFileName));
+            } catch (IOException e) {
+                throw exitWithError(e.toString());
+            }
         this.jsonReportFileName = jsonReportFileName;
         try {
             debugOutputStream = (debugOutputFileName == null) ? null
@@ -182,6 +188,20 @@ public final class ConsensusIO {
         long startTime = System.currentTimeMillis();
         MifHeader mifHeader;
         long originalNumberOfReads;
+        if (reportFileOutputStream != null) {
+            reportFileOutputStream.println("MiNNN v" + getShortestVersionString());
+            reportFileOutputStream.println("Report for Consensus command:");
+            if (inputFileName == null)
+                reportFileOutputStream.println("Input is from stdin");
+            else
+                reportFileOutputStream.println("Input file name: " + inputFileName);
+            if (outputFileName == null)
+                reportFileOutputStream.println("Output is to stdout");
+            else
+                reportFileOutputStream.println("Output file name: " + outputFileName);
+            reportFileOutputStream.println("Consensus assembled by groups: " + consensusGroups);
+            reportFileOutputStream.println("Consensus algorithm: " + consensusAlgorithmType);
+        }
         try (MifReader reader = createReader();
              MifWriter writer = createWriter(mifHeader = reader.getHeader())) {
             if (inputReadsLimit > 0)
@@ -435,24 +455,8 @@ public final class ConsensusIO {
             }
         }
 
-        StringBuilder reportFileHeader = new StringBuilder();
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
-
-        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
-        reportFileHeader.append("Report for Consensus command:\n");
-        if (inputFileName == null)
-            reportFileHeader.append("Input is from stdin\n");
-        else
-            reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
-        if (outputFileName == null)
-            reportFileHeader.append("Output is to stdout\n");
-        else
-            reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
-        reportFileHeader.append("Consensus assembled by groups: ").append(consensusGroups).append('\n');
-        reportFileHeader.append("Consensus algorithm: ").append(consensusAlgorithmType).append('\n');
-        reportFileHeader.append(reportedWarnings);
-
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         report.append("Processed ").append(totalReads).append(" reads\n");
@@ -474,7 +478,11 @@ public final class ConsensusIO {
         jsonReportData.put("consensusReads", consensusReads);
         jsonReportData.put("clustersCount", clustersCount);
 
-        humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
+        System.err.println(report.toString());
+        if (reportFileOutputStream != null) {
+            reportFileOutputStream.print(report.toString());
+            reportFileOutputStream.close();
+        }
         jsonReport(jsonReportFileName, jsonReportData);
     }
 
@@ -529,7 +537,7 @@ public final class ConsensusIO {
             if (warningsDisplayed == maxWarnings)
                 System.err.println("Warnings limit reached!");
         }
-        if (reportFileName != null)
-            reportedWarnings.append(text).append('\n');
+        if (reportFileOutputStream != null)
+            reportFileOutputStream.println(text);
     }
 }
