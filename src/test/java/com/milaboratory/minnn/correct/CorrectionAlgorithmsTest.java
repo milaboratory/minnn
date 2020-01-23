@@ -411,6 +411,13 @@ public class CorrectionAlgorithmsTest {
         }
 
         // calculating stats
+        CorrectionStats correctionStats = correctionData.stats;
+        for (CorrectBarcodesResult result : results) {
+            if (result.corrected)
+                correctionStats.correctedReads++;
+            else if (result.qualityUpdated)
+                correctionStats.updatedQualityReads++;
+        }
         int matchingMutatedReads = 0;
         int matchingCorrectedReads = 0;
         int wronglyCorrectedReads = 0;
@@ -450,7 +457,7 @@ public class CorrectionAlgorithmsTest {
                 uniqueBarcodesAfterCorrection.size(), wildcardShare,
                 calculateMaxErrors(testData, "G", maxErrorsShare), maxClusterDepth,
                 mutationProbabilitiesMultiplier, barcodeNumInstances, THRESHOLD_FOR_WRONG_NEW_BARCODES,
-                newBarcodesCounters.values(), wronglyCorrectedSequences, correctionMap);
+                newBarcodesCounters.values(), wronglyCorrectedSequences, correctionMap, correctionStats);
     }
 
     private static int calculateMaxErrors(CorrectionTestData testData, String groupName, float maxErrorsShare) {
@@ -865,6 +872,7 @@ public class CorrectionAlgorithmsTest {
         final List<WrongBarcodesCounter> wrongBarcodesCounters;
         final Collection<TestResultSequences> wronglyCorrectedSequences;
         final LinkedHashMap<NucleotideSequence, NucleotideSequence> correctionMap;
+        final CorrectionStats correctionStats;
 
         CorrectionTestStats(
                 int numberOfReads, int matchingMutatedReads, int matchingCorrectedReads, int wronglyCorrectedReads,
@@ -873,7 +881,7 @@ public class CorrectionAlgorithmsTest {
                 float probabilitiesMultiplier, int[] originalBarcodesCounts,
                 int thresholdForWrongNewBarcodes, Collection<WrongBarcodesCounter> newBarcodesCounters,
                 Collection<TestResultSequences> wronglyCorrectedSequences,
-                LinkedHashMap<NucleotideSequence, NucleotideSequence> correctionMap) {
+                LinkedHashMap<NucleotideSequence, NucleotideSequence> correctionMap, CorrectionStats correctionStats) {
             this.numberOfReads = numberOfReads;
             this.matchingMutatedReads = matchingMutatedReads;
             this.matchingCorrectedReads = matchingCorrectedReads;
@@ -897,6 +905,7 @@ public class CorrectionAlgorithmsTest {
                     .filter(c -> c.totalCount >= thresholdForWrongNewBarcodes).collect(Collectors.toList());
             this.wronglyCorrectedSequences = wronglyCorrectedSequences;
             this.correctionMap = correctionMap;
+            this.correctionStats = correctionStats;
         }
 
         void print() {
@@ -931,6 +940,40 @@ public class CorrectionAlgorithmsTest {
             if (newBarcodesTotalReads > 0)
                 System.out.println("New barcodes counts: " + newBarcodesCounters.stream().map(c -> c.totalCount)
                         .sorted((c1, c2) -> Long.compare(c2, c1)).collect(Collectors.toList()));
+            float correctedPercent = (numberOfReads == 0) ? 0
+                    : (float)correctionStats.correctedReads / numberOfReads * 100;
+            float qualityUpdatedPercent = (numberOfReads == 0) ? 0
+                    : (float)correctionStats.updatedQualityReads / numberOfReads * 100;
+            System.out.println("Reads with corrected barcodes: " + correctionStats.correctedReads
+                    + " (" + floatFormat.format(correctedPercent) + "%)");
+            System.out.println("Reads with not changed barcode sequences, but updated qualities: "
+                    + correctionStats.updatedQualityReads + " (" + floatFormat.format(qualityUpdatedPercent) + "%)");
+            System.out.println("Stats for 1st stage correction (merging by wildcards):");
+            System.out.println("Clusters checked for possible merge on wildcards processing stage: "
+                    + correctionStats.wildcardCanAddToClusterCalls);
+            float wildcardClusterNotAddedByThresholdPercent = (correctionStats.wildcardCanAddToClusterCalls == 0) ? 0
+                    : (float)correctionStats.wildcardClusterNotAddedByThreshold
+                    / correctionStats.wildcardCanAddToClusterCalls * 100;
+            System.out.println("Wildcard clusters not merged by size threshold: "
+                    + correctionStats.wildcardClusterNotAddedByThreshold + " ("
+                    + floatFormat.format(wildcardClusterNotAddedByThresholdPercent) + "%)");
+            System.out.println("Stats for 2nd stage correction (correction of mutations in barcodes):");
+            System.out.println("Clusters checked for possible merge on barcodes correction stage: "
+                    + correctionStats.barcodeCanAddToClusterCalls);
+            float barcodeClusterNotAddedByWildcardsPercent = (correctionStats.barcodeCanAddToClusterCalls == 0) ? 0
+                    : (float)correctionStats.barcodeClusterNotAddedByWildcards
+                    / correctionStats.barcodeCanAddToClusterCalls * 100;
+            float barcodeClusterNotAddedByExpectedCountPercent = (correctionStats.barcodeCanAddToClusterCalls == 0) ? 0
+                    : (float)correctionStats.barcodeClusterNotAddedByExpectedCount
+                    / correctionStats.barcodeCanAddToClusterCalls * 100;
+            System.out.println("Barcode clusters not merged because they are equal by wildcards "
+                    + "and were not previously merged on wildcards processing stage: "
+                    + correctionStats.barcodeClusterNotAddedByWildcards + " ("
+                    + floatFormat.format(barcodeClusterNotAddedByWildcardsPercent) + "%)");
+            System.out.println("Barcode clusters not merged because minor cluster count was bigger "
+                    + "than expected with specified mutation probabilities: "
+                    + correctionStats.barcodeClusterNotAddedByExpectedCount + " ("
+                    + floatFormat.format(barcodeClusterNotAddedByExpectedCountPercent) + "%)");
             System.out.println();
         }
 
