@@ -92,7 +92,7 @@ public final class CorrectBarcodesIO {
 
     public void go() {
         long startTime = System.currentTimeMillis();
-        CorrectionStats stats;
+        CorrectionStats stats = new CorrectionStats();
         try (MifReader pass1Reader = new MifReader(inputFileName);
              MifReader pass2Reader = new MifReader(inputFileName);
              MifWriter writer = Objects.requireNonNull(createWriter(pass1Reader.getHeader(), false));
@@ -150,28 +150,17 @@ public final class CorrectBarcodesIO {
                 // secondary barcodes correction
                 OutputPort<CorrectionData> correctionDataPort = performSecondaryBarcodesCorrection(preprocessorPort,
                         correctionAlgorithms, keyGroups, threads);
-                long correctedReads = 0;
-                long updatedQualityReads = 0;
-                long excludedReads = 0;
-                long totalWildcards = 0;
-                long totalNucleotides = 0;
                 for (CorrectionData correctionData : CUtils.it(correctionDataPort)) {
                     CorrectionStats statsForCurrentPrimaryGroups = correctionAlgorithms.correctAndWrite(
                             correctionData, pass2RawReadsPort, writer, excludedBarcodesWriter);
-                    correctedReads += statsForCurrentPrimaryGroups.correctedReads;
-                    updatedQualityReads += statsForCurrentPrimaryGroups.updatedQualityReads;
-                    excludedReads += statsForCurrentPrimaryGroups.excludedReads;
-                    totalWildcards += statsForCurrentPrimaryGroups.totalWildcards;
-                    totalNucleotides += statsForCurrentPrimaryGroups.totalNucleotides;
+                    stats.add(statsForCurrentPrimaryGroups);
                 }
-                stats = new CorrectionStats(correctedReads, updatedQualityReads, excludedReads,
-                        totalWildcards, totalNucleotides);
             } else {
                 // full file correction
                 CorrectionData correctionData = correctionAlgorithms.prepareCorrectionData(preprocessorPort,
                         keyGroups, 0);
-                stats = correctionAlgorithms.correctAndWrite(correctionData, pass2RawReadsPort,
-                        writer, excludedBarcodesWriter);
+                stats.add(correctionAlgorithms.correctAndWrite(correctionData, pass2RawReadsPort,
+                        writer, excludedBarcodesWriter));
             }
             pass1Reader.close();
             writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
@@ -198,6 +187,34 @@ public final class CorrectBarcodesIO {
         reportFileHeader.append("Corrected groups: ").append(keyGroups).append('\n');
         if (primaryGroups.size() > 0)
             reportFileHeader.append("Primary groups: ").append(primaryGroups).append('\n');
+        reportFileHeader.append("Stats for 1st stage correction (merging by wildcards):\n");
+        reportFileHeader.append("Clusters checked for possible merge on wildcards processing stage: ")
+                .append(stats.wildcardCanAddToClusterCalls).append('\n');
+        float wildcardClusterNotAddedByThresholdPercent = (stats.wildcardCanAddToClusterCalls == 0) ? 0
+                : (float)stats.wildcardClusterNotAddedByThreshold / stats.wildcardCanAddToClusterCalls * 100;
+        reportFileHeader.append("Wildcard clusters not merged by size threshold: ")
+                .append(stats.wildcardClusterNotAddedByThreshold).append(" (")
+                .append(floatFormat.format(wildcardClusterNotAddedByThresholdPercent)).append("%)\n");
+        reportFileHeader.append("Stats for 2nd stage correction (correction of mutations in barcodes):\n");
+        reportFileHeader.append("Clusters checked for possible merge on barcodes correction stage: ")
+                .append(stats.barcodeCanAddToClusterCalls).append('\n');
+        float barcodeClusterNotAddedByWildcardsPercent = (stats.barcodeCanAddToClusterCalls == 0) ? 0
+                : (float)stats.barcodeClusterNotAddedByWildcards / stats.barcodeCanAddToClusterCalls * 100;
+        float barcodeClusterNotAddedByExpectedCountPercent = (stats.barcodeCanAddToClusterCalls == 0) ? 0
+                : (float)stats.barcodeClusterNotAddedByExpectedCount / stats.barcodeCanAddToClusterCalls * 100;
+        float barcodeClusterNotAddedByThresholdPercent = (stats.barcodeCanAddToClusterCalls == 0) ? 0
+                : (float)stats.barcodeClusterNotAddedByThreshold / stats.barcodeCanAddToClusterCalls * 100;
+        reportFileHeader.append("Barcode clusters not merged because they are equal by wildcards ")
+                .append("and were not previously merged on wildcards processing stage: ")
+                .append(stats.barcodeClusterNotAddedByWildcards).append(" (")
+                .append(floatFormat.format(barcodeClusterNotAddedByWildcardsPercent)).append("%)\n");
+        reportFileHeader.append("Barcode clusters not merged because minor cluster count was bigger ")
+                .append("than expected with specified mutation probabilities: ")
+                .append(stats.barcodeClusterNotAddedByExpectedCount).append(" (")
+                .append(floatFormat.format(barcodeClusterNotAddedByExpectedCountPercent)).append("%)\n");
+        reportFileHeader.append("Barcode clusters not merged by size threshold: ")
+                .append(stats.barcodeClusterNotAddedByThreshold).append(" (")
+                .append(floatFormat.format(barcodeClusterNotAddedByThresholdPercent)).append("%)\n");
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
@@ -234,6 +251,12 @@ public final class CorrectBarcodesIO {
         jsonReportData.put("totalReads", totalReads);
         jsonReportData.put("totalWildcards", stats.totalWildcards);
         jsonReportData.put("totalNucleotides", stats.totalNucleotides);
+        jsonReportData.put("wildcardClusterNotAddedByThreshold", stats.wildcardClusterNotAddedByThreshold);
+        jsonReportData.put("wildcardCanAddToClusterCalls", stats.wildcardCanAddToClusterCalls);
+        jsonReportData.put("barcodeClusterNotAddedByWildcards", stats.barcodeClusterNotAddedByWildcards);
+        jsonReportData.put("barcodeClusterNotAddedByExpectedCount", stats.barcodeClusterNotAddedByExpectedCount);
+        jsonReportData.put("barcodeClusterNotAddedByThreshold", stats.barcodeClusterNotAddedByThreshold);
+        jsonReportData.put("barcodeCanAddToClusterCalls", stats.barcodeCanAddToClusterCalls);
 
         humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
         jsonReport(jsonReportFileName, jsonReportData);

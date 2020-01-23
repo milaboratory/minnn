@@ -29,19 +29,49 @@
 package com.milaboratory.minnn.correct;
 
 public final class CorrectionStats {
-    public final long correctedReads;
-    public final long updatedQualityReads;
-    public final long excludedReads;
-    public final long totalWildcards;
-    public final long totalNucleotides;
+    public long correctedReads = 0;
+    public long updatedQualityReads = 0;
+    public long excludedReads = 0;
+    public long totalWildcards = 0;
+    public long totalNucleotides = 0;
+    public long wildcardClusterNotAddedByThreshold = 0;
+    public long wildcardCanAddToClusterCalls = 0;
+    public long barcodeClusterNotAddedByWildcards = 0;
+    public long barcodeClusterNotAddedByExpectedCount = 0;
+    public long barcodeClusterNotAddedByThreshold = 0;
+    public long barcodeCanAddToClusterCalls = 0;
+
+    public CorrectionStats() {}
 
     public CorrectionStats(
-            long correctedReads, long updatedQualityReads, long excludedReads,
-            long totalWildcards, long totalNucleotides) {
+            long correctedReads, long updatedQualityReads, long excludedReads, long totalWildcards,
+            long totalNucleotides, long wildcardClusterNotAddedByThreshold, long wildcardCanAddToClusterCalls,
+            long barcodeClusterNotAddedByWildcards, long barcodeClusterNotAddedByExpectedCount,
+            long barcodeClusterNotAddedByThreshold, long barcodeCanAddToClusterCalls) {
         this.correctedReads = correctedReads;
         this.updatedQualityReads = updatedQualityReads;
         this.excludedReads = excludedReads;
         this.totalWildcards = totalWildcards;
         this.totalNucleotides = totalNucleotides;
+        this.wildcardClusterNotAddedByThreshold = wildcardClusterNotAddedByThreshold;
+        this.wildcardCanAddToClusterCalls = wildcardCanAddToClusterCalls;
+        this.barcodeClusterNotAddedByWildcards = barcodeClusterNotAddedByWildcards;
+        this.barcodeClusterNotAddedByExpectedCount = barcodeClusterNotAddedByExpectedCount;
+        this.barcodeClusterNotAddedByThreshold = barcodeClusterNotAddedByThreshold;
+        this.barcodeCanAddToClusterCalls = barcodeCanAddToClusterCalls;
+    }
+
+    public void add(CorrectionStats other) {
+        correctedReads += other.correctedReads;
+        updatedQualityReads += other.updatedQualityReads;
+        excludedReads += other.excludedReads;
+        totalWildcards += other.totalWildcards;
+        totalNucleotides += other.totalNucleotides;
+        wildcardClusterNotAddedByThreshold += other.wildcardClusterNotAddedByThreshold;
+        wildcardCanAddToClusterCalls += other.wildcardCanAddToClusterCalls;
+        barcodeClusterNotAddedByWildcards += other.barcodeClusterNotAddedByWildcards;
+        barcodeClusterNotAddedByExpectedCount += other.barcodeClusterNotAddedByExpectedCount;
+        barcodeClusterNotAddedByThreshold += other.barcodeClusterNotAddedByThreshold;
+        barcodeCanAddToClusterCalls += other.barcodeCanAddToClusterCalls;
     }
 }

@@ -87,6 +87,7 @@ public final class CorrectionAlgorithms {
         boolean reportProgress = true;
         for (CorrectionQualityPreprocessingResult inputData : CUtils.it(preprocessorPort)) {
             correctionData.parsedReadsCount += inputData.clusterSize;
+            CorrectionStats stats = correctionData.stats;
             // don't report progress inside each thread if this is correction with primary and secondary groups
             reportProgress &= (inputData.primaryGroups == null);
             for (Map.Entry<String, CorrectionGroupData> groupData : correctionData.keyGroupsData.entrySet()) {
@@ -98,8 +99,8 @@ public final class CorrectionAlgorithms {
                 SequenceWithWildcardsCount currentCounter = new SequenceWithWildcardsCount(seqWithQuality);
                 currentCounter.count = inputData.clusterSize;
                 correctionGroupData.wildcardCounters.add(currentCounter);
-                correctionData.totalWildcardsCount += currentCounter.wildcardsCount * inputData.clusterSize;
-                correctionData.totalNucleotidesCount += seq.size() * inputData.clusterSize;
+                stats.totalWildcards += currentCounter.wildcardsCount * inputData.clusterSize;
+                stats.totalNucleotides += seq.size() * inputData.clusterSize;
 
                 // counting raw barcode sequences if filtering by count is enabled
                 if (filterByCount) {
@@ -148,15 +149,16 @@ public final class CorrectionAlgorithms {
             });
             groupData.wildcardCounters = null;
         }
+        correctionData.stats.add(wildcardClusteringStrategy.getStats());
 
         // final clustering and filling correction map
         for (HashMap.Entry<String, CorrectionGroupData> entry : correctionData.keyGroupsData.entrySet()) {
             String groupName = entry.getKey();
             CorrectionGroupData groupData = entry.getValue();
+            BarcodeClusteringStrategy barcodeClusteringStrategy = barcodeClusteringStrategyFactory.createStrategy(
+                    (float)(groupData.lengthSum) / correctionData.parsedReadsCount);
             Clustering<SequenceWithQualityAndCount, SequenceWithQualityForClustering> clustering = new Clustering<>(
-                    groupData.sequenceCounters, new SequenceCounterExtractor<>(),
-                    barcodeClusteringStrategyFactory.createStrategy(
-                            (float)(groupData.lengthSum) / correctionData.parsedReadsCount));
+                    groupData.sequenceCounters, new SequenceCounterExtractor<>(), barcodeClusteringStrategy);
             if (reportProgress)
                 SmartProgressReporter.startProgressReport("Clustering barcodes in group " + groupName,
                         clustering, System.err);
@@ -179,6 +181,7 @@ public final class CorrectionAlgorithms {
             });
             groupData.sequenceCounters = null;
             groupData.originalSequencesWithWildcards = null;
+            correctionData.stats.add(barcodeClusteringStrategy.getStats());
         }
 
         if (filterByCount) {
@@ -199,7 +202,7 @@ public final class CorrectionAlgorithms {
      * @param rawReadsPort              port (MIF reader) with raw parsed reads to correct barcodes in them
      * @param writer                    MIF writer for corrected reads
      * @param excludedBarcodesWriter    MIF writer for reads that were filtered out by barcodes count
-     * @return                          correction stats: number of corrected reads and filtered out reads
+     * @return                          correction stats
      */
     public CorrectionStats correctAndWrite(
             CorrectionData correctionData, OutputPort<ParsedRead> rawReadsPort,
@@ -226,8 +229,13 @@ public final class CorrectionAlgorithms {
             } else
                 writer.write(correctBarcodesResult.parsedRead);
         }
-        return new CorrectionStats(correctedReads, updatedQualityReads, excludedReads,
-                correctionData.totalWildcardsCount, correctionData.totalNucleotidesCount);
+
+        CorrectionStats stats = correctionData.stats;
+        return new CorrectionStats(
+                correctedReads, updatedQualityReads, excludedReads, stats.totalWildcards, stats.totalNucleotides,
+                stats.wildcardClusterNotAddedByThreshold, stats.wildcardCanAddToClusterCalls,
+                stats.barcodeClusterNotAddedByWildcards, stats.barcodeClusterNotAddedByExpectedCount,
+                stats.barcodeClusterNotAddedByThreshold, stats.barcodeCanAddToClusterCalls);
     }
 
     public static OutputPort<CorrectionQualityPreprocessingResult> getPreprocessingResultOutputPort(
