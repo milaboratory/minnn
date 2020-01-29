@@ -26,21 +26,32 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.consensus;
+package com.milaboratory.minnn.consensus.trimmer;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import com.milaboratory.core.sequence.*;
+import gnu.trove.list.array.TFloatArrayList;
 
-public class ConsensusAlgorithmRNASeq extends ConsensusAlgorithm {
-    public ConsensusAlgorithmRNASeq() {
-        super(null, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                false, null, (byte)0, null);
-        throw new NotImplementedException();
+public class ConsensusBuilder {
+    private NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
+    private TFloatArrayList coverage = new TFloatArrayList();
+
+    public void append(NSequenceWithQuality letter, float letterCoverage) {
+        if (letter.size() != 1)
+            throw new IllegalArgumentException("Expected 1 letter sequence with quality, found: " + letter);
+        builder.append(letter);
+        coverage.add(letterCoverage);
     }
 
-    @Override
-    public CalculatedConsensuses process(Cluster cluster) {
-        throw new NotImplementedException();
+    public SequenceWithQualityAndCoverage createAndDestroy() {
+        NSequenceWithQuality seqWithQuality = builder.createAndDestroy();
+        SequenceWithQualityAndCoverage consensus = new SequenceWithQualityAndCoverage(
+                seqWithQuality.getSequence(), seqWithQuality.getQuality(), coverage.toArray());
+        builder = null;
+        coverage = null;
+        return consensus;
+    }
+
+    public int size() {
+        return coverage.size();
     }
 }

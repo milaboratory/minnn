@@ -29,10 +29,10 @@
 package com.milaboratory.minnn.consensus.singlecell;
 
 import com.milaboratory.core.sequence.NSequenceWithQuality;
-import com.milaboratory.core.sequence.NSequenceWithQualityBuilder;
 import com.milaboratory.core.sequence.NucleotideSequence;
-import com.milaboratory.core.sequence.SequenceWithQuality;
 import com.milaboratory.minnn.consensus.*;
+import com.milaboratory.minnn.consensus.trimmer.SequenceWithQualityAndCoverage;
+import com.milaboratory.minnn.consensus.trimmer.ConsensusBuilder;
 import gnu.trove.map.hash.TByteObjectHashMap;
 import gnu.trove.map.hash.TLongIntHashMap;
 import gnu.trove.set.hash.TLongHashSet;
@@ -53,14 +53,15 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
     public ConsensusAlgorithmSingleCell(
             Consumer<String> displayWarning, int numberOfTargets, int maxConsensusesPerCluster,
             float skippedFractionToRepeat, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
-            int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
-            boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
+            int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
+            float avgQualityThresholdForLowCoverage, int trimWindowSize, boolean toSeparateGroups,
+            PrintStream debugOutputStream, byte debugQualityThreshold,
             ConcurrentHashMap<Long, OriginalReadData> originalReadsData, int kmerLength, int kmerMaxOffset,
             int kmerMatchMaxErrors) {
         super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
                 Math.max(readsMinGoodSeqLength, kmerLength), readsAvgQualityThreshold, readsTrimWindowSize,
-                minGoodSeqLength, avgQualityThreshold, trimWindowSize, toSeparateGroups, debugOutputStream,
-                debugQualityThreshold, originalReadsData);
+                minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
+                trimWindowSize, toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData);
         this.kmerLength = kmerLength;
         this.kmerMaxOffset = kmerMaxOffset;
         this.kmerMatchMaxErrors = kmerMatchMaxErrors;
@@ -244,7 +245,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 alignedSequencesMatrix.addRow(currentRead.getSequences().get(targetId),
                         kmerOffsets.get(currentRead.getOriginalReadId()));
 
-            ArrayList<NSequenceWithQuality> consensusLetters = new ArrayList<>();
+            ConsensusBuilder consensusBuilder = new ConsensusBuilder();
+            ArrayList<NSequenceWithQuality> consensusLetters = (debugData != null) ? new ArrayList<>() : null;
             for (int coordinate = alignedSequencesMatrix.getMinCoordinate();
                  coordinate <= alignedSequencesMatrix.getMaxCoordinate(); coordinate++) {
                 ArrayList<SequenceWithAttributes> currentCoordinateLetters = new ArrayList<>();
@@ -254,8 +256,13 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                     if (!currentLetter.isNull())
                         currentCoordinateLetters.add(currentLetter);
                 }
-                if (currentCoordinateLetters.size() > 0)
-                    consensusLetters.add(calculateConsensusLetter(currentCoordinateLetters));
+                if (currentCoordinateLetters.size() > 0) {
+                    float coverage = (float)(currentCoordinateLetters.size()) / usedReadIds.length;
+                    NSequenceWithQuality consensusLetter = calculateConsensusLetter(currentCoordinateLetters);
+                    consensusBuilder.append(consensusLetter, coverage);
+                    if (consensusLetters != null)
+                        consensusLetters.add(consensusLetter);
+                }
             }
 
             if (debugData != null) {
@@ -270,8 +277,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 debugData.consensusData.set(targetId - 1, consensusLetters);
             }
 
-            // consensus sequence assembling and quality trimming
-            if (consensusLetters.size() == 0) {
+            // consensus sequence assembling and trimming by quality and coverage
+            if (consensusBuilder.size() == 0) {
                 if (collectOriginalReadsData)
                     for (long readId : usedReadIds) {
                         OriginalReadData currentReadData = originalReadsData.get(readId);
@@ -280,10 +287,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                     }
                 return new Consensus(debugData, numberOfTargets, true);
             }
-            NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
-            consensusLetters.stream().filter(letter -> letter != NSequenceWithQuality.EMPTY).forEach(builder::append);
-            NSequenceWithQuality consensusRawSequence = builder.createAndDestroy();
-            SequenceWithQuality<NucleotideSequence> consensusTrimmedSequence = trimConsensusBadQualityTails(
+            SequenceWithQualityAndCoverage consensusRawSequence = consensusBuilder.createAndDestroy();
+            NSequenceWithQuality consensusTrimmedSequence = trimConsensusBadQualityTails(
                     consensusRawSequence, targetId, trimmedLettersCounters);
             if (consensusTrimmedSequence == null) {
                 if (collectOriginalReadsData)

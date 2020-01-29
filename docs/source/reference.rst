@@ -157,9 +157,11 @@ consensus
  --reads-min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming input reads.
  --reads-avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming input reads.
  --reads-trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming input reads.
- --min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming output consensuses.
- --avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming output consensuses.
- --trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming output consensuses.
+ --min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming output consensuses by quality and coverage.
+ --low-coverage-threshold: Coverage is calculated as number of reads that have letters on current position divided by total number of reads for this consensus. Values lower than this parameter will be considered low. This parameter is for trimming output consensuses by quality and coverage.
+ --avg-quality-threshold: Minimal average quality for parts of consensus with good coverage. This parameter is for trimming output consensuses by quality and coverage.
+ --avg-quality-threshold-for-low-coverage: Minimal average quality for parts of consensus with low coverage. This parameter is for trimming output consensuses by quality and coverage.
+ --trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming output consensuses by quality and coverage.
  --original-read-stats: Save extra statistics for each original read into separate file. Output file in space separated text format.
  --not-used-reads-output: Write reads not used in consensus assembly into separate file. Output file in MIF format.
  --consensuses-to-separate-groups: If this parameter is specified, consensuses will not be written as reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by consensuses using filter / demultiplex actions, or export original reads and corresponding consensuses into separate reads using mif2fastq action.
@@ -198,9 +200,11 @@ consensus-dma
  --reads-min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming input reads.
  --reads-avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming input reads.
  --reads-trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming input reads.
- --min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming output consensuses.
- --avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming output consensuses.
- --trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming output consensuses.
+ --min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming output consensuses by quality and coverage.
+ --low-coverage-threshold: Coverage is calculated as number of reads that have letters on current position divided by total number of reads for this consensus. Values lower than this parameter will be considered low. This parameter is for trimming output consensuses by quality and coverage.
+ --avg-quality-threshold: Minimal average quality for parts of consensus with good coverage. This parameter is for trimming output consensuses by quality and coverage.
+ --avg-quality-threshold-for-low-coverage: Minimal average quality for parts of consensus with low coverage. This parameter is for trimming output consensuses by quality and coverage.
+ --trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming output consensuses by quality and coverage.
  --original-read-stats: Save extra statistics for each original read into separate file. Output file in space separated text format.
  --not-used-reads-output: Write reads not used in consensus assembly into separate file. Output file in MIF format.
  --consensuses-to-separate-groups: If this parameter is specified, consensuses will not be written as reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by consensuses using filter / demultiplex actions, or export original reads and corresponding consensuses into separate reads using mif2fastq action.

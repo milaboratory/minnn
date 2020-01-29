@@ -60,10 +60,10 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
                 outputFileName, SINGLE_CELL, 0, 0, 0, 0,
                 0, (byte)0, 0, skippedFractionToRepeat,
                 maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
-                minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadStatsFileName,
-                notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
-                kmerLength, kmerOffset, kmerMaxErrors, reportFileName, jsonReportFileName,
-                debugOutputFileName, debugQualityThreshold);
+                minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
+                trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName, toSeparateGroups,
+                inputReadsLimit, actualMaxWarnings, threads, kmerLength, kmerOffset, kmerMaxErrors,
+                reportFileName, jsonReportFileName, debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
     }
 
@@ -113,8 +113,8 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
         return new ConsensusSingleCellActionConfiguration(new ConsensusSingleCellActionConfiguration
                 .ConsensusSingleCellActionParameters(groupList, skippedFractionToRepeat, maxConsensusesPerCluster,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                avgQualityThreshold, trimWindowSize, toSeparateGroups, inputReadsLimit, kmerLength, kmerOffset,
-                kmerMaxErrors));
+                lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
+                toSeparateGroups, inputReadsLimit, kmerLength, kmerOffset, kmerMaxErrors));
     }
 
     @Override
@@ -165,9 +165,17 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
             names = {"--min-good-sequence-length"})
     private int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
+    @Option(description = CONSENSUSES_LOW_COVERAGE_THRESHOLD,
+            names = {"--low-coverage-threshold"})
+    private float lowCoverageThreshold = DEFAULT_CONSENSUS_LOW_COVERAGE_THRESHOLD;
+
     @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD,
             names = {"--avg-quality-threshold"})
     private float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
+
+    @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE,
+            names = {"--avg-quality-threshold-for-low-coverage"})
+    private float avgQualityThresholdForLowCoverage = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE;
 
     @Option(description = CONSENSUSES_TRIM_WINDOW_SIZE,
             names = {"--trim-window-size"})

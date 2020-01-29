@@ -76,7 +76,9 @@ public final class ConsensusIO {
     private final float readsAvgQualityThreshold;
     private final int readsTrimWindowSize;
     private final int minGoodSeqLength;
+    private final float lowCoverageThreshold;
     private final float avgQualityThreshold;
+    private final float avgQualityThresholdForLowCoverage;
     private final int trimWindowSize;
     private final String originalReadStatsFileName;
     private final String notUsedReadsOutputFileName;
@@ -101,16 +103,17 @@ public final class ConsensusIO {
     private LinkedHashSet<String> consensusGroups;
     private int numberOfTargets;
 
-    public ConsensusIO(PipelineConfiguration pipelineConfiguration, List<String> groupList, String inputFileName,
-                       String outputFileName, ConsensusAlgorithms consensusAlgorithmType, int alignerWidth,
-                       int matchScore, int mismatchScore, int gapScore, long goodQualityMismatchPenalty,
-                       byte goodQualityMismatchThreshold, long scoreThreshold, float skippedFractionToRepeat,
-                       int maxConsensusesPerCluster, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
-                       int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
-                       String originalReadStatsFileName, String notUsedReadsOutputFileName, boolean toSeparateGroups,
-                       long inputReadsLimit, int maxWarnings, int threads, int kmerLength, int kmerMaxOffset,
-                       int kmerMatchMaxErrors, String reportFileName, String jsonReportFileName,
-                       String debugOutputFileName, byte debugQualityThreshold) {
+    public ConsensusIO(
+            PipelineConfiguration pipelineConfiguration, List<String> groupList, String inputFileName,
+            String outputFileName, ConsensusAlgorithms consensusAlgorithmType, int alignerWidth,
+            int matchScore, int mismatchScore, int gapScore, long goodQualityMismatchPenalty,
+            byte goodQualityMismatchThreshold, long scoreThreshold, float skippedFractionToRepeat,
+            int maxConsensusesPerCluster, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
+            int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
+            float avgQualityThresholdForLowCoverage, int trimWindowSize, String originalReadStatsFileName,
+            String notUsedReadsOutputFileName, boolean toSeparateGroups, long inputReadsLimit, int maxWarnings,
+            int threads, int kmerLength, int kmerMaxOffset, int kmerMatchMaxErrors, String reportFileName,
+            String jsonReportFileName, String debugOutputFileName, byte debugQualityThreshold) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.consensusGroups = new LinkedHashSet<>(Objects.requireNonNull(groupList));
         this.inputFileName = inputFileName;
@@ -130,7 +133,9 @@ public final class ConsensusIO {
         this.readsTrimWindowSize = readsTrimWindowSize;
         this.toSeparateGroups = toSeparateGroups;
         this.minGoodSeqLength = minGoodSeqLength;
+        this.lowCoverageThreshold = lowCoverageThreshold;
         this.avgQualityThreshold = avgQualityThreshold;
+        this.avgQualityThresholdForLowCoverage = avgQualityThresholdForLowCoverage;
         this.trimWindowSize = trimWindowSize;
         this.originalReadStatsFileName = originalReadStatsFileName;
         this.notUsedReadsOutputFileName = notUsedReadsOutputFileName;
@@ -168,7 +173,8 @@ public final class ConsensusIO {
                         alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
                         goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat,
                         maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold,
-                        readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold, trimWindowSize, toSeparateGroups,
+                        readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
+                        avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
                         debugOutputStream, debugQualityThreshold, originalReadsData);
                 break;
             case RNA_SEQ:
@@ -177,8 +183,9 @@ public final class ConsensusIO {
             case SINGLE_CELL:
                 consensusAlgorithm = new ConsensusAlgorithmSingleCell(this::displayWarning, numberOfTargets,
                         maxConsensusesPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength,
-                        readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold,
-                        trimWindowSize, toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData,
+                        readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold,
+                        avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
+                        debugOutputStream, debugQualityThreshold, originalReadsData,
                         kmerLength, kmerMaxOffset, kmerMatchMaxErrors);
                 break;
         }

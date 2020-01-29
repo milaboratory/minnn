@@ -60,12 +60,11 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
                 outputFileName, DOUBLE_MULTI_ALIGN, alignerWidth, matchScore, mismatchScore, gapScore,
                 goodQualityMismatchPenalty, goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat,
                 maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
-                minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadStatsFileName,
-                notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
-                0, 0, 0, reportFileName, jsonReportFileName,
-                debugOutputFileName, debugQualityThreshold);
+                minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
+                trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName, toSeparateGroups,
+                inputReadsLimit, actualMaxWarnings, threads, 0, 0, 0,
+                reportFileName, jsonReportFileName, debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
-
     }
 
     @Override
@@ -115,8 +114,8 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
                 .ConsensusDoubleMultiAlignActionParameters(groupList, alignerWidth, matchScore, mismatchScore,
                 gapScore, goodQualityMismatchPenalty, goodQualityMismatchThreshold, scoreThreshold,
                 skippedFractionToRepeat, maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold,
-                readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold, trimWindowSize, toSeparateGroups,
-                inputReadsLimit));
+                readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
+                avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups, inputReadsLimit));
     }
 
     @Override
@@ -195,9 +194,17 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
             names = {"--min-good-sequence-length"})
     private int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
+    @Option(description = CONSENSUSES_LOW_COVERAGE_THRESHOLD,
+            names = {"--low-coverage-threshold"})
+    private float lowCoverageThreshold = DEFAULT_CONSENSUS_LOW_COVERAGE_THRESHOLD;
+
     @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD,
             names = {"--avg-quality-threshold"})
     private float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
+
+    @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE,
+            names = {"--avg-quality-threshold-for-low-coverage"})
+    private float avgQualityThresholdForLowCoverage = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE;
 
     @Option(description = CONSENSUSES_TRIM_WINDOW_SIZE,
             names = {"--trim-window-size"})

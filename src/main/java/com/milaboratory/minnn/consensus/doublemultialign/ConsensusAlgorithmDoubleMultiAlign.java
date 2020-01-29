@@ -31,6 +31,8 @@ package com.milaboratory.minnn.consensus.doublemultialign;
 import com.milaboratory.core.alignment.*;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.consensus.*;
+import com.milaboratory.minnn.consensus.trimmer.ConsensusBuilder;
+import com.milaboratory.minnn.consensus.trimmer.SequenceWithQualityAndCoverage;
 import gnu.trove.map.hash.TByteObjectHashMap;
 
 import java.io.PrintStream;
@@ -56,13 +58,14 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             Consumer<String> displayWarning, int numberOfTargets, int alignerWidth, int matchScore, int mismatchScore,
             int gapScore, long goodQualityMismatchPenalty, byte goodQualityMismatchThreshold, long scoreThreshold,
             float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
-            float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold,
-            int trimWindowSize, boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
+            float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold,
+            float avgQualityThreshold, float avgQualityThresholdForLowCoverage, int trimWindowSize,
+            boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
             ConcurrentHashMap<Long, OriginalReadData> originalReadsData) {
         super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                avgQualityThreshold, trimWindowSize, toSeparateGroups, debugOutputStream, debugQualityThreshold,
-                originalReadsData);
+                lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
+                toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData);
         this.alignerWidth = alignerWidth;
         this.scoring = new LinearGapAlignmentScoring<>(NucleotideSequence.ALPHABET, matchScore, mismatchScore,
                 gapScore);
@@ -356,26 +359,20 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
 
             // choosing letters for consensus and calculating quality
             int fullRowLength = lettersMatrixList.get(0).size();
-            ArrayList<NSequenceWithQuality> consensusLetters = getLettersWithQuality(lettersList, fullRowLength,
+            SequenceWithQualityAndCoverage consensusRawSequence = getConsensusRawSequence(lettersList, fullRowLength,
                     targetIndex);
+            if (debugData != null)
+                consensusDebugDataForThisTarget.addAll(getLettersWithQuality(lettersList, fullRowLength, targetIndex));
 
             // consensus sequence assembling and quality trimming
             OriginalReadStatus discardedStatus = stage2 ? CONSENSUS_DISCARDED_TRIM_STAGE2
                     : CONSENSUS_DISCARDED_TRIM_STAGE1;
-            if (consensusLetters.size() == 0) {
+            if (consensusRawSequence.size() == 0) {
                 storeOriginalReadsData(subsequencesList, discardedStatus, null, trimmedLettersCounters,
                         stage2);
                 return new Consensus(debugData, numberOfTargets, stage2);
             }
-            NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
-            for (NSequenceWithQuality consensusLetter : consensusLetters) {
-                if (consensusLetter != NSequenceWithQuality.EMPTY)
-                    builder.append(consensusLetter);
-                if (debugData != null)
-                    consensusDebugDataForThisTarget.add(consensusLetter);
-            }
-            NSequenceWithQuality consensusRawSequence = builder.createAndDestroy();
-            SequenceWithQuality<NucleotideSequence> consensusTrimmedSequence = trimConsensusBadQualityTails(
+            NSequenceWithQuality consensusTrimmedSequence = trimConsensusBadQualityTails(
                     consensusRawSequence, targetId, trimmedLettersCounters);
             if (consensusTrimmedSequence == null) {
                 storeOriginalReadsData(subsequencesList, discardedStatus, null, trimmedLettersCounters,
@@ -407,7 +404,42 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
     }
 
     /**
-     * Choose letters for consensus and calculate their quality.
+     * Choose letters for consensus and calculate their quality and coverage.
+     *
+     * @param lettersList       each element of this list is LettersWithPositions structure that allows to get
+     *                          letter by targetIndex and position; one element of lettersList is for one original
+     *                          (possibly multi-target) base read for this consensus
+     * @param fullRowLength     row length of aligned sequences matrix for current targetIndex
+     * @param targetIndex       current targetIndex
+     * @return                  consensus sequence with quality and coverage
+     */
+    private SequenceWithQualityAndCoverage getConsensusRawSequence(
+            List<LettersWithPositions> lettersList, int fullRowLength, int targetIndex) {
+        ConsensusBuilder consensusBuilder = new ConsensusBuilder();
+
+        for (int position = 0; position < fullRowLength; position++) {
+            ArrayList<SequenceWithAttributes> baseLetters = new ArrayList<>();
+            // loop by source reads for this consensus
+            for (LettersWithPositions currentLettersWithPositions : lettersList) {
+                SequenceWithAttributes currentLetter = currentLettersWithPositions.get(targetIndex, position);
+                if (!currentLetter.isNull())
+                    baseLetters.add(currentLetter);
+            }
+
+            if (baseLetters.size() > 0) {
+                NSequenceWithQuality consensusLetter = calculateConsensusLetter(baseLetters);
+                if (consensusLetter != NSequenceWithQuality.EMPTY) {
+                    float coverage = (float)(baseLetters.size()) / lettersList.size();
+                    consensusBuilder.append(consensusLetter, coverage);
+                }
+            }
+        }
+
+        return consensusBuilder.createAndDestroy();
+    }
+
+    /**
+     * Prepare list of consensus letters with qualities for saving in debug file.
      *
      * @param lettersList       each element of this list is LettersWithPositions structure that allows to get
      *                          letter by targetIndex and position; one element of lettersList is for one original
