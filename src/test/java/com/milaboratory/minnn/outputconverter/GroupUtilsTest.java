@@ -116,7 +116,7 @@ public class GroupUtilsTest {
     }
 
     @Test
-    public void invalidGroupRangeTest() throws Exception {
+    public void emptyGroupRangeTest() throws Exception {
         NSequenceWithQuality seq = new NSequenceWithQuality("A");
         MatchedRange testMatchedRange = new MatchedRange(seq, (byte)1, 0, new Range(0, 1));
         ArrayList<MatchedGroupEdge> testMatchedGroupEdges = new ArrayList<MatchedGroupEdge>() {{
@@ -127,9 +127,9 @@ public class GroupUtilsTest {
         }};
         MatchIntermediate testMatch = new MatchIntermediate(1, 0,
                 -1, -1, testMatchedGroupEdges, testMatchedRange);
-
-        exception.expect(IllegalStateException.class);
-        testMatch.getGroups();
+        List<MatchedGroup> groups = testMatch.getGroups();
+        assertEquals(1, groups.size());
+        assertEquals(NSequenceWithQuality.EMPTY, groups.get(0).getValue());
     }
 
     @Test
