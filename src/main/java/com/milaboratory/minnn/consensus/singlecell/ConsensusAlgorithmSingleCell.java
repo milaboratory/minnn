@@ -287,9 +287,10 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                     }
                 return new Consensus(debugData, numberOfTargets, true);
             }
+
             SequenceWithQualityAndCoverage consensusRawSequence = consensusBuilder.createAndDestroy();
             NSequenceWithQuality consensusTrimmedSequence = trimConsensusBadQualityTails(
-                    consensusRawSequence, targetId, trimmedLettersCounters);
+                    consensusRawSequence, targetId, trimmedLettersCounters, debugData);
             if (consensusTrimmedSequence == null) {
                 if (collectOriginalReadsData)
                     for (long readId : usedReadIds) {

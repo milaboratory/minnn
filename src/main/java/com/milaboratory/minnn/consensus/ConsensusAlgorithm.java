@@ -175,29 +175,50 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
      * @param targetId                  target id of this sequence; used for saving counts of trimmed letters
      * @param trimmedLettersCounters    data structure to save counts of trimmed letters,
      *                                  or null if saving original reads data is not enabled
+     * @param debugData                 data structure to save trimmed consensus debug data,
+     *                                  or null if debug file is not enabled
      * @return                          trimmed sequence or null if consensus was discarded after trimming
      */
     protected NSequenceWithQuality trimConsensusBadQualityTails(
-            SequenceWithQualityAndCoverage consensus, byte targetId, TrimmedLettersCounters trimmedLettersCounters) {
+            SequenceWithQualityAndCoverage consensus, byte targetId, TrimmedLettersCounters trimmedLettersCounters,
+            ConsensusDebugData debugData) {
+        NSequenceWithQuality trimmedConsensus;
         int trimResultLeft = consensusTrimmer.trim(consensus, 0, consensus.size(), true);
+        int trimResultRight = -1;
         if (trimResultLeft < -1) {
             if (collectOriginalReadsData)
                 trimmedLettersCounters.byTargetId.put(targetId, consensus.size());
-            return null;
+            trimmedConsensus = null;
+        } else {
+            trimResultRight = consensusTrimmer.trim(consensus, 0, consensus.size(), false);
+            if (trimResultRight < 0)
+                throw new IllegalStateException("Unexpected negative trimming result");
+            else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
+                if (collectOriginalReadsData)
+                    trimmedLettersCounters.byTargetId.put(targetId, consensus.size()
+                            - Math.max(0, trimResultRight - trimResultLeft - 1));
+                trimmedConsensus = null;
+            } else {
+                if (collectOriginalReadsData)
+                    trimmedLettersCounters.byTargetId.put(targetId,
+                            consensus.size() - (trimResultRight - trimResultLeft - 1));
+                trimmedConsensus = consensus.toNSequenceWithQuality(trimResultLeft + 1, trimResultRight);
+            }
         }
-        int trimResultRight = consensusTrimmer.trim(consensus, 0, consensus.size(), false);
-        if (trimResultRight < 0)
-            throw new IllegalStateException("Unexpected negative trimming result");
-        else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
-            if (collectOriginalReadsData)
-                trimmedLettersCounters.byTargetId.put(targetId, consensus.size()
-                        - Math.max(0, trimResultRight - trimResultLeft - 1));
-            return null;
+
+        if (debugData != null) {
+            ArrayList<NSequenceWithQuality> currentRawConsensusData = debugData.consensusData
+                    .get(targetId - 1);
+            ArrayList<NSequenceWithQuality> currentTrimmedConsensusData = debugData.trimmedConsensusData
+                    .get(targetId - 1);
+            for (int i = 0; i < currentRawConsensusData.size(); i++) {
+                if ((trimmedConsensus == null) || (i <= trimResultLeft) || (i >= trimResultRight))
+                    currentTrimmedConsensusData.add(null);
+                else
+                    currentTrimmedConsensusData.add(currentRawConsensusData.get(i));
+            }
         }
-        if (collectOriginalReadsData)
-            trimmedLettersCounters.byTargetId.put(targetId,
-                    consensus.size() - (trimResultRight - trimResultLeft - 1));
-        return consensus.toNSequenceWithQuality(trimResultLeft + 1, trimResultRight);
+        return trimmedConsensus;
     }
 
     protected String formatBarcodeValues(List<Barcode> barcodes) {

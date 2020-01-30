@@ -373,7 +373,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                 return new Consensus(debugData, numberOfTargets, stage2);
             }
             NSequenceWithQuality consensusTrimmedSequence = trimConsensusBadQualityTails(
-                    consensusRawSequence, targetId, trimmedLettersCounters);
+                    consensusRawSequence, targetId, trimmedLettersCounters, debugData);
             if (consensusTrimmedSequence == null) {
                 storeOriginalReadsData(subsequencesList, discardedStatus, null, trimmedLettersCounters,
                         stage2);
