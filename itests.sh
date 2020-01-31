@@ -6,7 +6,7 @@ source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"/shell/common.sh
 
 # "Integration" tests for MiNNN
 
-tests=("case_standard_pipeline" "case_pipes" "case_smart_overwrite")
+tests=("case_standard_pipeline" "case_pipes" "case_smart_overwrite case_empty_reads")
 
 create_standard_results=false
 run_tests=false
