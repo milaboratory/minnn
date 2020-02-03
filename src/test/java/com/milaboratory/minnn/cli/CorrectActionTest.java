@@ -262,4 +262,34 @@ public class CorrectActionTest {
                 assertTrue(new File(TEMP_DIR + prefix + i + ".mif").delete());
         }
     }
+
+    @Test
+    public void emptyReadsTest() throws Exception {
+        String inputFile = getExampleMif("with-empty-reads");
+        String sortedG1G2_1 = TEMP_DIR + "sortedG1G2_1.mif";
+        String sortedG2G1_1 = TEMP_DIR + "sortedG2G1_1.mif";
+        String sortedG1G2_2 = TEMP_DIR + "sortedG1G2_2.mif";
+        String sortedG2G1_2 = TEMP_DIR + "sortedG2G1_2.mif";
+        sortFile(inputFile, sortedG1G2_1, "G1 G2");
+        sortFile(inputFile, sortedG2G1_1, "G2 G1");
+
+        String correctedG1 = TEMP_DIR + "correctedG1.mif";
+        String correctedG2 = TEMP_DIR + "correctedG2.mif";
+        String correctedG1G2 = TEMP_DIR + "correctedG1G2.mif";
+        String correctedG2inG1 = TEMP_DIR + "correctedG2inG1.mif";
+        String correctedG1inG2 = TEMP_DIR + "correctedG1inG2.mif";
+        exec("correct -f --groups G1 --input " + sortedG1G2_1 + " --output " + correctedG1);
+        exec("correct -f -n 1000 --groups G2 --input " + sortedG2G1_1 + " --output " + correctedG2);
+        exec("correct -f -n 1000 --groups G1 G2 --input " + sortedG1G2_1 + " --output " + correctedG1G2);
+        sortFile(correctedG1, sortedG1G2_2, "G1 G2");
+        sortFile(correctedG2, sortedG2G1_2, "G2 G1");
+        exec("correct -f -n 5000 --primary-groups G1 --groups G2 --input " + sortedG1G2_2
+                + " --output " + correctedG2inG1);
+        exec("correct -f --primary-groups G2 --groups G1 --input " + sortedG2G1_2
+                + " --output " + correctedG1inG2);
+
+        for (String fileName : new String[] { inputFile, sortedG1G2_1, sortedG2G1_1, sortedG1G2_2, sortedG2G1_2,
+                correctedG1, correctedG2, correctedG1G2, correctedG2inG1, correctedG1inG2 })
+            assertTrue(new File(fileName).delete());
+    }
 }
