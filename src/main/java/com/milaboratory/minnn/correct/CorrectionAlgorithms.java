@@ -96,11 +96,14 @@ public final class CorrectionAlgorithms {
                 NSequenceWithQuality seqWithQuality = inputData.groupValues.get(groupName);
                 NucleotideSequence seq = seqWithQuality.getSequence();
 
-                SequenceWithWildcardsCount currentCounter = new SequenceWithWildcardsCount(seqWithQuality);
-                currentCounter.count = inputData.clusterSize;
-                correctionGroupData.wildcardCounters.add(currentCounter);
-                stats.totalWildcards += currentCounter.wildcardsCount * inputData.clusterSize;
-                stats.totalNucleotides += seq.size() * inputData.clusterSize;
+                // put only non-empty reads into correctionGroupData
+                if (seq.size() > 0) {
+                    SequenceWithWildcardsCount currentCounter = new SequenceWithWildcardsCount(seqWithQuality);
+                    currentCounter.count = inputData.clusterSize;
+                    correctionGroupData.wildcardCounters.add(currentCounter);
+                    stats.totalWildcards += currentCounter.wildcardsCount * inputData.clusterSize;
+                    stats.totalNucleotides += seq.size() * inputData.clusterSize;
+                }
 
                 // counting raw barcode sequences if filtering by count is enabled
                 if (filterByCount) {
@@ -119,34 +122,38 @@ public final class CorrectionAlgorithms {
         for (HashMap.Entry<String, CorrectionGroupData> entry : correctionData.keyGroupsData.entrySet()) {
             String groupName = entry.getKey();
             CorrectionGroupData groupData = entry.getValue();
-            Clustering<SequenceWithWildcardsCount, SequenceWithQualityForClustering> clustering = new Clustering<>(
-                    groupData.wildcardCounters, new SequenceCounterExtractor<>(), wildcardClusteringStrategy);
-            if (reportProgress)
-                SmartProgressReporter.startProgressReport("Clustering barcodes by wildcards in group "
-                                + groupName, clustering, System.err);
-            clustering.performClustering().forEach(cluster -> {
-                if (cluster.size() > 0) {
-                    List<NSequenceWithQuality> originalSequencesWithQuality = new ArrayList<>();
-                    Set<NucleotideSequence> originalSequences = new HashSet<>();
-                    SequenceWithQualityAndCount head = cluster.getHead();
-                    AtomicLong totalCount = new AtomicLong(head.count);
-                    originalSequencesWithQuality.add(head.seq);
-                    originalSequences.add(head.seq.getSequence());
-                    cluster.processAllChildren(childCluster -> {
-                        SequenceWithQualityAndCount child = childCluster.getHead();
-                        totalCount.addAndGet(child.count);
-                        originalSequencesWithQuality.add(child.seq);
-                        originalSequences.add(child.seq.getSequence());
-                        return true;
-                    });
-                    NSequenceWithQuality consensusSequence = mergeSequences(originalSequencesWithQuality);
-                    groupData.originalSequencesWithWildcards.put(consensusSequence.getSequence(), originalSequences);
-                    SequenceWithQualityAndCount currentCounter = new SequenceWithQualityAndCount(consensusSequence);
-                    currentCounter.count = totalCount.get();
-                    groupData.sequenceCounters.add(currentCounter);
-                } else
-                    groupData.sequenceCounters.add(cluster.getHead());
-            });
+            if (groupData.wildcardCounters.size() > 0) {
+                Clustering<SequenceWithWildcardsCount, SequenceWithQualityForClustering> clustering = new Clustering<>(
+                        groupData.wildcardCounters, new SequenceCounterExtractor<>(), wildcardClusteringStrategy);
+                if (reportProgress)
+                    SmartProgressReporter.startProgressReport("Clustering barcodes by wildcards in group "
+                            + groupName, clustering, System.err);
+                clustering.performClustering().forEach(cluster -> {
+                    if (cluster.size() > 0) {
+                        List<NSequenceWithQuality> originalSequencesWithQuality = new ArrayList<>();
+                        Set<NucleotideSequence> originalSequences = new HashSet<>();
+                        SequenceWithQualityAndCount head = cluster.getHead();
+                        AtomicLong totalCount = new AtomicLong(head.count);
+                        originalSequencesWithQuality.add(head.seq);
+                        originalSequences.add(head.seq.getSequence());
+                        cluster.processAllChildren(childCluster -> {
+                            SequenceWithQualityAndCount child = childCluster.getHead();
+                            totalCount.addAndGet(child.count);
+                            originalSequencesWithQuality.add(child.seq);
+                            originalSequences.add(child.seq.getSequence());
+                            return true;
+                        });
+                        NSequenceWithQuality consensusSequence = mergeSequences(originalSequencesWithQuality);
+                        groupData.originalSequencesWithWildcards.put(consensusSequence.getSequence(),
+                                originalSequences);
+                        SequenceWithQualityAndCount currentCounter = new SequenceWithQualityAndCount(
+                                consensusSequence);
+                        currentCounter.count = totalCount.get();
+                        groupData.sequenceCounters.add(currentCounter);
+                    } else
+                        groupData.sequenceCounters.add(cluster.getHead());
+                });
+            }
             groupData.wildcardCounters = null;
         }
         correctionData.stats.add(wildcardClusteringStrategy.getStats());
@@ -157,28 +164,31 @@ public final class CorrectionAlgorithms {
             CorrectionGroupData groupData = entry.getValue();
             BarcodeClusteringStrategy barcodeClusteringStrategy = barcodeClusteringStrategyFactory.createStrategy(
                     (float)(groupData.lengthSum) / correctionData.parsedReadsCount);
-            Clustering<SequenceWithQualityAndCount, SequenceWithQualityForClustering> clustering = new Clustering<>(
-                    groupData.sequenceCounters, new SequenceCounterExtractor<>(), barcodeClusteringStrategy);
-            if (reportProgress)
-                SmartProgressReporter.startProgressReport("Clustering barcodes in group " + groupName,
-                        clustering, System.err);
-            clustering.performClustering().forEach(cluster -> {
-                NSequenceWithQuality headSequence = cluster.getHead().seq;
-                Set<NucleotideSequence> headOriginalSequences = groupData.originalSequencesWithWildcards
-                        .get(headSequence.getSequence());
-                if (headOriginalSequences != null)
-                    headOriginalSequences.forEach(seq -> groupData.correctionMap.put(seq, headSequence));
-                cluster.processAllChildren(child -> {
-                    NucleotideSequence childSequence = child.getHead().seq.getSequence();
-                    Set<NucleotideSequence> childOriginalSequences = groupData.originalSequencesWithWildcards
-                            .get(childSequence);
-                    if (childOriginalSequences != null)
-                        childOriginalSequences.forEach(seq -> groupData.correctionMap.put(seq, headSequence));
-                    else
-                        groupData.correctionMap.put(childSequence, headSequence);
-                    return true;
+            if (groupData.sequenceCounters.size() > 0) {
+                Clustering<SequenceWithQualityAndCount, SequenceWithQualityForClustering> clustering =
+                        new Clustering<>(groupData.sequenceCounters, new SequenceCounterExtractor<>(),
+                                barcodeClusteringStrategy);
+                if (reportProgress)
+                    SmartProgressReporter.startProgressReport("Clustering barcodes in group " + groupName,
+                            clustering, System.err);
+                clustering.performClustering().forEach(cluster -> {
+                    NSequenceWithQuality headSequence = cluster.getHead().seq;
+                    Set<NucleotideSequence> headOriginalSequences = groupData.originalSequencesWithWildcards
+                            .get(headSequence.getSequence());
+                    if (headOriginalSequences != null)
+                        headOriginalSequences.forEach(seq -> groupData.correctionMap.put(seq, headSequence));
+                    cluster.processAllChildren(child -> {
+                        NucleotideSequence childSequence = child.getHead().seq.getSequence();
+                        Set<NucleotideSequence> childOriginalSequences = groupData.originalSequencesWithWildcards
+                                .get(childSequence);
+                        if (childOriginalSequences != null)
+                            childOriginalSequences.forEach(seq -> groupData.correctionMap.put(seq, headSequence));
+                        else
+                            groupData.correctionMap.put(childSequence, headSequence);
+                        return true;
+                    });
                 });
-            });
+            }
             groupData.sequenceCounters = null;
             groupData.originalSequencesWithWildcards = null;
             correctionData.stats.add(barcodeClusteringStrategy.getStats());
