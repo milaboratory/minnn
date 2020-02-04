@@ -316,4 +316,19 @@ public class ConsensusActionTest {
                 statsSC, statsDMA, statsSCT })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void emptyReadsTest() throws Exception {
+        String inputFile = getExampleMif("with-empty-reads");
+        String sorted = TEMP_DIR + "sorted.mif";
+        sortFile(inputFile, sorted, "G1 G2");
+        String consensusSC = TEMP_DIR + "consensusSC.mif";
+        String consensusDMA = TEMP_DIR + "consensusDMA.mif";
+        exec("consensus -f --groups G1 G2 --input " + sorted + " --output " + consensusSC
+                + " --reads-min-good-sequence-length 1 --min-good-sequence-length 1 --kmer-length 1");
+        exec("consensus-dma -f --groups G1 G2 --input " + sorted + " --output " + consensusDMA
+                + " --reads-min-good-sequence-length 1 --min-good-sequence-length 1");
+        for (String fileName : new String[] { inputFile, sorted, consensusSC, consensusDMA })
+            assertTrue(new File(fileName).delete());
+    }
 }

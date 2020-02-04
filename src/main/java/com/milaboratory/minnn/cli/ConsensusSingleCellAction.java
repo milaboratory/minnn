@@ -77,6 +77,16 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
         if (maxConsensusesPerCluster < 1)
             throwValidationException("--max-consensuses-per-cluster value must be positive!");
+        if (readsMinGoodSeqLength < 1)
+            throwValidationException("--reads-min-good-sequence-length value must be positive!");
+        if (minGoodSeqLength < 1)
+            throwValidationException("--min-good-sequence-length value must be positive!");
+        if (kmerLength < 1)
+            throwValidationException("--kmer-length value must be positive!");
+        if (kmerOffset < 0)
+            throwValidationException("--kmer-offset value must not be negative!");
+        if (kmerMaxErrors < 0)
+            throwValidationException("--kmer-max-errors value must not be negative!");
     }
 
     @Override

@@ -77,6 +77,10 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
         if (maxConsensusesPerCluster < 1)
             throwValidationException("--max-consensuses-per-cluster value must be positive!");
+        if (readsMinGoodSeqLength < 1)
+            throwValidationException("--reads-min-good-sequence-length value must be positive!");
+        if (minGoodSeqLength < 1)
+            throwValidationException("--min-good-sequence-length value must be positive!");
     }
 
     @Override
