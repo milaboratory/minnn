@@ -86,10 +86,10 @@ public class ConsensusActionTest {
                     + " --skipped-fraction-to-repeat " + (rg.nextFloat() * 0.8f + 0.1f)
                     + " --reads-avg-quality-threshold " + rg.nextInt(DEFAULT_GOOD_QUALITY)
                     + " --reads-trim-window-size " + (rg.nextInt(15) + 1)
-                    + " --reads-min-good-sequence-length " + rg.nextInt(50)
+                    + " --reads-min-good-sequence-length " + (rg.nextInt(50) + 1)
                     + " --avg-quality-threshold " + rg.nextInt(DEFAULT_GOOD_QUALITY)
                     + " --trim-window-size " + (rg.nextInt(15) + 1)
-                    + " --min-good-sequence-length " + rg.nextInt(50)
+                    + " --min-good-sequence-length " + (rg.nextInt(50) + 1)
                     + " --aligner-match-score 0 --aligner-mismatch-score " + mismatchScore
                     + " --aligner-gap-score " + gapScore);
             Stream.of(new String[] { output1, output2 }, new String[] { output2, output3 },
