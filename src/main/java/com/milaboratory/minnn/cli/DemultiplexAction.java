@@ -194,7 +194,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         }
 
         private String stripQuotes(String str) {
-            return str.replace("/(^\"|\')|(\"|\'$)/g", "");
+            return str.replace("/(^\"|')|(\"|'$)/g", "");
         }
     }
 
