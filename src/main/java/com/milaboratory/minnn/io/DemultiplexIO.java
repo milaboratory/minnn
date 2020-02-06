@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
@@ -382,10 +383,20 @@ public final class DemultiplexIO {
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder(prefix);
-            for (DemultiplexParameterValue parameterValue : parameterValues) {
-                builder.append('_');
-                builder.append(parameterValue.toString());
+            builder.append('_');
+            StringBuilder demultiplexIDBuilder = new StringBuilder();
+            for (int i = 0; i < parameterValues.size(); i++) {
+                if (i > 0)
+                    demultiplexIDBuilder.append('_');
+                String parameterString = parameterValues.get(i).toString();
+                if (parameterString.length() == 0)
+                    parameterString = DEMULTIPLEX_EMPTY_STRING_ID;
+                demultiplexIDBuilder.append(parameterString);
             }
+            String demultiplexIDString = demultiplexIDBuilder.toString();
+            if (demultiplexIDString.length() > DEMULTIPLEX_MAX_ID_STRING_LENGTH)
+                demultiplexIDString = UUID.nameUUIDFromBytes(demultiplexIDString.getBytes()).toString();
+            builder.append(demultiplexIDString);
             builder.append(".mif");
             return builder.toString();
         }

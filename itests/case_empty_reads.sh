@@ -22,4 +22,4 @@ minnn filter-by-count -Xmx900M -f --groups G1 G2 --max-unique-barcodes 100 --inp
 minnn filter-by-count -Xmx900M -f --groups G1 G2 --input ${prefix}_extracted.mif --output ${prefix}_filtered_by_count2.mif --excluded-barcodes-output ${prefix}_filter_by_count_excluded2.mif
 minnn filter -Xmx900M -f --input ${prefix}_extracted.mif --output ${prefix}_filtered1.mif "AvgGroupQuality(*)=25"
 minnn filter -Xmx900M -f --input ${prefix}_extracted.mif --output ${prefix}_filtered2.mif "GroupMaxNFraction(*)=0.1"
-#minnn demultiplex -f ${prefix}_extracted.mif --demultiplex-log ${prefix}_demultiplex.log --by-barcode G2
+minnn demultiplex -f ${prefix}_extracted.mif --demultiplex-log ${prefix}_demultiplex.log --by-barcode G2
