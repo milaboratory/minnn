@@ -162,4 +162,17 @@ public class FilterActionTest {
         for (String fileName : new String[] { inputFile, outputFile1, outputFile2 })
             assertTrue(new File(fileName).delete());
     }
+
+    @Test
+    public void emptyReadsTest() throws Exception {
+        String inputFile = getExampleMif("with-empty-reads");
+        String filtered1 = TEMP_DIR + "filtered1.mif";
+        String filtered2 = TEMP_DIR + "filtered2.mif";
+        exec("filter -f --input " + inputFile + " --output " + filtered1
+                + " \"AvgGroupQuality(*)=20\"");
+        exec("filter -f --input " + inputFile + " --output " + filtered2
+                + " \"GroupMaxNFraction(*)=0.15\"");
+        for (String fileName : new String[] { inputFile, filtered1, filtered2 })
+            assertTrue(new File(fileName).delete());
+    }
 }
