@@ -58,8 +58,11 @@ public final class WhitelistReadFilter implements ReadFilter {
 
             if (seq.containsWildcards())
                 new WildcardSequence(seq).addAllCombinationsTo(sequences);
-            else
-                sequences.add(seq);
+
+            // Sequences with wildcards will also be added "as is",
+            // so exact match will also be detected
+
+            sequences.add(seq);
         }
     }
 
