@@ -449,9 +449,11 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                         continue;
 
                     HashSet<Range> uniqueRanges = new HashSet<>();
-                    IteratorFromMiddle rightBorderIterator = new IteratorFromMiddle(fixedLeftBorder + seqSize - 1);
-                    int rightBorder = rightBorderIterator.next();
-                    while (rightBorder != -1) {
+                    // from must be <= fixedLeftBorder at this point
+                    int rightBorderMin = Math.max(fixedLeftBorder, fixedLeftBorder + seqSize - maxErrors - 1);
+                    // fixedRightBorder must be -1 at this point
+                    int rightBorderMax = Math.min(to - 1, fixedLeftBorder + seqSize + maxErrors - 1);
+                    for (int rightBorder = rightBorderMin; rightBorder <= rightBorderMax; rightBorder++) {
                         alignment = Objects.requireNonNull(fixedConfiguration.patternAligner.align(
                                 fixedConfiguration, false, currentSeq, target, rightBorder));
                         Range range = alignment.getSequence2Range();
@@ -464,7 +466,6 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                                             currentSeq.size()), 0, conf.defaultGroupsOverride);
                             allMatches.add(new ComparableMatch(range, match));
                         }
-                        rightBorder = rightBorderIterator.next();
                     }
                 }
 
@@ -550,63 +551,6 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                 } while ((foundPosition != -1) && ((foundPosition < min) || (foundPosition > max)));
 
                 return foundPosition;
-            }
-
-            /**
-             * Iterate position in target from middle (optimal match without indels) to both left and right until
-             * both borders are reached. Value -1 returned from next() means end of iterations. Left and right
-             * positions are inclusive.
-             */
-            private class IteratorFromMiddle {
-                final int middle;
-                final int left;
-                final int right;
-                int lastPosition = -2;
-                int currentNumErrors = 0;
-
-                IteratorFromMiddle(int middle) {
-                    int maxErrors = conf.bitapMaxErrors;
-                    int left = middle - maxErrors;
-                    int right = middle + maxErrors;
-                    int minPosition = from;
-                    int maxPosition = to - 1;
-                    if (fixedLeftBorder != -1)
-                        minPosition = Math.max(minPosition, fixedLeftBorder);
-                    if (fixedRightBorder != -1)
-                        maxPosition = Math.max(maxPosition, fixedRightBorder);
-                    if ((left > maxPosition) || (right < minPosition))
-                        lastPosition = -1;
-                    else {
-                        middle = Math.max(minPosition, Math.min(maxPosition, middle));
-                        left = Math.max(minPosition, left);
-                        right = Math.min(maxPosition, right);
-                    }
-                    this.middle = middle;
-                    this.left = left;
-                    this.right = right;
-                }
-
-                int next() {
-                    if (lastPosition == -1)
-                        return -1;
-                    else if (lastPosition == -2) {
-                        lastPosition = middle;
-                        return lastPosition;
-                    }
-
-                    // prefer less errors; with equal number of errors go left first (prefer shorter sequences)
-                    boolean goLeft = lastPosition >= middle;
-                    if (goLeft) {
-                        currentNumErrors++;
-                        if (middle - currentNumErrors >= left) {
-                            lastPosition = middle - currentNumErrors;
-                            return lastPosition;
-                        } // else try to go right
-                    }
-
-                    lastPosition = (middle + currentNumErrors <= right) ? middle + currentNumErrors : -1;
-                    return lastPosition;
-                }
             }
         }
     }

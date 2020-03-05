@@ -121,7 +121,7 @@ public class SpecialCasesTest {
         exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
                 + " --score-threshold -25 --bitap-max-errors 5"
                 + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
-        exec("sort -f --groups UMI --input " + extractOutput + " --output " + sortOutput);
+        sortFile(extractOutput, sortOutput, "UMI");
         exec("consensus -f --groups UMI --input " + sortOutput + " --output " + consensusOutput);
         for (String fileName : new String[] { extractOutput, sortOutput, consensusOutput })
             assertTrue(new File(fileName).delete());
