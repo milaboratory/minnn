@@ -103,7 +103,7 @@ public class SpecialCasesTest {
         String sortOutput = TEMP_DIR + "sorted.mif";
         String correctOutput = TEMP_DIR + "corrected.mif";
         exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
-                + " --score-threshold -25 --bitap-max-errors 5"
+                + " --score-threshold -25 --bitap-max-errors 5 --try-reverse-order"
                 + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
         sortFile(extractOutput, sortOutput, "UMI");
         exec("correct -f --groups UMI --input " + sortOutput + " --output " + correctOutput
@@ -119,7 +119,7 @@ public class SpecialCasesTest {
         String sortOutput = TEMP_DIR + "sorted.mif";
         String consensusOutput = TEMP_DIR + "consensus.mif";
         exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
-                + " --score-threshold -25 --bitap-max-errors 5"
+                + " --score-threshold -25 --bitap-max-errors 5 --try-reverse-order"
                 + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
         sortFile(extractOutput, sortOutput, "UMI");
         exec("consensus -f --groups UMI --input " + sortOutput + " --output " + consensusOutput);
@@ -239,7 +239,8 @@ public class SpecialCasesTest {
         String pattern = inputFastqFiles.contains("SRR")
                 ? "\"^(B1:N{8:12})gagtgattgcttgtgacgccaa(B2:N{8})(UMI:N{8})\\*\""
                 : "\"^(B1:N{8:12})gagt(B2:N{8})(UMI:N{8})\\*\"";
-        exec("extract -f --input " + inputFastqFiles + " --output " + extracted + " --pattern " + pattern);
+        exec("extract -f --input " + inputFastqFiles + " --output " + extracted + " --pattern " + pattern
+                + " --try-reverse-order");
         exec("mif2fastq -f --input " + extracted + " --group R1=" + fastqR1 + " R2=" + fastqR2);
         BufferedReader reader = new BufferedReader(new FileReader(fastqR1));
         String firstLine = reader.readLine();
