@@ -233,6 +233,72 @@ public class CorrectionAlgorithmsTest {
     }
 
     @Test
+    public void wildcardsClusteringTest() {
+        CorrectionAlgorithms wildcardsCorrectionAlgorithms = new CorrectionAlgorithms(
+                new BarcodeClusteringStrategyFactory(-1, 0, 1, 1,
+                        new SimpleMutationProbability(0, 0)),
+                0, 0, 7);
+        List<NSequenceWithQuality> inputGroupValues = Stream.of(
+                "ATTAGACA",
+                "ATTAGACA",
+                "ATTAGACA",
+                "BTTAGGCA",
+                "DTTAGACA",
+                "ATTNNACA",
+                "ATNNGACA",
+                "NTNAGACA",
+                "BTTDGNCA",
+                "BTTANNCA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "ATTANNNN",
+                "TNNNNNNN")
+                .map(seqStr -> new NSequenceWithQuality(new NucleotideSequence(seqStr), DEFAULT_MAX_QUALITY))
+                .collect(Collectors.toList());
+        List<NucleotideSequence> expectedCorrectedGroupValues = Stream.of(
+                "ATTAGACA",
+                "ATTAGACA",
+                "ATTAGACA",
+                "TTTAGGCA",
+                "ATTAGACA",
+                "ATTAGACA",
+                "ATTAGACA",
+                "ATTAGACA",
+                "TTTAGGCA",
+                "TTTAGGCA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "BTTAGNNA",
+                "ATTAGACA",
+                "TTTAGGCA")
+                .map(NucleotideSequence::new).collect(Collectors.toList());
+        CorrectionTestData testData = new CorrectionTestData(inputGroupValues, expectedCorrectedGroupValues);
+
+        // perform correction
+        OutputPort<CorrectionQualityPreprocessingResult> preprocessorPort = getPreprocessingResultOutputPort(
+                testData.getInputPort(), testData.keyGroups, testData.primaryGroups);
+        CorrectionData correctionData = wildcardsCorrectionAlgorithms.prepareCorrectionData(preprocessorPort,
+                testData.keyGroups, 0);
+        List<CorrectBarcodesResult> results = new ArrayList<>();
+        for (ParsedRead parsedRead : CUtils.it(testData.getInputPort()))
+            results.add(wildcardsCorrectionAlgorithms.correctBarcodes(parsedRead, correctionData));
+
+        // check correction results
+        testData.assertCorrectionResults(results);
+    }
+
+    @Test
     public void shortBarcodesMutationsTest() {
         float mutationProbabilitiesMultiplier = 0.5f;
         int numberOfBarcodes = 60;
@@ -611,20 +677,27 @@ public class CorrectionAlgorithmsTest {
         final List<ReadWithGroups> inputReadsWithGroups;
         final List<Map<String, NucleotideSequence>> expectedCorrectedGroupValues;
 
-        // simplified constructor for single group in single target without expected corrected values
+        // simple list of sequences correction
         CorrectionTestData(
-                String keyGroupName, List<NSequenceWithQuality> inputSequences, List<GroupCoordinates> groups) {
-            this(1, new LinkedHashSet<>(Collections.singleton(keyGroupName)), new LinkedHashSet<>(),
-                    inputSequences.stream().map(seq -> {
-                        TByteObjectHashMap<NSequenceWithQuality> map = new TByteObjectHashMap<>();
-                        map.put((byte)1, seq);
-                        return map;
+                List<NSequenceWithQuality> inputGroupValues, List<NucleotideSequence> expectedGroupValues) {
+            this(1, new LinkedHashSet<>(Collections.singleton("G")), new LinkedHashSet<>(),
+                    inputGroupValues.stream().map(seq -> {
+                        TByteObjectHashMap<NSequenceWithQuality> inputSequence = new TByteObjectHashMap<>();
+                        inputSequence.put((byte)1, seq);
+                        return inputSequence;
                     }).collect(Collectors.toList()),
-                    groups.stream().map(coordinates -> {
-                        Map<String, GroupCoordinates> map = new HashMap<>();
-                        map.put(keyGroupName, coordinates);
-                        return map;
-                    }).collect(Collectors.toList()), null);
+
+                    inputGroupValues.stream().map(seq -> {
+                        Map<String, GroupCoordinates> group = new HashMap<>();
+                        group.put("G", new GroupCoordinates((byte)1, 0, seq.size()));
+                        return group;
+                    }).collect(Collectors.toList()),
+
+                    expectedGroupValues.stream().map(seq -> {
+                        Map<String, NucleotideSequence> expectedCorrectedGroupValue = new HashMap<>();
+                        expectedCorrectedGroupValue.put("G", seq);
+                        return expectedCorrectedGroupValue;
+                    }).collect(Collectors.toList()));
         }
 
         // single group in single target, no expected values; data is prepared in ReadWithGroupAndOrder objects
