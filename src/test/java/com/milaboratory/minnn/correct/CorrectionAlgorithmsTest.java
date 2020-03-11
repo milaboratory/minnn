@@ -30,6 +30,8 @@ package com.milaboratory.minnn.correct;
 
 import cc.redberry.pipe.CUtils;
 import cc.redberry.pipe.OutputPort;
+import com.milaboratory.core.clustering.Cluster;
+import com.milaboratory.core.clustering.Clustering;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.mutations.Mutations;
 import com.milaboratory.core.mutations.generator.NucleotideMutationModel;
@@ -234,6 +236,62 @@ public class CorrectionAlgorithmsTest {
 
     @Test
     public void wildcardsClusteringTest() {
+        List<SequenceWithWildcardsCount> inputSequences = Stream.of(
+                "TTTGGGCCC",
+                "TTTNNNCCC",
+                "NNTGGGCCC",
+                "TTTGGGCNN",
+                "NTTGGGCCN",
+                "TDDNNC",
+                "TNNGGCCC",
+                "TTTGGGCCC",
+                "NTTGGGCCN",
+                "BBBGGGCCC",
+                "TTTDDDDDD",
+                "TTTCCC")
+                .map(seqStr -> new SequenceWithWildcardsCount(new NSequenceWithQuality(new NucleotideSequence(seqStr),
+                        DEFAULT_MAX_QUALITY))).collect(Collectors.toList());
+        Clustering<SequenceWithWildcardsCount, SequenceWithQualityForClustering> clustering = new Clustering<>(
+                inputSequences, new SequenceCounterExtractor<>(),
+                new WildcardClusteringStrategy(5));
+        List<Cluster<SequenceWithWildcardsCount>> clusters = clustering.performClustering();
+        assertEquals(5, clusters.size());
+
+        assertSeq("TTTGGGCCC", clusters.get(0).getHead());
+        List<Cluster<SequenceWithWildcardsCount>> children = new ArrayList<>();
+        clusters.get(0).processAllChildren(children::add);
+        assertEquals(6, children.size());
+        assertSeq("NNTGGGCCC", children.get(0).getHead());
+        assertSeq("NTTGGGCCN", children.get(1).getHead());
+        assertSeq("NTTGGGCCN", children.get(2).getHead());
+        assertSeq("TTTGGGCNN", children.get(3).getHead());
+        assertSeq("BBBGGGCCC", children.get(4).getHead());
+        assertSeq("TTTNNNCCC", children.get(5).getHead());
+
+        assertSeq("TTTGGGCCC", clusters.get(1).getHead());
+        children = new ArrayList<>();
+        clusters.get(1).processAllChildren(children::add);
+        assertEquals(0, children.size());
+
+        assertSeq("TTTCCC", clusters.get(2).getHead());
+        children = new ArrayList<>();
+        clusters.get(2).processAllChildren(children::add);
+        assertEquals(1, children.size());
+        assertSeq("TDDNNC", children.get(0).getHead());
+
+        assertSeq("TNNGGCCC", clusters.get(3).getHead());
+        children = new ArrayList<>();
+        clusters.get(3).processAllChildren(children::add);
+        assertEquals(0, children.size());
+
+        assertSeq("TTTDDDDDD", clusters.get(4).getHead());
+        children = new ArrayList<>();
+        clusters.get(4).processAllChildren(children::add);
+        assertEquals(0, children.size());
+    }
+
+    @Test
+    public void wildcardsCorrectionTest() {
         CorrectionAlgorithms wildcardsCorrectionAlgorithms = new CorrectionAlgorithms(
                 new BarcodeClusteringStrategyFactory(-1, 0, 1, 1,
                         new SimpleMutationProbability(0, 0)),
@@ -670,6 +728,10 @@ public class CorrectionAlgorithmsTest {
         return updatedSequencesForClusters;
     }
 
+    private void assertSeq(String expected, SequenceWithWildcardsCount actual) {
+        assertEquals(expected, actual.seq.getSequence().toString());
+    }
+
     private static class CorrectionTestData {
         final int numberOfTargets;
         final LinkedHashSet<String> keyGroups;
@@ -679,7 +741,8 @@ public class CorrectionAlgorithmsTest {
 
         // simple list of sequences correction
         CorrectionTestData(
-                List<NSequenceWithQuality> inputGroupValues, List<NucleotideSequence> expectedGroupValues) {
+                Collection<NSequenceWithQuality> inputGroupValues,
+                Collection<NucleotideSequence> expectedGroupValues) {
             this(1, new LinkedHashSet<>(Collections.singleton("G")), new LinkedHashSet<>(),
                     inputGroupValues.stream().map(seq -> {
                         TByteObjectHashMap<NSequenceWithQuality> inputSequence = new TByteObjectHashMap<>();
