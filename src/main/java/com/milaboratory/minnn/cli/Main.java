@@ -49,6 +49,7 @@ import static com.milaboratory.minnn.cli.FilterByCountAction.FILTER_BY_COUNT_ACT
 import static com.milaboratory.minnn.cli.GenerateDocsAction.GENERATE_DOCS_ACTION_NAME;
 import static com.milaboratory.minnn.cli.MifInfoAction.MIF_INFO_ACTION_NAME;
 import static com.milaboratory.minnn.cli.MifToFastqAction.MIF_TO_FASTQ_ACTION_NAME;
+import static com.milaboratory.minnn.cli.PerformanceTestAction.PERFORMANCE_TEST_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ReportAction.REPORT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAME;
@@ -142,6 +143,7 @@ public final class Main {
                 .addSubcommand(DECONTAMINATE_ACTION_NAME, DecontaminateAction.class)
                 .addSubcommand(MIF_INFO_ACTION_NAME, MifInfoAction.class)
                 .addSubcommand(GENERATE_DOCS_ACTION_NAME, GenerateDocsAction.class)
+                .addSubcommand(PERFORMANCE_TEST_ACTION_NAME, PerformanceTestAction.class)
                 .addSubcommand("help", HelpCommand.class);
         cmd.setSeparator(" ");
         cmd.setUnmatchedOptionsArePositionalParams(true);
