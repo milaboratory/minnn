@@ -58,7 +58,9 @@ public class ConsensusTestUtils {
         float readsAvgQualityThreshold = DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD;
         int readsTrimWindowSize = DEFAULT_CONSENSUS_READS_TRIM_WINDOW_SIZE;
         byte minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
+        float lowCoverageThreshold = DEFAULT_CONSENSUS_LOW_COVERAGE_THRESHOLD;
         float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
+        float avgQualityThresholdForLowCoverage = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE;
         int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
         long goodQualityMismatchPenalty = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY;
         byte goodQualityMismatchThreshold = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD;
@@ -96,8 +98,14 @@ public class ConsensusTestUtils {
                     case "MIN_GOOD_SEQ_LENGTH":
                         minGoodSeqLength = (Byte)(entry.getValue());
                         break;
+                    case "LOW_COVERAGE_THRESHOLD":
+                        lowCoverageThreshold = (Float)(entry.getValue());
+                        break;
                     case "AVG_QUALITY_THRESHOLD":
                         avgQualityThreshold = (Float)(entry.getValue());
+                        break;
+                    case "AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE":
+                        avgQualityThresholdForLowCoverage = (Float)(entry.getValue());
                         break;
                     case "TRIM_WINDOW_SIZE":
                         trimWindowSize = (Integer)(entry.getValue());
@@ -136,12 +144,13 @@ public class ConsensusTestUtils {
                         alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
                         goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxPerCluster,
                         readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                        avgQualityThreshold, trimWindowSize, false, null,
-                        (byte)0, null);
+                        lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
+                        false, null, (byte)0, null);
             case SINGLE_CELL:
                 return new ConsensusAlgorithmSingleCell(ConsensusTestUtils::displayTestWarning, numberOfTargets,
                         maxPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength, readsAvgQualityThreshold,
-                        readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold, trimWindowSize,
+                        readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
+                        avgQualityThresholdForLowCoverage, trimWindowSize,
                         false, null, (byte)0, null,
                         kmerLength, kmerOffset, kmerMaxErrors);
             case RNA_SEQ:

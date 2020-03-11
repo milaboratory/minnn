@@ -4,7 +4,7 @@
 License
 =======
 
-Copyright (c) 2016-2019, Popov Aleksandr, Bolotin Dmitry, Chudakov Dmitry, Shugay Mikhail (here and after addressed
+Copyright (c) 2016-2020, Popov Aleksandr, Bolotin Dmitry, Chudakov Dmitry, Shugay Mikhail (here and after addressed
 as Inventors) All Rights Reserved
 
 Permission to use, copy, modify and distribute any part of this program for educational, research and non-profit

@@ -14,15 +14,21 @@ following actions:
 
       minnn extract --input R1.fastq R2.fastq --output extracted.mif --pattern "^(SB1:N{5}) & (SB2:ATGNNNN)\*"
 
-   Note that extract action will search :code:`R1`, :code:`R2` combination and then try the same search with swapped
-   reads :code:`R2`, :code:`R1`. Then it will choose the match with better score. This is the default behavior; if you
-   want to check only :code:`R1`, :code:`R2` combination without checking reversed order, use :code:`--oriented` flag.
-   Details for pattern syntax can be found in :ref:`pattern_syntax` section.
+   Note that extract action will check all reads in order specified in :code:`--input` argument. It differs from
+   behavior of old versions of MiNNN that also tried swapped :code:`R1` and :code:`R2` by default. Details about
+   command line arguments and syntax can be found in :ref:`extract` and :ref:`pattern_syntax` sections.
+
+#. Sort reads by barcode values.
+
+   .. code-block:: text
+
+      minnn sort --input extracted.mif --output extracted_sorted.mif --groups SB1 SB2
+
 #. Correct mismatches and indels in barcodes.
 
    .. code-block:: text
 
-      minnn correct --input extracted.mif --output corrected.mif --groups SB1 SB2
+      minnn correct --input extracted_sorted.mif --output corrected.mif --groups SB1 SB2
 
 #. Filter out garbage reads.
 
@@ -30,7 +36,7 @@ following actions:
 
       minnn filter --input corrected.mif --output filtered.mif "SB1~'~TTTTT'"
 
-   Details for filter syntax can be found in :ref:`filter_syntax` section.
+   Details about command line arguments and syntax can be found in :ref:`filter` and :ref:`filter_syntax` sections.
 #. (Optionally) check statistics for collected barcodes.
 
    .. code-block:: text
@@ -42,13 +48,13 @@ following actions:
 
    .. code-block:: text
 
-      minnn sort --input filtered.mif --output sorted.mif --groups SB1 SB2
+      minnn sort --input filtered.mif --output filtered_sorted.mif --groups SB1 SB2
 
 #. Calculate consensuses.
 
    .. code-block:: text
 
-      minnn consensus --input sorted.mif --output consensus.mif --max-consensuses-per-cluster 1 --groups SB1 SB2
+      minnn consensus --input filtered_sorted.mif --output consensus.mif --max-consensuses-per-cluster 1 --groups SB1 SB2
 
 #. Export consensuses to FASTQ files.
 

@@ -120,8 +120,8 @@ public class Match {
                 if ((start.getPosition() == -1) ^ (end.getPosition() == -1))
                     throw new IllegalStateException("Group start and group end can be -1 only simultaneously. Start: "
                             + start.getPosition() + ", end: " + end.getPosition());
-                else if ((start.getPosition() != -1) && (start.getPosition() >= end.getPosition()))
-                    throw new IllegalStateException("Group start must be lower than the end. Start: "
+                else if ((start.getPosition() != -1) && (start.getPosition() > end.getPosition()))
+                    throw new IllegalStateException("Group start must not be bigger than the end. Start: "
                             + start.getPosition() + ", end: " + end.getPosition());
                 if ((start.getValueOverride() != null) ^ (start.getPosition() == -1))
                     throw new IllegalStateException("Value override must be set if position is -1 and not set if "

@@ -85,8 +85,8 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
         if (patternGroups.size() > 0)
             throw exitWithError("Error: groups " + patternGroups + " are both in pattern and in description groups!");
         ReadProcessor readProcessor = new ReadProcessor(getFullPipelineConfiguration(), getInputFiles(),
-                outputFileName, notMatchedOutputFileName, pattern, query, oriented, fairSorting, inputReadsLimit,
-                threads, reportFileName, jsonReportFileName, inputFormat, descriptionGroups);
+                outputFileName, notMatchedOutputFileName, pattern, query, tryReverseOrder, fairSorting,
+                inputReadsLimit, threads, reportFileName, jsonReportFileName, inputFormat, descriptionGroups);
         readProcessor.processReadsParallel();
     }
 
@@ -138,9 +138,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     @Override
     public ActionConfiguration getConfiguration() {
         return new ExtractActionConfiguration(new ExtractActionConfiguration.ExtractActionParameters(query,
-                inputFormat, oriented, matchScore, mismatchScore, uppercaseMismatchScore, gapScore, scoreThreshold,
-                goodQuality, badQuality, maxQualityPenalty, singleOverlapPenalty, maxOverlap, bitapMaxErrors,
-                fairSorting, inputReadsLimit, descriptionGroupsMap, simplifiedSyntax));
+                inputFormat, tryReverseOrder, matchScore, mismatchScore, uppercaseMismatchScore, gapScore,
+                scoreThreshold, goodQuality, badQuality, maxQualityPenalty, singleOverlapPenalty, maxOverlap,
+                bitapMaxErrors, fairSorting, inputReadsLimit, descriptionGroupsMap, simplifiedSyntax));
     }
 
     @Override
@@ -172,10 +172,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
             names = "--input-format")
     private MinnnDataFormat inputFormat = DEFAULT_INPUT_FORMAT;
 
-    @Option(description = "By default, if there are 2 or more reads, 2 last reads are checked in direct " +
-            "and reverse order. With this flag, only in direct order.",
-            names = "--oriented")
-    private boolean oriented = false;
+    @Option(description = "If there are 2 or more reads, check 2 last reads in direct and reverse order.",
+            names = "--try-reverse-order")
+    private boolean tryReverseOrder = false;
 
     @Option(description = MATCH_SCORE,
             names = "--match-score")
@@ -231,7 +230,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
 
     @Option(description = "Number of threads for parsing reads.",
             names = "--threads")
-    private int threads = DEFAULT_THREADS;
+    private int threads = Runtime.getRuntime().availableProcessors();
 
     @Option(description = REPORT,
             names = "--report")

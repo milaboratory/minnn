@@ -55,7 +55,8 @@ import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.cli.Defaults.BUILTIN_READ_GROUPS_NUM;
 import static com.milaboratory.minnn.io.MinnnDataFormat.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 import static java.lang.Double.NaN;
@@ -68,7 +69,7 @@ public final class ReadProcessor {
     private final Pattern pattern;
     private final String patternQuery;
     private final int outputNumberOfTargets;
-    private final boolean orientedReads;
+    private final boolean tryReverseOrder;
     private final boolean fairSorting;
     private final long inputReadsLimit;
     private final int threads;
@@ -78,11 +79,11 @@ public final class ReadProcessor {
     private final DescriptionGroups descriptionGroups;
     private final AtomicLong totalReads = new AtomicLong(0);
 
-    public ReadProcessor(PipelineConfiguration pipelineConfiguration, List<String> inputFileNames,
-                         String outputFileName, String notMatchedOutputFileName, Pattern pattern, String patternQuery,
-                         boolean orientedReads, boolean fairSorting, long inputReadsLimit, int threads,
-                         String reportFileName, String jsonReportFileName, MinnnDataFormat inputFormat,
-                         DescriptionGroups descriptionGroups) {
+    public ReadProcessor(
+            PipelineConfiguration pipelineConfiguration, List<String> inputFileNames, String outputFileName,
+            String notMatchedOutputFileName, Pattern pattern, String patternQuery, boolean tryReverseOrder,
+            boolean fairSorting, long inputReadsLimit, int threads, String reportFileName, String jsonReportFileName,
+            MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
         if ((inputFormat == MIF) && (inputFileNames.size() > 1))
             throw exitWithError("Mif data format uses single file; specified " + inputFileNames.size()
                     + " input files!");
@@ -93,7 +94,7 @@ public final class ReadProcessor {
         this.pattern = pattern;
         this.patternQuery = patternQuery;
         this.outputNumberOfTargets = calculateOutputNumberOfTargets();
-        this.orientedReads = orientedReads;
+        this.tryReverseOrder = tryReverseOrder;
         this.fairSorting = fairSorting;
         this.inputReadsLimit = inputReadsLimit;
         this.threads = threads;
@@ -113,7 +114,7 @@ public final class ReadProcessor {
             Merger<Chunk<IndexedSequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader,
                     4 * 64), 4 * 16);
             OutputPort<Chunk<ParsedRead>> parsedReadsPort = new ParallelProcessor<>(bufferedReaderPort,
-                    CUtils.chunked(new ReadParserProcessor(orientedReads)), threads);
+                    CUtils.chunked(new ReadParserProcessor()), threads);
             OrderedOutputPort<ParsedRead> orderedReadsPort = new OrderedOutputPort<>(CUtils.unchunked(parsedReadsPort),
                     ParsedRead::getOutputPortId);
             for (ParsedRead parsedRead : CUtils.it(orderedReadsPort)) {
@@ -136,7 +137,7 @@ public final class ReadProcessor {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
-        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
+        reportFileHeader.append("MiNNN v").append(getVersionString(VERSION_INFO_SHORTEST)).append('\n');
         reportFileHeader.append("Report for Extract command:\n");
         switch (inputFileNames.size()) {
             case 0:
@@ -163,7 +164,7 @@ public final class ReadProcessor {
         report.append("Processed ").append(totalReads).append(" reads, matched ").append(matchedReads)
                 .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
 
-        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("version", getVersionString(VERSION_INFO_SHORTEST));
         jsonReportData.put("inputFileNames", inputFileNames);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("notMatchedOutputFileName", notMatchedOutputFileName);
@@ -339,22 +340,12 @@ public final class ReadProcessor {
     }
 
     private class ReadParserProcessor implements Processor<IndexedSequenceRead, ParsedRead> {
-        private final boolean orientedReads;
-
-        ReadParserProcessor(boolean orientedReads) {
-            this.orientedReads = orientedReads;
-        }
-
         @Override
         public ParsedRead process(IndexedSequenceRead input) {
             Match bestMatch = null;
             boolean reverseMatch = false;
-            if (orientedReads) {
-                MultiNSequenceWithQualityImpl target = new MultiNSequenceWithQualityImpl(StreamSupport.stream(
-                        input.sequenceRead.spliterator(), false).map(SingleRead::getData)
-                        .toArray(NSequenceWithQuality[]::new));
-                bestMatch = pattern.match(target).getBestMatch(fairSorting);
-            } else {
+
+            if (tryReverseOrder) {
                 NSequenceWithQuality[] sequences = StreamSupport.stream(input.sequenceRead.spliterator(), false)
                         .map(SingleRead::getData).toArray(NSequenceWithQuality[]::new);
                 int numberOfReads = sequences.length;
@@ -362,8 +353,8 @@ public final class ReadProcessor {
                     bestMatch = pattern.match(sequences[0]).getBestMatch(fairSorting);
                 else {
                     NSequenceWithQuality[] sequencesWithSwap = sequences.clone();
-                    sequencesWithSwap[0] = sequences[1];
-                    sequencesWithSwap[1] = sequences[0];
+                    sequencesWithSwap[numberOfReads - 2] = sequences[numberOfReads - 1];
+                    sequencesWithSwap[numberOfReads - 1] = sequences[numberOfReads - 2];
                     MultiNSequenceWithQualityImpl notSwappedTarget = new MultiNSequenceWithQualityImpl(sequences);
                     MultiNSequenceWithQualityImpl swappedTarget = new MultiNSequenceWithQualityImpl(sequencesWithSwap);
                     Match notSwappedMatch = pattern.match(notSwappedTarget).getBestMatch(fairSorting);
@@ -384,6 +375,11 @@ public final class ReadProcessor {
                             bestMatch = notSwappedMatch;
                     }
                 }
+            } else {
+                MultiNSequenceWithQualityImpl target = new MultiNSequenceWithQualityImpl(StreamSupport.stream(
+                        input.sequenceRead.spliterator(), false).map(SingleRead::getData)
+                        .toArray(NSequenceWithQuality[]::new));
+                bestMatch = pattern.match(target).getBestMatch(fairSorting);
             }
 
             int numberOfTargetsOverride = pattern.getConfiguration().defaultGroupsOverride

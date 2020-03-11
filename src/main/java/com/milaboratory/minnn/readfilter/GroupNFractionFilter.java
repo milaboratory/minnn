@@ -46,13 +46,18 @@ public final class GroupNFractionFilter implements ReadFilter {
     public ParsedRead filter(ParsedRead parsedRead) {
         if (groupNameOrAll.equals("*")) {
             if (parsedRead.getNotDefaultGroups().stream()
-                    .allMatch(group -> (float)getNCount(group) / group.getValue().size() <= maxNFraction))
+                    .allMatch(group -> {
+                        int matchedGroupLength = group.getValue().size();
+                        return (matchedGroupLength > 0)
+                                && ((float)getNCount(group) / matchedGroupLength <= maxNFraction);
+                    } ))
                 return parsedRead;
             else
                 return notMatchedRead(parsedRead);
         } else {
             MatchedGroup matchedGroup = getGroupByName(parsedRead, groupNameOrAll);
-            if ((float)getNCount(matchedGroup) / matchedGroup.getValue().size() <= maxNFraction)
+            int matchedGroupLength = matchedGroup.getValue().size();
+            if ((matchedGroupLength > 0) && ((float)getNCount(matchedGroup) / matchedGroupLength <= maxNFraction))
                 return parsedRead;
             else
                 return notMatchedRead(parsedRead);

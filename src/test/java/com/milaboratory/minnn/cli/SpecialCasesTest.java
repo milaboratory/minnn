@@ -35,16 +35,12 @@ import java.io.*;
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class SpecialCasesTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
-        File outputFilesDirectory = new File(TEMP_DIR);
-        if (!outputFilesDirectory.exists())
-            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+        actionTestInit();
     }
 
     @Test
@@ -55,15 +51,18 @@ public class SpecialCasesTest {
         String diff = TEMP_DIR + "diff.mif";
         String diff_R1 = TEMP_DIR + "diff_R1.fastq";
         String diff_R2 = TEMP_DIR + "diff_R2.fastq";
-        exec("extract -f --input " + inputFile + " --output " + file1 + " --input-format MIF"
-                + " --score-threshold -100 --uppercase-mismatch-score -15 --max-quality-penalty 0"
-                + " --pattern \"^(UMI:nnnntnnnntnnnn)TCTTGGG\\*\"");
-        exec("extract -f --input " + file1 + " --output " + file2 + " --input-format MIF"
-                + " --not-matched-output " + diff + " --score-threshold -100 --uppercase-mismatch-score -15"
-                + " --pattern \"^(UMI:nnnntnnnntnnnn)TCTTGGG(R1cut:N{*})\\*\" --max-quality-penalty 0");
-        exec("mif2fastq -f --input " + diff + " --group R1=" + diff_R1 + " --group R2=" + diff_R2);
-        assertEquals(0, new File(diff_R1).length());
-        assertEquals(0, new File(diff_R2).length());
+        for (String extractFlags : new String[] { "", " --try-reverse-order" }) {
+            exec("extract -f --input " + inputFile + " --output " + file1 + " --input-format MIF"
+                    + " --score-threshold -100 --uppercase-mismatch-score -15 --max-quality-penalty 0"
+                    + " --bitap-max-errors 4 --pattern \"^(UMI:nnnntnnnntnnnn)TCTTGGG\\*\"" + extractFlags);
+            exec("extract -f --input " + file1 + " --output " + file2 + " --input-format MIF"
+                    + " --not-matched-output " + diff + " --score-threshold -100 --uppercase-mismatch-score -15"
+                    + " --pattern \"^(UMI:nnnntnnnntnnnn)TCTTGGG(R1cut:N{*})\\*\" --max-quality-penalty 0"
+                    + " --bitap-max-errors 4" + extractFlags);
+            exec("mif2fastq -f --input " + diff + " --group R1=" + diff_R1 + " --group R2=" + diff_R2);
+            assertEquals(0, new File(diff_R1).length());
+            assertEquals(0, new File(diff_R2).length());
+        }
         for (String fileName : new String[] { inputFile, file1, file2, diff, diff_R1, diff_R2 })
             assertTrue(new File(fileName).delete());
     }
@@ -100,7 +99,7 @@ public class SpecialCasesTest {
         String sortOutput = TEMP_DIR + "sorted.mif";
         String correctOutput = TEMP_DIR + "corrected.mif";
         exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
-                + " --score-threshold -25 --bitap-max-errors 5"
+                + " --score-threshold -25 --bitap-max-errors 5 --try-reverse-order"
                 + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
         sortFile(extractOutput, sortOutput, "UMI");
         exec("correct -f --groups UMI --input " + sortOutput + " --output " + correctOutput
@@ -116,9 +115,9 @@ public class SpecialCasesTest {
         String sortOutput = TEMP_DIR + "sorted.mif";
         String consensusOutput = TEMP_DIR + "consensus.mif";
         exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
-                + " --score-threshold -25 --bitap-max-errors 5"
+                + " --score-threshold -25 --bitap-max-errors 5 --try-reverse-order"
                 + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
-        exec("sort -f --groups UMI --input " + extractOutput + " --output " + sortOutput);
+        sortFile(extractOutput, sortOutput, "UMI");
         exec("consensus -f --groups UMI --input " + sortOutput + " --output " + consensusOutput);
         for (String fileName : new String[] { extractOutput, sortOutput, consensusOutput })
             assertTrue(new File(fileName).delete());
@@ -236,7 +235,8 @@ public class SpecialCasesTest {
         String pattern = inputFastqFiles.contains("SRR")
                 ? "\"^(B1:N{8:12})gagtgattgcttgtgacgccaa(B2:N{8})(UMI:N{8})\\*\""
                 : "\"^(B1:N{8:12})gagt(B2:N{8})(UMI:N{8})\\*\"";
-        exec("extract -f --input " + inputFastqFiles + " --output " + extracted + " --pattern " + pattern);
+        exec("extract -f --input " + inputFastqFiles + " --output " + extracted + " --pattern " + pattern
+                + " --try-reverse-order");
         exec("mif2fastq -f --input " + extracted + " --group R1=" + fastqR1 + " R2=" + fastqR2);
         BufferedReader reader = new BufferedReader(new FileReader(fastqR1));
         String firstLine = reader.readLine();

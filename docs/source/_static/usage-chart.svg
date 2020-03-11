@@ -78,7 +78,6 @@
   <font id="EmbeddedFont_2" horiz-adv-x="2048">
    <font-face font-family="Liberation Serif embedded" units-per-em="2048" font-weight="bold" font-style="normal" ascent="1826" descent="450"/>
    <missing-glyph horiz-adv-x="2048" d="M 0,0 L 2047,0 2047,2047 0,2047 0,0 Z"/>
-   <glyph unicode="y" horiz-adv-x="1033" d="M 462,-29 L 86,850 20,874 20,940 501,940 501,874 389,848 610,328 807,850 697,874 697,940 1004,940 1004,874 936,854 565,-58 C 544,-113 522,-164 500,-210 478,-257 454,-297 427,-332 400,-366 369,-393 334,-412 299,-431 259,-441 213,-441 194,-441 178,-441 165,-441 151,-441 138,-440 126,-438 113,-437 101,-434 89,-432 76,-430 63,-427 48,-423 L 48,-181 108,-181 151,-307 C 160,-314 171,-320 183,-324 194,-328 208,-330 225,-330 252,-330 276,-323 297,-309 317,-295 335,-276 352,-253 369,-229 384,-201 399,-170 413,-138 428,-104 444,-69 L 462,-29 Z"/>
    <glyph unicode="x" horiz-adv-x="1059" d="M 31,875 L 31,940 533,940 533,875 428,848 565,637 746,850 652,875 652,940 972,940 972,875 889,854 625,544 923,86 1013,65 1013,0 511,0 511,65 616,88 452,341 234,86 328,65 328,0 8,0 8,65 92,81 392,433 122,850 31,875 Z"/>
    <glyph unicode="v" horiz-adv-x="1006" d="M 956,854 L 580,-20 459,-20 66,850 0,874 0,940 481,940 481,874 369,848 610,312 827,850 717,874 717,940 1024,940 1024,874 956,854 Z"/>
    <glyph unicode="u" horiz-adv-x="1086" d="M 705,82 C 684,71 662,60 637,47 612,34 586,23 559,12 532,1 503,-7 474,-15 445,-21 415,-25 385,-25 347,-25 312,-20 280,-10 248,0 221,16 198,38 175,60 157,89 144,124 131,159 125,202 125,252 L 125,850 31,874 31,940 414,940 414,291 C 414,235 426,191 450,160 473,129 507,113 551,113 602,113 652,124 703,147 L 703,850 617,874 617,940 992,940 992,90 1084,66 1084,0 719,0 705,82 Z"/>
@@ -112,7 +111,7 @@
   </font>
  </defs>
  <defs class="TextShapeIndex">
-  <g ooo:slide="id1" ooo:id-list="id3 id4 id5 id6 id7 id8 id9 id10 id11 id12 id13 id14 id15 id16 id17 id18 id19"/>
+  <g ooo:slide="id1" ooo:id-list="id3 id4 id5 id6 id7 id8 id9 id10 id11 id12 id13 id14 id15 id16 id17"/>
  </defs>
  <defs class="EmbeddedBulletChars">
   <g id="bullet-char-template-57356" transform="scale(0.00048828125,-0.00048828125)">
@@ -160,128 +159,113 @@
      <g class="Page">
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id3">
-        <rect class="BoundingBox" stroke="none" fill="none" x="1507" y="2015" width="39119" height="4575"/>
-        <path fill="rgb(114,159,207)" stroke="none" d="M 21066,6588 L 1508,6588 1508,2016 40624,2016 40624,6588 21066,6588 Z"/>
-        <path fill="none" stroke="rgb(52,101,164)" d="M 21066,6588 L 1508,6588 1508,2016 40624,2016 40624,6588 21066,6588 Z"/>
-        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="1758" y="3271"><tspan fill="rgb(0,0,0)" stroke="none">Extract barcodes from sequences</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="4921"><tspan fill="rgb(0,0,0)" stroke="none">Example: minnn extract --input R1.fastq R2.fastq --output extracted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="5721"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--pattern &quot;(SB:N{5})TGCA(UMI:atnnnnn)\*&quot; --score-threshold -50</tspan></tspan></tspan></text>
+        <rect class="BoundingBox" stroke="none" fill="none" x="1507" y="2031" width="39119" height="4575"/>
+        <path fill="rgb(114,159,207)" stroke="none" d="M 21066,6604 L 1508,6604 1508,2032 40624,2032 40624,6604 21066,6604 Z"/>
+        <path fill="none" stroke="rgb(52,101,164)" d="M 21066,6604 L 1508,6604 1508,2032 40624,2032 40624,6604 21066,6604 Z"/>
+        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="1758" y="3287"><tspan fill="rgb(0,0,0)" stroke="none">Extract barcodes from sequences</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="4937"><tspan fill="rgb(0,0,0)" stroke="none">Example: minnn extract --input R1.fastq R2.fastq --output extracted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="5737"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--pattern &quot;(SB:N{5})TGCA(UMI:atnnnnn)\*&quot; --score-threshold -50</tspan></tspan></tspan></text>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id4">
-        <rect class="BoundingBox" stroke="none" fill="none" x="14207" y="8111" width="11687" height="10163"/>
-        <path fill="rgb(114,159,207)" stroke="none" d="M 20050,18272 L 14208,18272 14208,8112 25892,8112 25892,18272 20050,18272 Z"/>
-        <path fill="none" stroke="rgb(52,101,164)" d="M 20050,18272 L 14208,18272 14208,8112 25892,8112 25892,18272 20050,18272 Z"/>
-        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="14458" y="9367"><tspan fill="rgb(0,0,0)" stroke="none">Correct errors</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="14458" y="10772"><tspan fill="rgb(0,0,0)" stroke="none">in barcodes</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="12346"><tspan fill="rgb(0,0,0)" stroke="none">Example: minnn correct</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="13146"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input extracted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="13946"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--output corrected.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="14746"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups SB UMI</tspan></tspan></tspan></text>
+        <rect class="BoundingBox" stroke="none" fill="none" x="14207" y="10159" width="11687" height="11195"/>
+        <path fill="rgb(114,159,207)" stroke="none" d="M 20050,21352 L 14208,21352 14208,10160 25892,10160 25892,21352 20050,21352 Z"/>
+        <path fill="none" stroke="rgb(52,101,164)" d="M 20050,21352 L 14208,21352 14208,10160 25892,10160 25892,21352 20050,21352 Z"/>
+        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="14458" y="11415"><tspan fill="rgb(0,0,0)" stroke="none">Correct errors</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="14458" y="12820"><tspan fill="rgb(0,0,0)" stroke="none">in barcodes</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="14394"><tspan fill="rgb(0,0,0)" stroke="none">Example:</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="15194"><tspan fill="rgb(0,0,0)" stroke="none">minnn sort</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="15994"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input extracted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="16794"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--output sorted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="17594"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups SB UMI  </tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="18394"><tspan fill="rgb(0,0,0)" stroke="none">minnn correct</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="19194"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input sorted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="19994"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--output corrected.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="20794"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups SB UMI</tspan></tspan></tspan></text>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id5">
-        <rect class="BoundingBox" stroke="none" fill="none" x="1507" y="8111" width="11687" height="11179"/>
-        <path fill="rgb(101,194,149)" stroke="none" d="M 7350,19288 L 1508,19288 1508,8112 13192,8112 13192,19288 7350,19288 Z"/>
-        <path fill="none" stroke="rgb(52,101,164)" d="M 7350,19288 L 1508,19288 1508,8112 13192,8112 13192,19288 7350,19288 Z"/>
-        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="1758" y="9367"><tspan fill="rgb(0,0,0)" stroke="none">Collect statistics</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="11030"><tspan fill="rgb(0,0,0)" stroke="none">Examples:</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="11830"><tspan fill="rgb(0,0,0)" stroke="none">minnn stat-groups </tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="12630"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input corrected.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="13430"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups SB UMI</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="14230"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--min-count-filter 100</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="15030"><tspan fill="rgb(0,0,0)" stroke="none">minnn stat-positions</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="15830"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input extracted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="16630"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--output positions.txt</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="17430"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--min-frac-filter 0.05</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="18230"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups UMI</tspan></tspan></tspan></text>
+        <rect class="BoundingBox" stroke="none" fill="none" x="1507" y="10159" width="11687" height="11179"/>
+        <path fill="rgb(101,194,149)" stroke="none" d="M 7350,21336 L 1508,21336 1508,10160 13192,10160 13192,21336 7350,21336 Z"/>
+        <path fill="none" stroke="rgb(52,101,164)" d="M 7350,21336 L 1508,21336 1508,10160 13192,10160 13192,21336 7350,21336 Z"/>
+        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="1758" y="11415"><tspan fill="rgb(0,0,0)" stroke="none">Collect statistics</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="13078"><tspan fill="rgb(0,0,0)" stroke="none">Examples:</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="13878"><tspan fill="rgb(0,0,0)" stroke="none">minnn stat-groups </tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="14678"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input corrected.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="15478"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups SB UMI</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="16278"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--min-count-filter 100</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="17078"><tspan fill="rgb(0,0,0)" stroke="none">minnn stat-positions</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="17878"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input extracted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="18678"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--output positions.txt</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="19478"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--min-frac-filter 0.05</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="20278"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups UMI</tspan></tspan></tspan></text>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id6">
-        <rect class="BoundingBox" stroke="none" fill="none" x="14207" y="19795" width="11687" height="8131"/>
-        <path fill="rgb(114,159,207)" stroke="none" d="M 20050,27924 L 14208,27924 14208,19796 25892,19796 25892,27924 20050,27924 Z"/>
-        <path fill="none" stroke="rgb(52,101,164)" d="M 20050,27924 L 14208,27924 14208,19796 25892,19796 25892,27924 20050,27924 Z"/>
-        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="14458" y="21051"><tspan fill="rgb(0,0,0)" stroke="none">Sort sequences</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="14458" y="22456"><tspan fill="rgb(0,0,0)" stroke="none">by barcode values</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="24106"><tspan fill="rgb(0,0,0)" stroke="none">Example: minnn sort</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="24906"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input corrected.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="25706"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--output sorted.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="14458" y="26506"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups UMI</tspan></tspan></tspan></text>
+        <rect class="BoundingBox" stroke="none" fill="none" x="1507" y="24383" width="39119" height="7115"/>
+        <path fill="rgb(114,159,207)" stroke="none" d="M 21066,31496 L 1508,31496 1508,24384 40624,24384 40624,31496 21066,31496 Z"/>
+        <path fill="none" stroke="rgb(52,101,164)" d="M 21066,31496 L 1508,31496 1508,24384 40624,24384 40624,31496 21066,31496 Z"/>
+        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="1758" y="25639"><tspan fill="rgb(0,0,0)" stroke="none">Calculate consensuses for original molecules</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="27289"><tspan fill="rgb(0,0,0)" stroke="none">Example:</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="28089"><tspan fill="rgb(0,0,0)" stroke="none">minnn sort</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="28889"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input corrected.mif --output sorted.mif --groups UMI</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="29689"><tspan fill="rgb(0,0,0)" stroke="none">minnn consensus</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="30489"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input sorted.mif --output consensus.mif </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups UMI --max-consensuses-per-cluster 6</tspan></tspan></tspan></text>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id7">
-        <rect class="BoundingBox" stroke="none" fill="none" x="1507" y="29447" width="39119" height="4575"/>
-        <path fill="rgb(114,159,207)" stroke="none" d="M 21066,34020 L 1508,34020 1508,29448 40624,29448 40624,34020 21066,34020 Z"/>
-        <path fill="none" stroke="rgb(52,101,164)" d="M 21066,34020 L 1508,34020 1508,29448 40624,29448 40624,34020 21066,34020 Z"/>
-        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="1758" y="30703"><tspan fill="rgb(0,0,0)" stroke="none">Calculate consensuses for original molecules</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="32353"><tspan fill="rgb(0,0,0)" stroke="none">Example: minnn consensus --input sorted.mif --output consensus.mif </tspan><tspan fill="rgb(0,0,0)" stroke="none">--groups UMI</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="33153"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--max-consensuses-per-cluster 6</tspan></tspan></tspan></text>
+        <rect class="BoundingBox" stroke="none" fill="none" x="1507" y="35051" width="39119" height="4575"/>
+        <path fill="rgb(114,159,207)" stroke="none" d="M 21066,39624 L 1508,39624 1508,35052 40624,35052 40624,39624 21066,39624 Z"/>
+        <path fill="none" stroke="rgb(52,101,164)" d="M 21066,39624 L 1508,39624 1508,35052 40624,35052 40624,39624 21066,39624 Z"/>
+        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="1758" y="36307"><tspan fill="rgb(0,0,0)" stroke="none">Convert results from MIF to FASTQ format</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="37957"><tspan fill="rgb(0,0,0)" stroke="none">Example: minnn mif2fastq --input consensus.mif --group R1=consensus-R1.fastq</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="38757"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--group R2=consensus-R2.fastq</tspan></tspan></tspan></text>
        </g>
       </g>
       <g class="com.sun.star.drawing.CustomShape">
        <g id="id8">
-        <rect class="BoundingBox" stroke="none" fill="none" x="1507" y="35543" width="39119" height="4575"/>
-        <path fill="rgb(114,159,207)" stroke="none" d="M 21066,40116 L 1508,40116 1508,35544 40624,35544 40624,40116 21066,40116 Z"/>
-        <path fill="none" stroke="rgb(52,101,164)" d="M 21066,40116 L 1508,40116 1508,35544 40624,35544 40624,40116 21066,40116 Z"/>
-        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="1758" y="36799"><tspan fill="rgb(0,0,0)" stroke="none">Convert results from MIF to FASTQ format</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="38449"><tspan fill="rgb(0,0,0)" stroke="none">Example: minnn mif2fastq --input consensus.mif --group R1=consensus-R1.fastq</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="1758" y="39249"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--group R2=consensus-R2.fastq</tspan></tspan></tspan></text>
+        <rect class="BoundingBox" stroke="none" fill="none" x="26907" y="10159" width="13719" height="11179"/>
+        <path fill="rgb(247,161,154)" stroke="none" d="M 33766,21336 L 26908,21336 26908,10160 40624,10160 40624,21336 33766,21336 Z"/>
+        <path fill="none" stroke="rgb(52,101,164)" d="M 33766,21336 L 26908,21336 26908,10160 40624,10160 40624,21336 33766,21336 Z"/>
+        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="27158" y="11415"><tspan fill="rgb(0,0,0)" stroke="none">Filter data or split</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="27158" y="12820"><tspan fill="rgb(0,0,0)" stroke="none">to multiple files</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="14470"><tspan fill="rgb(0,0,0)" stroke="none">Examples:</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="15270"><tspan fill="rgb(0,0,0)" stroke="none">minnn filter</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="16070"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input corrected.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="16870"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--output filtered.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="17670"><tspan fill="rgb(0,0,0)" stroke="none"> “</tspan><tspan fill="rgb(0,0,0)" stroke="none">Len(UMI)=7 &amp; UMI~‘~^AATC’”</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="18470"><tspan fill="rgb(0,0,0)" stroke="none">minnn demultiplex</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="19270"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--by-barcode SB</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="20070"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">corrected.mif </tspan></tspan><tspan class="TextPosition" x="27158" y="20870"><tspan fill="rgb(0,0,0)" stroke="none"> --demultiplex-log output.log</tspan></tspan></tspan></text>
        </g>
       </g>
-      <g class="com.sun.star.drawing.CustomShape">
+      <g class="com.sun.star.drawing.LineShape">
        <g id="id9">
-        <rect class="BoundingBox" stroke="none" fill="none" x="26907" y="8111" width="13719" height="11179"/>
-        <path fill="rgb(247,161,154)" stroke="none" d="M 33766,19288 L 26908,19288 26908,8112 40624,8112 40624,19288 33766,19288 Z"/>
-        <path fill="none" stroke="rgb(52,101,164)" d="M 33766,19288 L 26908,19288 26908,8112 40624,8112 40624,19288 33766,19288 Z"/>
-        <text class="TextShape"><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="27158" y="9367"><tspan fill="rgb(0,0,0)" stroke="none">Filter data or split</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Serif, serif" font-size="1270px" font-weight="700"><tspan class="TextPosition" x="27158" y="10772"><tspan fill="rgb(0,0,0)" stroke="none">to multiple files</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="12422"><tspan fill="rgb(0,0,0)" stroke="none">Examples:</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="13222"><tspan fill="rgb(0,0,0)" stroke="none">minnn filter</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="14022"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--input corrected.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="14822"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--output filtered.mif</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="15622"><tspan fill="rgb(0,0,0)" stroke="none"> “</tspan><tspan fill="rgb(0,0,0)" stroke="none">Len(UMI)=7 &amp; UMI~‘~^AATC’”</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="16422"><tspan fill="rgb(0,0,0)" stroke="none">minnn demultiplex</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="17222"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">--by-barcode SB</tspan></tspan></tspan><tspan class="TextParagraph" font-family="Liberation Mono, monospace" font-size="706px" font-weight="400"><tspan class="TextPosition" x="27158" y="18022"><tspan fill="rgb(0,0,0)" stroke="none"> </tspan><tspan fill="rgb(0,0,0)" stroke="none">corrected.mif </tspan></tspan><tspan class="TextPosition" x="27158" y="18822"><tspan fill="rgb(0,0,0)" stroke="none"> --demultiplex-log output.log</tspan></tspan></tspan></text>
+        <rect class="BoundingBox" stroke="none" fill="none" x="7096" y="6603" width="2542" height="3558"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 9636,6604 L 7346,9810"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 7096,10160 L 7480,9881 7235,9707 7096,10160 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id10">
-        <rect class="BoundingBox" stroke="none" fill="none" x="7096" y="6587" width="2542" height="1526"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 9636,6588 L 7465,7891"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 7096,8112 L 7559,8009 7405,7752 7096,8112 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="18779" y="6603" width="1039" height="3558"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 18780,6604 L 19678,9747"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 19796,10160 L 19817,9686 19528,9769 19796,10160 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id11">
-        <rect class="BoundingBox" stroke="none" fill="none" x="18779" y="6587" width="1018" height="1526"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 18780,6588 L 19557,7754"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 19796,8112 L 19671,7654 19422,7821 19796,8112 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="31479" y="6603" width="3050" height="3558"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 31480,6604 L 34248,9834"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 34528,10160 L 34349,9721 34121,9916 34528,10160 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id12">
-        <rect class="BoundingBox" stroke="none" fill="none" x="31479" y="6587" width="3050" height="1526"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 31480,6588 L 34143,7920"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 34528,8112 L 34193,7777 34058,8045 34528,8112 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="13192" y="14731" width="1018" height="1018"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 14208,14732 L 13496,15444"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 13192,15748 L 13616,15536 13404,15324 13192,15748 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id13">
-        <rect class="BoundingBox" stroke="none" fill="none" x="13192" y="13191" width="1018" height="510"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 14208,13192 L 13577,13508"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 13192,13700 L 13662,13633 13527,13365 13192,13700 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="25891" y="14731" width="1018" height="1018"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 25892,14732 L 26604,15444"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 26908,15748 L 26696,15324 26484,15536 26908,15748 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id14">
-        <rect class="BoundingBox" stroke="none" fill="none" x="25891" y="13191" width="1018" height="1018"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 25892,13192 L 26604,13904"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 26908,14208 L 26696,13784 26484,13996 26908,14208 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="19646" y="21335" width="301" height="3050"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 19796,21336 L 19796,23954"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 19796,24384 L 19946,23934 19646,23934 19796,24384 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id15">
-        <rect class="BoundingBox" stroke="none" fill="none" x="19646" y="18271" width="301" height="1526"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 19796,18272 L 19796,19366"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 19796,19796 L 19946,19346 19646,19346 19796,19796 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="28432" y="21335" width="5590" height="3050"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 34020,21336 L 28809,24178"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 28432,24384 L 28899,24300 28755,24037 28432,24384 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id16">
-        <rect class="BoundingBox" stroke="none" fill="none" x="25892" y="19287" width="8130" height="4574"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 34020,19288 L 26267,23649"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 25892,23860 L 26358,23770 26211,23509 25892,23860 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="20154" y="31495" width="301" height="3558"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 20304,31496 L 20304,34622"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 20304,35052 L 20454,34602 20154,34602 20304,35052 Z"/>
        </g>
       </g>
       <g class="com.sun.star.drawing.LineShape">
        <g id="id17">
-        <rect class="BoundingBox" stroke="none" fill="none" x="20154" y="27923" width="301" height="1526"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 20304,27924 L 20304,29018"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 20304,29448 L 20454,28998 20154,28998 20304,29448 Z"/>
-       </g>
-      </g>
-      <g class="com.sun.star.drawing.LineShape">
-       <g id="id18">
-        <rect class="BoundingBox" stroke="none" fill="none" x="20154" y="34019" width="301" height="1526"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 20304,34020 L 20304,35114"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 20304,35544 L 20454,35094 20154,35094 20304,35544 Z"/>
-       </g>
-      </g>
-      <g class="com.sun.star.drawing.LineShape">
-       <g id="id19">
-        <rect class="BoundingBox" stroke="none" fill="none" x="25892" y="14224" width="1018" height="1018"/>
-        <path fill="none" stroke="rgb(0,0,0)" d="M 26908,15240 L 26196,14528"/>
-        <path fill="rgb(0,0,0)" stroke="none" d="M 25892,14224 L 26104,14648 26316,14436 25892,14224 Z"/>
+        <rect class="BoundingBox" stroke="none" fill="none" x="25892" y="15748" width="1018" height="1018"/>
+        <path fill="none" stroke="rgb(0,0,0)" d="M 26908,16764 L 26196,16052"/>
+        <path fill="rgb(0,0,0)" stroke="none" d="M 25892,15748 L 26104,16172 26316,15960 25892,15748 Z"/>
        </g>
       </g>
      </g>

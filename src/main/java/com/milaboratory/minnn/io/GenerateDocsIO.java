@@ -48,6 +48,7 @@ import static com.milaboratory.minnn.cli.DecontaminateAction.DECONTAMINATE_ACTIO
 import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
+import static com.milaboratory.minnn.cli.FilterByCountAction.FILTER_BY_COUNT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.MifToFastqAction.MIF_TO_FASTQ_ACTION_NAME;
 import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAME;
@@ -61,9 +62,9 @@ public final class GenerateDocsIO {
     private static final HashMap<String, List<String>> specificOptions = new HashMap<>();
     static {
         List<String> commandsWithForceOverwrite = Arrays.asList(EXTRACT_ACTION_NAME, FILTER_ACTION_NAME,
-                DEMULTIPLEX_ACTION_NAME, MIF_TO_FASTQ_ACTION_NAME, CORRECT_ACTION_NAME, SORT_ACTION_NAME,
-                CONSENSUS_SINGLE_CELL_ACTION_NAME, CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME, STAT_GROUPS_ACTION_NAME,
-                STAT_POSITIONS_ACTION_NAME, DECONTAMINATE_ACTION_NAME);
+                DEMULTIPLEX_ACTION_NAME, MIF_TO_FASTQ_ACTION_NAME, CORRECT_ACTION_NAME, FILTER_BY_COUNT_ACTION_NAME,
+                SORT_ACTION_NAME, CONSENSUS_SINGLE_CELL_ACTION_NAME, CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME,
+                STAT_GROUPS_ACTION_NAME, STAT_POSITIONS_ACTION_NAME, DECONTAMINATE_ACTION_NAME);
         List<String> commandsWithQuietOption = Arrays.asList(CORRECT_ACTION_NAME, SORT_ACTION_NAME,
                 CONSENSUS_SINGLE_CELL_ACTION_NAME, CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME);
         specificOptions.put("--force-overwrite", commandsWithForceOverwrite);
@@ -73,9 +74,9 @@ public final class GenerateDocsIO {
     private final String outputFileName;
 
     public GenerateDocsIO(String outputFileName) {
-        for (String actionName : new String[] { "Extract", "Filter", "Demultiplex", "MifToFastq", "Correct", "Sort",
-                "ConsensusSingleCell", "ConsensusDoubleMultiAlign", "StatGroups", "StatPositions", "Decontaminate",
-                "Report" }) {
+        for (String actionName : new String[] { "Extract", "Filter", "Demultiplex", "MifToFastq", "Correct",
+                "FilterByCount", "Sort", "ConsensusSingleCell", "ConsensusDoubleMultiAlign", "StatGroups",
+                "StatPositions", "MifInfo", "Decontaminate", "Report" }) {
             try {
                 actionClasses.add(Class.forName("com.milaboratory.minnn.cli." + actionName + "Action"));
             } catch (ClassNotFoundException e) {

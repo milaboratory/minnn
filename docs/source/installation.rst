@@ -29,7 +29,8 @@ Manual Installation
 Installation with Homebrew
 --------------------------
 
-#. If you don't have homebrew, install it from https://brew.sh/ (on Mac OS X) or from http://linuxbrew.sh/ (on Linux).
+#. If you don't have homebrew, install it from https://brew.sh/ (on Mac OS X) or from
+https://docs.brew.sh/Homebrew-on-Linux (on Linux).
 #. Type minnn installation command:
 
    .. code-block:: text

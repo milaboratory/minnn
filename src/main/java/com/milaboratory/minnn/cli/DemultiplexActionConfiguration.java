@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 
 public final class DemultiplexActionConfiguration implements ActionConfiguration {
-    private static final String DEMULTIPLEX_ACTION_VERSION_ID = "1";
+    private static final String DEMULTIPLEX_ACTION_VERSION_ID = "2";
     private final DemultiplexActionParameters demultiplexParameters;
 
     @JsonCreator

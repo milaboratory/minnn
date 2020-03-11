@@ -28,20 +28,20 @@
  */
 package com.milaboratory.minnn.readfilter;
 
+import cc.redberry.combinatorics.Combinatorics;
 import com.milaboratory.core.sequence.NucleotideSequence;
+import com.milaboratory.core.sequence.SequenceBuilder;
 import com.milaboratory.core.sequence.Wildcard;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
 import java.util.*;
 
 import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
-import static com.milaboratory.minnn.util.SystemUtils.*;
+import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 public final class WhitelistReadFilter implements ReadFilter {
     private final String groupName;
-    private final Set<NucleotideSequence> sequencesWithoutWildcards = new HashSet<>();
-    private final Set<WildcardSequence> sequencesWithWildcards = new HashSet<>();
-    private final Set<WildcardSequence> allSequences = new HashSet<>();
+    private final Set<NucleotideSequence> sequences = new HashSet<>();
 
     public WhitelistReadFilter(String groupName, Collection<String> whitelistValues) {
         this.groupName = groupName;
@@ -52,59 +52,39 @@ public final class WhitelistReadFilter implements ReadFilter {
             } catch (IllegalArgumentException e) {
                 throw exitWithError("Wrong whitelist value: " + whitelistValue + "! " + e.getMessage());
             }
-            if (seq.containsWildcards()) {
-                WildcardSequence wildcardSequence = new WildcardSequence(seq);
-                sequencesWithWildcards.add(wildcardSequence);
-                allSequences.add(wildcardSequence);
-            } else {
-                sequencesWithoutWildcards.add(seq);
-                allSequences.add(new WildcardSequence(seq));
-            }
+
+            if (seq.containsWildcards())
+                saveAllWildcardCombinations(seq);
+            // Sequences with wildcards will also be added "as is", so exact match will also be detected
+            sequences.add(seq);
         }
     }
 
     @Override
     public ParsedRead filter(ParsedRead parsedRead) {
         NucleotideSequence seq = getGroupByName(parsedRead, groupName).getValue().getSequence();
-        if (sequencesWithoutWildcards.contains(seq))
+        if (sequences.contains(seq))
             return parsedRead;
-        else {
-            for (WildcardSequence whitelistEntry : (seq.containsWildcards() ? allSequences : sequencesWithWildcards))
-                if (whitelistEntry.equalsByWildcards(seq))
-                    return parsedRead;
+        else
             return notMatchedRead(parsedRead);
+    }
+
+    /**
+     * Adds all possible combinations of basic letters that this wildcard matches.
+     */
+    private void saveAllWildcardCombinations(NucleotideSequence seq) {
+        Wildcard[] letters = new Wildcard[seq.size()];
+        for (int i = 0; i < seq.size(); i++)
+            letters[i] = ALPHABET.codeToWildcard(seq.codeAt(i));
+        for (int[] tuple : Combinatorics.tuples(Arrays.stream(letters).mapToInt(Wildcard::basicSize).toArray())) {
+            SequenceBuilder<NucleotideSequence> builder = ALPHABET.createBuilder().ensureCapacity(letters.length);
+            for (int i = 0; i < tuple.length; i++)
+                builder.append(letters[i].getMatchingCode(tuple[i]));
+            sequences.add(builder.createAndDestroy());
         }
     }
 
-    private static class WildcardSequence {
-        final Wildcard[] letters;
-
-        WildcardSequence(NucleotideSequence seq) {
-            this.letters = new Wildcard[seq.size()];
-            for (int i = 0; i < seq.size(); i++)
-                letters[i] = ALPHABET.codeToWildcard(seq.codeAt(i));
-        }
-
-        boolean equalsByWildcards(NucleotideSequence seq) {
-            if (letters.length != seq.size())
-                return false;
-            for (int i = 0; i < letters.length; i++)
-                if (!letters[i].intersectsWith(ALPHABET.codeToWildcard(seq.codeAt(i))))
-                    return false;
-            return true;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            WildcardSequence that = (WildcardSequence)o;
-            return Arrays.equals(letters, that.letters);
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(letters);
-        }
+    protected Set<NucleotideSequence> getSequences() {
+        return sequences;
     }
 }

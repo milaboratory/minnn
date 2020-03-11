@@ -35,16 +35,12 @@ import java.io.File;
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class FilterActionTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
-        File outputFilesDirectory = new File(TEMP_DIR);
-        if (!outputFilesDirectory.exists())
-            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+        actionTestInit();
     }
 
     @Test
@@ -160,6 +156,19 @@ public class FilterActionTest {
         } catch (RuntimeException ignored) {}
 
         for (String fileName : new String[] { inputFile, outputFile1, outputFile2 })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void emptyReadsTest() throws Exception {
+        String inputFile = getExampleMif("with-empty-reads");
+        String filtered1 = TEMP_DIR + "filtered1.mif";
+        String filtered2 = TEMP_DIR + "filtered2.mif";
+        exec("filter -f --input " + inputFile + " --output " + filtered1
+                + " \"AvgGroupQuality(*)=20\"");
+        exec("filter -f --input " + inputFile + " --output " + filtered2
+                + " \"GroupMaxNFraction(*)=0.15\"");
+        for (String fileName : new String[] { inputFile, filtered1, filtered2 })
             assertTrue(new File(fileName).delete());
     }
 }

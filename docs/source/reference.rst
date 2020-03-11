@@ -19,7 +19,7 @@ extract
  --output: Output file in MIF format. If not specified, stdout will be used.
  --not-matched-output: Output file for not matched reads in MIF format. If not specified, not matched reads will not be written anywhere.
  --input-format: Input data format. Available options: FASTQ, MIF.
- --oriented: By default, if there are 2 or more reads, 2 last reads are checked in direct and reverse order. With this flag, only in direct order.
+ --try-reverse-order: If there are 2 or more reads, check 2 last reads in direct and reverse order.
  --match-score: Score for perfectly matched nucleotide.
  --mismatch-score: Score for mismatched nucleotide.
  --uppercase-mismatch-score: Score for mismatched uppercase nucleotide.
@@ -123,6 +123,26 @@ correct
  -f, --force-overwrite: Force overwrite of output file(s).
  -nw, --no-warnings: Suppress all warning messages.
 
+.. _filter-by-count:
+
+filter-by-count
+---------------
+.. include:: reference_descriptions/filter-by-count.rst
+
+.. code-block:: text
+
+ --groups: Group names for filtering by count.
+ --input: Input file in MIF format. This argument is required; stdin is not supported.
+ --output: Output file in MIF format. If not specified, stdout will be used.
+ --max-unique-barcodes: Maximal number of unique barcodes that will be included into output. Reads containing barcodes with biggest counts will be included, reads with barcodes with smaller counts will be excluded. Value 0 turns off this feature: if this argument is 0, all barcodes will be included.
+ --min-count: Barcodes with count less than specified will not be included in the output.
+ --excluded-barcodes-output: Output file for reads with barcodes excluded by count. If not specified, reads with excluded barcodes will not be written anywhere.
+ -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
+ --overwrite-if-required: Overwrite output file if it is corrupted or if it was generated from different input file or with different parameters. -f / --force-overwrite overrides this option.
+ -f, --force-overwrite: Force overwrite of output file(s).
+
 .. _sort:
 
 sort
@@ -157,9 +177,11 @@ consensus
  --reads-min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming input reads.
  --reads-avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming input reads.
  --reads-trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming input reads.
- --min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming output consensuses.
- --avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming output consensuses.
- --trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming output consensuses.
+ --min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming output consensuses by quality and coverage.
+ --low-coverage-threshold: Coverage is calculated as number of reads that have letters on current position divided by total number of reads for this consensus. Values lower than this parameter will be considered low. This parameter is for trimming output consensuses by quality and coverage.
+ --avg-quality-threshold: Minimal average quality for parts of consensus with good coverage. This parameter is for trimming output consensuses by quality and coverage.
+ --avg-quality-threshold-for-low-coverage: Minimal average quality for parts of consensus with low coverage. This parameter is for trimming output consensuses by quality and coverage.
+ --trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming output consensuses by quality and coverage.
  --original-read-stats: Save extra statistics for each original read into separate file. Output file in space separated text format.
  --not-used-reads-output: Write reads not used in consensus assembly into separate file. Output file in MIF format.
  --consensuses-to-separate-groups: If this parameter is specified, consensuses will not be written as reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by consensuses using filter / demultiplex actions, or export original reads and corresponding consensuses into separate reads using mif2fastq action.
@@ -198,9 +220,11 @@ consensus-dma
  --reads-min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming input reads.
  --reads-avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming input reads.
  --reads-trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming input reads.
- --min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming output consensuses.
- --avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming output consensuses.
- --trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming output consensuses.
+ --min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming output consensuses by quality and coverage.
+ --low-coverage-threshold: Coverage is calculated as number of reads that have letters on current position divided by total number of reads for this consensus. Values lower than this parameter will be considered low. This parameter is for trimming output consensuses by quality and coverage.
+ --avg-quality-threshold: Minimal average quality for parts of consensus with good coverage. This parameter is for trimming output consensuses by quality and coverage.
+ --avg-quality-threshold-for-low-coverage: Minimal average quality for parts of consensus with low coverage. This parameter is for trimming output consensuses by quality and coverage.
+ --trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming output consensuses by quality and coverage.
  --original-read-stats: Save extra statistics for each original read into separate file. Output file in space separated text format.
  --not-used-reads-output: Write reads not used in consensus assembly into separate file. Output file in MIF format.
  --consensuses-to-separate-groups: If this parameter is specified, consensuses will not be written as reads R1, R2 etc to output file. Instead, original sequences will be written as R1, R2 etc and consensuses will be written as CR1, CR2 etc, so it will be possible to cluster original reads by consensuses using filter / demultiplex actions, or export original reads and corresponding consensuses into separate reads using mif2fastq action.
@@ -253,6 +277,18 @@ stat-positions
  --report: File to write brief command execution stats in human readable form. If not specified, these stats are displayed on screen only.
  --json-report: File to write command execution stats in JSON format.
  -f, --force-overwrite: Force overwrite of output file(s).
+
+.. _mif-info:
+
+mif-info
+--------
+.. include:: reference_descriptions/mif-info.rst
+
+.. code-block:: text
+
+ -q, --quick, --no-reads-count: Don't count reads, display only info from header.
+ --report: File to write report in human readable form. If not specified, report is displayed on screen only.
+ --json-report: File to write command execution stats in JSON format.
 
 .. _decontaminate:
 

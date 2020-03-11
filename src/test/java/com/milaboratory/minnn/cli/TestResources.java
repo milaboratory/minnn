@@ -48,11 +48,15 @@ public class TestResources {
                 TEMP_DIR + "100reads.mif"));
         examples.put("good-quality", new ExampleMif(EXAMPLES_PATH + "small/good-quality.fastq",
                 TEMP_DIR + "good-quality.mif"));
+        examples.put("with-empty-reads", new ExampleMif(
+                EXAMPLES_PATH + "with_empty_reads/with_empty_reads_R1.fastq.gz "
+                        + EXAMPLES_PATH + "with_empty_reads/with_empty_reads_R2.fastq.gz",
+                TEMP_DIR + "with-empty-reads.mif"));
     }
 
     public static String getExampleMif(String example) {
         String common = "extract -f --input " + examples.get(example).fastq + " --output " + examples.get(example).mif
-                + " --mismatch-score -9 --gap-score -10 --single-overlap-penalty -10 --pattern ";
+                + " --mismatch-score -9 --gap-score -10 --single-overlap-penalty -10 --try-reverse-order --pattern ";
         switch (example) {
             case "twosided":
                 exec(common + "\"(G1:tctcag)&(G2:ana)(G3:ggnnc)(G4:NN)\\*\" --score-threshold -20");
@@ -68,6 +72,9 @@ public class TestResources {
                 break;
             case "good-quality":
                 exec(common + "\"(G1:CCCGCCC)\"");
+                break;
+            case "with-empty-reads":
+                exec(common + "\"(G1:^N{10})\\(G2:*)\"");
                 break;
             default:
                 throw new IllegalArgumentException("Unknown example: " + example);

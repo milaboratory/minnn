@@ -1,4 +1,19 @@
 
+minnn 10.0 (11 Mar 2020)
+========================
+
+-- Behavior from --oriented flag in Extract is now default, and swapping reads is achieved by 
+   --try-reverse-order flag
+-- Fixes and optimizations for filtering with barcode whitelists
+-- Quality trimmer for consensus now uses both quality and coverage
+-- Bugfixes related to empty reads in input FASTQ files
+-- Several bugfixes in Extract action
+-- Support for smart overwrite in Demultiplex action
+-- Reporting about MIF file moved from Stat actions to separate mif-info action
+-- Better reporting for Filter action arguments
+-- Reports are appended instead of overwriting
+
+
 minnn 9.1 (23 Jan 2020)
 ========================
 

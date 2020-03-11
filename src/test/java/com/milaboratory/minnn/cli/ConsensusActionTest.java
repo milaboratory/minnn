@@ -41,16 +41,12 @@ import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class ConsensusActionTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
-        File outputFilesDirectory = new File(TEMP_DIR);
-        if (!outputFilesDirectory.exists())
-            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+        actionTestInit();
     }
 
     @Test
@@ -86,10 +82,10 @@ public class ConsensusActionTest {
                     + " --skipped-fraction-to-repeat " + (rg.nextFloat() * 0.8f + 0.1f)
                     + " --reads-avg-quality-threshold " + rg.nextInt(DEFAULT_GOOD_QUALITY)
                     + " --reads-trim-window-size " + (rg.nextInt(15) + 1)
-                    + " --reads-min-good-sequence-length " + rg.nextInt(50)
+                    + " --reads-min-good-sequence-length " + (rg.nextInt(50) + 1)
                     + " --avg-quality-threshold " + rg.nextInt(DEFAULT_GOOD_QUALITY)
                     + " --trim-window-size " + (rg.nextInt(15) + 1)
-                    + " --min-good-sequence-length " + rg.nextInt(50)
+                    + " --min-good-sequence-length " + (rg.nextInt(50) + 1)
                     + " --aligner-match-score 0 --aligner-mismatch-score " + mismatchScore
                     + " --aligner-gap-score " + gapScore);
             Stream.of(new String[] { output1, output2 }, new String[] { output2, output3 },
@@ -314,6 +310,21 @@ public class ConsensusActionTest {
         for (String fileName : new String[] { inputFile, sortedFile1, correctedFile, correctedTruncatedFile,
                 sortedFile2, sortedTruncatedFile, consensusSCFile, consensusDMAFile, consensusSCTruncatedFile,
                 statsSC, statsDMA, statsSCT })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void emptyReadsTest() throws Exception {
+        String inputFile = getExampleMif("with-empty-reads");
+        String sorted = TEMP_DIR + "sorted.mif";
+        sortFile(inputFile, sorted, "G1 G2");
+        String consensusSC = TEMP_DIR + "consensusSC.mif";
+        String consensusDMA = TEMP_DIR + "consensusDMA.mif";
+        exec("consensus -f --groups G1 G2 --input " + sorted + " --output " + consensusSC
+                + " --reads-min-good-sequence-length 1 --min-good-sequence-length 1 --kmer-length 1");
+        exec("consensus-dma -f --groups G1 G2 --input " + sorted + " --output " + consensusDMA
+                + " --reads-min-good-sequence-length 1 --min-good-sequence-length 1");
+        for (String fileName : new String[] { inputFile, sorted, consensusSC, consensusDMA })
             assertTrue(new File(fileName).delete());
     }
 }

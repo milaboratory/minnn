@@ -33,13 +33,12 @@ import org.junit.*;
 
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class CommonArgumentsTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
+        actionTestInit();
     }
 
     @Test

@@ -35,17 +35,13 @@ import java.io.File;
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.minnn.cli.Main.main;
 import static org.junit.Assert.*;
 
 public class ExtractActionTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
-        File outputFilesDirectory = new File(TEMP_DIR);
-        if (!outputFilesDirectory.exists())
-            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+        actionTestInit();
     }
 
     @Test
@@ -64,19 +60,19 @@ public class ExtractActionTest {
                             "GroupEdgePosition(GroupEdge('UMI', false), 4)])), " +
                             "FullReadPattern(FuzzyMatchPattern(AA, 0, 0, -1, -1))])"),
                     "--input", testInputR1, testInputR2, "--output", testOutput1Double,
-                    "--devel-parser-syntax", "--score-threshold", "0"};
+                    "--devel-parser-syntax", "--try-reverse-order", "--score-threshold", "0"};
             main(args1);
 
             String[] args2 = {"extract", "-f", "--score-threshold", "0", "--devel-parser-syntax", "--match-score", "0",
-                    "--oriented", "--pattern", inQuotes("FullReadPattern(FuzzyMatchPattern(ATTAGACA, " +
-                    "0, 0, -1, -1))"), "--input", testInputR1, "--output", testOutput1Single};
+                    "--pattern", inQuotes("FullReadPattern(FuzzyMatchPattern(ATTAGACA, " + "0, 0, -1, -1))"),
+                    "--input", testInputR1, "--output", testOutput1Single};
             main(args2);
 
-            String[] args3 = {"extract", "-f", "--pattern", "<GA(UMI:AG)CA \\ AA",
+            String[] args3 = {"extract", "-f", "--pattern", "<GA(UMI:AG)CA \\ AA", "--try-reverse-order",
                     "--input", testInputR1, testInputR2, "--output", testOutput2Double, "--score-threshold", "0"};
             main(args3);
 
-            String[] args4 = {"extract", "-f", "--score-threshold", "0", "--match-score", "0", "--oriented",
+            String[] args4 = {"extract", "-f", "--score-threshold", "0", "--match-score", "0",
                     "--pattern", "ATTAGACA", "--input", testInputR1, "--output", testOutput2Single};
             main(args4);
 
@@ -114,7 +110,7 @@ public class ExtractActionTest {
                 + " --output " + outTwoMif;
 
         String configuration = " --match-score 0 --mismatch-score -7 --gap-score -11 --single-overlap-penalty -10 "
-                + "--bitap-max-errors 3 --threads 4";
+                + "--bitap-max-errors 3 --threads 4 --try-reverse-order";
 
         String patternPos = "^(UMI:N{14})n{22}(SB:N{4}) \\ *";
         String penaltyPos = " --score-threshold -200";
@@ -143,7 +139,7 @@ public class ExtractActionTest {
         String out = TEMP_DIR + "outputSCT1.mif";
         String argsIO = "extract -f --input " + R1 + " " + R2 + " --output " + out;
         String query = argsIO + " --pattern \"NN(G1:N{12})N{22}TCAG\\NN(G2:N{12})N{22}TCAG\" --threads 3 "
-                + "--bitap-max-errors 1 --mismatch-score -1 --score-threshold -73";
+                + "--bitap-max-errors 1 --mismatch-score -1 --score-threshold -73 --try-reverse-order";
         exec(query);
         assertTrue(new File(out).delete());
     }
@@ -235,7 +231,8 @@ public class ExtractActionTest {
         String sortedFile2 = TEMP_DIR + "groups_override_sorted2.mif";
         String consensusFile = TEMP_DIR + "groups_override_consensus.mif";
         exec("extract -f --input " + r1 + " " + r2 + " --output " + extractedFile + " --score-threshold -100"
-                + " --pattern \"^(R1:(G1:NNN))aac\\cctc(R2:aaa)(R3:t(G3:tt)t)$\" --bitap-max-errors 10");
+                + " --pattern \"^(R1:(G1:NNN))aac\\cctc(R2:aaa)(R3:t(G3:tt)t)$\""
+                + " --bitap-max-errors 10 --try-reverse-order");
         sortFile(extractedFile, sortedFile1, "G1 G3");
         exec("correct -f --input " + sortedFile1 + " --output " + correctedFile + " --groups G1 G3");
         sortFile(correctedFile, sortedFile2, "G1 G3");

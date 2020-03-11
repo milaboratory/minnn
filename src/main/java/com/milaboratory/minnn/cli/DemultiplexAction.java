@@ -64,7 +64,8 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         prepareDemultiplexArguments();
         DemultiplexIO demultiplexIO = new DemultiplexIO(getFullPipelineConfiguration(),
                 parsedDemultiplexArguments.inputFileName, parsedDemultiplexArguments.demultiplexArguments,
-                logFileName, outputBufferSize, inputReadsLimit, reportFileName, jsonReportFileName);
+                logFileName, forceOverwrite || overwriteIfRequired, outputBufferSize, inputReadsLimit,
+                reportFileName, jsonReportFileName);
         demultiplexIO.go();
     }
 
@@ -77,7 +78,42 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     public void validate() {
         if (argumentsQueryList == null)
             throwValidationException("Filter options are not specified!");
-        MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
+        for (String in : getInputFiles()) {
+            if (!new File(in).exists())
+                throwValidationException("ERROR: input file \"" + in + "\" does not exist.", false);
+            validateInfo(in);
+        }
+
+        if (forceOverwrite)
+            return;
+        if (new File(logFileName).exists()) {
+            List<String> outputFileNames = getOutputFiles();
+            if (outputFileNames.size() == 1) {
+                if (!overwriteIfRequired)
+                    throwValidationException("Log file " + logFileName + " already exists, and it's empty. "
+                            + "Use -f / --force-overwrite or --overwrite-if-required option to overwrite it.");
+            } else  {
+                List<String> existingFiles = new ArrayList<>();
+                List<String> missingFiles = new ArrayList<>();
+                for (String f : outputFileNames)
+                    if (!f.equals(logFileName)) {
+                        if (new File(f).exists())
+                            existingFiles.add(f);
+                        else
+                            missingFiles.add(f);
+                    }
+                if (overwriteIfRequired) {
+                    if (missingFiles.size() > 0)
+                        return;
+                    for (String f : existingFiles)
+                        handleExistenceOfOutputFile(f);
+                    if (isSkipExecution() && !verbose && (getOutputFiles().size() > 1))
+                        warn("Skipping " + DEMULTIPLEX_ACTION_NAME + ". All output files already exist and contain "
+                                + "correct binary data obtained from the specified input file.");
+                } else
+                    handleExistenceOfOutputFile(existingFiles.get(0));
+            }
+        }
     }
 
     @Override
@@ -93,8 +129,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         List<String> outputFileNames = new ArrayList<>();
         outputFileNames.add(logFileName);
         if (new File(logFileName).exists())
-            try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName)))
-            {
+            try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName))) {
                 String loggedFileName;
                 while ((loggedFileName = logReader.readLine()) != null)
                     outputFileNames.add(loggedFileName);
@@ -102,11 +137,6 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
                 throw exitWithError("Bad or corrupted log file, read error: " + e.getMessage());
             }
         return outputFileNames;
-    }
-
-    @Override
-    public void handleExistenceOfOutputFile(String outFileName) {
-        MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
     }
 
     @Override
@@ -194,7 +224,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
         }
 
         private String stripQuotes(String str) {
-            return str.replace("/(^\"|\')|(\"|\'$)/g", "");
+            return str.replace("/(^\"|')|(\"|'$)/g", "");
         }
     }
 
