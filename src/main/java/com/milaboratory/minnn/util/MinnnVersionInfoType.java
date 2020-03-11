@@ -26,26 +26,8 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.cli;
+package com.milaboratory.minnn.util;
 
-import org.junit.*;
-
-import java.io.File;
-
-import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
-import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static org.junit.Assert.*;
-
-public class GenerateDocsActionTest {
-    @BeforeClass
-    public static void init() {
-        actionTestInit();
-    }
-
-    @Test
-    public void simpleTest() throws Exception {
-        String tempFile = TEMP_DIR + "generateDocsTest.rst";
-        exec("docs --output " + tempFile);
-        assertTrue(new File(tempFile).delete());
-    }
+public enum MinnnVersionInfoType {
+    VERSION_INFO_SHORTEST, VERSION_INFO_MAIN, VERSION_INFO_MIF
 }

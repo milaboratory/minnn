@@ -438,29 +438,35 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                 Alignment<NucleotideSequenceCaseSensitive> alignment;
 
                 for (currentIndex = 0; currentIndex < sequences.size(); currentIndex++) {
-                    if (bitapMatcherFilters.get(currentIndex).findNext() == -1)
-                        continue;
                     NucleotideSequenceCaseSensitive currentSeq = sequences.get(currentIndex);
+                    int seqSize = currentSeq.size();
+                    int maxErrors = fixedConfiguration.bitapMaxErrors;
+                    int bitapMinAllowedResult = Math.max(0, Math.min(target.size() - 1,
+                            fixedLeftBorder + seqSize - maxErrors - 1));
+                    int bitapMaxAllowedResult = Math.min(target.size() - 1,
+                            fixedLeftBorder + seqSize + maxErrors - 1);
+                    if (bitapNextWithinRange(bitapMinAllowedResult, bitapMaxAllowedResult) == -1)
+                        continue;
+
                     HashSet<Range> uniqueRanges = new HashSet<>();
-                    for (int rightBorder = Math.max(fixedLeftBorder, fixedLeftBorder + currentSeq.size()
-                            - fixedConfiguration.bitapMaxErrors - 1);
-                         rightBorder <= Math.min(to - 1, fixedLeftBorder + currentSeq.size()
-                                 + fixedConfiguration.bitapMaxErrors - 1);
-                         rightBorder++)
-                        if ((rightBorder >= fixedLeftBorder) && (rightBorder < target.size())) {
-                            alignment = Objects.requireNonNull(fixedConfiguration.patternAligner.align(
-                                    fixedConfiguration, false, currentSeq, target, rightBorder));
-                            Range range = alignment.getSequence2Range();
-                            if ((alignment.getScore() >= fixedConfiguration.scoreThreshold)
-                                    && !uniqueRanges.contains(range)) {
-                                uniqueRanges.add(range);
-                                MatchIntermediate match = generateMatch(alignment, target, targetId,
-                                        firstUppercase(currentSeq), lastUppercase(currentSeq),
-                                        fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
-                                        currentSeq.size()), 0, conf.defaultGroupsOverride);
-                                allMatches.add(new ComparableMatch(range, match));
-                            }
+                    // from must be <= fixedLeftBorder at this point
+                    int rightBorderMin = Math.max(fixedLeftBorder, fixedLeftBorder + seqSize - maxErrors - 1);
+                    // fixedRightBorder must be -1 at this point
+                    int rightBorderMax = Math.min(to - 1, fixedLeftBorder + seqSize + maxErrors - 1);
+                    for (int rightBorder = rightBorderMin; rightBorder <= rightBorderMax; rightBorder++) {
+                        alignment = Objects.requireNonNull(fixedConfiguration.patternAligner.align(
+                                fixedConfiguration, false, currentSeq, target, rightBorder));
+                        Range range = alignment.getSequence2Range();
+                        if ((alignment.getScore() >= fixedConfiguration.scoreThreshold)
+                                && !uniqueRanges.contains(range)) {
+                            uniqueRanges.add(range);
+                            MatchIntermediate match = generateMatch(alignment, target, targetId,
+                                    firstUppercase(currentSeq), lastUppercase(currentSeq),
+                                    fixGroupEdgePositions(groupEdgePositions, groupOffsets.get(currentIndex),
+                                            currentSeq.size()), 0, conf.defaultGroupsOverride);
+                            allMatches.add(new ComparableMatch(range, match));
                         }
+                    }
                 }
 
                 allMatchesIterator = allMatches.iterator();
@@ -476,9 +482,20 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                 Alignment<NucleotideSequenceCaseSensitive> alignment;
 
                 for (currentIndex = 0; currentIndex < sequences.size(); currentIndex++) {
-                    if (bitapMatcherFilters.get(currentIndex).findNext() == -1)
-                        continue;
                     NucleotideSequenceCaseSensitive currentSeq = sequences.get(currentIndex);
+                    int maxErrors = fixedConfiguration.bitapMaxErrors;
+                    int bitapMinAllowedResult = Math.max(0, fixedRightBorder - maxErrors);
+                    int bitapMaxAllowedResult = Math.min(target.size() - 1, fixedRightBorder + maxErrors);
+                    if (fixedLeftBorder != -1) {
+                        int seqSize = currentSeq.size();
+                        bitapMinAllowedResult = Math.max(bitapMinAllowedResult,
+                                fixedLeftBorder + seqSize - maxErrors - 1);
+                        bitapMaxAllowedResult = Math.min(bitapMaxAllowedResult,
+                                fixedLeftBorder + seqSize + maxErrors - 1);
+                    }
+                    if (bitapNextWithinRange(bitapMinAllowedResult, bitapMaxAllowedResult) == -1)
+                        continue;
+
                     alignment = Objects.requireNonNull(fixedConfiguration.patternAligner.align(
                             fixedConfiguration, false, currentSeq, target, fixedRightBorder));
                     if (alignment.getScore() >= fixedConfiguration.scoreThreshold) {
@@ -514,6 +531,26 @@ public final class FuzzyMatchPattern extends SinglePattern implements CanBeSingl
                     else
                         return Math.min(correctPosition, targetLength - 1);
                 }
+            }
+
+            /**
+             * Find bitap match position within range or return -1 if there are no matches within range.
+             *
+             * @param min   minimal allowed match position, inclusive
+             * @param max   maximal allowed match position, inclusive
+             * @return      found bitap match position within range or -1 if there are no matches within range
+             */
+            private int bitapNextWithinRange(int min, int max) {
+                if (min > max)
+                    return -1;
+
+                BitapMatcherFilter currentBitapFilter = bitapMatcherFilters.get(currentIndex);
+                int foundPosition;
+                do {
+                    foundPosition = correctBitapPosition(currentBitapFilter.findNext());
+                } while ((foundPosition != -1) && ((foundPosition < min) || (foundPosition > max)));
+
+                return foundPosition;
             }
         }
     }

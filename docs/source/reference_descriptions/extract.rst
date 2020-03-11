@@ -20,10 +20,11 @@ action with input from MIF. If :code:`--output` argument is missing, data will b
 For example, if there are 2 FASTQ files in the input, there must be a read separator (``\``) in the pattern with
 queries for :code:`R1` and :code:`R2`.
 
-If there is more than 1 read in the input, extract action will search :code:`R1`, :code:`R2` combination and then try
-the same search with swapped reads :code:`R2`, :code:`R1`. Then it will choose the match with better score. This will
-be done for each multi-read sequence from input. This is the default behavior; if you want to check only :code:`R1`,
-:code:`R2` combination without checking reversed order, use :code:`--oriented` flag.
+By default, if there is more than 1 read in the input, extract action will check input reads in order they specified in
+:code:`--input` argument, or if input file is MIF, then in order they saved in MIF file. If :code:`--try-reverse-order`
+argument is specified, it will also try the combination with 2 swapped last reads (for example, if there are 3 reads,
+it will try :code:`R1, R2, R3` and :code:`R1, R3, R2` combinations), and then choose the match with better score.
+This will be done for each multi-read sequence from the input.
 
 Extract action uses bitap algorithm to quickly search nucleotide sequences from pattern in the target, and then
 it uses aligner to align pattern sequence with found section of the target and calculate match score. You can set
@@ -46,7 +47,7 @@ Extract action uses internal heuristics to speed up the search and reduce the nu
 using pattern sequences and logical operators. This can produce wrong results in rare cases. There is the option
 :code:`--fair-sorting` to always do full search, but this is much slower than default unfair sorting.
 
-:code:`--threads` option sets the number of threads for pattern matching. It is recommended to set it equal to the
+:code:`--threads` option sets the number of threads for pattern matching. By default, it is equal to available
 number of CPU cores.
 
 :code:`--not-matched-output` argument allows to write not matched reads to the separate MIF file. By default (if this

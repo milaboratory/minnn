@@ -221,7 +221,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Option(description = "Number of threads for parsing reads.",
             names = {"--threads"})
-    private int threads = DEFAULT_THREADS;
+    private int threads = Runtime.getRuntime().availableProcessors();
 
     @Option(description = REPORT,
             names = "--report")

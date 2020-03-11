@@ -46,7 +46,8 @@ import java.util.stream.Collectors;
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -55,6 +56,7 @@ public final class DemultiplexIO {
     private final String inputFileName;
     private final List<DemultiplexFilter> demultiplexFilters;
     private final String logFileName;
+    private final boolean allowOverwriting;
     private final int outputBufferSize;
     private final long inputReadsLimit;
     private final String reportFileName;
@@ -65,13 +67,15 @@ public final class DemultiplexIO {
     private MifHeader header;
     private long originalNumberOfReads;
 
-    public DemultiplexIO(PipelineConfiguration pipelineConfiguration, String inputFileName,
-                         List<DemultiplexArgument> demultiplexArguments, String logFileName, int outputBufferSize,
-                         long inputReadsLimit, String reportFileName, String jsonReportFileName) {
+    public DemultiplexIO(
+            PipelineConfiguration pipelineConfiguration, String inputFileName,
+            List<DemultiplexArgument> demultiplexArguments, String logFileName, boolean allowOverwriting,
+            int outputBufferSize, long inputReadsLimit, String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.demultiplexFilters = demultiplexArguments.stream().map(this::parseFilter).collect(Collectors.toList());
         this.logFileName = logFileName;
+        this.allowOverwriting = allowOverwriting;
         this.outputBufferSize = outputBufferSize;
         this.inputReadsLimit = inputReadsLimit;
         this.reportFileName = reportFileName;
@@ -118,7 +122,7 @@ public final class DemultiplexIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
-        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
+        reportFileHeader.append("MiNNN v").append(getVersionString(VERSION_INFO_SHORTEST)).append('\n');
         reportFileHeader.append("Report for Demultiplex command:\n");
         if (inputFileName == null)
             reportFileHeader.append("Input is from stdin\n");
@@ -132,7 +136,7 @@ public final class DemultiplexIO {
         report.append("Processed ").append(totalReads).append(" reads, matched ").append(matchedReads)
                 .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
 
-        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("version", getVersionString(VERSION_INFO_SHORTEST));
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("prefix", prefix);
         jsonReportData.put("outputFilesNum", outputFileNames.size());
@@ -152,12 +156,12 @@ public final class DemultiplexIO {
     }
 
     private MifWriter getMifWriter(OutputFileIdentifier outputFileIdentifier) {
-        if (outputFileIdentifiers.containsKey(outputFileIdentifier))
-            return outputFileIdentifiers.get(outputFileIdentifier).getWriter();
-        else {
+        OutputFileIdentifier cachedIdentifier = outputFileIdentifiers.get(outputFileIdentifier);
+        if (cachedIdentifier == null) {
             outputFileIdentifiers.put(outputFileIdentifier, outputFileIdentifier);
-            return outputFileIdentifier.getWriter();
+            cachedIdentifier = outputFileIdentifier;
         }
+        return cachedIdentifier.getWriter();
     }
 
     private DemultiplexResult demultiplex(ParsedRead parsedRead) {
@@ -351,7 +355,10 @@ public final class DemultiplexIO {
         MifWriter getWriter() {
             if (writer == null) {
                 try {
-                    writer = new MifWriter(toString(), header, outputBufferSize);
+                    String fileName = toString();
+                    if (!allowOverwriting && new File(fileName).exists())
+                        throw exitWithError("File " + fileName + " already exists, and overwriting was not enabled!");
+                    writer = new MifWriter(fileName, header, outputBufferSize);
                 } catch (IOException e) {
                     throw exitWithError(e.getMessage());
                 }

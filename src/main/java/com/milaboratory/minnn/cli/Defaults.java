@@ -52,7 +52,6 @@ public final class Defaults {
     public final static int DEFAULT_MAX_QUALITY_PENALTY = -4;
     public final static long DEFAULT_SINGLE_OVERLAP_PENALTY = DEFAULT_GAP_SCORE;
     public final static long DEFAULT_NOT_RESULT_SCORE = 0;
-    public final static int DEFAULT_THREADS = 4;
     public final static MinnnDataFormat DEFAULT_INPUT_FORMAT = FASTQ;
     public final static int DEFAULT_SORT_MIN_CHUNK_SIZE = 16384;
     public final static int DEFAULT_SORT_MAX_CHUNK_SIZE = 65536;
@@ -63,6 +62,7 @@ public final class Defaults {
     public final static float DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY = 0.1f;
     public final static float DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY = 0.02f;
     public final static float DEFAULT_CORRECT_WILDCARDS_COLLAPSING_MERGE_THRESHOLD = 10.0f;
+    public final static int DEFAULT_CORRECT_MAX_THREADS = 4;
     public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 20;
     public final static int DEFAULT_CONSENSUS_SCORE_THRESHOLD = -100;
     public final static float DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT = 0.05f;
@@ -78,6 +78,7 @@ public final class Defaults {
     public final static long DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY = -17;
     public final static byte DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD = GOOD_QUALITY_VALUE;
     public final static int DEFAULT_CONSENSUS_MAX_WARNINGS = 5;
+    public final static int DEFAULT_CONSENSUS_MAX_THREADS = 10;
     public final static int DEFAULT_CONSENSUS_KMER_LENGTH = 21;
     public final static int DEFAULT_CONSENSUS_KMER_OFFSET = 15;
     public final static int DEFAULT_CONSENSUS_KMER_MAX_ERRORS = 3;

@@ -29,11 +29,10 @@ sequences.
 files, in this case ``\`` character must not be used. In multi-read inputs ``\`` must be used, and number
 of reads in pattern must be equal to number of input FASTQ files (or to number of reads in input MIF file if
 :code:`--input-format MIF` parameter is used). There can be many reads, but the most common case is 2 reads:
-:code:`R1` and :code:`R2`. By default, extract action will search :code:`R1`, :code:`R2` combination and then try
-the same search with swapped reads :code:`R2`, :code:`R1`. Then it will choose the match with better score. This is
-the default behavior; if you want to check only :code:`R1`, :code:`R2` combination without checking reversed order,
-use :code:`--oriented` flag. :code:`R3`, :code:`R4`, :code:`R5` and further reads are never swapped and not affected
-by :code:`--oriented` flag.
+:code:`R1` and :code:`R2`. By default, extract action will check input reads in order they specified in
+:code:`--input` argument, or if input file is MIF, then in order they saved in MIF file. If :code:`--try-reverse-order`
+argument is specified, it will also try the combination with 2 swapped last reads (for example, if there are 3 reads,
+it will try :code:`R1, R2, R3` and :code:`R1, R3, R2` combinations), and then choose the match with better score.
 
 Another important syntax element is capture group. It looks like :code:`(group_name:query)` where :code:`group_name`
 is any sequence of letters and digits (like :code:`UMI` or :code:`SB1`) that you use as group name. Group names are
@@ -53,12 +52,13 @@ can be used if you want to strip first 3 characters and override built-in :code:
 output reads without stripped characters. Note that :code:`R1`, :code:`R2`, :code:`R3` etc, like any common groups,
 can contain nested groups and can be nested inside other groups.
 
-**Important:** in matches that come from swapped :code:`R1` and :code:`R2` reads, :code:`R1` in input will become
-:code:`R2` in output and vice versa, if you don't use built-in group names override. If you use the override,
+**Important:** in matches that come from swapped reads (when :code:`--try-reverse-order` argument is specified),
+if you don't use built-in group names override, :code:`R1` in input will become :code:`R2` in output and vice versa
+(or there can be, for example, swapped :code:`R2` and :code:`R3` in case of 3 reads). If you use the override,
 :code:`R1`, :code:`R2`, :code:`R3` etc in output will come from the place where they matched. If you export the output
 MIF file from :ref:`extract` action to FASTQ and want to determine whether the match came from straight or swapped
-:code:`R1`, :code:`R2`, check the comments for :code:`||~` character sequence: it is added to matches that came from
-swapped reads. Look at :ref:`mif2fastq` section for detailed information.
+reads, check the comments for :code:`||~` character sequence: it is added to matches that came from swapped reads.
+Look at :ref:`mif2fastq` section for detailed information.
 
 :code:`*` character can be used instead of read contents if any contents must match. It can be enclosed in one or
 multiple capture groups, but can't be used if there are other query elements in the same read. If there are other
@@ -66,7 +66,7 @@ query elements, use :code:`N{*}` instead. For example, the following queries are
 
 .. code-block:: text
 
-   minnn extract --input R1.fastq R2.fastq --oriented --pattern "(G1:ATTA)\(G2:(G3:*))"
+   minnn extract --input R1.fastq R2.fastq --try-reverse-order --pattern "(G1:ATTA)\(G2:(G3:*))"
    minnn extract --input R1.fastq R2.fastq R3.fastq --pattern "*\*\*"
    minnn extract --input R1.fastq R2.fastq --pattern "(G1:ATTAN{*})\(G2:*)"
 
@@ -217,7 +217,7 @@ not matched in the output while the entire query is matched. Examples:
 
 .. code-block:: text
 
-   minnn extract --pattern "[AA\*\TT] || [*\GG\CG]" --oriented --input R1.fastq R2.fastq R3.fastq
+   minnn extract --pattern "[AA\*\TT] || [*\GG\CG]" --input R1.fastq R2.fastq R3.fastq
    minnn extract --pattern "[^(G1:AA) + [ATTA || GACA]$ \ *] || [AT(G1:N{:8})\(G2:AATGC)]" --input R1.fastq R2.fastq
 
 :code:`&&` operator is high-level AND. For AND operator it is not necessary to enclose multi-read query in square
@@ -226,7 +226,7 @@ brackets because there is no ambiguity. Groups with the same name are **not** al
 
 .. code-block:: text
 
-   minnn extract --pattern "AA\*\TT && *\GG\CG" --oriented --input R1.fastq R2.fastq R3.fastq
+   minnn extract --pattern "AA\*\TT && *\GG\CG" --input R1.fastq R2.fastq R3.fastq
    minnn extract --pattern "^(G1:AA) + [ATTA || GACA]$ \ * && AT(G2:N{:8})\(G3:AATGC)" --input R1.fastq R2.fastq
 
 :code:`~` is high-level NOT operator with single operand. It can sometimes be useful with single-read queries to
@@ -250,8 +250,8 @@ Instead, this query can be used:
 
    minnn extract --pattern "~[ATTAGACA \ *] && * \ TTC" --input R1.fastq R2.fastq
 
-Note that if :code:`R1` and :code:`R2` are swapped, they will be swapped synchronously for all multi-read queries
-that appear as operands in the entire query, so this query will never match:
+Note that if :code:`--try-reverse-order` argument is specified, reads will be swapped synchronously for all multi-read
+queries that appear as operands in the entire query, so this query will never match:
 
 .. code-block:: text
 

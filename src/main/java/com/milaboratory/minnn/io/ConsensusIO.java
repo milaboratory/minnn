@@ -54,7 +54,8 @@ import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.consensus.ConsensusAlgorithms.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -149,7 +150,7 @@ public final class ConsensusIO {
             this.reportFileOutputStream = null;
         else
             try {
-                this.reportFileOutputStream = new PrintStream(new FileOutputStream(reportFileName));
+                this.reportFileOutputStream = new PrintStream(new FileOutputStream(reportFileName, true));
             } catch (IOException e) {
                 throw exitWithError(e.toString());
             }
@@ -196,7 +197,7 @@ public final class ConsensusIO {
         MifHeader mifHeader;
         long originalNumberOfReads;
         if (reportFileOutputStream != null) {
-            reportFileOutputStream.println("MiNNN v" + getShortestVersionString());
+            reportFileOutputStream.println("MiNNN v" + getVersionString(VERSION_INFO_SHORTEST));
             reportFileOutputStream.println("Report for Consensus command:");
             if (inputFileName == null)
                 reportFileOutputStream.println("Input is from stdin");
@@ -475,7 +476,7 @@ public final class ConsensusIO {
             report.append("Average number of consensuses per barcode group: ")
                     .append(floatFormat.format((float)consensusReads / clustersCount)).append("\n");
 
-        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("version", getVersionString(VERSION_INFO_SHORTEST));
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("consensusGroups", consensusGroups);
@@ -487,7 +488,7 @@ public final class ConsensusIO {
 
         System.err.println(report.toString());
         if (reportFileOutputStream != null) {
-            reportFileOutputStream.print(report.toString());
+            reportFileOutputStream.println(report.toString());
             reportFileOutputStream.close();
         }
         jsonReport(jsonReportFileName, jsonReportData);

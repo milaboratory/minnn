@@ -5,7 +5,7 @@ set -euxo pipefail
 prefix=empty_reads_test
 input="R1_with_empty_reads.fastq.gz R2_with_empty_reads.fastq.gz"
 pattern="(FULL:tggtatcaacgcagagt(G1:n{4}tn{4}tn{4})tct)\(G2:*)"
-minnn extract -Xmx900M -f --pattern "$pattern" --input ${input} --output ${prefix}_extracted.mif --not-matched-output ${prefix}_not_matched.mif
+minnn extract -Xmx900M -f --pattern "$pattern" --input ${input} --output ${prefix}_extracted.mif --not-matched-output ${prefix}_not_matched.mif --try-reverse-order
 minnn sort -Xmx900M -f --groups G1 G2 --input ${prefix}_extracted.mif --output ${prefix}_sorted_G1G2.mif
 minnn sort -Xmx900M -f --groups G2 --input ${prefix}_extracted.mif --output ${prefix}_sorted_G2.mif
 minnn correct -Xmx900M -f -n 1000 --groups G2 --input ${prefix}_sorted_G2.mif --output ${prefix}_corrected.mif

@@ -44,13 +44,13 @@ final class ReportWriter {
         PrintStream reportFileOutputStream = null;
         try {
             if (fileName != null)
-                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName));
+                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName, true));
         } catch (IOException e) {
             throw exitWithError(e.toString());
         }
         if (reportFileOutputStream != null) {
             reportFileOutputStream.print(fileHeader);
-            reportFileOutputStream.print(text);
+            reportFileOutputStream.println(text);
             reportFileOutputStream.close();
         }
     }
@@ -59,7 +59,7 @@ final class ReportWriter {
         PrintStream reportFileOutputStream = null;
         try {
             if (fileName != null)
-                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName));
+                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName, true));
         } catch (IOException e) {
             throw exitWithError(e.toString());
         }

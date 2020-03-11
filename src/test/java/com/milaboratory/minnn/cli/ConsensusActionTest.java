@@ -41,16 +41,12 @@ import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class ConsensusActionTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
-        File outputFilesDirectory = new File(TEMP_DIR);
-        if (!outputFilesDirectory.exists())
-            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+        actionTestInit();
     }
 
     @Test

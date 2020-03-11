@@ -37,7 +37,6 @@ import picocli.CommandLine.Model.*;
 
 import java.util.*;
 
-import static com.milaboratory.cli.AppVersionInfo.OutputType.*;
 import static com.milaboratory.minnn.cli.ConsensusDoubleMultiAlignAction.CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ConsensusSingleCellAction.CONSENSUS_SINGLE_CELL_ACTION_NAME;
 import static com.milaboratory.minnn.cli.CorrectAction.CORRECT_ACTION_NAME;
@@ -48,12 +47,14 @@ import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
 import static com.milaboratory.minnn.cli.FilterByCountAction.FILTER_BY_COUNT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.GenerateDocsAction.GENERATE_DOCS_ACTION_NAME;
+import static com.milaboratory.minnn.cli.MifInfoAction.MIF_INFO_ACTION_NAME;
 import static com.milaboratory.minnn.cli.MifToFastqAction.MIF_TO_FASTQ_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ReportAction.REPORT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAME;
 import static com.milaboratory.minnn.cli.StatPositionsAction.STAT_POSITIONS_ACTION_NAME;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 public final class Main {
@@ -110,7 +111,7 @@ public final class Main {
             componentVersions.put("milib", milibVersionInfo);
             componentVersions.put(APP_NAME, minnnVersionInfo);
             AppVersionInfo.init(componentVersions, new HashMap<>());
-            versionInfo = getVersionString(ToConsole, true).split("\n");
+            versionInfo = getVersionString(VERSION_INFO_MAIN).split("\n");
 
             // Checking whether we are running a snapshot version
             if (minnnVersionInfo.getVersion().contains("SNAPSHOT")) {
@@ -139,6 +140,7 @@ public final class Main {
                 .addSubcommand(CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME, ConsensusDoubleMultiAlignAction.class)
                 .addSubcommand(MIF_TO_FASTQ_ACTION_NAME, MifToFastqAction.class)
                 .addSubcommand(DECONTAMINATE_ACTION_NAME, DecontaminateAction.class)
+                .addSubcommand(MIF_INFO_ACTION_NAME, MifInfoAction.class)
                 .addSubcommand(GENERATE_DOCS_ACTION_NAME, GenerateDocsAction.class)
                 .addSubcommand("help", HelpCommand.class);
         cmd.setSeparator(" ");

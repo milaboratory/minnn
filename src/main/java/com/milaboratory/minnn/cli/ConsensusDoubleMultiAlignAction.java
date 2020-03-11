@@ -236,7 +236,7 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
 
     @Option(description = CONSENSUS_NUMBER_OF_THREADS,
             names = {"--threads"})
-    private int threads = DEFAULT_THREADS;
+    private int threads = Math.min(DEFAULT_CONSENSUS_MAX_THREADS, Runtime.getRuntime().availableProcessors());
 
     @Option(description = REPORT,
             names = "--report")

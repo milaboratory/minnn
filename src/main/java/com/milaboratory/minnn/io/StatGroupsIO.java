@@ -43,7 +43,8 @@ import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -134,7 +135,7 @@ public final class StatGroupsIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
-        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
+        reportFileHeader.append("MiNNN v").append(getVersionString(VERSION_INFO_SHORTEST)).append('\n');
         reportFileHeader.append("Report for StatGroups command:\n");
         if (inputFileName == null)
             reportFileHeader.append("Input is from stdin\n");
@@ -147,14 +148,6 @@ public final class StatGroupsIO {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
-        if (correctedGroups.size() == 0)
-            report.append("Input MIF file is not corrected\n");
-        else
-            report.append("Groups ").append(correctedGroups).append(" in input MIF file are corrected\n");
-        if (sortedGroups.size() == 0)
-            report.append("Input MIF file is not sorted\n");
-        else
-            report.append("Groups ").append(sortedGroups).append(" in input MIF file are sorted\n");
         report.append("Checked ").append(totalReads).append(" reads\n");
         long countedReads = table.stream().mapToLong(line -> line.count).sum();
         if (totalReads > 0)
@@ -162,7 +155,7 @@ public final class StatGroupsIO {
                     .append(floatFormat.format((float)countedReads / totalReads * 100))
                     .append("% of checked reads)\n");
 
-        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("version", getVersionString(VERSION_INFO_SHORTEST));
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("correctedGroups", correctedGroups);

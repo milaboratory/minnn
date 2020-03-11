@@ -44,6 +44,7 @@ import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.correct.CorrectionAlgorithms.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -174,7 +175,7 @@ public final class CorrectBarcodesIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
-        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
+        reportFileHeader.append("MiNNN v").append(getVersionString(VERSION_INFO_SHORTEST)).append('\n');
         reportFileHeader.append("Report for Correct command:\n");
         reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
         if (outputFileName == null)
@@ -235,7 +236,7 @@ public final class CorrectBarcodesIO {
                     .append(floatFormat.format((float)stats.totalWildcards / stats.totalNucleotides * 100))
                     .append("% of all letters in barcodes)\n");
 
-        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("version", getVersionString(VERSION_INFO_SHORTEST));
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("excludedBarcodesOutputFileName", excludedBarcodesOutputFileName);
