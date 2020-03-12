@@ -28,14 +28,7 @@
  */
 package com.milaboratory.minnn.stat;
 
-import com.milaboratory.core.sequence.*;
-
-import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
-import static com.milaboratory.minnn.util.SequencesCache.*;
-
 public final class SimpleMutationProbability implements MutationProbability {
-    private static final byte basicSize = (byte)(ALPHABET.basicSize());
-    private static final float badQualityBasicProbability = 1.0f / basicSize;
     private final float basicSubstitutionProbability;
     private final float indelProbability;
 
@@ -50,47 +43,7 @@ public final class SimpleMutationProbability implements MutationProbability {
             throw new IllegalArgumentException("Mutation must not be insertion and deletion in the same time!");
         else if ((from == -1) || (to == -1))
             return indelProbability;
-        else {
-            float[] fromProbabilities = new float[basicSize];
-            float[] toProbabilities = new float[basicSize];
-
-            float fromProbabilitiesSum = 0;
-            float toProbabilitiesSum = 0;
-            for (int i = 0; i < basicSize; i++) {
-                float fromProbability = qualityToLetterProbabilityCache[fromQual];
-                Wildcard fromWildcard = ALPHABET.codeToWildcard(from);
-                if (fromProbability < badQualityBasicProbability)
-                    fromProbability = badQualityBasicProbability;
-                else if ((fromWildcard.getBasicMask() & basicLettersMasks[i]) == 0)
-                    fromProbability = (1 - fromProbability) / (basicSize - fromWildcard.basicSize());
-                else
-                    fromProbability = fromProbability / fromWildcard.basicSize();
-                fromProbabilities[i] = fromProbability;
-                fromProbabilitiesSum += fromProbability;
-
-                float toProbability = qualityToLetterProbabilityCache[toQual];
-                Wildcard toWildcard = ALPHABET.codeToWildcard(to);
-                if (toProbability < badQualityBasicProbability)
-                    toProbability = badQualityBasicProbability;
-                else if ((toWildcard.getBasicMask() & basicLettersMasks[i]) == 0)
-                    toProbability = (1 - toProbability) / (basicSize - toWildcard.basicSize());
-                else
-                    toProbability = toProbability / toWildcard.basicSize();
-                toProbabilities[i] = toProbability;
-                toProbabilitiesSum += toProbability;
-            }
-
-            float substitutionProbability = 0;
-            for (int i = 0; i < basicSize; i++)
-                for (int j = 0; j < basicSize; j++) {
-                    float combinationProbability = fromProbabilities[i] * toProbabilities[j]
-                            / fromProbabilitiesSum / toProbabilitiesSum;
-                    if (from == to)
-                        substitutionProbability += combinationProbability;
-                    else
-                        substitutionProbability += combinationProbability * basicSubstitutionProbability;
-                }
-            return substitutionProbability;
-        }
+        else
+            return basicSubstitutionProbability;
     }
 }
