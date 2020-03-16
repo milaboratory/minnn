@@ -41,11 +41,13 @@ import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.util.SmartProgressReporter;
+import com.milaboratory.util.TempFileManager;
 import gnu.trove.map.hash.TLongLongHashMap;
+import org.clapper.util.misc.FileHashMap;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -95,7 +97,7 @@ public final class ConsensusIO {
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
-    private final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
+    private final FileHashMap<Long, OriginalReadData> originalReadsData;
     private final TLongLongHashMap consensusFinalIds;
     private ConsensusAlgorithm consensusAlgorithm;
     private long consensusReads = 0;
@@ -162,8 +164,16 @@ public final class ConsensusIO {
             throw exitWithError(e.toString());
         }
         this.debugQualityThreshold = debugQualityThreshold;
-        this.originalReadsData = ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
-                ? new ConcurrentHashMap<>() : null;
+        if ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null)) {
+            try {
+                File tempFile = TempFileManager.getTempFile((outputFileName == null) ? null
+                        : Paths.get(new File(outputFileName).getAbsolutePath()).getParent());
+                this.originalReadsData = new FileHashMap<>(tempFile.getAbsolutePath());
+            } catch (IOException e) {
+                throw exitWithError(e.getMessage());
+            }
+        } else
+            this.originalReadsData = null;
         this.consensusFinalIds = (originalReadStatsFileName == null) ? null : new TLongLongHashMap();
     }
 

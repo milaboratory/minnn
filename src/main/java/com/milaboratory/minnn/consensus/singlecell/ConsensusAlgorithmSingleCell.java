@@ -36,10 +36,10 @@ import com.milaboratory.minnn.consensus.trimmer.ConsensusBuilder;
 import gnu.trove.map.hash.TByteObjectHashMap;
 import gnu.trove.map.hash.TLongIntHashMap;
 import gnu.trove.set.hash.TLongHashSet;
+import org.clapper.util.misc.FileHashMap;
 
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import static com.milaboratory.minnn.consensus.ConsensusStageForDebug.*;
@@ -56,7 +56,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
             float avgQualityThresholdForLowCoverage, int trimWindowSize, boolean toSeparateGroups,
             PrintStream debugOutputStream, byte debugQualityThreshold,
-            ConcurrentHashMap<Long, OriginalReadData> originalReadsData, int kmerLength, int kmerMaxOffset,
+            FileHashMap<Long, OriginalReadData> originalReadsData, int kmerLength, int kmerMaxOffset,
             int kmerMatchMaxErrors) {
         super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
                 Math.max(readsMinGoodSeqLength, kmerLength), readsAvgQualityThreshold, readsTrimWindowSize,
@@ -187,8 +187,11 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
 
         if (usedReads.size() == 0) {
             if (collectOriginalReadsData)
-                for (long readId : skippedReads.toArray())
-                    originalReadsData.get(readId).status = KMERS_NOT_FOUND;
+                for (long readId : skippedReads.toArray()) {
+                    OriginalReadData originalReadData = getOriginalReadData(readId);
+                    originalReadData.status = KMERS_NOT_FOUND;
+                    setOriginalReadData(readId, originalReadData);
+                }
             return null;
         } else
             return new OffsetSearchResults(kmerOffsetsForTargets, usedReads, remainingReads,
@@ -281,9 +284,10 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             if (consensusBuilder.size() == 0) {
                 if (collectOriginalReadsData)
                     for (long readId : usedReadIds) {
-                        OriginalReadData currentReadData = originalReadsData.get(readId);
+                        OriginalReadData currentReadData = getOriginalReadData(readId);
                         currentReadData.status = CONSENSUS_DISCARDED_TRIM;
                         currentReadData.consensusTrimmedLettersCounters = trimmedLettersCounters;
+                        setOriginalReadData(readId, currentReadData);
                     }
                 return new Consensus(debugData, numberOfTargets, true);
             }
@@ -294,9 +298,10 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             if (consensusTrimmedSequence == null) {
                 if (collectOriginalReadsData)
                     for (long readId : usedReadIds) {
-                        OriginalReadData currentReadData = originalReadsData.get(readId);
+                        OriginalReadData currentReadData = getOriginalReadData(readId);
                         currentReadData.status = CONSENSUS_DISCARDED_TRIM;
                         currentReadData.consensusTrimmedLettersCounters = trimmedLettersCounters;
+                        setOriginalReadData(readId, currentReadData);
                     }
                 return new Consensus(debugData, numberOfTargets, true);
             } else
@@ -310,10 +315,11 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                 defaultGroupsOverride.get());
         if (collectOriginalReadsData)
             for (long readId : usedReadIds) {
-                OriginalReadData currentReadData = originalReadsData.get(readId);
+                OriginalReadData currentReadData = getOriginalReadData(readId);
                 currentReadData.status = USED_IN_CONSENSUS;
                 currentReadData.consensusTrimmedLettersCounters = trimmedLettersCounters;
                 currentReadData.setConsensus(consensus);
+                setOriginalReadData(readId, currentReadData);
             }
         return consensus;
     }

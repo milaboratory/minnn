@@ -34,7 +34,7 @@ import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.consensus.SpecialSequences.*;
 import static com.milaboratory.minnn.util.SequencesCache.*;
 
-public final class SequenceWithAttributes {
+public final class SequenceWithAttributes implements java.io.Serializable {
     private final NucleotideSequence seq;
     private final SequenceQuality qual;
     private final long originalReadId;

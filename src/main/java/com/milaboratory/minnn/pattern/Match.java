@@ -40,7 +40,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Serializable(by = IO.MatchSerializer.class)
-public class Match {
+public class Match implements java.io.Serializable {
     protected final int numberOfTargets;
     protected final long score;
     protected final ArrayList<MatchedGroupEdge> matchedGroupEdges;
@@ -171,7 +171,7 @@ public class Match {
             output.writeObject(matchedGroupEdge);
     }
 
-    private static class MatchedGroupEdgeIndex {
+    private static class MatchedGroupEdgeIndex implements java.io.Serializable {
         private final String groupName;
         private final boolean isStart;
 

@@ -28,7 +28,7 @@
  */
 package com.milaboratory.minnn.consensus;
 
-public final class Barcode {
+public final class Barcode implements java.io.Serializable {
     final String groupName;
     final SequenceWithAttributes value;
     final byte targetId;

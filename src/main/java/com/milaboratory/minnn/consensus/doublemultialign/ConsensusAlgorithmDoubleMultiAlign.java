@@ -34,10 +34,10 @@ import com.milaboratory.minnn.consensus.*;
 import com.milaboratory.minnn.consensus.trimmer.ConsensusBuilder;
 import com.milaboratory.minnn.consensus.trimmer.SequenceWithQualityAndCoverage;
 import gnu.trove.map.hash.TByteObjectHashMap;
+import org.clapper.util.misc.FileHashMap;
 
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.*;
 
@@ -61,7 +61,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold,
             float avgQualityThreshold, float avgQualityThresholdForLowCoverage, int trimWindowSize,
             boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
-            ConcurrentHashMap<Long, OriginalReadData> originalReadsData) {
+            FileHashMap<Long, OriginalReadData> originalReadsData) {
         super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
                 lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
@@ -394,12 +394,13 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             TrimmedLettersCounters consensusTrimmedLettersCounters, boolean stage2) {
         if (collectOriginalReadsData)
             subsequencesList.forEach(alignedSubsequences -> {
-                OriginalReadData originalReadData = originalReadsData.get(alignedSubsequences.originalReadId);
+                OriginalReadData originalReadData = getOriginalReadData(alignedSubsequences.originalReadId);
                 originalReadData.status = status;
                 if (consensus != null)
                     originalReadData.setConsensus(consensus);
                 originalReadData.consensusTrimmedLettersCounters = consensusTrimmedLettersCounters;
                 originalReadData.alignmentScores.set(stage2 ? 1 : 0, alignedSubsequences.alignmentScores);
+                setOriginalReadData(alignedSubsequences.originalReadId, originalReadData);
             });
     }
 
