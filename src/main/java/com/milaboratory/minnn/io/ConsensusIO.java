@@ -542,8 +542,11 @@ public final class ConsensusIO {
     }
 
     private void saveOriginalReadsData(ParsedRead parsedRead) {
-        if (originalReadsData != null)
-            originalReadsData.putIfAbsent(parsedRead.getOriginalRead().getId(), new OriginalReadData(parsedRead));
+        if (originalReadsData != null) {
+            synchronized (originalReadsData) {
+                originalReadsData.putIfAbsent(parsedRead.getOriginalRead().getId(), new OriginalReadData(parsedRead));
+            }
+        }
     }
 
     private synchronized void displayWarning(String text) {

@@ -89,12 +89,16 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         this.consensusCurrentTempId = new AtomicLong(0);
     }
 
-    protected synchronized OriginalReadData getOriginalReadData(long readId) {
-        return originalReadsData.get(readId);
+    protected OriginalReadData getOriginalReadData(long readId) {
+        synchronized (originalReadsData) {
+            return originalReadsData.get(readId);
+        }
     }
 
-    protected synchronized void setOriginalReadData(long readId, OriginalReadData originalReadData) {
-        originalReadsData.put(readId, originalReadData);
+    protected void setOriginalReadData(long readId, OriginalReadData originalReadData) {
+        synchronized (originalReadsData) {
+            originalReadsData.put(readId, originalReadData);
+        }
     }
 
     /**
