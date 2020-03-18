@@ -54,6 +54,7 @@ import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 public final class DemultiplexIO {
     private final PipelineConfiguration pipelineConfiguration;
     private final String inputFileName;
+    private final String outputFilesPath;
     private final List<DemultiplexFilter> demultiplexFilters;
     private final String logFileName;
     private final boolean allowOverwriting;
@@ -68,11 +69,12 @@ public final class DemultiplexIO {
     private long originalNumberOfReads;
 
     public DemultiplexIO(
-            PipelineConfiguration pipelineConfiguration, String inputFileName,
+            PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFilesPath,
             List<DemultiplexArgument> demultiplexArguments, String logFileName, boolean allowOverwriting,
             int outputBufferSize, long inputReadsLimit, String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
+        this.outputFilesPath = outputFilesPath;
         this.demultiplexFilters = demultiplexArguments.stream().map(this::parseFilter).collect(Collectors.toList());
         this.logFileName = logFileName;
         this.allowOverwriting = allowOverwriting;
