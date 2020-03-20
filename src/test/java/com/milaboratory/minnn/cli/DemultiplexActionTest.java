@@ -172,6 +172,24 @@ public class DemultiplexActionTest {
         Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
     }
 
+    @Test
+    public void multipleOptionsSampleTest() throws Exception {
+        String startFile = getExampleMif("twosided");
+        String inputFile = TEMP_DIR + TEST_FILENAME_PREFIX + "_input.mif";
+        String sampleFile = EXAMPLES_PATH + "demultiplex_samples/mulitple_options_sample.txt";
+        String tempOutputFile1 = TEMP_DIR + "R1.fastq";
+        String tempOutputFile2 = TEMP_DIR + "R2.fastq";
+        exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
+                + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\"");
+        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFile + " --demultiplex-log " + LOG_FILE);
+        for (File currentFile : getOutputFiles())
+            exec("mif2fastq -f --input " + currentFile + " --group R1=" + tempOutputFile1
+                    + " R2=" + tempOutputFile2);
+        for (String fileName : new String[] { startFile, inputFile, tempOutputFile1, tempOutputFile2, LOG_FILE })
+            assertTrue(new File(fileName).delete());
+        Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
+    }
+
     private static File[] getOutputFiles() {
         return new File(TEMP_DIR).listFiles((dummy, name) -> name.startsWith(TEST_FILENAME_PREFIX + '_'));
     }
