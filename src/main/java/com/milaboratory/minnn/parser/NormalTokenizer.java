@@ -64,6 +64,7 @@ final class NormalTokenizer extends Tokenizer {
         normalParsers.parseRepeatPatterns(getRepeatPatternBraces(bracesPairs, borderBracesPairs))
                 .forEach(tokenizedString::tokenizeSubstring);
         normalParsers.parseFuzzyMatchPatterns(tokenizedString).forEach(tokenizedString::tokenizeSubstring);
+        clearGarbageTokens(normalParsers, tokenizedString, false);
         normalParsers.parseAnyPatterns(tokenizedString).forEach(tokenizedString::tokenizeSubstring);
         clearGarbageTokens(normalParsers, tokenizedString, false);
         normalParsers.parseFilters(tokenizedString, false).forEach(tokenizedString::tokenizeSubstring);
