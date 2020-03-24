@@ -28,17 +28,17 @@ Examples for demultiplex action:
 
 Sample file is a plain-text table with values separated with spaces or tabs. First line contains the keyword
 :code:`Sample` and then group names. Other lines start with sample names and then there are values of the groups
-for this sample.
+for this sample. Multiple lines with the same sample name will be combined into one sample.
 
 Example for sample file with single group:
 
 .. code-block:: text
 
    Sample UMI
-   good_value_1 AAAA
-   good_value_2 TTTT
-   good_value_3 CCCC
-   good_value_4 AAGG
+   good_sample_1 AAAA
+   good_sample_1 TTTT
+   good_sample_2 CCCC
+   good_sample_2 AAGG
    error_value_1 GGAA
    error_value_2 AATT
    special_value TTAA
