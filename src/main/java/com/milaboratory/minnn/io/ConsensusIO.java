@@ -85,6 +85,7 @@ public final class ConsensusIO {
     private final int trimWindowSize;
     private final String originalReadStatsFileName;
     private final String notUsedReadsOutputFileName;
+    private final boolean saveNotUsedReads;
     private final boolean toSeparateGroups;
     private final long inputReadsLimit;
     private final int maxWarnings;
@@ -142,6 +143,7 @@ public final class ConsensusIO {
         this.trimWindowSize = trimWindowSize;
         this.originalReadStatsFileName = originalReadStatsFileName;
         this.notUsedReadsOutputFileName = notUsedReadsOutputFileName;
+        this.saveNotUsedReads = (notUsedReadsOutputFileName != null);
         this.inputReadsLimit = inputReadsLimit;
         this.maxWarnings = maxWarnings;
         this.threads = threads;
@@ -164,7 +166,7 @@ public final class ConsensusIO {
             throw exitWithError(e.toString());
         }
         this.debugQualityThreshold = debugQualityThreshold;
-        if ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null)) {
+        if (originalReadStatsFileName != null) {
             try {
                 File tempFile = TempFileManager.getTempFile((outputFileName == null) ? null
                         : Paths.get(new File(outputFileName).getAbsolutePath()).getParent());
@@ -186,7 +188,7 @@ public final class ConsensusIO {
                         maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold,
                         readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
                         avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
-                        debugOutputStream, debugQualityThreshold, originalReadsData);
+                        debugOutputStream, debugQualityThreshold, originalReadsData, saveNotUsedReads);
                 break;
             case RNA_SEQ:
                 consensusAlgorithm = new ConsensusAlgorithmRNASeq();
@@ -196,7 +198,7 @@ public final class ConsensusIO {
                         maxConsensusesPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength,
                         readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold,
                         avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
-                        debugOutputStream, debugQualityThreshold, originalReadsData,
+                        debugOutputStream, debugQualityThreshold, originalReadsData, saveNotUsedReads,
                         kmerLength, kmerMaxOffset, kmerMatchMaxErrors);
                 break;
         }
@@ -221,7 +223,11 @@ public final class ConsensusIO {
             reportFileOutputStream.println("Consensus algorithm: " + consensusAlgorithmType);
         }
         try (MifReader reader = createReader();
-             MifWriter writer = createWriter(mifHeader = reader.getHeader())) {
+             MifWriter writer = createWriter(mifHeader = reader.getHeader());
+             MifWriter notUsedReadsWriter = saveNotUsedReads ? new MifWriter(notUsedReadsOutputFileName, new MifHeader(
+                     pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
+                     mifHeader.getSortedGroups(), mifHeader.getGroupEdges())) : null)
+        {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             validateInputGroups(reader, consensusGroups, false, "--groups");
@@ -243,8 +249,12 @@ public final class ConsensusIO {
                 AtomicLong orderedPortIndex = new AtomicLong(0);
                 for (ParsedRead parsedRead : CUtils.it(reader)) {
                     LinkedHashMap<String, NucleotideSequence> groups = extractConsensusGroups(parsedRead);
-                    allClusters.computeIfAbsent(groups, g -> new Cluster(orderedPortIndex.getAndIncrement()));
-                    allClusters.get(groups).data.add(extractData(parsedRead));
+                    allClusters.computeIfAbsent(groups, g -> new Cluster(
+                            orderedPortIndex.getAndIncrement(), saveNotUsedReads));
+                    Cluster currentCluster = allClusters.get(groups);
+                    currentCluster.data.add(extractData(parsedRead));
+                    if (saveNotUsedReads)
+                        currentCluster.savedReads.add(parsedRead);
                     saveOriginalReadsData(parsedRead);
                     if (totalReads.incrementAndGet() == inputReadsLimit)
                         break;
@@ -264,7 +274,7 @@ public final class ConsensusIO {
                 // all groups are sorted; we can add input reads to the cluster while their group values are the same
                 clusterOutputPort = new OutputPort<Cluster>() {
                     LinkedHashMap<String, NucleotideSequence> previousGroups = null;
-                    Cluster currentCluster = new Cluster(0);
+                    Cluster currentCluster = new Cluster(0, saveNotUsedReads);
                     int orderedPortIndex = 0;
                     boolean finished = false;
 
@@ -287,11 +297,13 @@ public final class ConsensusIO {
                                 if (!currentGroups.equals(previousGroups)) {
                                     if (previousGroups != null) {
                                         preparedCluster = currentCluster;
-                                        currentCluster = new Cluster(++orderedPortIndex);
+                                        currentCluster = new Cluster(++orderedPortIndex, saveNotUsedReads);
                                     }
                                     previousGroups = currentGroups;
                                 }
                                 currentCluster.data.add(extractData(parsedRead));
+                                if (saveNotUsedReads)
+                                    currentCluster.savedReads.add(parsedRead);
                                 saveOriginalReadsData(parsedRead);
                                 totalReads.getAndIncrement();
                             } else {
@@ -332,10 +344,14 @@ public final class ConsensusIO {
                         consensus.debugData.writeDebugData(debugOutputStream, subclusterDebugIndex, i);
                     }
                 }
+                if (saveNotUsedReads)
+                    calculatedConsensuses.notUsedReads.forEach(notUsedReadsWriter::write);
             }
             reader.close();
             originalNumberOfReads = reader.getOriginalNumberOfReads();
             writer.setOriginalNumberOfReads(originalNumberOfReads);
+            if (saveNotUsedReads)
+                notUsedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -452,22 +468,6 @@ public final class ConsensusIO {
                     }
                     originalReadsDataWriter.println(line);
                 }
-            } catch (IOException e) {
-                throw exitWithError(e.getMessage());
-            }
-        }
-
-        if (notUsedReadsOutputFileName != null) {
-            System.err.println("Writing not matched reads...");
-            try (MifWriter notUsedReadsWriter = new MifWriter(notUsedReadsOutputFileName, new MifHeader(
-                    pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
-                    mifHeader.getSortedGroups(), mifHeader.getGroupEdges()))) {
-                for (long readId = 0; readId < originalNumberOfReads; readId++) {
-                    OriginalReadData currentReadData = originalReadsData.get(readId);
-                    if ((currentReadData != null) && (currentReadData.status != USED_IN_CONSENSUS))
-                        notUsedReadsWriter.write(currentReadData.read);
-                }
-                notUsedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
             } catch (IOException e) {
                 throw exitWithError(e.getMessage());
             }

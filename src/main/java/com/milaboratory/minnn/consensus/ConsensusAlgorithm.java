@@ -34,6 +34,7 @@ import com.milaboratory.minnn.consensus.trimmer.ConsensusTrimmer;
 import com.milaboratory.minnn.consensus.trimmer.SequenceWithQualityAndCoverage;
 import com.milaboratory.minnn.util.ConsensusLetter;
 import gnu.trove.map.hash.TByteObjectHashMap;
+import gnu.trove.set.hash.TLongHashSet;
 import org.clapper.util.misc.FileHashMap;
 
 import java.io.PrintStream;
@@ -55,6 +56,7 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     protected final byte debugQualityThreshold;
     private final FileHashMap<Long, OriginalReadData> originalReadsData;
     protected final boolean collectOriginalReadsData;
+    protected final boolean saveNotUsedReads;
     protected final AtomicLong consensusCurrentTempId;
     // this flag must be set after reading 1st cluster in process() function
     protected final AtomicBoolean defaultGroupsOverride = new AtomicBoolean(false);
@@ -70,7 +72,7 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
             int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
             float avgQualityThresholdForLowCoverage, int trimWindowSize, boolean toSeparateGroups,
             PrintStream debugOutputStream, byte debugQualityThreshold,
-            FileHashMap<Long, OriginalReadData> originalReadsData) {
+            FileHashMap<Long, OriginalReadData> originalReadsData, boolean saveNotUsedReads) {
         this.displayWarning = displayWarning;
         this.numberOfTargets = numberOfTargets;
         this.maxConsensusesPerCluster = maxConsensusesPerCluster;
@@ -86,6 +88,7 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         this.debugQualityThreshold = debugQualityThreshold;
         this.originalReadsData = originalReadsData;
         this.collectOriginalReadsData = (originalReadsData != null);
+        this.saveNotUsedReads = saveNotUsedReads;
         this.consensusCurrentTempId = new AtomicLong(0);
     }
 
@@ -246,5 +249,15 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
             builder.append(barcode.groupName).append('=').append(barcode.value.getSeq().toString());
         }
         return builder.toString();
+    }
+
+    protected void collectNotUsedReads(
+            CalculatedConsensuses calculatedConsensuses, Cluster cluster, List<DataFromParsedRead> remainingData) {
+        if (saveNotUsedReads) {
+            TLongHashSet remainingReadIds = new TLongHashSet();
+            remainingData.stream().mapToLong(DataFromParsedRead::getOriginalReadId).forEach(remainingReadIds::add);
+            cluster.savedReads.stream().filter(read -> remainingReadIds.contains(read.getOriginalRead().getId()))
+                    .forEach(calculatedConsensuses.notUsedReads::add);
+        }
     }
 }

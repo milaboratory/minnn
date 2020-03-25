@@ -56,12 +56,13 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
             float avgQualityThresholdForLowCoverage, int trimWindowSize, boolean toSeparateGroups,
             PrintStream debugOutputStream, byte debugQualityThreshold,
-            FileHashMap<Long, OriginalReadData> originalReadsData, int kmerLength, int kmerMaxOffset,
-            int kmerMatchMaxErrors) {
+            FileHashMap<Long, OriginalReadData> originalReadsData, boolean saveNotUsedReads,
+            int kmerLength, int kmerMaxOffset, int kmerMatchMaxErrors) {
         super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
                 Math.max(readsMinGoodSeqLength, kmerLength), readsAvgQualityThreshold, readsTrimWindowSize,
                 minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
-                trimWindowSize, toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData);
+                trimWindowSize, toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData,
+                saveNotUsedReads);
         this.kmerLength = kmerLength;
         this.kmerMaxOffset = kmerMaxOffset;
         this.kmerMatchMaxErrors = kmerMatchMaxErrors;
@@ -70,7 +71,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
     @Override
     public CalculatedConsensuses process(Cluster cluster) {
         defaultGroupsOverride.set(cluster.data.get(0).isDefaultGroupsOverride());
-        CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex);
+        CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(
+                cluster.orderedPortIndex, saveNotUsedReads);
         List<DataFromParsedRead> remainingData = trimBadQualityTails(cluster.data);
         int clusterSize = cluster.data.size();
         if (remainingData.size() == 0) {
@@ -125,6 +127,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             }
         }
 
+        collectNotUsedReads(calculatedConsensuses, cluster, remainingData);
         return calculatedConsensuses;
     }
 
