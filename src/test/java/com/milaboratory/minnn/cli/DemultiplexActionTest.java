@@ -131,6 +131,7 @@ public class DemultiplexActionTest {
         String inputFile1 = TEMP_DIR + TEST_FILENAME_PREFIX + "_input1.mif";
         String inputFile2 = TEMP_DIR + TEST_FILENAME_PREFIX + "_input2.mif";
         String sampleFile = EXAMPLES_PATH + "demultiplex_samples/sample1.txt";
+        Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
         exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile1
                 + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\"");
         exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile2
@@ -188,6 +189,30 @@ public class DemultiplexActionTest {
         for (String fileName : new String[] { startFile, inputFile, tempOutputFile1, tempOutputFile2, LOG_FILE })
             assertTrue(new File(fileName).delete());
         Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
+    }
+
+    @Test
+    public void outputDirectoryTest() throws Exception {
+        String startFile = getExampleMif("twosided");
+        String inputFile = TEMP_DIR + TEST_FILENAME_PREFIX + ".mif";
+        exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
+                + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\" --try-reverse-order");
+
+        String outputPath = TEMP_DIR + "output_directory_test";
+        boolean createdNewDir = new File(outputPath).mkdirs();
+        if (!createdNewDir)
+            Arrays.stream(Objects.requireNonNull(new File(outputPath)
+                    .listFiles((dummy, name) -> name.startsWith(TEST_FILENAME_PREFIX + '_'))))
+                    .map(File::delete).forEach(Assert::assertTrue);
+        exec("demultiplex -f " + inputFile + " --by-barcode G1 --by-barcode G4 --demultiplex-log " + LOG_FILE
+                + " --output-path " + outputPath);
+        File[] outputFiles = Objects.requireNonNull(new File(outputPath)
+                .listFiles((dummy, name) -> name.startsWith(TEST_FILENAME_PREFIX + '_')));
+        assertEquals(10231, outputFiles.length);
+
+        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+        for (String fileName : new String[] { startFile, inputFile, outputPath, LOG_FILE })
+            assertTrue(new File(fileName).delete());
     }
 
     private static File[] getOutputFiles() {

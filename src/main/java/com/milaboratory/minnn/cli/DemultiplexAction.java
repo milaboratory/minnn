@@ -134,14 +134,13 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     protected List<String> getOutputFiles() {
         List<String> outputFileNames = new ArrayList<>();
         outputFileNames.add(logFileName);
+        String actualOutputPath = (outputFilesPath == null)
+                ? new File(parsedDemultiplexArguments.inputFileName).getParent() : outputFilesPath;
         if (new File(logFileName).exists())
             try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName))) {
                 String loggedFileName;
-                while ((loggedFileName = logReader.readLine()) != null) {
-                    if (outputFilesPath != null)
-                        loggedFileName = outputFilesPath + File.separator + loggedFileName;
-                    outputFileNames.add(loggedFileName);
-                }
+                while ((loggedFileName = logReader.readLine()) != null)
+                    outputFileNames.add(actualOutputPath + File.separator + loggedFileName);
             } catch (IOException e) {
                 throw exitWithError("Bad or corrupted log file, read error: " + e.getMessage());
             }

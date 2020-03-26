@@ -176,7 +176,8 @@ public final class DemultiplexIO {
                 parameterValues.add(parameterValue);
         }
         OutputFileIdentifier outputFileIdentifier = new OutputFileIdentifier(parameterValues);
-        return new DemultiplexResult(parsedRead, outputFileIdentifier.toString(), getMifWriter(outputFileIdentifier));
+        return new DemultiplexResult(parsedRead, new File(outputFileIdentifier.toString()).getName(),
+                getMifWriter(outputFileIdentifier));
     }
 
     private interface DemultiplexFilter {
@@ -346,6 +347,8 @@ public final class DemultiplexIO {
             if (writer == null) {
                 try {
                     String fileName = toString();
+                    if (outputFilesPath != null)
+                        fileName = outputFilesPath + File.separator + new File(fileName).getName();
                     if (!allowOverwriting && new File(fileName).exists())
                         throw exitWithError("File " + fileName + " already exists, and overwriting was not enabled!");
                     writer = new MifWriter(fileName, header, outputBufferSize);
