@@ -183,8 +183,8 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     private String logFileName = null;
 
     @Option(description = "Path to write output files. If not specified, output files will be written to the " +
-            "current directory. This option does not affect demultiplex log file; you can specify the path for " +
-            "demultiplex log file in --demultiplex-log argument.",
+            "same directory as input file. This option does not affect demultiplex log file; you can specify " +
+            "the path for demultiplex log file in --demultiplex-log argument.",
             names = {"--output-path"})
     private String outputFilesPath = null;
 
