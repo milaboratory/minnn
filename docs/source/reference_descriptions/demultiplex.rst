@@ -17,12 +17,17 @@ created for each combination of barcode values and samples, so this command can 
 output files will be written. You can use the log file from previous run and add :code:`--overwrite-if-required`
 argument if you want to use smart overwrite feature: overwrite output files only if the input file had changed.
 
+:code:`--output-path` argument allows to set the path for output files. If not specified, output files will be written
+to the same directory as input file. This option does not affect demultiplex log file; you can specify the path for
+demultiplex log file in :code:`--demultiplex-log` argument.
+
 Examples for demultiplex action:
 
 .. code-block:: text
 
    minnn demultiplex --output-buffer-size 30000 --by-barcode SB1 corrected.mif --demultiplex-log log.txt
    minnn demultiplex --demultiplex-log 1.log --by-sample samples1.txt --by-sample samples2.txt --by-barcode UMI in.mif
+   minnn demultiplex --by-sample S1 data.mif --output-path ./data --demultiplex-log ./logs/demultiplex.log
 
 **Sample file format:**
 
