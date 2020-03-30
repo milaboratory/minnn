@@ -215,6 +215,40 @@ public class DemultiplexActionTest {
             assertTrue(new File(fileName).delete());
     }
 
+    @Test
+    public void specialCaseTest1() throws Exception {
+        String startFile = getExampleMif("twosided");
+        String workingDir = TEMP_DIR + "demultiplex_sp1";
+        String inputFileDir = "input_file_dir";
+        String inputNamePrefix = "input";
+        String inputFile = inputFileDir + File.separator + inputNamePrefix + ".mif";
+        String outputDir = "out_dir";
+        String logDir = "log_dir";
+        String logFile = logDir + File.separator + "log_file.txt";
+        boolean dummy = new File(workingDir + File.separator + inputFileDir).mkdirs();
+        dummy |= new File(workingDir + File.separator + outputDir).mkdirs();
+        dummy |= new File(workingDir + File.separator + logDir).mkdirs();
+        dummy |= Files.exists(Paths.get(workingDir + File.separator + inputFileDir));
+        assertTrue(dummy);
+
+        execAsProcess(null,
+                "extract -f --input-format MIF --input " + startFile + " --output " + inputFile
+                        + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\" --try-reverse-order", workingDir);
+        execAsProcess(null,
+                "demultiplex -f --by-barcode G1 " + inputFile + " --output-path " + outputDir
+                        + " --demultiplex-log " + logFile, workingDir);
+
+        File[] outputFiles = Objects.requireNonNull(new File(workingDir + File.separator + outputDir)
+                .listFiles((f, name) -> name.startsWith(inputNamePrefix + '_')));
+        assertEquals(76, outputFiles.length);
+        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+        for (String fileName : new String[] { startFile,
+                workingDir + File.separator + inputFile, workingDir + File.separator + logFile,
+                workingDir + File.separator + inputFileDir, workingDir + File.separator + logDir,
+                workingDir + File.separator + outputDir, workingDir })
+            assertTrue(new File(fileName).delete());
+    }
+
     private static File[] getOutputFiles() {
         return new File(TEMP_DIR).listFiles((dummy, name) -> name.startsWith(TEST_FILENAME_PREFIX + '_'));
     }
