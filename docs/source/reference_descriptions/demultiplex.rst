@@ -27,7 +27,7 @@ Examples for demultiplex action:
 
    minnn demultiplex --output-buffer-size 30000 --by-barcode SB1 corrected.mif --demultiplex-log log.txt
    minnn demultiplex --demultiplex-log 1.log --by-sample samples1.txt --by-sample samples2.txt --by-barcode UMI in.mif
-   minnn demultiplex --by-sample S1 data.mif --output-path ./data --demultiplex-log ./logs/demultiplex.log
+   minnn demultiplex --by-barcode S1 data.mif --output-path ./data --demultiplex-log ./logs/demultiplex.log
 
 **Sample file format:**
 
