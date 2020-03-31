@@ -44,6 +44,8 @@ import com.milaboratory.util.SmartProgressReporter;
 import com.milaboratory.util.TempFileManager;
 import gnu.trove.map.hash.TLongLongHashMap;
 import org.clapper.util.misc.FileHashMap;
+import org.clapper.util.misc.ObjectExistsException;
+import org.clapper.util.misc.VersionMismatchException;
 
 import java.io.*;
 import java.nio.file.Paths;
@@ -170,8 +172,8 @@ public final class ConsensusIO {
             try {
                 File tempFile = TempFileManager.getTempFile((outputFileName == null) ? null
                         : Paths.get(new File(outputFileName).getAbsolutePath()).getParent());
-                this.originalReadsData = new FileHashMap<>(tempFile.getAbsolutePath());
-            } catch (IOException e) {
+                this.originalReadsData = new FileHashMap<>(tempFile.getAbsolutePath(), FileHashMap.TRANSIENT);
+            } catch (IOException | ObjectExistsException | ClassNotFoundException | VersionMismatchException e) {
                 throw exitWithError(e.getMessage());
             }
         } else
