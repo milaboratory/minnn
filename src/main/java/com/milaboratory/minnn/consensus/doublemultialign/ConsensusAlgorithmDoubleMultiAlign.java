@@ -34,10 +34,10 @@ import com.milaboratory.minnn.consensus.*;
 import com.milaboratory.minnn.consensus.trimmer.ConsensusBuilder;
 import com.milaboratory.minnn.consensus.trimmer.SequenceWithQualityAndCoverage;
 import gnu.trove.map.hash.TByteObjectHashMap;
+import org.clapper.util.misc.FileHashMap;
 
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.*;
 
@@ -61,11 +61,11 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold,
             float avgQualityThreshold, float avgQualityThresholdForLowCoverage, int trimWindowSize,
             boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
-            ConcurrentHashMap<Long, OriginalReadData> originalReadsData) {
+            FileHashMap<Long, OriginalReadData> originalReadsData, boolean saveNotUsedReads) {
         super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
                 lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
-                toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData);
+                toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData, saveNotUsedReads);
         this.alignerWidth = alignerWidth;
         this.scoring = new LinearGapAlignmentScoring<>(NucleotideSequence.ALPHABET, matchScore, mismatchScore,
                 gapScore);
@@ -77,7 +77,8 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
     @Override
     public CalculatedConsensuses process(Cluster cluster) {
         defaultGroupsOverride.set(cluster.data.get(0).isDefaultGroupsOverride());
-        CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex);
+        CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex,
+                saveNotUsedReads);
         List<DataFromParsedRead> data = trimBadQualityTails(cluster.data);
         if (data.size() == 0) {
             calculatedConsensuses.consensuses.add(new Consensus((debugOutputStream == null) ? null
@@ -156,10 +157,13 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                     displayWarning.accept("WARNING: max consensuses per cluster exceeded; not processed "
                             + filteredOutReads.size() + " reads from cluster of " + cluster.data.size()
                             + " reads! Barcode values: " + formatBarcodeValues(bestData.getBarcodes()));
+                    collectNotUsedReads(calculatedConsensuses, cluster, data);
                     data = new ArrayList<>();
                 }
-            } else
+            } else {
+                collectNotUsedReads(calculatedConsensuses, cluster, data);
                 data = new ArrayList<>();
+            }
         }
 
         return calculatedConsensuses;
@@ -394,12 +398,13 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
             TrimmedLettersCounters consensusTrimmedLettersCounters, boolean stage2) {
         if (collectOriginalReadsData)
             subsequencesList.forEach(alignedSubsequences -> {
-                OriginalReadData originalReadData = originalReadsData.get(alignedSubsequences.originalReadId);
+                OriginalReadData originalReadData = getOriginalReadData(alignedSubsequences.originalReadId);
                 originalReadData.status = status;
                 if (consensus != null)
                     originalReadData.setConsensus(consensus);
                 originalReadData.consensusTrimmedLettersCounters = consensusTrimmedLettersCounters;
                 originalReadData.alignmentScores.set(stage2 ? 1 : 0, alignedSubsequences.alignmentScores);
+                setOriginalReadData(alignedSubsequences.originalReadId, originalReadData);
             });
     }
 

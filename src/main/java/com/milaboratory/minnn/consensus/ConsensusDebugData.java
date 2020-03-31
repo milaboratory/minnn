@@ -36,7 +36,7 @@ import java.util.stream.*;
 
 import static com.milaboratory.minnn.consensus.ConsensusStageForDebug.*;
 
-public final class ConsensusDebugData {
+public final class ConsensusDebugData implements java.io.Serializable {
     private final int numberOfTargets;
     private final byte debugQualityThreshold;
     private final ConsensusStageForDebug stage;

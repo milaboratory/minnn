@@ -38,7 +38,7 @@ import java.util.*;
 
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
-public final class Consensus {
+public final class Consensus implements java.io.Serializable {
     public final TByteObjectHashMap<SequenceWithAttributes> sequences;
     public final List<Barcode> barcodes;
     public final int consensusReadsNum;

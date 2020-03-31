@@ -34,7 +34,7 @@ import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.annotations.Serializable;
 
 @Serializable(by = IO.GroupEdgeSerializer.class)
-public final class GroupEdge {
+public final class GroupEdge implements java.io.Serializable {
     private final String groupName;
     /**
      * true if this is group start, false if this is group end

@@ -28,13 +28,17 @@
  */
 package com.milaboratory.minnn.consensus;
 
+import com.milaboratory.minnn.outputconverter.ParsedRead;
+
 import java.util.ArrayList;
 
 public final class Cluster {
     public final ArrayList<DataFromParsedRead> data = new ArrayList<>();
+    public final ArrayList<ParsedRead> savedReads;
     public final long orderedPortIndex;
 
-    public Cluster(long orderedPortIndex) {
+    public Cluster(long orderedPortIndex, boolean saveNotUsedReads) {
+        this.savedReads = saveNotUsedReads ? new ArrayList<>() : null;
         this.orderedPortIndex = orderedPortIndex;
     }
 }

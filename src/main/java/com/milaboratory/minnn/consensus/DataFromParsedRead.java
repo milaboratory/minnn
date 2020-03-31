@@ -35,7 +35,7 @@ import gnu.trove.map.hash.TByteObjectHashMap;
 import java.util.*;
 import java.util.stream.*;
 
-public class DataFromParsedRead {
+public class DataFromParsedRead implements java.io.Serializable {
     protected final TByteObjectHashMap<SequenceWithAttributes> sequences;
     protected final List<Barcode> barcodes;
     protected final long originalReadId;
