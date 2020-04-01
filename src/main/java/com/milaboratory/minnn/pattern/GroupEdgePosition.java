@@ -28,7 +28,7 @@
  */
 package com.milaboratory.minnn.pattern;
 
-public final class GroupEdgePosition {
+public final class GroupEdgePosition implements java.io.Serializable {
     private final GroupEdge groupEdge;
     private final int position;
 

@@ -59,7 +59,7 @@ import static org.junit.Assert.*;
 
 public class CommonTestUtils {
     public static final Random rg = new Random();
-    public static final String TEMP_DIR = System.getProperty("java.io.tmpdir") + "/";
+    public static final String TEMP_DIR = System.getProperty("java.io.tmpdir") + File.separator;
     private static final String LN_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final String QUERY_CHAR_STRING = " ATGCNatgcn()[]{}^$:+&|\\~0123456789-*";
 

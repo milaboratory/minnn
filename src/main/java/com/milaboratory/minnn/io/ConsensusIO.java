@@ -41,11 +41,15 @@ import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
 import com.milaboratory.util.SmartProgressReporter;
+import com.milaboratory.util.TempFileManager;
 import gnu.trove.map.hash.TLongLongHashMap;
+import org.clapper.util.misc.FileHashMap;
+import org.clapper.util.misc.ObjectExistsException;
+import org.clapper.util.misc.VersionMismatchException;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -83,6 +87,7 @@ public final class ConsensusIO {
     private final int trimWindowSize;
     private final String originalReadStatsFileName;
     private final String notUsedReadsOutputFileName;
+    private final boolean saveNotUsedReads;
     private final boolean toSeparateGroups;
     private final long inputReadsLimit;
     private final int maxWarnings;
@@ -95,7 +100,7 @@ public final class ConsensusIO {
     private final PrintStream debugOutputStream;
     private final byte debugQualityThreshold;
     private final AtomicLong totalReads = new AtomicLong(0);
-    private final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
+    private final FileHashMap<Long, OriginalReadData> originalReadsData;
     private final TLongLongHashMap consensusFinalIds;
     private ConsensusAlgorithm consensusAlgorithm;
     private long consensusReads = 0;
@@ -140,6 +145,7 @@ public final class ConsensusIO {
         this.trimWindowSize = trimWindowSize;
         this.originalReadStatsFileName = originalReadStatsFileName;
         this.notUsedReadsOutputFileName = notUsedReadsOutputFileName;
+        this.saveNotUsedReads = (notUsedReadsOutputFileName != null);
         this.inputReadsLimit = inputReadsLimit;
         this.maxWarnings = maxWarnings;
         this.threads = threads;
@@ -162,8 +168,16 @@ public final class ConsensusIO {
             throw exitWithError(e.toString());
         }
         this.debugQualityThreshold = debugQualityThreshold;
-        this.originalReadsData = ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
-                ? new ConcurrentHashMap<>() : null;
+        if (originalReadStatsFileName != null) {
+            try {
+                File tempFile = TempFileManager.getTempFile((outputFileName == null) ? null
+                        : Paths.get(new File(outputFileName).getAbsolutePath()).getParent());
+                this.originalReadsData = new FileHashMap<>(tempFile.getAbsolutePath(), FileHashMap.TRANSIENT);
+            } catch (IOException | ObjectExistsException | ClassNotFoundException | VersionMismatchException e) {
+                throw exitWithError(e.getMessage());
+            }
+        } else
+            this.originalReadsData = null;
         this.consensusFinalIds = (originalReadStatsFileName == null) ? null : new TLongLongHashMap();
     }
 
@@ -176,7 +190,7 @@ public final class ConsensusIO {
                         maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold,
                         readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
                         avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
-                        debugOutputStream, debugQualityThreshold, originalReadsData);
+                        debugOutputStream, debugQualityThreshold, originalReadsData, saveNotUsedReads);
                 break;
             case RNA_SEQ:
                 consensusAlgorithm = new ConsensusAlgorithmRNASeq();
@@ -186,7 +200,7 @@ public final class ConsensusIO {
                         maxConsensusesPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength,
                         readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold,
                         avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
-                        debugOutputStream, debugQualityThreshold, originalReadsData,
+                        debugOutputStream, debugQualityThreshold, originalReadsData, saveNotUsedReads,
                         kmerLength, kmerMaxOffset, kmerMatchMaxErrors);
                 break;
         }
@@ -211,7 +225,11 @@ public final class ConsensusIO {
             reportFileOutputStream.println("Consensus algorithm: " + consensusAlgorithmType);
         }
         try (MifReader reader = createReader();
-             MifWriter writer = createWriter(mifHeader = reader.getHeader())) {
+             MifWriter writer = createWriter(mifHeader = reader.getHeader());
+             MifWriter notUsedReadsWriter = saveNotUsedReads ? new MifWriter(notUsedReadsOutputFileName, new MifHeader(
+                     pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
+                     mifHeader.getSortedGroups(), mifHeader.getGroupEdges())) : null)
+        {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             validateInputGroups(reader, consensusGroups, false, "--groups");
@@ -233,8 +251,12 @@ public final class ConsensusIO {
                 AtomicLong orderedPortIndex = new AtomicLong(0);
                 for (ParsedRead parsedRead : CUtils.it(reader)) {
                     LinkedHashMap<String, NucleotideSequence> groups = extractConsensusGroups(parsedRead);
-                    allClusters.computeIfAbsent(groups, g -> new Cluster(orderedPortIndex.getAndIncrement()));
-                    allClusters.get(groups).data.add(extractData(parsedRead));
+                    allClusters.computeIfAbsent(groups, g -> new Cluster(
+                            orderedPortIndex.getAndIncrement(), saveNotUsedReads));
+                    Cluster currentCluster = allClusters.get(groups);
+                    currentCluster.data.add(extractData(parsedRead));
+                    if (saveNotUsedReads)
+                        currentCluster.savedReads.add(parsedRead);
                     saveOriginalReadsData(parsedRead);
                     if (totalReads.incrementAndGet() == inputReadsLimit)
                         break;
@@ -254,7 +276,7 @@ public final class ConsensusIO {
                 // all groups are sorted; we can add input reads to the cluster while their group values are the same
                 clusterOutputPort = new OutputPort<Cluster>() {
                     LinkedHashMap<String, NucleotideSequence> previousGroups = null;
-                    Cluster currentCluster = new Cluster(0);
+                    Cluster currentCluster = new Cluster(0, saveNotUsedReads);
                     int orderedPortIndex = 0;
                     boolean finished = false;
 
@@ -277,11 +299,13 @@ public final class ConsensusIO {
                                 if (!currentGroups.equals(previousGroups)) {
                                     if (previousGroups != null) {
                                         preparedCluster = currentCluster;
-                                        currentCluster = new Cluster(++orderedPortIndex);
+                                        currentCluster = new Cluster(++orderedPortIndex, saveNotUsedReads);
                                     }
                                     previousGroups = currentGroups;
                                 }
                                 currentCluster.data.add(extractData(parsedRead));
+                                if (saveNotUsedReads)
+                                    currentCluster.savedReads.add(parsedRead);
                                 saveOriginalReadsData(parsedRead);
                                 totalReads.getAndIncrement();
                             } else {
@@ -322,10 +346,14 @@ public final class ConsensusIO {
                         consensus.debugData.writeDebugData(debugOutputStream, subclusterDebugIndex, i);
                     }
                 }
+                if (saveNotUsedReads)
+                    calculatedConsensuses.notUsedReads.forEach(notUsedReadsWriter::write);
             }
             reader.close();
             originalNumberOfReads = reader.getOriginalNumberOfReads();
             writer.setOriginalNumberOfReads(originalNumberOfReads);
+            if (saveNotUsedReads)
+                notUsedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -447,22 +475,6 @@ public final class ConsensusIO {
             }
         }
 
-        if (notUsedReadsOutputFileName != null) {
-            System.err.println("Writing not matched reads...");
-            try (MifWriter notUsedReadsWriter = new MifWriter(notUsedReadsOutputFileName, new MifHeader(
-                    pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
-                    mifHeader.getSortedGroups(), mifHeader.getGroupEdges()))) {
-                for (long readId = 0; readId < originalNumberOfReads; readId++) {
-                    OriginalReadData currentReadData = originalReadsData.get(readId);
-                    if ((currentReadData != null) && (currentReadData.status != USED_IN_CONSENSUS))
-                        notUsedReadsWriter.write(currentReadData.read);
-                }
-                notUsedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
-            } catch (IOException e) {
-                throw exitWithError(e.getMessage());
-            }
-        }
-
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -532,8 +544,11 @@ public final class ConsensusIO {
     }
 
     private void saveOriginalReadsData(ParsedRead parsedRead) {
-        if (originalReadsData != null)
-            originalReadsData.putIfAbsent(parsedRead.getOriginalRead().getId(), new OriginalReadData(parsedRead));
+        if (originalReadsData != null) {
+            synchronized (originalReadsData) {
+                originalReadsData.putIfAbsent(parsedRead.getOriginalRead().getId(), new OriginalReadData(parsedRead));
+            }
+        }
     }
 
     private synchronized void displayWarning(String text) {

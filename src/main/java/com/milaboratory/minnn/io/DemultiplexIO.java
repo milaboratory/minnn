@@ -54,6 +54,7 @@ import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 public final class DemultiplexIO {
     private final PipelineConfiguration pipelineConfiguration;
     private final String inputFileName;
+    private final String outputFilesPath;
     private final List<DemultiplexFilter> demultiplexFilters;
     private final String logFileName;
     private final boolean allowOverwriting;
@@ -68,11 +69,12 @@ public final class DemultiplexIO {
     private long originalNumberOfReads;
 
     public DemultiplexIO(
-            PipelineConfiguration pipelineConfiguration, String inputFileName,
+            PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFilesPath,
             List<DemultiplexArgument> demultiplexArguments, String logFileName, boolean allowOverwriting,
             int outputBufferSize, long inputReadsLimit, String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
+        this.outputFilesPath = outputFilesPath;
         this.demultiplexFilters = demultiplexArguments.stream().map(this::parseFilter).collect(Collectors.toList());
         this.logFileName = logFileName;
         this.allowOverwriting = allowOverwriting;
@@ -174,7 +176,8 @@ public final class DemultiplexIO {
                 parameterValues.add(parameterValue);
         }
         OutputFileIdentifier outputFileIdentifier = new OutputFileIdentifier(parameterValues);
-        return new DemultiplexResult(parsedRead, outputFileIdentifier.toString(), getMifWriter(outputFileIdentifier));
+        return new DemultiplexResult(parsedRead, new File(outputFileIdentifier.toString()).getName(),
+                getMifWriter(outputFileIdentifier));
     }
 
     private interface DemultiplexFilter {
@@ -201,13 +204,13 @@ public final class DemultiplexIO {
     }
 
     private static class SampleFilter implements DemultiplexFilter {
-        private final List<Sample> samples;
+        private final LinkedHashMap<String, Sample> samples;
 
         SampleFilter(DemultiplexArgument argument) {
             if (argument.isBarcode)
                 throw new IllegalArgumentException("Non-sample argument " + argument.argument
                         + " passed to SampleFilter!");
-            samples = new ArrayList<>();
+            samples = new LinkedHashMap<>();
             File sampleFile = new File(argument.argument);
             try (Scanner sampleScanner = new Scanner(sampleFile)) {
                 String[] barcodeNames;
@@ -236,7 +239,15 @@ public final class DemultiplexIO {
                             barcodeSequences[i] = currentToken.equals("*") ? null
                                     : new NucleotideSequence(currentToken);
                         }
-                        samples.add(new Sample(sampleTokens[0], barcodeNames, barcodeSequences));
+                        String sampleName = sampleTokens[0];
+                        Sample sample;
+                        if (samples.containsKey(sampleName))
+                            sample = samples.get(sampleName);
+                        else {
+                            sample = new Sample(sampleName, barcodeNames);
+                            samples.put(sampleName, sample);
+                        }
+                        sample.addBarcodeSequences(barcodeSequences);
                     }
                 }
             } catch (IOException e) {
@@ -250,28 +261,30 @@ public final class DemultiplexIO {
 
         @Override
         public DemultiplexParameterValue filter(ParsedRead parsedRead) {
-            for (Sample sample : samples) {
-                boolean allMatch = true;
-                for (int i = 0; i < sample.numBarcodes(); i++) {
-                    String currentName = sample.barcodeNames[i];
-                    NucleotideSequence currentSequence = sample.barcodeSequences[i];
-                    boolean groupFound = false;
-                    for (MatchedGroup matchedGroup : parsedRead.getGroups())
-                        if (matchedGroup.getGroupName().equals(currentName)) {
-                            groupFound = true;
-                            // null sequence means "*" in the sample file
-                            if ((currentSequence != null) &&
-                                    (!matchedGroup.getValue().getSequence().equals(currentSequence)))
-                                allMatch = false;
+            for (Sample sample : samples.values()) {
+                for (NucleotideSequence[] barcodeSequences : sample.allMatchingBarcodeSequences) {
+                    boolean allMatch = true;
+                    for (int i = 0; i < sample.numBarcodes(); i++) {
+                        String currentName = sample.barcodeNames[i];
+                        NucleotideSequence currentSequence = barcodeSequences[i];
+                        boolean groupFound = false;
+                        for (MatchedGroup matchedGroup : parsedRead.getGroups())
+                            if (matchedGroup.getGroupName().equals(currentName)) {
+                                groupFound = true;
+                                // null sequence means "*" in the sample file
+                                if ((currentSequence != null) &&
+                                        (!matchedGroup.getValue().getSequence().equals(currentSequence)))
+                                    allMatch = false;
+                                break;
+                            }
+                        if (!groupFound)
+                            allMatch = false;
+                        if (!allMatch)
                             break;
-                        }
-                    if (!groupFound)
-                        allMatch = false;
-                    if (!allMatch)
-                        break;
+                    }
+                    if (allMatch)
+                        return sample;
                 }
-                if (allMatch)
-                    return sample;
             }
             return null;
         }
@@ -287,19 +300,6 @@ public final class DemultiplexIO {
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Barcode that = (Barcode)o;
-            return barcode.equals(that.barcode);
-        }
-
-        @Override
-        public int hashCode() {
-            return barcode.hashCode();
-        }
-
-        @Override
         public String toString() {
             return barcode.toString();
         }
@@ -308,34 +308,24 @@ public final class DemultiplexIO {
     private static class Sample implements DemultiplexParameterValue {
         final String name;
         final String[] barcodeNames;
-        final NucleotideSequence[] barcodeSequences;
+        final List<NucleotideSequence[]> allMatchingBarcodeSequences = new ArrayList<>();
 
-        Sample(String name, String[] barcodeNames, NucleotideSequence[] barcodeSequences) {
+        Sample(String name, String[] barcodeNames) {
             if (barcodeNames.length == 0)
                 throw exitWithError("Invalid sample file: missing barcode names!");
-            if (barcodeNames.length != barcodeSequences.length)
-                throw exitWithError("Invalid sample: mismatched number of barcode names "
-                        + Arrays.toString(barcodeNames) + " and barcodes " + Arrays.toString(barcodeSequences));
             this.name = name;
             this.barcodeNames = barcodeNames;
-            this.barcodeSequences = barcodeSequences;
+        }
+
+        void addBarcodeSequences(NucleotideSequence[] barcodeSequences) {
+            if (barcodeNames.length != barcodeSequences.length)
+                throw exitWithError("Invalid sample " + name + ": mismatched number of barcode names "
+                        + Arrays.toString(barcodeNames) + " and barcodes " + Arrays.toString(barcodeSequences));
+            allMatchingBarcodeSequences.add(barcodeSequences);
         }
 
         int numBarcodes() {
             return barcodeNames.length;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Sample sample = (Sample)o;
-            return Arrays.equals(barcodeSequences, sample.barcodeSequences);
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(barcodeSequences);
         }
 
         @Override
@@ -347,6 +337,7 @@ public final class DemultiplexIO {
     private class OutputFileIdentifier {
         final List<DemultiplexParameterValue> parameterValues;
         MifWriter writer = null;
+        String cachedString = null;
 
         OutputFileIdentifier(List<DemultiplexParameterValue> parameterValues) {
             this.parameterValues = parameterValues;
@@ -356,6 +347,8 @@ public final class DemultiplexIO {
             if (writer == null) {
                 try {
                     String fileName = toString();
+                    if (outputFilesPath != null)
+                        fileName = outputFilesPath + File.separator + new File(fileName).getName();
                     if (!allowOverwriting && new File(fileName).exists())
                         throw exitWithError("File " + fileName + " already exists, and overwriting was not enabled!");
                     writer = new MifWriter(fileName, header, outputBufferSize);
@@ -379,33 +372,36 @@ public final class DemultiplexIO {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             OutputFileIdentifier that = (OutputFileIdentifier)o;
-            return parameterValues.equals(that.parameterValues);
+            return toString().equals(that.toString());
         }
 
         @Override
         public int hashCode() {
-            return parameterValues.hashCode();
+            return toString().hashCode();
         }
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder(prefix);
-            builder.append('_');
-            StringBuilder demultiplexIDBuilder = new StringBuilder();
-            for (int i = 0; i < parameterValues.size(); i++) {
-                if (i > 0)
-                    demultiplexIDBuilder.append('_');
-                String parameterString = parameterValues.get(i).toString();
-                if (parameterString.length() == 0)
-                    parameterString = DEMULTIPLEX_EMPTY_STRING_ID;
-                demultiplexIDBuilder.append(parameterString);
+            if (cachedString == null) {
+                StringBuilder builder = new StringBuilder(prefix);
+                builder.append('_');
+                StringBuilder demultiplexIDBuilder = new StringBuilder();
+                for (int i = 0; i < parameterValues.size(); i++) {
+                    if (i > 0)
+                        demultiplexIDBuilder.append('_');
+                    String parameterString = parameterValues.get(i).toString();
+                    if (parameterString.length() == 0)
+                        parameterString = DEMULTIPLEX_EMPTY_STRING_ID;
+                    demultiplexIDBuilder.append(parameterString);
+                }
+                String demultiplexIDString = demultiplexIDBuilder.toString();
+                if (demultiplexIDString.length() > DEMULTIPLEX_MAX_ID_STRING_LENGTH)
+                    demultiplexIDString = UUID.nameUUIDFromBytes(demultiplexIDString.getBytes()).toString();
+                builder.append(demultiplexIDString);
+                builder.append(".mif");
+                cachedString = builder.toString();
             }
-            String demultiplexIDString = demultiplexIDBuilder.toString();
-            if (demultiplexIDString.length() > DEMULTIPLEX_MAX_ID_STRING_LENGTH)
-                demultiplexIDString = UUID.nameUUIDFromBytes(demultiplexIDString.getBytes()).toString();
-            builder.append(demultiplexIDString);
-            builder.append(".mif");
-            return builder.toString();
+            return cachedString;
         }
     }
 

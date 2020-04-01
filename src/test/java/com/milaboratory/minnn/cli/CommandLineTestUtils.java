@@ -32,6 +32,7 @@ import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.SinglePattern;
 
 import java.io.File;
+import java.util.*;
 
 import static com.milaboratory.minnn.cli.Main.main;
 import static com.milaboratory.minnn.cli.TestResources.*;
@@ -40,9 +41,11 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class CommandLineTestUtils {
+    private static final String cmdLineSplitRegexp = "[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)";
+
     public static void exec(String cmdLine) {
         ParsedRead.clearStaticCache();
-        main(cmdLine.split("[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)"));
+        main(cmdLine.split(cmdLineSplitRegexp));
     }
 
     public static Void callableExec(String cmdLine) {
@@ -52,6 +55,27 @@ public class CommandLineTestUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void execAsProcess(String jvmArgs, String args, String workingDir) throws Exception {
+        String javaHome = System.getProperty("java.home");
+        String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
+        String classpath = System.getProperty("java.class.path");
+
+        List<String> command = new ArrayList<>();
+        command.add(javaBin);
+        if (jvmArgs != null)
+            command.addAll(Arrays.asList(jvmArgs.split(cmdLineSplitRegexp)));
+        command.add("-cp");
+        command.add(classpath);
+        command.add(Main.class.getName());
+        command.addAll(Arrays.asList(args.split(cmdLineSplitRegexp)));
+
+        ProcessBuilder builder = new ProcessBuilder(command);
+        if (workingDir != null)
+            builder.directory(new File(workingDir));
+        Process process = builder.inheritIO().start();
+        process.waitFor();
     }
 
     public static void actionTestInit() {

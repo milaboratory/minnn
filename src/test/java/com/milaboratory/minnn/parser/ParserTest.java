@@ -312,6 +312,18 @@ public class ParserTest {
         assertEquals(target, bestToString(pattern.match(new NSequenceWithQuality(target))));
     }
 
+    @Test
+    public void specialCaseTest1() throws Exception {
+        boolean exceptionThrown = false;
+        try {
+            strictParser.parseQuery("^(R1:(CB:N{16})(UMI:N{10})*)\\(R2:*)\\(I1:*)\\(I2:*)");
+        } catch (ParserException e) {
+            exceptionThrown = true;
+            assertTrue(e.getMessage().contains("'*' pattern is invalid if there are other patterns"));
+        }
+        assertTrue(exceptionThrown);
+    }
+
     private static void testSample(String query, String target, Range expectedRange) throws Exception {
         Pattern pattern = strictParser.parseQuery(query);
         NSequenceWithQuality parsedTarget = new NSequenceWithQuality(target);

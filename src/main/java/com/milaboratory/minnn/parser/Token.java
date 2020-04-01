@@ -132,6 +132,7 @@ final class Token {
         else throw new ParserException("Expected MultipleReadsOperator, but got " + pattern);
     }
 
+    @SuppressWarnings("unchecked")
     <P extends Pattern> P getSpecificPattern(Class<P> patternClass) throws ParserException {
         try {
             if (patternClass.isAssignableFrom(getPattern().getClass()))

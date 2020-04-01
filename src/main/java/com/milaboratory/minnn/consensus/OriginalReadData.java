@@ -36,7 +36,7 @@ import java.util.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.util.CommonUtils.*;
 
-public final class OriginalReadData {
+public final class OriginalReadData implements java.io.Serializable {
     public final ParsedRead read;
     public OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
     public TrimmedLettersCounters trimmedLettersCounters = null;

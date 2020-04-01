@@ -33,7 +33,7 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 /**
  * Parent class for MatchedRange and MatchedGroupEdge.
  */
-public abstract class MatchedItem {
+public abstract class MatchedItem implements java.io.Serializable {
     protected final NSequenceWithQuality target;
     /**
      * IDs start from 1.

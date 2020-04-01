@@ -30,7 +30,7 @@ package com.milaboratory.minnn.consensus;
 
 import gnu.trove.map.hash.TByteIntHashMap;
 
-public final class TrimmedLettersCounters {
+public final class TrimmedLettersCounters implements java.io.Serializable {
     public final TByteIntHashMap byTargetId = new TByteIntHashMap();
 
     public TrimmedLettersCounters(int numberOfTargets) {

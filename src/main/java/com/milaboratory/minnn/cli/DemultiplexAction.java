@@ -37,6 +37,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import picocli.CommandLine.*;
 
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 
 import static com.milaboratory.minnn.cli.CommonDescriptions.*;
@@ -63,8 +64,9 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     public void run1() {
         prepareDemultiplexArguments();
         DemultiplexIO demultiplexIO = new DemultiplexIO(getFullPipelineConfiguration(),
-                parsedDemultiplexArguments.inputFileName, parsedDemultiplexArguments.demultiplexArguments,
-                logFileName, forceOverwrite || overwriteIfRequired, outputBufferSize, inputReadsLimit,
+                parsedDemultiplexArguments.inputFileName, outputFilesPath,
+                parsedDemultiplexArguments.demultiplexArguments, logFileName,
+                forceOverwrite || overwriteIfRequired, outputBufferSize, inputReadsLimit,
                 reportFileName, jsonReportFileName);
         demultiplexIO.go();
     }
@@ -83,6 +85,10 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
                 throwValidationException("ERROR: input file \"" + in + "\" does not exist.", false);
             validateInfo(in);
         }
+        if (outputFilesPath != null)
+            if (Files.notExists(Paths.get(outputFilesPath)))
+                throwValidationException("ERROR: specified path for output files \"" + outputFilesPath
+                        + "\" does not exist.", false);
 
         if (forceOverwrite)
             return;
@@ -128,11 +134,13 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     protected List<String> getOutputFiles() {
         List<String> outputFileNames = new ArrayList<>();
         outputFileNames.add(logFileName);
+        String actualOutputPath = (outputFilesPath == null)
+                ? new File(parsedDemultiplexArguments.inputFileName).getParent() : outputFilesPath;
         if (new File(logFileName).exists())
             try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName))) {
                 String loggedFileName;
                 while ((loggedFileName = logReader.readLine()) != null)
-                    outputFileNames.add(loggedFileName);
+                    outputFileNames.add(actualOutputPath + File.separator + loggedFileName);
             } catch (IOException e) {
                 throw exitWithError("Bad or corrupted log file, read error: " + e.getMessage());
             }
@@ -142,7 +150,7 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
     @Override
     public ActionConfiguration getConfiguration() {
         return new DemultiplexActionConfiguration(new DemultiplexActionConfiguration.DemultiplexActionParameters(
-                argumentsQueryList, inputReadsLimit));
+                argumentsQueryList, outputFilesPath, inputReadsLimit));
     }
 
     @Override
@@ -173,6 +181,12 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
             names = {"--demultiplex-log"},
             required = true)
     private String logFileName = null;
+
+    @Option(description = "Path to write output files. If not specified, output files will be written to the " +
+            "same directory as input file. This option does not affect demultiplex log file; you can specify " +
+            "the path for demultiplex log file in --demultiplex-log argument.",
+            names = {"--output-path"})
+    private String outputFilesPath = null;
 
     @Option(description = "Write buffer size for each output file.",
             names = {"--output-buffer-size"})
