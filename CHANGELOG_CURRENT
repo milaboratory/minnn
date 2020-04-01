@@ -1,5 +1,0 @@
-Support for Demultiplex samples with multiple options for the same sample name
-Directory for output files can now be specified in Demultiplex with --output-path argument
-Bugfix in parsing "*" patterns in Extract action
-Performance and memory usage improvement for Consensus --not-used-reads-output option
-Consensus --original-read-stats option now stores stats table in temporary file instead of memory
