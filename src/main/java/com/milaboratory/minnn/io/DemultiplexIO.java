@@ -70,7 +70,8 @@ public final class DemultiplexIO {
 
     public DemultiplexIO(
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFilesPath,
-            List<DemultiplexArgument> demultiplexArguments, String logFileName, boolean allowOverwriting, long inputReadsLimit, String reportFileName, String jsonReportFileName, boolean debugMode) {
+            List<DemultiplexArgument> demultiplexArguments, String logFileName, boolean allowOverwriting,
+            long inputReadsLimit, String reportFileName, String jsonReportFileName, boolean debugMode) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFilesPath = outputFilesPath;

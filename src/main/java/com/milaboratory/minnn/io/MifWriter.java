@@ -60,8 +60,8 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
         this(outputStream, mifHeader, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
     }
 
-    public MifWriter(OutputStream outputStream, MifHeader mifHeader, ExecutorService executorService,
-                     int concurrency) {
+    public MifWriter(
+            OutputStream outputStream, MifHeader mifHeader, ExecutorService executorService, int concurrency) {
         throw new NotImplementedException();
     }
 

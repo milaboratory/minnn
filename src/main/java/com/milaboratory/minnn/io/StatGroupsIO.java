@@ -64,9 +64,10 @@ public final class StatGroupsIO {
     private final HashMap<StatGroupsKey, StatGroupsValue> statGroups = new HashMap<>();
     private long totalReads = 0;
 
-    public StatGroupsIO(List<String> groupList, String inputFileName, String outputFileName, long inputReadsLimit,
-                        byte readQualityFilter, byte minQualityFilter, byte avgQualityFilter, int minCountFilter,
-                        float minFracFilter, String reportFileName, String jsonReportFileName, boolean debugMode) {
+    public StatGroupsIO(
+            List<String> groupList, String inputFileName, String outputFileName, long inputReadsLimit,
+            byte readQualityFilter, byte minQualityFilter, byte avgQualityFilter, int minCountFilter,
+            float minFracFilter, String reportFileName, String jsonReportFileName, boolean debugMode) {
         this.groupList = new LinkedHashSet<>(groupList);
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;

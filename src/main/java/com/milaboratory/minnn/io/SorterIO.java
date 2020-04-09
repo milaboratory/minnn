@@ -65,8 +65,8 @@ public final class SorterIO {
 
     public SorterIO(
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFileName,
-            List<String> sortGroupNames, int chunkSize, String reportFileName, String jsonReportFileName, boolean debugMode,
-            String tmpFile) {
+            List<String> sortGroupNames, int chunkSize, String reportFileName, String jsonReportFileName,
+            boolean debugMode, String tmpFile) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;

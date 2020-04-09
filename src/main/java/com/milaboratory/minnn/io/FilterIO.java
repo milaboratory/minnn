@@ -64,6 +64,7 @@ public final class FilterIO {
     private final String reportFileName;
     private final String jsonReportFileName;
     private final AtomicLong totalReadsCounter = new AtomicLong(0);
+    private final boolean debugMode;
 
     public FilterIO(
             PipelineConfiguration pipelineConfiguration, ReadFilter readFilter, String filterQuery,

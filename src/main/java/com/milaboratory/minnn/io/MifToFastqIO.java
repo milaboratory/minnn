@@ -59,8 +59,9 @@ public final class MifToFastqIO {
     private final String jsonReportFileName;
     private final boolean debugMode;
 
-    public MifToFastqIO(String inputFileName, LinkedHashMap<String, String> outputGroups, boolean copyOriginalHeaders,
-                        long inputReadsLimit, String reportFileName, String jsonReportFileName, boolean debugMode) {
+    public MifToFastqIO(
+            String inputFileName, LinkedHashMap<String, String> outputGroups, boolean copyOriginalHeaders,
+            long inputReadsLimit, String reportFileName, String jsonReportFileName, boolean debugMode) {
         this.inputFileName = inputFileName;
         this.outputGroupNames = new String[outputGroups.size()];
         this.outputFileNames = new String[outputGroups.size()];

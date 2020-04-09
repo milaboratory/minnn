@@ -73,7 +73,7 @@ public final class CorrectBarcodesIO {
             BarcodeClusteringStrategyFactory barcodeClusteringStrategyFactory, int maxUniqueBarcodes, int minCount,
             String excludedBarcodesOutputFileName, float wildcardsCollapsingMergeThreshold, long inputReadsLimit,
             boolean suppressWarnings, int threads, String reportFileName, String jsonReportFileName,
-                             boolean debugMode) {
+            boolean debugMode) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.correctionAlgorithms = new CorrectionAlgorithms(barcodeClusteringStrategyFactory,
                 maxUniqueBarcodes, minCount, wildcardsCollapsingMergeThreshold);
@@ -96,6 +96,9 @@ public final class CorrectBarcodesIO {
 
     public void go() {
         long startTime = System.currentTimeMillis();
+        String pass1ReaderStats = null;
+        String pass2ReaderStats = null;
+        String writerStats = null;
         CorrectionStats stats = new CorrectionStats();
         try (MifReader pass1Reader = new MifReader(inputFileName);
              MifReader pass2Reader = new MifReader(inputFileName);
@@ -165,10 +168,10 @@ public final class CorrectBarcodesIO {
                         keyGroups, 0);
                 stats.add(correctionAlgorithms.correctAndWrite(correctionData, pass2RawReadsPort,
                         writer, excludedBarcodesWriter));
+            }
             if (debugMode) {
                 pass1ReaderStats = pass1Reader.getStats().toString();
-                if (pass2Reader != null)
-                    pass2ReaderStats = pass2Reader.getStats().toString();
+                pass2ReaderStats = pass2Reader.getStats().toString();
                 writerStats = writer.getStats().toString();
             }
             pass1Reader.close();
@@ -227,8 +230,7 @@ public final class CorrectBarcodesIO {
         if (debugMode) {
             reportFileHeader.append("\n\nDebug information:\n\n");
             reportFileHeader.append("Pass 1 reader stats:\n").append(pass1ReaderStats).append('\n');
-            if (pass2ReaderStats != null)
-                reportFileHeader.append("Pass 2 reader stats:\n").append(pass2ReaderStats).append('\n');
+            reportFileHeader.append("Pass 2 reader stats:\n").append(pass2ReaderStats).append('\n');
             reportFileHeader.append("Writer stats:\n").append(writerStats).append("\n\n");
         }
 

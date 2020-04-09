@@ -84,9 +84,9 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     public MifReader(String fileName, ExecutorService executorService, int concurrency) throws IOException {
         File file = new File(fileName);
         size = file.length();
-        primitivIHybrid = new PrimitivIHybrid(executorService, file.toPath());
+        primitivIHybrid = new PrimitivIHybrid(executorService, file.toPath(), concurrency);
         readHeader();
-        reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, concurrency, DEFAULT_READ_AHEAD_BLOCKS);
+        reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, DEFAULT_READ_AHEAD_BLOCKS);
     }
 
     private void readHeader() {
@@ -124,7 +124,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         if (!closed) {
             reader.close();
             try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
-                originalNumberOfReads = finished ? PrimitivI.readLong() : parsedReadsTaken;
+                originalNumberOfReads = finished ? primitivI.readLong() : parsedReadsTaken;
             }
             try {
                 primitivIHybrid.close();

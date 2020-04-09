@@ -78,12 +78,13 @@ public final class ReadProcessor {
     private final MinnnDataFormat inputFormat;
     private final DescriptionGroups descriptionGroups;
     private final AtomicLong totalReads = new AtomicLong(0);
+    private final boolean debugMode;
 
     public ReadProcessor(
             PipelineConfiguration pipelineConfiguration, List<String> inputFileNames, String outputFileName,
             String notMatchedOutputFileName, Pattern pattern, String patternQuery, boolean tryReverseOrder,
-            boolean fairSorting, long inputReadsLimit, int threads, String reportFileName, String jsonReportFileName, boolean debugMode,
-            MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
+            boolean fairSorting, long inputReadsLimit, int threads, String reportFileName, String jsonReportFileName,
+            boolean debugMode, MinnnDataFormat inputFormat, DescriptionGroups descriptionGroups) {
         if ((inputFormat == MIF) && (inputFileNames.size() > 1))
             throw exitWithError("Mif data format uses single file; specified " + inputFileNames.size()
                     + " input files!");

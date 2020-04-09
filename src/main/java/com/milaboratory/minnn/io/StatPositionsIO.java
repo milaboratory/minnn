@@ -60,9 +60,10 @@ public final class StatPositionsIO {
     private final HashMap<StatGroupsKey, Long> statGroups = new HashMap<>();
     private long totalReads = 0;
 
-    public StatPositionsIO(List<String> groupList, List<String> readIdList, boolean outputWithSeq,
-                           String inputFileName, String outputFileName, long inputReadsLimit, int minCountFilter,
-                           float minFracFilter, String reportFileName, String jsonReportFileName, boolean debugMode) {
+    public StatPositionsIO(
+            List<String> groupList, List<String> readIdList, boolean outputWithSeq,
+            String inputFileName, String outputFileName, long inputReadsLimit, int minCountFilter,
+            float minFracFilter, String reportFileName, String jsonReportFileName, boolean debugMode) {
         this.groupList = new LinkedHashSet<>(groupList);
         this.readIdList = (readIdList == null) ? null : new LinkedHashSet<>(readIdList);
         this.outputWithSeq = outputWithSeq;
