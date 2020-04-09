@@ -71,7 +71,11 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
 
     public MifWriter(String fileName, MifHeader mifHeader, ExecutorService executorService, int concurrency)
             throws IOException {
-        primitivOHybrid = new PrimitivOHybrid(executorService, new File(fileName).toPath());
+        File file = new File(fileName);
+        if (file.exists())
+            if (!file.delete())
+                throw new IOException("File " + fileName + " already exists and cannot be deleted!");
+        primitivOHybrid = new PrimitivOHybrid(executorService, file.toPath());
         writeHeader(mifHeader);
         writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, DEFAULT_BLOCK_SIZE);
     }
