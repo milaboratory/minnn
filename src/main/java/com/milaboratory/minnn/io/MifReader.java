@@ -62,9 +62,9 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private boolean closed = false;
     private PipelineConfiguration pipelineConfiguration;
     private int numberOfTargets;
-    private ArrayList<String> correctedGroups = new ArrayList<>();
-    private ArrayList<String> sortedGroups = new ArrayList<>();
-    private ArrayList<GroupEdge> groupEdges = new ArrayList<>();
+    private final ArrayList<String> correctedGroups = new ArrayList<>();
+    private final ArrayList<String> sortedGroups = new ArrayList<>();
+    private final ArrayList<GroupEdge> groupEdges = new ArrayList<>();
     private long firstReadSerializedLength = -1;
     private long originalNumberOfReads = -1;
     private String mifVersionInfo;
@@ -123,15 +123,19 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     public synchronized void close() {
         if (!closed) {
             reader.close();
-            try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
-                originalNumberOfReads = finished ? primitivI.readLong() : parsedReadsTaken;
+            if (finished) {
+                try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
+                    originalNumberOfReads = primitivI.readLong();
+                }
+                try {
+                    primitivIHybrid.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                originalNumberOfReads = parsedReadsTaken;
+                finished = true;
             }
-            try {
-                primitivIHybrid.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            finished = true;
             closed = true;
         }
     }

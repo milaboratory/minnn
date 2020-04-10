@@ -107,7 +107,7 @@ public final class ConsensusIO {
     private long consensusReads = 0;
     private long clustersCount = 0;
     private int warningsDisplayed = 0;
-    private LinkedHashSet<String> consensusGroups;
+    private final LinkedHashSet<String> consensusGroups;
     private int numberOfTargets;
 
     public ConsensusIO(
@@ -266,7 +266,7 @@ public final class ConsensusIO {
                         break;
                 }
                 clusterOutputPort = new OutputPort<Cluster>() {
-                    Iterator<Cluster> clusters = allClusters.values().iterator();
+                    final Iterator<Cluster> clusters = allClusters.values().iterator();
 
                     @Override
                     public synchronized Cluster take() {
