@@ -70,6 +70,7 @@ final class ReportWriter {
             } catch (JsonProcessingException e) {
                 throw exitWithError(e.toString());
             }
+            reportFileOutputStream.close();
         }
     }
 }
