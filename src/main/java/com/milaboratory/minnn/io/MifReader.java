@@ -33,9 +33,7 @@ import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
-import com.milaboratory.minnn.util.DebugUtils.*;
 import com.milaboratory.primitivio.PrimitivI;
-import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.blocks.PrimitivIBlocks;
 import com.milaboratory.primitivio.blocks.PrimitivIBlocksStats;
 import com.milaboratory.primitivio.blocks.PrimitivIHybrid;
@@ -43,6 +41,7 @@ import com.milaboratory.util.CanReportProgress;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -53,9 +52,9 @@ import static java.lang.Double.NaN;
 
 public final class MifReader extends PipelineConfigurationReaderMiNNN
         implements OutputPortCloseable<ParsedRead>, CanReportProgress {
+    private final String fileName;
     private final PrimitivIHybrid primitivIHybrid;
     private final PrimitivIBlocks<ParsedRead>.Reader reader;
-    private final long size;
     private long parsedReadsLimit = -1;
     private long parsedReadsTaken = 0;
     private boolean finished = false;
@@ -65,31 +64,23 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private final ArrayList<String> correctedGroups = new ArrayList<>();
     private final ArrayList<String> sortedGroups = new ArrayList<>();
     private final ArrayList<GroupEdge> groupEdges = new ArrayList<>();
-    private long firstReadSerializedLength = -1;
-    private long originalNumberOfReads = -1;
+    private long numberOfReads;
+    private long originalNumberOfReads;
     private String mifVersionInfo;
-
-    public MifReader(InputStream stream) {
-        this(stream, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
-    }
-
-    public MifReader(InputStream stream, ExecutorService executorService, int concurrency) {
-        throw new NotImplementedException();
-    }
 
     public MifReader(String fileName) throws IOException {
         this(fileName, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
     }
 
     public MifReader(String fileName, ExecutorService executorService, int concurrency) throws IOException {
+        this.fileName = fileName;
         File file = new File(fileName);
-        size = file.length();
         primitivIHybrid = new PrimitivIHybrid(executorService, file.toPath(), concurrency);
-        readHeader();
+        readMetaInfo();
         reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, DEFAULT_READ_AHEAD_BLOCKS);
     }
 
-    private void readHeader() {
+    private void readMetaInfo() {
         try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
             byte[] magicBytes = new byte[BEGIN_MAGIC_LENGTH];
             try {
@@ -117,6 +108,12 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
                 groupEdges.add(groupEdge);
             }
         }
+        try (PrimitivI primitivI = primitivIHybrid.beginRandomAccessPrimitivI(-FOOTER_LENGTH)) {
+            numberOfReads = primitivI.readLong();
+            originalNumberOfReads = primitivI.readLong();
+            if (!Arrays.equals(primitivI.readBytes(END_MAGIC_LENGTH), getEndMagicBytes()))
+                throw exitWithError("Error in MIF file " + fileName + ": END_MAGIC mismatch.");
+        }
     }
 
     @Override
@@ -142,13 +139,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
 
     @Override
     public double getProgress() {
-        if (parsedReadsLimit == -1) {
-            if ((size < 1) || (firstReadSerializedLength == -1))
-                return NaN;
-            else
-                return (double)(parsedReadsTaken) * firstReadSerializedLength / size;
-        } else
-            return (double)parsedReadsTaken / parsedReadsLimit;
+        return (getNumberOfReads() == 0) ? NaN : (double)parsedReadsTaken / getNumberOfReads();
     }
 
     @Override
@@ -164,8 +155,6 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         if (parsedRead == null)
             finished = true;
         else {
-            if (firstReadSerializedLength == -1)
-                calculateFirstReadLength(parsedRead);
             parsedReadsTaken++;
             if ((parsedReadsLimit != -1) && (parsedReadsTaken > parsedReadsLimit))
                 throw new IllegalStateException("Specified parsed reads limit (" + parsedReadsLimit + ") was "
@@ -195,36 +184,25 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         return new ArrayList<>(groupEdges);
     }
 
-    public MifHeader getHeader() {
-        return new MifHeader(pipelineConfiguration, numberOfTargets, correctedGroups, sortedGroups, groupEdges);
-    }
-
     public String getMifVersionInfo() {
         return mifVersionInfo;
     }
 
-    private void calculateFirstReadLength(ParsedRead parsedRead) {
-        ByteArrayOutputStream counterStream = new ByteArrayOutputStream();
-        PrimitivO outStream = new PrimitivO(counterStream);
-        outStream.writeObject(parsedRead);
-        outStream.close();
-        firstReadSerializedLength = counterStream.toByteArray().length;
+    public long getNumberOfReads() {
+        return (parsedReadsLimit == -1) ? numberOfReads : Math.min(parsedReadsLimit, numberOfReads);
+    }
+
+    public long getNumberOfReadsInFile() {
+        return numberOfReads;
     }
 
     public long getOriginalNumberOfReads() {
-        if (!closed)
-            throw new IllegalStateException("getOriginalNumberOfReads() used when reader is not closed!");
         return originalNumberOfReads;
     }
 
-    public long getEstimatedNumberOfReads() {
-        if ((size == -1) || (firstReadSerializedLength == -1))
-            return -1;
-        else {
-            long estimatedNumberOfReads = size / Math.max(1, firstReadSerializedLength);
-            return (parsedReadsLimit == -1) ? estimatedNumberOfReads
-                    : Math.min(parsedReadsLimit, estimatedNumberOfReads);
-        }
+    public MifMetaInfo getMetaInfo() {
+        return new MifMetaInfo(pipelineConfiguration, numberOfTargets, correctedGroups, sortedGroups, groupEdges,
+                numberOfReads, originalNumberOfReads);
     }
 
     public PrimitivIBlocksStats getStats() {

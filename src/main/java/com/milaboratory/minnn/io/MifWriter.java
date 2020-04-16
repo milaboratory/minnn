@@ -31,7 +31,6 @@ package com.milaboratory.minnn.io;
 import com.milaboratory.cli.PipelineConfigurationWriter;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
-import com.milaboratory.minnn.util.DebugUtils.*;
 import com.milaboratory.primitivio.PrimitivO;
 import com.milaboratory.primitivio.blocks.PrimitivOBlocks;
 import com.milaboratory.primitivio.blocks.PrimitivOBlocksStats;
@@ -52,48 +51,41 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     private final PrimitivOHybrid primitivOHybrid;
     private final PrimitivOBlocks<ParsedRead>.Writer writer;
     private boolean closed = false;
-    private long estimatedNumberOfReads = -1;
+    private long estimatedNumberOfReads;
     private long writtenReads = 0;
-    private long originalNumberOfReads = -1;
+    private final long originalNumberOfReads;
 
-    public MifWriter(OutputStream outputStream, MifHeader mifHeader) {
-        this(outputStream, mifHeader, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
+    public MifWriter(String fileName, MifMetaInfo mifMetaInfo) throws IOException {
+        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
     }
 
-    public MifWriter(
-            OutputStream outputStream, MifHeader mifHeader, ExecutorService executorService, int concurrency) {
-        throw new NotImplementedException();
-    }
-
-    public MifWriter(String fileName, MifHeader mifHeader) throws IOException {
-        this(fileName, mifHeader, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
-    }
-
-    public MifWriter(String fileName, MifHeader mifHeader, ExecutorService executorService, int concurrency)
+    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, ExecutorService executorService, int concurrency)
             throws IOException {
         File file = new File(fileName);
         if (file.exists())
             if (!file.delete())
                 throw new IOException("File " + fileName + " already exists and cannot be deleted!");
         primitivOHybrid = new PrimitivOHybrid(executorService, file.toPath());
-        writeHeader(mifHeader);
+        writeHeader(mifMetaInfo);
         writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, DEFAULT_BLOCK_SIZE);
+        this.estimatedNumberOfReads = mifMetaInfo.getNumberOfReads();
+        this.originalNumberOfReads = mifMetaInfo.getOriginalNumberOfReads();
     }
 
-    private void writeHeader(MifHeader mifHeader) {
+    private void writeHeader(MifMetaInfo mifMetaInfo) {
         try (PrimitivO primitivO = primitivOHybrid.beginPrimitivO()) {
             primitivO.write(getBeginMagicBytes());
             primitivO.writeUTF(getVersionString(VERSION_INFO_MIF));
-            primitivO.writeObject(mifHeader.getPipelineConfiguration());
-            primitivO.writeInt(mifHeader.getNumberOfTargets());
-            primitivO.writeInt(mifHeader.getCorrectedGroups().size());
-            for (String correctedGroup : mifHeader.getCorrectedGroups())
+            primitivO.writeObject(mifMetaInfo.getPipelineConfiguration());
+            primitivO.writeInt(mifMetaInfo.getNumberOfTargets());
+            primitivO.writeInt(mifMetaInfo.getCorrectedGroups().size());
+            for (String correctedGroup : mifMetaInfo.getCorrectedGroups())
                 primitivO.writeObject(correctedGroup);
-            primitivO.writeInt(mifHeader.getSortedGroups().size());
-            for (String sortedGroup : mifHeader.getSortedGroups())
+            primitivO.writeInt(mifMetaInfo.getSortedGroups().size());
+            for (String sortedGroup : mifMetaInfo.getSortedGroups())
                 primitivO.writeObject(sortedGroup);
-            primitivO.writeInt(mifHeader.getGroupEdges().size());
-            for (GroupEdge groupEdge : mifHeader.getGroupEdges()) {
+            primitivO.writeInt(mifMetaInfo.getGroupEdges().size());
+            for (GroupEdge groupEdge : mifMetaInfo.getGroupEdges()) {
                 primitivO.writeObject(groupEdge);
                 primitivO.putKnownObject(groupEdge);
             }
@@ -111,9 +103,11 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     @Override
     public void close() throws IOException {
         if (!closed) {
-            writer.close();
+            writer.close(); // This will also write stream termination symbol/block to the stream
+
+            // writing footer
             try (PrimitivO primitivO = primitivOHybrid.beginPrimitivO()) {
-                primitivO.writeObject(null);
+                primitivO.writeLong(writtenReads);
                 primitivO.writeLong(originalNumberOfReads);
                 primitivO.write(getEndMagicBytes());
             }
@@ -126,20 +120,13 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
         return writer.getParent().getStats();
     }
 
-    public void setOriginalNumberOfReads(long originalNumberOfReads) {
-        this.originalNumberOfReads = originalNumberOfReads;
-    }
-
     public void setEstimatedNumberOfReads(long estimatedNumberOfReads) {
         this.estimatedNumberOfReads = estimatedNumberOfReads;
     }
 
     @Override
     public double getProgress() {
-        if (estimatedNumberOfReads == -1)
-            return (writtenReads == 0) ? 0 : NaN;
-        else
-            return Math.min(1, (double)writtenReads / estimatedNumberOfReads);
+        return (estimatedNumberOfReads == -1) ? NaN : Math.min(1, (double)writtenReads / estimatedNumberOfReads);
     }
 
     @Override

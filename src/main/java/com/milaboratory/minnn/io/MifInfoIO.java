@@ -28,58 +28,47 @@
  */
 package com.milaboratory.minnn.io;
 
-import cc.redberry.pipe.CUtils;
 import com.milaboratory.minnn.pattern.GroupEdge;
-import com.milaboratory.util.SmartProgressReporter;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
-import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
 public final class MifInfoIO {
     private final String inputFileName;
-    private final boolean noReadsCount;
     private final String reportFileName;
     private final String jsonReportFileName;
 
-    public MifInfoIO(String inputFileName, boolean noReadsCount, String reportFileName, String jsonReportFileName) {
+    public MifInfoIO(String inputFileName, String reportFileName, String jsonReportFileName) {
         this.inputFileName = inputFileName;
-        this.noReadsCount = noReadsCount;
         this.reportFileName = reportFileName;
         this.jsonReportFileName = jsonReportFileName;
     }
 
     public void go() {
-        long startTime = System.currentTimeMillis();
         String mifVersionInfo;
-        long numberOfReads = 0;
-        long originalNumberOfReads = 0;
         int numberOfTargets;
         List<String> allGroups;
         List<String> correctedGroups;
         List<String> sortedGroups;
+        long numberOfReads;
+        long originalNumberOfReads;
 
         try (MifReader reader = new MifReader(inputFileName)) {
             mifVersionInfo = reader.getMifVersionInfo();
-            MifHeader header = reader.getHeader();
-            numberOfTargets = header.getNumberOfTargets();
+            MifMetaInfo mifMetaInfo = reader.getMetaInfo();
+            numberOfTargets = mifMetaInfo.getNumberOfTargets();
             allGroups = reader.getGroupEdges().stream().map(GroupEdge::getGroupName).distinct()
                     .collect(Collectors.toList());
-            correctedGroups = header.getCorrectedGroups();
-            sortedGroups = header.getSortedGroups();
-            if (!noReadsCount) {
-                SmartProgressReporter.startProgressReport("Counting reads", reader, System.err);
-                numberOfReads = StreamSupport.stream(CUtils.it(reader).spliterator(), false).count();
-                reader.close();
-                originalNumberOfReads = reader.getOriginalNumberOfReads();
-            }
+            correctedGroups = mifMetaInfo.getCorrectedGroups();
+            sortedGroups = mifMetaInfo.getSortedGroups();
+            numberOfReads = reader.getNumberOfReadsInFile();
+            originalNumberOfReads = mifMetaInfo.getOriginalNumberOfReads();
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -91,13 +80,8 @@ public final class MifInfoIO {
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
         report.append("\nMIF file version: ").append(mifVersionInfo).append('\n');
-        long elapsedTime = System.currentTimeMillis() - startTime;
-        if (!noReadsCount) {
-            report.append("Processing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
-            report.append("File contains ").append(numberOfReads).append(" reads\n");
-            report.append("Original data (before extraction) contained ").append(originalNumberOfReads)
-                    .append(" reads\n");
-        }
+        report.append("File contains ").append(numberOfReads).append(" reads\n");
+        report.append("Original data (before extraction) contained ").append(originalNumberOfReads).append(" reads\n");
         report.append("Number of targets in file: ").append(numberOfTargets).append('\n');
         report.append("Groups in file: ").append(allGroups).append('\n');
         if (correctedGroups.size() == 0)
@@ -113,11 +97,8 @@ public final class MifInfoIO {
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("mifVersionInfo", mifVersionInfo);
         jsonReportData.put("numberOfTargets", numberOfTargets);
-        if (!noReadsCount) {
-            jsonReportData.put("numberOfReads", numberOfReads);
-            jsonReportData.put("originalNumberOfReads", originalNumberOfReads);
-            jsonReportData.put("elapsedTime", elapsedTime);
-        }
+        jsonReportData.put("numberOfReads", numberOfReads);
+        jsonReportData.put("originalNumberOfReads", originalNumberOfReads);
         jsonReportData.put("allGroups", allGroups);
         jsonReportData.put("correctedGroups", correctedGroups);
         jsonReportData.put("sortedGroups", sortedGroups);

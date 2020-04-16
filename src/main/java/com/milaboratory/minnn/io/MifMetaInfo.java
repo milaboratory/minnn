@@ -33,21 +33,33 @@ import com.milaboratory.minnn.pattern.GroupEdge;
 
 import java.util.ArrayList;
 
-public class MifHeader {
+public class MifMetaInfo {
     private final PipelineConfiguration pipelineConfiguration;
     private final int numberOfTargets;
     private final ArrayList<String> correctedGroups;
     private final ArrayList<String> sortedGroups;
     private final ArrayList<GroupEdge> groupEdges;
+    private final long numberOfReads;
+    private final long originalNumberOfReads;
 
-    public MifHeader(PipelineConfiguration pipelineConfiguration, int numberOfTargets,
-                     ArrayList<String> correctedGroups, ArrayList<String> sortedGroups,
-                     ArrayList<GroupEdge> groupEdges) {
+    public MifMetaInfo(
+            PipelineConfiguration pipelineConfiguration, int numberOfTargets, ArrayList<String> correctedGroups,
+            ArrayList<String> sortedGroups, ArrayList<GroupEdge> groupEdges, long originalNumberOfReads) {
+        this(pipelineConfiguration, numberOfTargets, correctedGroups, sortedGroups, groupEdges,
+                -1, originalNumberOfReads);
+    }
+
+    public MifMetaInfo(
+            PipelineConfiguration pipelineConfiguration, int numberOfTargets, ArrayList<String> correctedGroups,
+            ArrayList<String> sortedGroups, ArrayList<GroupEdge> groupEdges,
+            long numberOfReads, long originalNumberOfReads) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.numberOfTargets = numberOfTargets;
         this.correctedGroups = correctedGroups;
         this.sortedGroups = sortedGroups;
         this.groupEdges = groupEdges;
+        this.numberOfReads = numberOfReads;
+        this.originalNumberOfReads = originalNumberOfReads;
     }
 
     public PipelineConfiguration getPipelineConfiguration() {
@@ -68,5 +80,13 @@ public class MifHeader {
 
     public ArrayList<GroupEdge> getGroupEdges() {
         return groupEdges;
+    }
+
+    public long getNumberOfReads() {
+        return numberOfReads;
+    }
+
+    public long getOriginalNumberOfReads() {
+        return originalNumberOfReads;
     }
 }

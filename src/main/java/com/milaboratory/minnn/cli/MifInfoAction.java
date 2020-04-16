@@ -52,8 +52,7 @@ public final class MifInfoAction extends ACommandWithOutput implements MiNNNComm
 
     @Override
     public void run0() {
-        MifInfoIO mifInfoIO = new MifInfoIO(Objects.requireNonNull(inputFileName), noReadsCount,
-                reportFileName, jsonReportFileName);
+        MifInfoIO mifInfoIO = new MifInfoIO(Objects.requireNonNull(inputFileName), reportFileName, jsonReportFileName);
         mifInfoIO.go();
     }
 
@@ -70,10 +69,6 @@ public final class MifInfoAction extends ACommandWithOutput implements MiNNNComm
     @Parameters(arity = "1",
             description = "File in MIF format.")
     private String inputFileName = null;
-
-    @Option(description = "Don't count reads, display only info from header.",
-            names = {"-q", "--quick", "--no-reads-count"})
-    private boolean noReadsCount = false;
 
     @Option(description = REPORT,
             names = "--report")

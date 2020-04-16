@@ -28,10 +28,15 @@
  */
 package com.milaboratory.minnn.io;
 
+import static com.milaboratory.minnn.cli.Magic.*;
+
 final class IODefaults {
     private IODefaults() {}
 
-    final static int DEFAULT_CONCURRENCY = 4;
-    final static int DEFAULT_BLOCK_SIZE = 5000;
-    final static int DEFAULT_READ_AHEAD_BLOCKS = 5;
+    static final int DEFAULT_CONCURRENCY = 4;
+    static final int DEFAULT_BLOCK_SIZE = 5000;
+    static final int DEFAULT_READ_AHEAD_BLOCKS = 5;
+
+    /** Number of bytes in footer with meta information */
+    static final int FOOTER_LENGTH = 8 + 8 + END_MAGIC_LENGTH;
 }
