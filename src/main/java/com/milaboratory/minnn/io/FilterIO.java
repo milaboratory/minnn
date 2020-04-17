@@ -90,9 +90,10 @@ public final class FilterIO {
         long matchedReads = 0;
         String readerStats = null;
         String writerStats = null;
-        try (MifReader reader = createReader();
-             MifWriter writer = createWriter(new MifHeader(pipelineConfiguration, reader.getNumberOfTargets(),
-                     reader.getCorrectedGroups(), reader.getSortedGroups(), reader.getGroupEdges()))) {
+        try (MifReader reader = new MifReader(inputFileName);
+             MifWriter writer = new MifWriter(outputFileName, new MifMetaInfo(pipelineConfiguration,
+                     reader.getNumberOfTargets(), reader.getCorrectedGroups(), reader.getSortedGroups(),
+                     reader.getGroupEdges(), reader.getOriginalNumberOfReads()))) {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Filtering reads", reader, System.err);
@@ -113,8 +114,6 @@ public final class FilterIO {
                 readerStats = reader.getStats().toString();
                 writerStats = writer.getStats().toString();
             }
-            reader.close();
-            writer.setOriginalNumberOfReads(reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -164,15 +163,6 @@ public final class FilterIO {
 
         humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
         jsonReport(jsonReportFileName, jsonReportData);
-    }
-
-    private MifReader createReader() throws IOException {
-        return (inputFileName == null) ? new MifReader(System.in) : new MifReader(inputFileName);
-    }
-
-    private MifWriter createWriter(MifHeader mifHeader) throws IOException {
-        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
-                : new MifWriter(outputFileName, mifHeader);
     }
 
     private class FilterProcessor implements Processor<ParsedRead, ParsedRead> {

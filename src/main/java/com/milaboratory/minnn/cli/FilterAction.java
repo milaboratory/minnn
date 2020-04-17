@@ -137,8 +137,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
     @Override
     protected List<String> getInputFiles() {
         List<String> inputFileNames = new ArrayList<>();
-        if (inputFileName != null)
-            inputFileNames.add(inputFileName);
+        inputFileNames.add(inputFileName);
         if (barcodeWhitelistFiles != null)
             inputFileNames.addAll(barcodeWhitelistFiles.values());
         if (barcodeWhitelistPatternFiles != null)
@@ -148,19 +147,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Override
     protected List<String> getOutputFiles() {
-        List<String> outputFileNames = new ArrayList<>();
-        if (outputFileName != null)
-            outputFileNames.add(outputFileName);
-        return outputFileNames;
-    }
-
-    @Override
-    public void handleExistenceOfOutputFile(String outFileName) {
-        // disable smart overwrite if input is from pipe
-        if (inputFileName == null)
-            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
-        else
-            super.handleExistenceOfOutputFile(outFileName);
+        return Collections.singletonList(outputFileName);
     }
 
     @Override
@@ -172,24 +159,23 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Override
     public PipelineConfiguration getFullPipelineConfiguration() {
-        if (inputFileName != null)
-            return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
-                    binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
-                    AppVersionInfo.get());
-        else
-            return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
+        return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
+                binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
+                AppVersionInfo.get());
     }
 
     @Parameters(arity = "0..*",
             description = "\"<filter_query>\"")
     private List<String> filterQueryList = null;
 
-    @Option(description = IN_FILE_OR_STDIN,
-            names = {"--input"})
+    @Option(description = IN_MIF_FILE,
+            names = {"--input"},
+            required = true)
     private String inputFileName = null;
 
-    @Option(description = OUT_FILE_OR_STDOUT,
-            names = {"--output"})
+    @Option(description = OUT_MIF_FILE,
+            names = {"--output"},
+            required = true)
     private String outputFileName = null;
 
     @Option(description = "Barcode Whitelist Options: Barcode names and names of corresponding files with " +

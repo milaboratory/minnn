@@ -48,6 +48,7 @@ import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.PipelineConfigurationReaderMiNNN.pipelineConfigurationReaderInstance;
 import static com.milaboratory.minnn.io.MifInfoExtractor.mifInfoExtractor;
+import static com.milaboratory.minnn.io.MinnnDataFormat.*;
 import static com.milaboratory.minnn.parser.ParserFormat.*;
 import static com.milaboratory.minnn.util.CommonUtils.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
@@ -97,6 +98,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
 
     @Override
     public void validate() {
+        if ((inputFormat == MIF) && (getInputFiles().size() != 1))
+            throw new ValidationException(spec.commandLine(),
+                    "Expected exactly 1 input file if --input-format MIF is specified!", false);
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
         validateQuality(goodQuality, spec.commandLine());
         validateQuality(badQuality, spec.commandLine());
@@ -119,8 +123,7 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
     @Override
     protected List<String> getOutputFiles() {
         List<String> outputFileNames = new ArrayList<>();
-        if (outputFileName != null)
-            outputFileNames.add(outputFileName);
+        outputFileNames.add(outputFileName);
         if (notMatchedOutputFileName != null)
             outputFileNames.add(notMatchedOutputFileName);
         return outputFileNames;
@@ -145,7 +148,12 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
 
     @Override
     public PipelineConfiguration getFullPipelineConfiguration() {
-        return PipelineConfiguration.mkInitial(getInputFiles(), getConfiguration(), AppVersionInfo.get());
+        if (inputFormat == MIF)
+            return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(getInputFiles().get(0),
+                    binaryFileInfoExtractor.getFileInfo(getInputFiles().get(0))), getInputFiles(), getConfiguration(),
+                    AppVersionInfo.get());
+        else
+            return PipelineConfiguration.mkInitial(getInputFiles(), getConfiguration(), AppVersionInfo.get());
     }
 
     @Option(description = PATTERN_QUERY,
@@ -159,8 +167,9 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
             arity = "1..*")
     private List<String> inputFileNames = null;
 
-    @Option(description = OUT_FILE_OR_STDOUT,
-            names = "--output")
+    @Option(description = OUT_MIF_FILE,
+            names = "--output",
+            required = true)
     private String outputFileName = null;
 
     @Option(description = "Output file for not matched reads in MIF format. If not specified, not " +
@@ -168,7 +177,8 @@ public final class ExtractAction extends ACommandWithSmartOverwrite implements M
             names = "--not-matched-output")
     private String notMatchedOutputFileName = null;
 
-    @Option(description = "Input data format. Available options: FASTQ, MIF.",
+    @Option(description = "Input data format. Available options: FASTQ, MIF. Input from stdin is not supported for " +
+            "MIF format.",
             names = "--input-format")
     private MinnnDataFormat inputFormat = DEFAULT_INPUT_FORMAT;
 

@@ -112,8 +112,9 @@ public final class ReadProcessor {
         String readerStats = null;
         String writerStats = null;
         try (IndexedSequenceReader<?> reader = createReader();
-             MifWriter writer = Objects.requireNonNull(createWriter(false));
-             MifWriter mismatchedReadsWriter = createWriter(true)) {
+             MifWriter writer = Objects.requireNonNull(
+                     createWriter(false, reader.getOriginalNumberOfReads()));
+             MifWriter mismatchedReadsWriter = createWriter(true, reader.getOriginalNumberOfReads())) {
             SmartProgressReporter.startProgressReport("Parsing", reader, System.err);
             Merger<Chunk<IndexedSequenceRead>> bufferedReaderPort = CUtils.buffered(CUtils.chunked(reader,
                     4 * 64), 4 * 16);
@@ -134,10 +135,11 @@ public final class ReadProcessor {
                 writerStats = writer.getStats().toString();
             }
             reader.close();
-            long originalNumberOfReads = (inputFormat == MIF) ? reader.getOriginalNumberOfReads() : totalReads.get();
-            writer.setOriginalNumberOfReads(originalNumberOfReads);
-            if (mismatchedReadsWriter != null)
-                mismatchedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
+            if (inputFormat != MIF) {
+                writer.setOriginalNumberOfReads(totalReads.get());
+                if (mismatchedReadsWriter != null)
+                    mismatchedReadsWriter.setOriginalNumberOfReads(totalReads.get());
+            }
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
@@ -228,8 +230,7 @@ public final class ReadProcessor {
                 }
                 break;
             case MIF:
-                MifReader mifReader = (inputFileNames.size() == 0) ? new MifReader(System.in)
-                        : new MifReader(inputFileNames.get(0));
+                MifReader mifReader = new MifReader(inputFileNames.get(0));
                 if (inputReadsLimit > 0)
                     mifReader.setParsedReadsLimit(inputReadsLimit);
                 numberOfTargets = mifReader.getNumberOfTargets();
@@ -246,19 +247,18 @@ public final class ReadProcessor {
         return reader;
     }
 
-    private MifWriter createWriter(boolean mismatchedReads) throws IOException {
+    private MifWriter createWriter(boolean mismatchedReads, long originalNumberOfReads) throws IOException {
         ArrayList<GroupEdge> outputGroupEdges = new ArrayList<>(pattern.getGroupEdges());
         descriptionGroups.getGroupNames().forEach(groupName -> {
             outputGroupEdges.add(new GroupEdge(groupName, true));
             outputGroupEdges.add(new GroupEdge(groupName, false));
         });
-        MifHeader mifHeader = new MifHeader(pipelineConfiguration, outputNumberOfTargets, new ArrayList<>(),
-                new ArrayList<>(), outputGroupEdges);
+        MifMetaInfo mifMetaInfo = new MifMetaInfo(pipelineConfiguration, outputNumberOfTargets, new ArrayList<>(),
+                new ArrayList<>(), outputGroupEdges, originalNumberOfReads);
         if (mismatchedReads)
-            return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifHeader);
+            return (notMatchedOutputFileName == null) ? null : new MifWriter(notMatchedOutputFileName, mifMetaInfo);
         else
-            return (outputFileName == null) ? new MifWriter(new SystemOutStream(), mifHeader)
-                    : new MifWriter(outputFileName, mifHeader);
+            return new MifWriter(outputFileName, mifMetaInfo);
     }
 
     private int calculateOutputNumberOfTargets() {
@@ -354,7 +354,9 @@ public final class ReadProcessor {
         }
 
         long getOriginalNumberOfReads() {
-            return getMifReader().getOriginalNumberOfReads();
+            /* value -1 for originalNumberOfReads means that input file is the original, and originalNumberOfReads
+             * will be calculated in the end */
+            return (inputFormat == MIF) ? getMifReader().getOriginalNumberOfReads() : -1;
         }
     }
 

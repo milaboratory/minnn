@@ -85,17 +85,13 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
 
     @Override
     protected List<String> getInputFiles() {
-        List<String> inputFileNames = new ArrayList<>();
-        if (inputFileName != null)
-            inputFileNames.add(inputFileName);
-        return inputFileNames;
+        return Collections.singletonList(inputFileName);
     }
 
     @Override
     protected List<String> getOutputFiles() {
         List<String> outputFileNames = new ArrayList<>();
-        if (outputFileName != null)
-            outputFileNames.add(outputFileName);
+        outputFileNames.add(outputFileName);
         if (originalReadStatsFileName != null)
             outputFileNames.add(originalReadStatsFileName);
         if (notUsedReadsOutputFileName != null)
@@ -105,8 +101,8 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
 
     @Override
     public void handleExistenceOfOutputFile(String outFileName) {
-        // disable smart overwrite if input is from pipe or extra output files are specified
-        if ((inputFileName == null) || (originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
+        // disable smart overwrite if extra output files are specified
+        if ((originalReadStatsFileName != null) || (notUsedReadsOutputFileName != null))
             MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
         else
             super.handleExistenceOfOutputFile(outFileName);
@@ -124,20 +120,19 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
 
     @Override
     public PipelineConfiguration getFullPipelineConfiguration() {
-        if (inputFileName != null)
-            return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
-                    binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
-                    AppVersionInfo.get());
-        else
-            return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
+        return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
+                binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
+                AppVersionInfo.get());
     }
 
-    @Option(description = IN_FILE_OR_STDIN,
-            names = {"--input"})
+    @Option(description = IN_MIF_FILE,
+            names = {"--input"},
+            required = true)
     private String inputFileName = null;
 
-    @Option(description = OUT_FILE_OR_STDOUT,
-            names = {"--output"})
+    @Option(description = OUT_MIF_FILE,
+            names = {"--output"},
+            required = true)
     private String outputFileName = null;
 
     @Option(description = CONSENSUS_GROUP_LIST,

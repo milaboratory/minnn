@@ -53,7 +53,7 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     private boolean closed = false;
     private long estimatedNumberOfReads;
     private long writtenReads = 0;
-    private final long originalNumberOfReads;
+    private long originalNumberOfReads;
 
     public MifWriter(String fileName, MifMetaInfo mifMetaInfo) throws IOException {
         this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
@@ -105,6 +105,9 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
         if (!closed) {
             writer.close(); // This will also write stream termination symbol/block to the stream
 
+            if (originalNumberOfReads == -1)
+                throw new IllegalStateException("originalNumberOfReads is not initialized in MifWriter!");
+
             // writing footer
             try (PrimitivO primitivO = primitivOHybrid.beginPrimitivO()) {
                 primitivO.writeLong(writtenReads);
@@ -122,6 +125,13 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
 
     public void setEstimatedNumberOfReads(long estimatedNumberOfReads) {
         this.estimatedNumberOfReads = estimatedNumberOfReads;
+    }
+
+    public void setOriginalNumberOfReads(long originalNumberOfReads) {
+        if (this.originalNumberOfReads != -1)
+            throw new IllegalStateException("originalNumberOfReads is already set to " + this.originalNumberOfReads
+                    + " in MifWriter, and trying to set new value " + originalNumberOfReads);
+        this.originalNumberOfReads = originalNumberOfReads;
     }
 
     @Override

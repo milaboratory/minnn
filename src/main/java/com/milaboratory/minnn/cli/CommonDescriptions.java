@@ -31,10 +31,8 @@ package com.milaboratory.minnn.cli;
 class CommonDescriptions {
     private CommonDescriptions() {}
 
-    static final String IN_FILE_NO_STDIN = "Input file in MIF format. This argument is required; stdin is not" +
-            " supported.";
-    static final String IN_FILE_OR_STDIN = "Input file in MIF format. If not specified, stdin will be used.";
-    static final String OUT_FILE_OR_STDOUT = "Output file in MIF format. If not specified, stdout will be used.";
+    static final String IN_MIF_FILE = "Input file in MIF format. This argument is required.";
+    static final String OUT_MIF_FILE = "Output file in MIF format. This argument is required.";
     static final String OUT_TEXT_FILE = "Output text file. If not specified, stdout will be used.";
     static final String PATTERN_QUERY = "Query, pattern specified in MiNNN format.";
     static final String MATCH_SCORE = "Score for perfectly matched nucleotide.";
