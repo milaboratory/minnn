@@ -71,27 +71,12 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
 
     @Override
     protected List<String> getInputFiles() {
-        List<String> inputFileNames = new ArrayList<>();
-        if (inputFileName != null)
-            inputFileNames.add(inputFileName);
-        return inputFileNames;
+        return Collections.singletonList(inputFileName);
     }
 
     @Override
     protected List<String> getOutputFiles() {
-        List<String> outputFileNames = new ArrayList<>();
-        if (outputFileName != null)
-            outputFileNames.add(outputFileName);
-        return outputFileNames;
-    }
-
-    @Override
-    public void handleExistenceOfOutputFile(String outFileName) {
-        // disable smart overwrite if input is from pipe
-        if (inputFileName == null)
-            MiNNNCommand.super.handleExistenceOfOutputFile(outFileName, forceOverwrite || overwriteIfRequired);
-        else
-            super.handleExistenceOfOutputFile(outFileName);
+        return Collections.singletonList(outputFileName);
     }
 
     @Override
@@ -102,12 +87,9 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
 
     @Override
     public PipelineConfiguration getFullPipelineConfiguration() {
-        if (inputFileName != null)
-            return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
-                    binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
-                    AppVersionInfo.get());
-        else
-            return PipelineConfiguration.mkInitial(new ArrayList<>(), getConfiguration(), AppVersionInfo.get());
+        return PipelineConfiguration.appendStep(pipelineConfigurationReader.fromFile(inputFileName,
+                binaryFileInfoExtractor.getFileInfo(inputFileName)), getInputFiles(), getConfiguration(),
+                AppVersionInfo.get());
     }
 
     @Option(description = "Group names to use for sorting. Priority is in descending order.",
@@ -116,12 +98,14 @@ public final class SortAction extends ACommandWithSmartOverwrite implements MiNN
             arity = "1..*")
     private List<String> sortGroupNames = null;
 
-    @Option(description = IN_FILE_OR_STDIN,
-            names = {"--input"})
+    @Option(description = IN_MIF_FILE,
+            names = {"--input"},
+            required = true)
     private String inputFileName = null;
 
-    @Option(description = OUT_FILE_OR_STDOUT,
-            names = {"--output"})
+    @Option(description = OUT_MIF_FILE,
+            names = {"--output"},
+            required = true)
     private String outputFileName = null;
 
     @Option(description = "Chunk size for sorter.",

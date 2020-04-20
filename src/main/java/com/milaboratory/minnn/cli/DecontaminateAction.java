@@ -81,8 +81,7 @@ public final class DecontaminateAction extends ACommandWithSmartOverwrite implem
     @Override
     protected List<String> getOutputFiles() {
         List<String> outputFileNames = new ArrayList<>();
-        if (outputFileName != null)
-            outputFileNames.add(outputFileName);
+        outputFileNames.add(outputFileName);
         if (excludedBarcodesOutputFileName != null)
             outputFileNames.add(excludedBarcodesOutputFileName);
         return outputFileNames;
@@ -126,13 +125,14 @@ public final class DecontaminateAction extends ACommandWithSmartOverwrite implem
             arity = "1..*")
     private List<String> primaryGroupNames = null;
 
-    @Option(description = IN_FILE_NO_STDIN,
+    @Option(description = IN_MIF_FILE,
             names = {"--input"},
             required = true)
     private String inputFileName = null;
 
-    @Option(description = OUT_FILE_OR_STDOUT,
-            names = {"--output"})
+    @Option(description = OUT_MIF_FILE,
+            names = {"--output"},
+            required = true)
     private String outputFileName = null;
 
     @Option(description = "Output file for reads with filtered out barcodes. If not specified, reads with " +

@@ -210,7 +210,7 @@ public final class ConsensusIO {
 
     public void go() {
         long startTime = System.currentTimeMillis();
-        MifHeader mifHeader;
+        MifMetaInfo mifMetaInfo;
         long originalNumberOfReads;
         String readerStats = null;
         String writerStats = null;
@@ -228,11 +228,12 @@ public final class ConsensusIO {
             reportFileOutputStream.println("Consensus assembled by groups: " + consensusGroups);
             reportFileOutputStream.println("Consensus algorithm: " + consensusAlgorithmType);
         }
-        try (MifReader reader = createReader();
-             MifWriter writer = createWriter(mifHeader = reader.getHeader());
-             MifWriter notUsedReadsWriter = saveNotUsedReads ? new MifWriter(notUsedReadsOutputFileName, new MifHeader(
-                     pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
-                     mifHeader.getSortedGroups(), mifHeader.getGroupEdges())) : null)
+        try (MifReader reader = new MifReader(inputFileName);
+             MifWriter writer = createWriter(mifMetaInfo = reader.getMetaInfo());
+             MifWriter notUsedReadsWriter = saveNotUsedReads ? new MifWriter(notUsedReadsOutputFileName,
+                     new MifMetaInfo(pipelineConfiguration, numberOfTargets, mifMetaInfo.getCorrectedGroups(),
+                     mifMetaInfo.getSortedGroups(), mifMetaInfo.getGroupEdges(),
+                             mifMetaInfo.getOriginalNumberOfReads())) : null)
         {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
@@ -519,14 +520,9 @@ public final class ConsensusIO {
         jsonReport(jsonReportFileName, jsonReportData);
     }
 
-    private MifReader createReader() throws IOException {
-        return (inputFileName == null) ? new MifReader(System.in) : new MifReader(inputFileName);
-    }
-
-    private MifWriter createWriter(MifHeader mifHeader) throws IOException {
-        ArrayList<GroupEdge> groupEdges = mifHeader.getGroupEdges();
-        numberOfTargets = mifHeader.getNumberOfTargets();
-        MifHeader newHeader;
+    private MifWriter createWriter(MifMetaInfo mifMetaInfo) throws IOException {
+        ArrayList<GroupEdge> groupEdges = mifMetaInfo.getGroupEdges();
+        numberOfTargets = mifMetaInfo.getNumberOfTargets();
         if (toSeparateGroups) {
             Set<String> defaultSeparateGroups = IntStream.rangeClosed(1, numberOfTargets)
                     .mapToObj(i -> "CR" + i).collect(Collectors.toSet());
@@ -539,10 +535,9 @@ public final class ConsensusIO {
                 groupEdges.add(new GroupEdge(name, false));
             });
         }
-        newHeader = new MifHeader(pipelineConfiguration, numberOfTargets, mifHeader.getCorrectedGroups(),
-                new ArrayList<>(), groupEdges);
-        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), newHeader)
-                : new MifWriter(outputFileName, newHeader);
+        return new MifWriter(outputFileName, new MifMetaInfo(pipelineConfiguration, numberOfTargets,
+                mifMetaInfo.getCorrectedGroups(), new ArrayList<>(), groupEdges,
+                mifMetaInfo.getOriginalNumberOfReads()));
     }
 
     private LinkedHashMap<String, NucleotideSequence> extractConsensusGroups(ParsedRead parsedRead) {

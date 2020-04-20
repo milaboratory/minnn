@@ -71,10 +71,7 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
 
     @Override
     protected List<String> getInputFiles() {
-        List<String> inputFileNames = new ArrayList<>();
-        if (inputFileName != null)
-            inputFileNames.add(inputFileName);
-        return inputFileNames;
+        return Collections.singletonList(inputFileName);
     }
 
     @Override
@@ -89,8 +86,9 @@ public final class MifToFastqAction extends ACommandWithOutput implements MiNNNC
             arity = "1..*")
     private LinkedHashMap<String, String> groupsQuery = null;
 
-    @Option(description = IN_FILE_OR_STDIN,
-            names = {"--input"})
+    @Option(description = IN_MIF_FILE,
+            names = {"--input"},
+            required = true)
     private String inputFileName = null;
 
     @Option(description = "Copy original comments from initial fastq files to comments of output fastq files.",

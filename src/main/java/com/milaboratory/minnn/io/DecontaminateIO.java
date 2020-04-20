@@ -80,8 +80,8 @@ public final class DecontaminateIO {
         long startTime = System.currentTimeMillis();
         try (MifReader pass1Reader = new MifReader(inputFileName);
              MifReader pass2Reader = new MifReader(inputFileName);
-             MifWriter writer = Objects.requireNonNull(createWriter(pass1Reader.getHeader(), false));
-             MifWriter excludedBarcodesWriter = createWriter(pass1Reader.getHeader(), true)) {
+             MifWriter writer = Objects.requireNonNull(createWriter(pass1Reader.getMetaInfo(), false));
+             MifWriter excludedBarcodesWriter = createWriter(pass1Reader.getMetaInfo(), true)) {
             if (inputReadsLimit > 0) {
                 pass1Reader.setParsedReadsLimit(inputReadsLimit);
                 pass2Reader.setParsedReadsLimit(inputReadsLimit);
@@ -137,15 +137,15 @@ public final class DecontaminateIO {
         jsonReport(jsonReportFileName, jsonReportData);
     }
 
-    private MifWriter createWriter(MifHeader inputHeader, boolean excludedBarcodes) throws IOException {
-        MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
-                inputHeader.getCorrectedGroups(), inputHeader.getSortedGroups(), inputHeader.getGroupEdges());
+    private MifWriter createWriter(MifMetaInfo inputMetaInfo, boolean excludedBarcodes) throws IOException {
+        MifMetaInfo outputMetaInfo = new MifMetaInfo(pipelineConfiguration, inputMetaInfo.getNumberOfTargets(),
+                inputMetaInfo.getCorrectedGroups(), inputMetaInfo.getSortedGroups(), inputMetaInfo.getGroupEdges(),
+                inputMetaInfo.getOriginalNumberOfReads());
         if (excludedBarcodes)
             return (excludedBarcodesOutputFileName == null) ? null
-                    : new MifWriter(excludedBarcodesOutputFileName, outputHeader);
+                    : new MifWriter(excludedBarcodesOutputFileName, outputMetaInfo);
         else
-            return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
-                    : new MifWriter(outputFileName, outputHeader);
+            return new MifWriter(outputFileName, outputMetaInfo);
     }
 
     private void performDecontamination(

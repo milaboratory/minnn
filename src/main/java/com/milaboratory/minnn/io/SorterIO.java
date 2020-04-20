@@ -84,18 +84,19 @@ public final class SorterIO {
         long totalReads = 0;
         String readerStats = null;
         String writerStats = null;
-        try (MifReader reader = createReader();
-             MifWriter writer = createWriter(reader.getHeader())) {
+        try (MifReader reader = new MifReader(inputFileName);
+             MifWriter writer = new MifWriter(outputFileName, new MifMetaInfo(pipelineConfiguration,
+                     reader.getNumberOfTargets(), reader.getCorrectedGroups(), new ArrayList<>(sortGroupNames),
+                     reader.getGroupEdges(), reader.getOriginalNumberOfReads()))) {
             validateInputGroups(reader, sortGroupNames, true, "--groups");
             SmartProgressReporter.startProgressReport("Reading", reader, System.err);
             OutputPortCloseable<ParsedRead> sorted = Sorter.sort(reader, new ParsedReadComparator(), chunkSize,
                     new ParsedReadObjectSerializer(reader.getGroupEdges()), tmpFile);
             SmartProgressReporter.startProgressReport("Writing", writer, System.err);
+            writer.setEstimatedNumberOfReads(reader.getNumberOfReads());
             for (ParsedRead parsedRead : CUtils.it(sorted)) {
-                totalReads++;
-                if (totalReads == 1)
-                    writer.setEstimatedNumberOfReads(reader.getEstimatedNumberOfReads());
                 writer.write(parsedRead);
+                totalReads++;
             }
             if (debugMode) {
                 readerStats = reader.getStats().toString();
@@ -142,17 +143,6 @@ public final class SorterIO {
 
         humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
         jsonReport(jsonReportFileName, jsonReportData);
-    }
-
-    private MifReader createReader() throws IOException {
-        return (inputFileName == null) ? new MifReader(System.in) : new MifReader(inputFileName);
-    }
-
-    private MifWriter createWriter(MifHeader inputHeader) throws IOException {
-        MifHeader outputHeader = new MifHeader(pipelineConfiguration, inputHeader.getNumberOfTargets(),
-                inputHeader.getCorrectedGroups(), new ArrayList<>(sortGroupNames), inputHeader.getGroupEdges());
-        return (outputFileName == null) ? new MifWriter(new SystemOutStream(), outputHeader)
-                : new MifWriter(outputFileName, outputHeader);
     }
 
     private int estimateChunkSize() {

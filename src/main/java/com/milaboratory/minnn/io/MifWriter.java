@@ -55,11 +55,19 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     private long writtenReads = 0;
     private long originalNumberOfReads;
 
+    // if bufferSize value is -1, use the default value from milib
+    private final int bufferSize;
+
     public MifWriter(String fileName, MifMetaInfo mifMetaInfo) throws IOException {
-        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
+        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY, -1);
     }
 
-    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, ExecutorService executorService, int concurrency)
+    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, int concurrency, int bufferSize) throws IOException {
+        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), concurrency, bufferSize);
+    }
+
+    public MifWriter(
+            String fileName, MifMetaInfo mifMetaInfo, ExecutorService executorService, int concurrency, int bufferSize)
             throws IOException {
         File file = new File(fileName);
         if (file.exists())
@@ -70,10 +78,12 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
         writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, DEFAULT_BLOCK_SIZE);
         this.estimatedNumberOfReads = mifMetaInfo.getNumberOfReads();
         this.originalNumberOfReads = mifMetaInfo.getOriginalNumberOfReads();
+        this.bufferSize = bufferSize;
     }
 
     private void writeHeader(MifMetaInfo mifMetaInfo) {
-        try (PrimitivO primitivO = primitivOHybrid.beginPrimitivO()) {
+        try (PrimitivO primitivO = (bufferSize == -1) ? primitivOHybrid.beginPrimitivO()
+                : primitivOHybrid.beginPrimitivO(false, bufferSize)) {
             primitivO.write(getBeginMagicBytes());
             primitivO.writeUTF(getVersionString(VERSION_INFO_MIF));
             primitivO.writeObject(mifMetaInfo.getPipelineConfiguration());

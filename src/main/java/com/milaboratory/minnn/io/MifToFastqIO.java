@@ -83,7 +83,7 @@ public final class MifToFastqIO {
         long startTime = System.currentTimeMillis();
         long totalReads = 0;
         String readerStats = null;
-        try (MifReader reader = createReader();
+        try (MifReader reader = new MifReader(inputFileName);
              SequenceWriter writer = createWriter()) {
             LinkedHashSet<String> availableGroupNames = reader.getGroupEdges().stream().map(GroupEdge::getGroupName)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -137,10 +137,6 @@ public final class MifToFastqIO {
 
         humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
         jsonReport(jsonReportFileName, jsonReportData);
-    }
-
-    private MifReader createReader() throws IOException {
-        return (inputFileName == null) ? new MifReader(System.in) : new MifReader(inputFileName);
     }
 
     private SequenceWriter createWriter() throws IOException {

@@ -90,8 +90,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Override
     protected List<String> getOutputFiles() {
         List<String> outputFileNames = new ArrayList<>();
-        if (outputFileName != null)
-            outputFileNames.add(outputFileName);
+        outputFileNames.add(outputFileName);
         if (excludedBarcodesOutputFileName != null)
             outputFileNames.add(excludedBarcodesOutputFileName);
         return outputFileNames;
@@ -138,13 +137,14 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
             arity = "1..*")
     private List<String> primaryGroupNames = null;
 
-    @Option(description = IN_FILE_NO_STDIN,
+    @Option(description = IN_MIF_FILE,
             names = {"--input"},
             required = true)
     private String inputFileName = null;
 
-    @Option(description = OUT_FILE_OR_STDOUT,
-            names = {"--output"})
+    @Option(description = OUT_MIF_FILE,
+            names = {"--output"},
+            required = true)
     private String outputFileName = null;
 
     @Option(description = "Relative maximal allowed number of errors (Levenshtein distance) between barcodes for " +

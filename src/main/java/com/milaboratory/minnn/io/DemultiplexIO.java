@@ -65,8 +65,7 @@ public final class DemultiplexIO {
     private final String prefix;
     private final LinkedHashMap<OutputFileIdentifier, OutputFileIdentifier> outputFileIdentifiers;
     private final HashSet<String> outputFileNames;
-    private MifHeader header;
-    private long originalNumberOfReads;
+    private MifMetaInfo mifMetaInfo;
 
     public DemultiplexIO(
             PipelineConfiguration pipelineConfiguration, String inputFileName, String outputFilesPath,
@@ -82,8 +81,7 @@ public final class DemultiplexIO {
         this.reportFileName = reportFileName;
         this.jsonReportFileName = jsonReportFileName;
         this.debugMode = debugMode;
-        this.prefix = ((inputFileName.length() > 4)
-                && inputFileName.substring(inputFileName.length() - 4).equals(".mif"))
+        this.prefix = ((inputFileName.length() > 4) && inputFileName.endsWith(".mif"))
                 ? inputFileName.substring(0, inputFileName.length() - 4) : inputFileName;
         this.outputFileIdentifiers = new LinkedHashMap<>();
         this.outputFileNames = new HashSet<>();
@@ -96,8 +94,9 @@ public final class DemultiplexIO {
         String readerStats = null;
         try (MifReader reader = new MifReader(inputFileName);
              PrintStream logWriter = new PrintStream(new FileOutputStream(logFileName))) {
-            header = new MifHeader(pipelineConfiguration, reader.getNumberOfTargets(), reader.getCorrectedGroups(),
-                    reader.getSortedGroups(), reader.getGroupEdges());
+            mifMetaInfo = new MifMetaInfo(pipelineConfiguration, reader.getNumberOfTargets(),
+                    reader.getCorrectedGroups(), reader.getSortedGroups(), reader.getGroupEdges(),
+                    reader.getOriginalNumberOfReads());
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
             SmartProgressReporter.startProgressReport("Demultiplexing reads", reader, System.err);
@@ -117,7 +116,6 @@ public final class DemultiplexIO {
             if (debugMode)
                 readerStats = reader.getStats().toString();
             reader.close();
-            originalNumberOfReads = reader.getOriginalNumberOfReads();
             outputFileIdentifiers.keySet().forEach(OutputFileIdentifier::closeWriter);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
@@ -358,7 +356,8 @@ public final class DemultiplexIO {
                         fileName = outputFilesPath + File.separator + new File(fileName).getName();
                     if (!allowOverwriting && new File(fileName).exists())
                         throw exitWithError("File " + fileName + " already exists, and overwriting was not enabled!");
-                    writer = new MifWriter(fileName, header);
+                    writer = new MifWriter(fileName, mifMetaInfo, 1,
+                            DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE);
                 } catch (IOException e) {
                     throw exitWithError(e.getMessage());
                 }
@@ -368,7 +367,6 @@ public final class DemultiplexIO {
 
         void closeWriter() {
             if (writer != null) {
-                writer.setOriginalNumberOfReads(originalNumberOfReads);
                 try {
                     writer.close();
                 } catch (IOException e) {

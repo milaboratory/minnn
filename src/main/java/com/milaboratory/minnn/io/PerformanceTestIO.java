@@ -198,10 +198,6 @@ public final class PerformanceTestIO {
             return finished;
         }
 
-        public MifHeader getHeader() {
-            return new MifHeader(pipelineConfiguration, numberOfTargets, correctedGroups, sortedGroups, groupEdges);
-        }
-
         private void calculateFirstReadLength(ParsedRead parsedRead) {
             ByteArrayOutputStream counterStream = new ByteArrayOutputStream();
             PrimitivO outStream = new PrimitivO(counterStream);
@@ -217,24 +213,24 @@ public final class PerformanceTestIO {
         boolean closed = false;
         long writtenReads = 0;
 
-        public MifWriterForTest(MifHeader mifHeader) throws IOException {
+        public MifWriterForTest(MifMetaInfo mifMetaInfo) throws IOException {
             output = new PrimitivO(new BufferedOutputStream(new FileOutputStream(outputFileName), BUFFER_SIZE));
-            writeHeader(mifHeader);
+            writeHeader(mifMetaInfo);
         }
 
-        private void writeHeader(MifHeader mifHeader) {
+        private void writeHeader(MifMetaInfo mifMetaInfo) {
             output.write(getBeginMagicBytes());
             output.writeUTF(getVersionString(VERSION_INFO_MIF));
-            output.writeObject(mifHeader.getPipelineConfiguration());
-            output.writeInt(mifHeader.getNumberOfTargets());
-            output.writeInt(mifHeader.getCorrectedGroups().size());
-            for (String correctedGroup : mifHeader.getCorrectedGroups())
+            output.writeObject(mifMetaInfo.getPipelineConfiguration());
+            output.writeInt(mifMetaInfo.getNumberOfTargets());
+            output.writeInt(mifMetaInfo.getCorrectedGroups().size());
+            for (String correctedGroup : mifMetaInfo.getCorrectedGroups())
                 output.writeObject(correctedGroup);
-            output.writeInt(mifHeader.getSortedGroups().size());
-            for (String sortedGroup : mifHeader.getSortedGroups())
+            output.writeInt(mifMetaInfo.getSortedGroups().size());
+            for (String sortedGroup : mifMetaInfo.getSortedGroups())
                 output.writeObject(sortedGroup);
-            output.writeInt(mifHeader.getGroupEdges().size());
-            for (GroupEdge groupEdge : mifHeader.getGroupEdges()) {
+            output.writeInt(mifMetaInfo.getGroupEdges().size());
+            for (GroupEdge groupEdge : mifMetaInfo.getGroupEdges()) {
                 output.writeObject(groupEdge);
                 output.putKnownObject(groupEdge);
             }
