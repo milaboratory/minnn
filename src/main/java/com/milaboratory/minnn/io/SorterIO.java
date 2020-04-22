@@ -102,8 +102,6 @@ public final class SorterIO {
                 readerStats = reader.getStats().toString();
                 writerStats = writer.getStats().toString();
             }
-            reader.close();
-            writer.setOriginalNumberOfReads(reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }

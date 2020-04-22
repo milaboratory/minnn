@@ -174,10 +174,6 @@ public final class CorrectBarcodesIO {
                 pass2ReaderStats = pass2Reader.getStats().toString();
                 writerStats = writer.getStats().toString();
             }
-            pass1Reader.close();
-            writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
-            if (excludedBarcodesWriter != null)
-                excludedBarcodesWriter.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }

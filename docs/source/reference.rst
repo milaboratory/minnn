@@ -16,9 +16,9 @@ extract
 
  --pattern: Query, pattern specified in MiNNN format.
  --input: Input files. Single file means that there is 1 read or multi-read file; multiple files mean that there is 1 file for each read. If not specified, stdin will be used.
- --output: Output file in MIF format. If not specified, stdout will be used.
+ --output: Output file in MIF format. This argument is required.
  --not-matched-output: Output file for not matched reads in MIF format. If not specified, not matched reads will not be written anywhere.
- --input-format: Input data format. Available options: FASTQ, MIF.
+ --input-format: Input data format. Available options: FASTQ, MIF. Input from stdin is not supported for MIF format.
  --try-reverse-order: If there are 2 or more reads, check 2 last reads in direct and reverse order.
  --match-score: Score for perfectly matched nucleotide.
  --mismatch-score: Score for mismatched nucleotide.
@@ -48,8 +48,8 @@ filter
 
 .. code-block:: text
 
- --input: Input file in MIF format. If not specified, stdin will be used.
- --output: Output file in MIF format. If not specified, stdout will be used.
+ --input: Input file in MIF format. This argument is required.
+ --output: Output file in MIF format. This argument is required.
  --whitelist: Barcode Whitelist Options: Barcode names and names of corresponding files with whitelists. Whitelist files must contain barcode values, one value on the line. For example, --whitelist BC1=options_BC1.txt can be used, where options_BC1.txt contains AAA, GGG and CCC lines: they are whitelist options for barcode BC1.
  --whitelist-patterns: Barcode Whitelist Pattern Options: Barcode names and names of corresponding files with whitelists. Whitelist files must contain barcode values or queries with MiNNN pattern syntax, one value or query on the line. This is more convenient way for specifying OR operator when there are many operands. So, for example, instead of using "BC1~'^AAA' | BC1~'^GGG' | BC1~'^CCC$'" query, option --whitelist-patterns BC2=options_BC2.txt can be used, where options_BC2.txt must contain ^AAA, ^GGG and ^CCC$ lines. If multiple --whitelist and --whitelist-patterns options specified for the same barcode, then barcode is considered matching if at least 1 whitelist contains it.
  --fair-sorting: Use fair sorting and fair best match by score for all patterns.
@@ -86,7 +86,7 @@ mif2fastq
 .. code-block:: text
 
  --group: Group Options: Groups and their file names for output reads. At least 1 group must be specified. Built-in groups R1, R2, R3... used for input reads. Example: --group R1=out_R1.fastq --group R2=out_R2.fastq --group UMI=UMI.fastq
- --input: Input file in MIF format. If not specified, stdin will be used.
+ --input: Input file in MIF format. This argument is required.
  --copy-original-headers: Copy original comments from initial fastq files to comments of output fastq files.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.
  --report: File to write report in human readable form. If not specified, report is displayed on screen only.
@@ -103,8 +103,8 @@ correct
 
  --groups: Group names for correction.
  --primary-groups: Primary group names. If specified, all groups from --groups argument will be treated as secondary. Barcode correction will be performed not in scale of the entire input file, but separately in clusters with the same primary group values. If input file is already sorted by primary groups, correction will be faster and less memory consuming. Usage example: correct cell barcodes (CB) first, then sort by CB, then correct UMI for each CB separately. So, for first correction pass use "--groups CB", and for second pass use "--groups UMI --primary-groups CB". If multiple primary groups are specified, clusters will be determined by unique combinations of primary groups values.
- --input: Input file in MIF format. This argument is required; stdin is not supported.
- --output: Output file in MIF format. If not specified, stdout will be used.
+ --input: Input file in MIF format. This argument is required.
+ --output: Output file in MIF format. This argument is required.
  --max-errors-share: Relative maximal allowed number of errors (Levenshtein distance) between barcodes for which they are considered identical. It is multiplied on average barcode length to calculate maximal allowed number of errors; if result is less than 1, it rounds up to 1. This max errors calculation method is enabled by default. It is recommended to set only one of --max-errors-share and --max-errors parameters, and set the other one to -1. Negative value means that this max errors calculation method is disabled. If both methods are enabled, the lowest calculated value of max errors is used.
  --max-errors: Maximal Levenshtein distance between barcodes for which they are considered identical. It is recommended to set only one of --max-errors-share and --max-errors parameters, and set the other one to -1. Negative value means that this max errors calculation method is disabled. If both methods are enabled, the lowest calculated value of max errors is used.
  --cluster-threshold: Threshold for barcode clustering: if smaller barcode count divided to larger barcode count is below this threshold, barcode will be merged to the cluster. This feature is turned off (set to 1) by default, because there is already filtering by --single-substitution-probability and --single-indel-probability enabled. You can turn on this filter (set the threshold) and set single error probabilities to 1; or you can use both filters (by cluster threshold and by single error probabilities) if you want.
@@ -132,8 +132,8 @@ filter-by-count
 .. code-block:: text
 
  --groups: Group names for filtering by count.
- --input: Input file in MIF format. This argument is required; stdin is not supported.
- --output: Output file in MIF format. If not specified, stdout will be used.
+ --input: Input file in MIF format. This argument is required.
+ --output: Output file in MIF format. This argument is required.
  --max-unique-barcodes: Maximal number of unique barcodes that will be included into output. Reads containing barcodes with biggest counts will be included, reads with barcodes with smaller counts will be excluded. Value 0 turns off this feature: if this argument is 0, all barcodes will be included.
  --min-count: Barcodes with count less than specified will not be included in the output.
  --excluded-barcodes-output: Output file for reads with barcodes excluded by count. If not specified, reads with excluded barcodes will not be written anywhere.
@@ -152,8 +152,8 @@ sort
 .. code-block:: text
 
  --groups: Group names to use for sorting. Priority is in descending order.
- --input: Input file in MIF format. If not specified, stdin will be used.
- --output: Output file in MIF format. If not specified, stdout will be used.
+ --input: Input file in MIF format. This argument is required.
+ --output: Output file in MIF format. This argument is required.
  --chunk-size: Chunk size for sorter.
  --report: File to write report in human readable form. If not specified, report is displayed on screen only.
  --json-report: File to write command execution stats in JSON format.
@@ -169,8 +169,8 @@ consensus
 
 .. code-block:: text
 
- --input: Input file in MIF format. If not specified, stdin will be used.
- --output: Output file in MIF format. If not specified, stdout will be used.
+ --input: Input file in MIF format. This argument is required.
+ --output: Output file in MIF format. This argument is required.
  --groups: List of groups that represent barcodes. All these groups must be sorted with "sort" action.
  --skipped-fraction-to-repeat: Fraction of reads skipped by score threshold that must start the search for another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of reads with identical barcodes.
  --max-consensuses-per-cluster: Maximal number of consensuses generated from 1 cluster. Every time this threshold is applied to stop searching for new consensuses, warning will be displayed. Too many consensuses per cluster indicate that score threshold, aligner width or skipped fraction to repeat is too low.
@@ -205,8 +205,8 @@ consensus-dma
 
 .. code-block:: text
 
- --input: Input file in MIF format. If not specified, stdin will be used.
- --output: Output file in MIF format. If not specified, stdout will be used.
+ --input: Input file in MIF format. This argument is required.
+ --output: Output file in MIF format. This argument is required.
  --groups: List of groups that represent barcodes. All these groups must be sorted with "sort" action.
  --width: Window width (maximum allowed number of indels) for banded aligner.
  --aligner-match-score: Score for perfectly matched nucleotide, used in sequences alignment.
@@ -246,7 +246,7 @@ stat-groups
 .. code-block:: text
 
  --groups: Space separated list of groups to output, determines the keys by which the output table will be aggregated.
- --input: Input file in MIF format. If not specified, stdin will be used.
+ --input: Input file in MIF format. This argument is required.
  --output: Output text file. If not specified, stdout will be used.
  --read-quality-filter: Filter group values with a min (non-aggregated) quality below a given threshold, applied on by-read basis, should be applied prior to any aggregation. 0 value means no threshold.
  --min-quality-filter: Filter group values based on min aggregated quality. 0 value means no filtering.
@@ -269,7 +269,7 @@ stat-positions
  --groups: Space separated list of groups to output, determines IDs allowed in group.id column.
  --reads: Space separated list of original read IDs to output (R1, R2 etc), determines IDs allowed in read column. If not specified, all reads will be used.
  --output-with-seq: Also output matched sequences. If specified, key columns are group.id + read + seq + pos; if not specified, key columns are group.id + read + pos.
- --input: Input file in MIF format. If not specified, stdin will be used.
+ --input: Input file in MIF format. This argument is required.
  --output: Output text file. If not specified, stdout will be used.
  --min-count-filter: Filter unique group values represented by less than specified number of reads.
  --min-frac-filter: Filter unique group values represented by less than specified fraction of reads.
@@ -286,7 +286,6 @@ mif-info
 
 .. code-block:: text
 
- -q, --quick, --no-reads-count: Don't count reads, display only info from header.
  --report: File to write report in human readable form. If not specified, report is displayed on screen only.
  --json-report: File to write command execution stats in JSON format.
 
@@ -300,8 +299,8 @@ decontaminate
 
  --groups: Group names for molecular barcodes (UMI). Reads where these barcodes are contaminated from other cells will be filtered out.
  --primary-groups: Primary group names. These groups contains cell barcodes: each combination of primary group values corresponds to 1 cell. Molecular barcodes are counted separately for each cell, and then reads containing molecular barcodes with significantly lower counts than in other cell will be removed.
- --input: Input file in MIF format. This argument is required; stdin is not supported.
- --output: Output file in MIF format. If not specified, stdout will be used.
+ --input: Input file in MIF format. This argument is required.
+ --output: Output file in MIF format. This argument is required.
  --excluded-barcodes-output: Output file for reads with filtered out barcodes. If not specified, reads with filtered out barcodes will not be written anywhere.
  --min-count-share: Threshold for filtering out molecular barcodes. If count of a molecular barcode is lower than count of the same barcode in different cell, multiplied on this share, then reads in the cell with lower count of this barcode will be considered contaminated and will be filtered out.
  -n, --number-of-reads: Number of reads to take; 0 value means to take the entire input file.

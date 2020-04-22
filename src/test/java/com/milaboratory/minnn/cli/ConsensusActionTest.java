@@ -294,7 +294,7 @@ public class ConsensusActionTest {
                 + " --output " + consensusSCTruncatedFile + " --original-read-stats " + statsSCT
                 + " --groups G1 G2 --avg-quality-threshold 25");
         for (HashMap.Entry<String, Integer> entry : new HashMap<String, Integer>() {{
-            put(statsSC, 25001); put(statsDMA, 25001); put(statsSCT, 1001); }}.entrySet()) {
+            put(statsSC, 25001); put(statsDMA, 25001); put(statsSCT, 25001); }}.entrySet()) {
             try (Scanner scanner = new Scanner(new File(entry.getKey()))) {
                 int linesCount = 0;
                 while (scanner.hasNextLine()) {

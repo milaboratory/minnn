@@ -72,10 +72,7 @@ public final class StatPositionsAction extends ACommandWithOutput implements MiN
 
     @Override
     protected List<String> getInputFiles() {
-        List<String> inputFileNames = new ArrayList<>();
-        if (inputFileName != null)
-            inputFileNames.add(inputFileName);
-        return inputFileNames;
+        return Collections.singletonList(inputFileName);
     }
 
     @Override
@@ -103,8 +100,9 @@ public final class StatPositionsAction extends ACommandWithOutput implements MiN
             names = {"--output-with-seq"})
     private boolean outputWithSeq = false;
 
-    @Option(description = IN_FILE_OR_STDIN,
-            names = {"--input"})
+    @Option(description = IN_MIF_FILE,
+            names = {"--input"},
+            required = true)
     private String inputFileName = null;
 
     @Option(description = OUT_TEXT_FILE,

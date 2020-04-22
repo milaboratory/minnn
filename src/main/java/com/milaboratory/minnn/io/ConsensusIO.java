@@ -237,6 +237,7 @@ public final class ConsensusIO {
         {
             if (inputReadsLimit > 0)
                 reader.setParsedReadsLimit(inputReadsLimit);
+            originalNumberOfReads = reader.getOriginalNumberOfReads();
             validateInputGroups(reader, consensusGroups, false, "--groups");
             LinkedHashSet<String> notCorrectedGroups = new LinkedHashSet<>(consensusGroups);
             notCorrectedGroups.removeAll(reader.getCorrectedGroups());
@@ -358,11 +359,6 @@ public final class ConsensusIO {
                 readerStats = reader.getStats().toString();
                 writerStats = writer.getStats().toString();
             }
-            reader.close();
-            originalNumberOfReads = reader.getOriginalNumberOfReads();
-            writer.setOriginalNumberOfReads(originalNumberOfReads);
-            if (saveNotUsedReads)
-                notUsedReadsWriter.setOriginalNumberOfReads(originalNumberOfReads);
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }

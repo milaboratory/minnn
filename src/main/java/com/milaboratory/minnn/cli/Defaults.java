@@ -82,7 +82,8 @@ public final class Defaults {
     public final static int DEFAULT_CONSENSUS_KMER_LENGTH = 21;
     public final static int DEFAULT_CONSENSUS_KMER_OFFSET = 15;
     public final static int DEFAULT_CONSENSUS_KMER_MAX_ERRORS = 3;
-    public final static int DEFAULT_DEMULTIPLEX_OUTPUT_BUFFER_SIZE = 1 << 16;
+    public final static int DEFAULT_DEMULTIPLEX_PRIMITIVO_BUFFER_SIZE = 1000;
+    public final static int DEFAULT_DEMULTIPLEX_PRIMITIVO_BLOCK_SIZE = 1000;
     public final static float DEFAULT_DECONTAMINATE_MIN_COUNT_SHARE = 0.05f;
 
     public final static String APP_NAME = "minnn";

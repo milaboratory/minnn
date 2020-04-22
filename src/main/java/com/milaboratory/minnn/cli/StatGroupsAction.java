@@ -76,10 +76,7 @@ public final class StatGroupsAction extends ACommandWithOutput implements MiNNNC
 
     @Override
     protected List<String> getInputFiles() {
-        List<String> inputFileNames = new ArrayList<>();
-        if (inputFileName != null)
-            inputFileNames.add(inputFileName);
-        return inputFileNames;
+        return Collections.singletonList(inputFileName);
     }
 
     @Override
@@ -97,8 +94,9 @@ public final class StatGroupsAction extends ACommandWithOutput implements MiNNNC
             arity = "1..*")
     private List<String> groupList = null;
 
-    @Option(description = IN_FILE_OR_STDIN,
-            names = {"--input"})
+    @Option(description = IN_MIF_FILE,
+            names = {"--input"},
+            required = true)
     private String inputFileName = null;
 
     @Option(description = OUT_TEXT_FILE,

@@ -90,10 +90,6 @@ public final class DecontaminateIO {
             validateInputGroups(pass1Reader, primaryGroupNames, false,
                     "--primary-groups");
             performDecontamination(pass1Reader, pass2Reader, writer, excludedBarcodesWriter);
-            pass1Reader.close();
-            writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
-            if (excludedBarcodesWriter != null)
-                excludedBarcodesWriter.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }

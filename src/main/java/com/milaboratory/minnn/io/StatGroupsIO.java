@@ -87,7 +87,7 @@ public final class StatGroupsIO {
         ArrayList<String> correctedGroups;
         ArrayList<String> sortedGroups;
         String readerStats = null;
-        try (MifReader reader = createReader()) {
+        try (MifReader reader = new MifReader(inputFileName)) {
             validateInputGroups(reader, groupList, true, "--groups");
             correctedGroups = reader.getCorrectedGroups();
             sortedGroups = reader.getSortedGroups();
@@ -176,10 +176,6 @@ public final class StatGroupsIO {
 
         humanReadableReport(reportFileName, reportFileHeader.toString(), report.toString());
         jsonReport(jsonReportFileName, jsonReportData);
-    }
-
-    private MifReader createReader() throws IOException {
-        return (inputFileName == null) ? new MifReader(System.in) : new MifReader(inputFileName);
     }
 
     private PrintStream createWriter() throws IOException {

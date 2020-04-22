@@ -121,18 +121,13 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         if (!closed) {
             reader.close();
             if (finished) {
-                try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
-                    originalNumberOfReads = primitivI.readLong();
-                }
                 try {
                     primitivIHybrid.close();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            } else {
-                originalNumberOfReads = parsedReadsTaken;
+            } else
                 finished = true;
-            }
             closed = true;
         }
     }

@@ -59,31 +59,32 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     private final int bufferSize;
 
     public MifWriter(String fileName, MifMetaInfo mifMetaInfo) throws IOException {
-        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY, -1);
+        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(),
+                DEFAULT_CONCURRENCY, -1, DEFAULT_BLOCK_SIZE);
     }
 
-    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, int concurrency, int bufferSize) throws IOException {
-        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), concurrency, bufferSize);
+    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, int concurrency, int bufferSize, int blockSize)
+            throws IOException {
+        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), concurrency, bufferSize, blockSize);
     }
 
     public MifWriter(
-            String fileName, MifMetaInfo mifMetaInfo, ExecutorService executorService, int concurrency, int bufferSize)
-            throws IOException {
+            String fileName, MifMetaInfo mifMetaInfo, ExecutorService executorService, int concurrency,
+            int bufferSize, int blockSize) throws IOException {
         File file = new File(fileName);
         if (file.exists())
             if (!file.delete())
                 throw new IOException("File " + fileName + " already exists and cannot be deleted!");
         primitivOHybrid = new PrimitivOHybrid(executorService, file.toPath());
+        this.bufferSize = bufferSize;
         writeHeader(mifMetaInfo);
-        writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, DEFAULT_BLOCK_SIZE);
+        writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, blockSize);
         this.estimatedNumberOfReads = mifMetaInfo.getNumberOfReads();
         this.originalNumberOfReads = mifMetaInfo.getOriginalNumberOfReads();
-        this.bufferSize = bufferSize;
     }
 
     private void writeHeader(MifMetaInfo mifMetaInfo) {
-        try (PrimitivO primitivO = (bufferSize == -1) ? primitivOHybrid.beginPrimitivO()
-                : primitivOHybrid.beginPrimitivO(false, bufferSize)) {
+        try (PrimitivO primitivO = beginPrimitivO()) {
             primitivO.write(getBeginMagicBytes());
             primitivO.writeUTF(getVersionString(VERSION_INFO_MIF));
             primitivO.writeObject(mifMetaInfo.getPipelineConfiguration());
@@ -119,7 +120,7 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
                 throw new IllegalStateException("originalNumberOfReads is not initialized in MifWriter!");
 
             // writing footer
-            try (PrimitivO primitivO = primitivOHybrid.beginPrimitivO()) {
+            try (PrimitivO primitivO = beginPrimitivO()) {
                 primitivO.writeLong(writtenReads);
                 primitivO.writeLong(originalNumberOfReads);
                 primitivO.write(getEndMagicBytes());
@@ -137,6 +138,12 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
         this.estimatedNumberOfReads = estimatedNumberOfReads;
     }
 
+    /**
+     * This function must be used only when input file is the original, and original number of reads is calculated
+     * in the end. Later in pipeline, originalNumberOfReads must be set in the constructor.
+     *
+     * @param originalNumberOfReads number of reads in the original FASTQ files
+     */
     public void setOriginalNumberOfReads(long originalNumberOfReads) {
         if (this.originalNumberOfReads != -1)
             throw new IllegalStateException("originalNumberOfReads is already set to " + this.originalNumberOfReads
@@ -152,5 +159,10 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     @Override
     public boolean isFinished() {
         return closed;
+    }
+
+    private PrimitivO beginPrimitivO() {
+        return (bufferSize == -1) ? primitivOHybrid.beginPrimitivO()
+                : primitivOHybrid.beginPrimitivO(false, bufferSize);
     }
 }

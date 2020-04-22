@@ -109,11 +109,6 @@ public final class FilterByCountIO {
                 if (++totalReads == inputReadsLimit)
                     break;
             }
-
-            pass1Reader.close();
-            writer.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
-            if (excludedBarcodesWriter != null)
-                excludedBarcodesWriter.setOriginalNumberOfReads(pass1Reader.getOriginalNumberOfReads());
         } catch (IOException e) {
             throw exitWithError(e.getMessage());
         }
