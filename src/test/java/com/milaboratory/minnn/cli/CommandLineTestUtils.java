@@ -57,6 +57,10 @@ public class CommandLineTestUtils {
         return null;
     }
 
+    public static void execAsProcess(String cmdLine) throws Exception {
+        execAsProcess(null, cmdLine, null);
+    }
+
     public static void execAsProcess(String jvmArgs, String args, String workingDir) throws Exception {
         String javaHome = System.getProperty("java.home");
         String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
