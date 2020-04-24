@@ -157,6 +157,28 @@ public class ExtractActionTest {
     }
 
     @Test
+    public void specialCaseTest3() throws Exception {
+        String inputFile = EXAMPLES_PATH + "small/extract-special-case-test-3.fastq";
+        String outputFile = TEMP_DIR + "outputSCT3.mif";
+        String pattern = " --pattern \"^tggtatcaacgcagagt(UMI:NNNNtNNNNtNNNN)tc\"";
+        for (String fairSorting : new String[] { "", " --fair-sorting" }) {
+            assertOutputContains(true, "matched 1 ", () -> callableExec(
+                    "extract -f --input " + inputFile + " --output " + outputFile + fairSorting + pattern
+                            + " --score-threshold -45"));
+            assertOutputContains(true, "matched 0 ", () -> callableExec(
+                    "extract -f --input " + inputFile + " --output " + outputFile + fairSorting + pattern
+                            + " --score-threshold -44"));
+            assertOutputContains(true, "matched 1 ", () -> callableExec(
+                    "extract -f --input " + inputFile + " --output " + outputFile + fairSorting + pattern
+                            + " --score-threshold -16 --max-quality-penalty 0"));
+            assertOutputContains(true, "matched 0 ", () -> callableExec(
+                    "extract -f --input " + inputFile + " --output " + outputFile + fairSorting + pattern
+                            + " --score-threshold -15 --max-quality-penalty 0"));
+        }
+        assertTrue(new File(outputFile).delete());
+    }
+
+    @Test
     public void mifRandomTest() throws Exception {
         String mifFile1 = TEMP_DIR + "output1.mif";
         String mifFile2 = TEMP_DIR + "output2.mif";

@@ -37,6 +37,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import java.io.IOException;
+
 import static com.milaboratory.minnn.cli.Magic.BEGIN_MAGIC_MIF;
 import static com.milaboratory.minnn.io.MifInfoExtractor.*;
 import static com.milaboratory.minnn.io.MifReader.readPipelineHeader;
