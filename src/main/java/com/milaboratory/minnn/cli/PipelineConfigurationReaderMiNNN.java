@@ -31,10 +31,15 @@ package com.milaboratory.minnn.cli;
 import com.milaboratory.cli.BinaryFileInfo;
 import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.cli.PipelineConfigurationReader;
-import com.milaboratory.minnn.io.MifReader;
+import com.milaboratory.primitivio.PrimitivI;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 import static com.milaboratory.minnn.cli.Magic.BEGIN_MAGIC_MIF;
 import static com.milaboratory.minnn.io.MifInfoExtractor.*;
+import static com.milaboratory.minnn.io.MifReader.readPipelineHeader;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public class PipelineConfigurationReaderMiNNN implements PipelineConfigurationReader {
@@ -54,7 +59,7 @@ public class PipelineConfigurationReaderMiNNN implements PipelineConfigurationRe
             return null;
         try {
             return fromFile(fileName, fileInfo);
-        } catch (Throwable ignored) {}
+        } catch (RuntimeException ignored) {}
         return null;
     }
 
@@ -75,13 +80,13 @@ public class PipelineConfigurationReaderMiNNN implements PipelineConfigurationRe
             if (fileInfo == null)
                 throw exitWithError("Not a MiNNN file");
             if (BEGIN_MAGIC_MIF.equals(fileInfo.fileType)) {
-                try (MifReader reader = new MifReader(fileName)) {
-                    return reader.getPipelineConfiguration();
+                try (PrimitivI primitivI = new PrimitivI(new FileInputStream(new File(fileName)))) {
+                    return readPipelineHeader(primitivI).getPipelineConfiguration();
                 }
             }
             throw exitWithError("Not a MiNNN file");
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

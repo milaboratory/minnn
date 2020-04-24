@@ -55,6 +55,7 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
 public final class DemultiplexAction extends ACommandWithSmartOverwrite implements MiNNNCommand {
     public static final String DEMULTIPLEX_ACTION_NAME = "demultiplex";
     private ParsedDemultiplexArguments parsedDemultiplexArguments = null;
+    private List<String> outputFileNames = null;
 
     public DemultiplexAction() {
         super(APP_NAME, mifInfoExtractor, pipelineConfigurationReaderInstance);
@@ -132,18 +133,20 @@ public final class DemultiplexAction extends ACommandWithSmartOverwrite implemen
 
     @Override
     protected List<String> getOutputFiles() {
-        List<String> outputFileNames = new ArrayList<>();
-        outputFileNames.add(logFileName);
-        String actualOutputPath = (outputFilesPath == null)
-                ? new File(parsedDemultiplexArguments.inputFileName).getParent() : outputFilesPath;
-        if (new File(logFileName).exists())
-            try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName))) {
-                String loggedFileName;
-                while ((loggedFileName = logReader.readLine()) != null)
-                    outputFileNames.add(actualOutputPath + File.separator + loggedFileName);
-            } catch (IOException e) {
-                throw exitWithError("Bad or corrupted log file, read error: " + e.getMessage());
-            }
+        if (outputFileNames == null) {
+            outputFileNames = new ArrayList<>();
+            outputFileNames.add(logFileName);
+            String actualOutputPath = (outputFilesPath == null)
+                    ? new File(parsedDemultiplexArguments.inputFileName).getParent() : outputFilesPath;
+            if (new File(logFileName).exists())
+                try (BufferedReader logReader = new BufferedReader(new FileReader(logFileName))) {
+                    String loggedFileName;
+                    while ((loggedFileName = logReader.readLine()) != null)
+                        outputFileNames.add(actualOutputPath + File.separator + loggedFileName);
+                } catch (IOException e) {
+                    throw exitWithError("Bad or corrupted log file, read error: " + e.getMessage());
+                }
+        }
         return outputFileNames;
     }
 

@@ -82,18 +82,9 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
 
     private void readMetaInfo() {
         try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
-            byte[] magicBytes = new byte[BEGIN_MAGIC_LENGTH];
-            try {
-                primitivI.readFully(magicBytes);
-            } catch (RuntimeException e) {
-                throw exitWithError("Unsupported file format; error while reading file header: " + e.getMessage());
-            }
-            String magicString = new String(magicBytes);
-            if (!magicString.equals(BEGIN_MAGIC))
-                throw exitWithError("Unsupported file format; .mif file of version " + magicString +
-                        " while you are running MiNNN " + BEGIN_MAGIC);
-            mifVersionInfo = primitivI.readUTF();
-            pipelineConfiguration = primitivI.readObject(PipelineConfiguration.class);
+            MifPipelineHeader mifPipelineHeader = readPipelineHeader(primitivI);
+            mifVersionInfo = mifPipelineHeader.mifVersionInfo;
+            pipelineConfiguration = mifPipelineHeader.pipelineConfiguration;
             numberOfTargets = primitivI.readInt();
             int correctedGroupsNum = primitivI.readInt();
             for (int i = 0; i < correctedGroupsNum; i++)
@@ -114,6 +105,22 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
             if (!Arrays.equals(primitivI.readBytes(END_MAGIC_LENGTH), getEndMagicBytes()))
                 throw exitWithError("Error in MIF file " + fileName + ": END_MAGIC mismatch.");
         }
+    }
+
+    public static MifPipelineHeader readPipelineHeader(PrimitivI mifFilePrimitivI) {
+        byte[] magicBytes = new byte[BEGIN_MAGIC_LENGTH];
+        try {
+            mifFilePrimitivI.readFully(magicBytes);
+        } catch (RuntimeException e) {
+            throw exitWithError("Unsupported file format; error while reading file header: " + e.getMessage());
+        }
+        String magicString = new String(magicBytes);
+        if (!magicString.equals(BEGIN_MAGIC))
+            throw exitWithError("Unsupported file format; .mif file of version " + magicString +
+                    " while you are running MiNNN " + BEGIN_MAGIC);
+        String mifVersionInfo = mifFilePrimitivI.readUTF();
+        PipelineConfiguration pipelineConfiguration = mifFilePrimitivI.readObject(PipelineConfiguration.class);
+        return new MifPipelineHeader(mifVersionInfo, pipelineConfiguration);
     }
 
     @Override

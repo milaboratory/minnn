@@ -101,6 +101,10 @@ public class DemultiplexActionTest {
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required");
         File[] outputFiles = getOutputFiles();
         assertEquals(4667, outputFiles.length);
+        execAsProcess("demultiplex " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
+                + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required");
+        outputFiles = getOutputFiles();
+        assertEquals(4667, outputFiles.length);
         Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
 
         exec("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("sample2")
