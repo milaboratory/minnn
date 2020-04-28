@@ -68,31 +68,6 @@ public class SpecialCasesTest {
     }
 
     @Test
-    public void pipeTest() throws Exception {
-        String inputFileR1 = TEST_RESOURCES_PATH + "sample_r1.fastq.gz";
-        String inputFileR2 = TEST_RESOURCES_PATH + "sample_r2.fastq.gz";
-        String outputFile = TEMP_DIR + "sortedUMI.mif";
-
-        InputStream previousIn = System.in;
-        PrintStream previousOut = System.out;
-        ByteArrayOutputStream savedStream = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(savedStream));
-
-        exec("extract -n 7 --input " + inputFileR1 + " " + inputFileR2
-                + " --pattern \"^(UMI:NNNNNNNN)\\*\"");
-
-        ByteArrayInputStream pipeInput = new ByteArrayInputStream(savedStream.toByteArray());
-        System.setIn(pipeInput);
-        System.setOut(previousOut);
-
-        exec("sort -f --groups UMI --output " + outputFile);
-
-        System.setIn(previousIn);
-
-        assertTrue(new File(outputFile).delete());
-    }
-
-    @Test
     public void correctionSpeedTest() throws Exception {
         String inputFastqFiles = getBigOrSmallFastqTestFileNames("test01_R1.fastq.gz", "test01_R2.fastq.gz");
         String extractOutput = TEMP_DIR + "extracted.mif";

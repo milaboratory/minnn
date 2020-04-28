@@ -48,6 +48,11 @@ public class DemultiplexActionTest {
         actionTestInit();
     }
 
+    @Before
+    public void setUp() {
+        deleteOutputFiles(getOutputFiles(), false);
+    }
+
     @Test
     public void randomTest() throws Exception {
         String startFile = TEMP_DIR + "start_" + TEST_FILENAME_PREFIX + ".mif";
@@ -59,20 +64,19 @@ public class DemultiplexActionTest {
                 "--by-sample " + sampleFile + " --by-barcode G1", "--by-barcode G1 --by-sample " + sampleFile
         };
 
-        Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
         for (int i = 0; i < 50; i++) {
             String filterOptions = randomFilterOptions[rg.nextInt(randomFilterOptions.length)];
             createRandomMifFile(startFile);
             exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
-                    + " --pattern \"(G1:tnncn)(G2:ncnc)\" --bitap-max-errors 0");
+                    + " --pattern \"(G1:tgncn)(G2:ccnc)\" --bitap-max-errors 0");
             exec("demultiplex -f " + filterOptions + " " + inputFile + " --demultiplex-log " + LOG_FILE);
             File[] outputFiles = getOutputFiles();
             int previousNumberOfFiles = outputFiles.length;
-            Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+            deleteOutputFiles(outputFiles, true);
             exec("demultiplex -f " + filterOptions + " " + inputFile + " --demultiplex-log " + LOG_FILE);
             outputFiles = getOutputFiles();
             assertEquals(previousNumberOfFiles, outputFiles.length);
-            Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+            deleteOutputFiles(outputFiles, true);
         }
         for (String fileName : new String[] { startFile, inputFile, LOG_FILE })
             assertTrue(new File(fileName).delete());
@@ -90,34 +94,34 @@ public class DemultiplexActionTest {
         exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                 + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\" --try-reverse-order"
                 + " --threads 5 --mismatch-score -9 --gap-score -10 --single-overlap-penalty -10");
-        Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
 
-        exec("demultiplex -f " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
-                + " --by-barcode G4 --demultiplex-log " + LOG_FILE);
+        execAsProcess("demultiplex -f " + inputFile + " --by-barcode G1 --by-sample "
+                + sampleFiles.get("sample1") + " --by-barcode G4 --demultiplex-log " + LOG_FILE);
         assertOutputContains(true, "already exists", () -> callableExec("demultiplex " + inputFile
                 + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1") + " --by-barcode G4 --demultiplex-log "
                 + LOG_FILE));
-        exec("demultiplex " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
-                + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required");
+        execAsProcess("demultiplex " + inputFile + " --by-barcode G1 --by-sample "
+                + sampleFiles.get("sample1") + " --by-barcode G4 --demultiplex-log " + LOG_FILE
+                + " --overwrite-if-required");
         File[] outputFiles = getOutputFiles();
         assertEquals(4667, outputFiles.length);
         execAsProcess("demultiplex " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required");
         outputFiles = getOutputFiles();
         assertEquals(4667, outputFiles.length);
-        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+        deleteOutputFiles(outputFiles, true);
 
-        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("sample2")
+        execAsProcess("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("sample2")
                 + " --by-sample " + sampleFiles.get("sample3") + " --demultiplex-log " + LOG_FILE);
         outputFiles = getOutputFiles();
         assertEquals(16, outputFiles.length);
-        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+        deleteOutputFiles(outputFiles, true);
 
-        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("asterisk_sample")
+        execAsProcess("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("asterisk_sample")
                 + " --demultiplex-log " + LOG_FILE);
         outputFiles = getOutputFiles();
         assertEquals(10, outputFiles.length);
-        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+        deleteOutputFiles(outputFiles, true);
 
         assertOutputContains(true, "Invalid sample", () -> callableExec("demultiplex -f " + inputFile
                 + " --by-sample " + sampleFiles.get("bad_sample") + " --demultiplex-log " + LOG_FILE));
@@ -133,20 +137,19 @@ public class DemultiplexActionTest {
         String inputFile1 = TEMP_DIR + TEST_FILENAME_PREFIX + "_input1.mif";
         String inputFile2 = TEMP_DIR + TEST_FILENAME_PREFIX + "_input2.mif";
         String sampleFile = EXAMPLES_PATH + "demultiplex_samples/sample1.txt";
-        Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
         exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile1
                 + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\"");
         exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile2
                 + " --pattern \"(G1:NNN)&(G2:aANA)\\(G3:ntt)&(G4:nnnn)\"");
 
-        exec("demultiplex -f " + inputFile1 + " --by-barcode G1 --by-sample " + sampleFile
+        execAsProcess("demultiplex -f " + inputFile1 + " --by-barcode G1 --by-sample " + sampleFile
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE);
         assertOutputContains(true, "already exists", () -> callableExec("demultiplex " + inputFile1
                 + " --by-barcode G1 --by-sample " + sampleFile + " --by-barcode G4 --demultiplex-log " + LOG_FILE));
         String copiedFile = TEMP_DIR + TEST_FILENAME_PREFIX + "_copy_from_input1.mif";
         Files.copy(Paths.get(TEMP_DIR + TEST_FILENAME_PREFIX + "_input1_TAC_test_sample_1_4_ACTA.mif"),
                 Paths.get(copiedFile), StandardCopyOption.REPLACE_EXISTING);
-        exec("demultiplex " + inputFile2 + " --by-barcode G1 --by-sample " + sampleFile
+        execAsProcess("demultiplex " + inputFile2 + " --by-barcode G1 --by-sample " + sampleFile
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required");
         assertOutputContains(true, "All output files", () -> callableExec("demultiplex " + inputFile2
                 + " --by-barcode G1 --by-sample " + sampleFile + " --by-barcode G4 --demultiplex-log " + LOG_FILE
@@ -165,14 +168,14 @@ public class DemultiplexActionTest {
                 "demultiplex " + inputFile2 + " --by-barcode G1 --by-sample " + sampleFile
                         + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required --verbose"));
         Files.delete(Paths.get(TEMP_DIR + TEST_FILENAME_PREFIX + "_input2_TAC_test_sample_1_4_ACTA.mif"));
-        exec("demultiplex " + inputFile2 + " --by-barcode G1 --by-sample " + sampleFile
+        execAsProcess("demultiplex " + inputFile2 + " --by-barcode G1 --by-sample " + sampleFile
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required --verbose");
-        exec("demultiplex " + inputFile2 + " --by-barcode G1 --by-sample " + sampleFile
+        execAsProcess("demultiplex " + inputFile2 + " --by-barcode G1 --by-sample " + sampleFile
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --force-overwrite");
 
         for (String fileName : new String[] { startFile, inputFile1, inputFile2, copiedFile, LOG_FILE })
             assertTrue(new File(fileName).delete());
-        Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
+        deleteOutputFiles(getOutputFiles(), true);
     }
 
     @Test
@@ -184,13 +187,14 @@ public class DemultiplexActionTest {
         String tempOutputFile2 = TEMP_DIR + "R2.fastq";
         exec("extract -f --input-format MIF --input " + startFile + " --output " + inputFile
                 + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\"");
-        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFile + " --demultiplex-log " + LOG_FILE);
+        execAsProcess("demultiplex -f " + inputFile + " --by-sample " + sampleFile
+                + " --demultiplex-log " + LOG_FILE);
         for (File currentFile : getOutputFiles())
-            exec("mif2fastq -f --input " + currentFile + " --group R1=" + tempOutputFile1
+            execAsProcess("mif2fastq -f --input " + currentFile + " --group R1=" + tempOutputFile1
                     + " R2=" + tempOutputFile2);
         for (String fileName : new String[] { startFile, inputFile, tempOutputFile1, tempOutputFile2, LOG_FILE })
             assertTrue(new File(fileName).delete());
-        Arrays.stream(getOutputFiles()).map(File::delete).forEach(Assert::assertTrue);
+        deleteOutputFiles(getOutputFiles(), true);
     }
 
     @Test
@@ -203,16 +207,16 @@ public class DemultiplexActionTest {
         String outputPath = TEMP_DIR + "output_directory_test";
         boolean createdNewDir = new File(outputPath).mkdirs();
         if (!createdNewDir)
-            Arrays.stream(Objects.requireNonNull(new File(outputPath)
-                    .listFiles((dummy, name) -> name.startsWith(TEST_FILENAME_PREFIX + '_'))))
-                    .map(File::delete).forEach(Assert::assertTrue);
-        exec("demultiplex -f " + inputFile + " --by-barcode G1 --by-barcode G4 --demultiplex-log " + LOG_FILE
-                + " --output-path " + outputPath);
+            deleteOutputFiles(Objects.requireNonNull(new File(outputPath)
+                    .listFiles((dummy, name) -> name.startsWith(TEST_FILENAME_PREFIX + '_'))), false);
+        execAsProcess("-Xmx800M", "demultiplex -f " + inputFile
+                + " --by-barcode G1 --by-barcode G4 --demultiplex-log " + LOG_FILE + " --output-path " + outputPath,
+                null);
         File[] outputFiles = Objects.requireNonNull(new File(outputPath)
                 .listFiles((dummy, name) -> name.startsWith(TEST_FILENAME_PREFIX + '_')));
         assertEquals(10231, outputFiles.length);
 
-        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+        deleteOutputFiles(outputFiles, true);
         for (String fileName : new String[] { startFile, inputFile, outputPath, LOG_FILE })
             assertTrue(new File(fileName).delete());
     }
@@ -243,7 +247,7 @@ public class DemultiplexActionTest {
         File[] outputFiles = Objects.requireNonNull(new File(workingDir + File.separator + outputDir)
                 .listFiles((f, name) -> name.startsWith(inputNamePrefix + '_')));
         assertEquals(76, outputFiles.length);
-        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
+        deleteOutputFiles(outputFiles, true);
         for (String fileName : new String[] { startFile,
                 workingDir + File.separator + inputFile, workingDir + File.separator + logFile,
                 workingDir + File.separator + inputFileDir, workingDir + File.separator + logDir,
@@ -253,5 +257,11 @@ public class DemultiplexActionTest {
 
     private static File[] getOutputFiles() {
         return new File(TEMP_DIR).listFiles((dummy, name) -> name.startsWith(TEST_FILENAME_PREFIX + '_'));
+    }
+
+    private static void deleteOutputFiles(File[] outputFiles, boolean filesMustExist) {
+        if (filesMustExist)
+            assertTrue(outputFiles.length > 0);
+        Arrays.stream(outputFiles).map(File::delete).forEach(Assert::assertTrue);
     }
 }
