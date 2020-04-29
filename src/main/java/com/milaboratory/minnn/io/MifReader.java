@@ -45,8 +45,8 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.Magic.*;
-import static com.milaboratory.minnn.io.IODefaults.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static java.lang.Double.NaN;
 
@@ -69,7 +69,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private String mifVersionInfo;
 
     public MifReader(String fileName) throws IOException {
-        this(fileName, Executors.newCachedThreadPool(), DEFAULT_CONCURRENCY);
+        this(fileName, Executors.newCachedThreadPool(), PRIMITIVIO_DEFAULT_CONCURRENCY);
     }
 
     public MifReader(String fileName, ExecutorService executorService, int concurrency) throws IOException {
@@ -77,11 +77,11 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
         File file = new File(fileName);
         primitivIHybrid = new PrimitivIHybrid(executorService, file.toPath(), concurrency);
         readMetaInfo();
-        reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, DEFAULT_READ_AHEAD_BLOCKS);
+        reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, PRIMITIVIO_READ_AHEAD_BLOCKS);
     }
 
     private void readMetaInfo() {
-        try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI()) {
+        try (PrimitivI primitivI = primitivIHybrid.beginPrimitivI(false, PRIMITIVIO_BUFFER_SIZE)) {
             MifPipelineHeader mifPipelineHeader = readPipelineHeader(primitivI);
             mifVersionInfo = mifPipelineHeader.mifVersionInfo;
             pipelineConfiguration = mifPipelineHeader.pipelineConfiguration;
@@ -99,7 +99,7 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
                 groupEdges.add(groupEdge);
             }
         }
-        try (PrimitivI primitivI = primitivIHybrid.beginRandomAccessPrimitivI(-FOOTER_LENGTH)) {
+        try (PrimitivI primitivI = primitivIHybrid.beginRandomAccessPrimitivI(-MIF_FOOTER_LENGTH)) {
             numberOfReads = primitivI.readLong();
             originalNumberOfReads = primitivI.readLong();
             if (!Arrays.equals(primitivI.readBytes(END_MAGIC_LENGTH), getEndMagicBytes()))

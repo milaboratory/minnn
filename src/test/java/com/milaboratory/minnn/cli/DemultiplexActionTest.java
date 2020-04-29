@@ -72,11 +72,11 @@ public class DemultiplexActionTest {
             exec("demultiplex -f " + filterOptions + " " + inputFile + " --demultiplex-log " + LOG_FILE);
             File[] outputFiles = getOutputFiles();
             int previousNumberOfFiles = outputFiles.length;
-            deleteOutputFiles(outputFiles, true);
+            deleteOutputFiles(outputFiles, false);
             exec("demultiplex -f " + filterOptions + " " + inputFile + " --demultiplex-log " + LOG_FILE);
             outputFiles = getOutputFiles();
             assertEquals(previousNumberOfFiles, outputFiles.length);
-            deleteOutputFiles(outputFiles, true);
+            deleteOutputFiles(outputFiles, false);
         }
         for (String fileName : new String[] { startFile, inputFile, LOG_FILE })
             assertTrue(new File(fileName).delete());

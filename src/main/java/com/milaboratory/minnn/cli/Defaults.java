@@ -33,6 +33,7 @@ import com.milaboratory.minnn.io.MinnnDataFormat;
 import java.util.UUID;
 
 import static com.milaboratory.core.sequence.SequenceQuality.*;
+import static com.milaboratory.minnn.cli.Magic.END_MAGIC_LENGTH;
 import static com.milaboratory.minnn.io.MinnnDataFormat.*;
 import static com.milaboratory.minnn.parser.Parser.PARSER_BUILTIN_READ_GROUPS_NUM;
 
@@ -82,8 +83,6 @@ public final class Defaults {
     public final static int DEFAULT_CONSENSUS_KMER_LENGTH = 21;
     public final static int DEFAULT_CONSENSUS_KMER_OFFSET = 15;
     public final static int DEFAULT_CONSENSUS_KMER_MAX_ERRORS = 3;
-    public final static int DEFAULT_DEMULTIPLEX_PRIMITIVO_BUFFER_SIZE = 5000;
-    public final static int DEFAULT_DEMULTIPLEX_PRIMITIVO_BLOCK_SIZE = 5000;
     public final static float DEFAULT_DECONTAMINATE_MIN_COUNT_SHARE = 0.05f;
 
     public final static String APP_NAME = "minnn";
@@ -95,4 +94,12 @@ public final class Defaults {
     public final static String DEMULTIPLEX_EMPTY_STRING_ID = UUID.nameUUIDFromBytes(new byte[0]).toString();
     public final static double OVERFLOW_PROTECTION_MIN = 1E-100D;
     public final static double OVERFLOW_PROTECTION_MAX = 1E100D;
+
+    public static final int PRIMITIVIO_DEFAULT_CONCURRENCY = 4;
+    public static final int PRIMITIVIO_BUFFER_SIZE = 5000;
+    public static final int PRIMITIVIO_BLOCK_SIZE = 5000;
+    public static final int PRIMITIVIO_READ_AHEAD_BLOCKS = 5;
+
+    /** Number of bytes in MIF footer with meta information */
+    public static final int MIF_FOOTER_LENGTH = 8 + 8 + END_MAGIC_LENGTH;
 }

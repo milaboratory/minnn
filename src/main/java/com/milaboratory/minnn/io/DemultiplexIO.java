@@ -356,8 +356,7 @@ public final class DemultiplexIO {
                         fileName = outputFilesPath + File.separator + new File(fileName).getName();
                     if (!allowOverwriting && new File(fileName).exists())
                         throw exitWithError("File " + fileName + " already exists, and overwriting was not enabled!");
-                    writer = new MifWriter(fileName, mifMetaInfo, 1,
-                            DEFAULT_DEMULTIPLEX_PRIMITIVO_BUFFER_SIZE, DEFAULT_DEMULTIPLEX_PRIMITIVO_BLOCK_SIZE);
+                    writer = new MifWriter(fileName, mifMetaInfo, 1);
                 } catch (IOException e) {
                     throw exitWithError(e.getMessage());
                 }

@@ -41,8 +41,8 @@ import java.io.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.Magic.*;
-import static com.milaboratory.minnn.io.IODefaults.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static java.lang.Double.NaN;
@@ -55,30 +55,23 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     private long writtenReads = 0;
     private long originalNumberOfReads;
 
-    // if bufferSize value is -1, use the default value from milib
-    private final int bufferSize;
-
     public MifWriter(String fileName, MifMetaInfo mifMetaInfo) throws IOException {
-        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(),
-                DEFAULT_CONCURRENCY, -1, DEFAULT_BLOCK_SIZE);
+        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), PRIMITIVIO_DEFAULT_CONCURRENCY);
     }
 
-    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, int concurrency, int bufferSize, int blockSize)
+    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, int concurrency) throws IOException {
+        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), concurrency);
+    }
+
+    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, ExecutorService executorService, int concurrency)
             throws IOException {
-        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), concurrency, bufferSize, blockSize);
-    }
-
-    public MifWriter(
-            String fileName, MifMetaInfo mifMetaInfo, ExecutorService executorService, int concurrency,
-            int bufferSize, int blockSize) throws IOException {
         File file = new File(fileName);
         if (file.exists())
             if (!file.delete())
                 throw new IOException("File " + fileName + " already exists and cannot be deleted!");
         primitivOHybrid = new PrimitivOHybrid(executorService, file.toPath());
-        this.bufferSize = bufferSize;
         writeHeader(mifMetaInfo);
-        writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, blockSize);
+        writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, PRIMITIVIO_BLOCK_SIZE);
         this.estimatedNumberOfReads = mifMetaInfo.getNumberOfReads();
         this.originalNumberOfReads = mifMetaInfo.getOriginalNumberOfReads();
     }
@@ -162,7 +155,6 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     }
 
     private PrimitivO beginPrimitivO() {
-        return (bufferSize == -1) ? primitivOHybrid.beginPrimitivO()
-                : primitivOHybrid.beginPrimitivO(false, bufferSize);
+        return primitivOHybrid.beginPrimitivO(false, PRIMITIVIO_BUFFER_SIZE);
     }
 }
