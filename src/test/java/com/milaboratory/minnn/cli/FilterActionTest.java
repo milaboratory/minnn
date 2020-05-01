@@ -97,7 +97,7 @@ public class FilterActionTest {
         assertFileNotEquals(outputFile2, outputFile3);
         assertMifEqualsAsFastq(outputFile2, outputFile3, true);
         assertOutputContains(true, "must be for single read", () -> callableExec("filter -f --input "
-                + inputFile + " G1~'A\\A'"));
+                + inputFile + " --output " + outputFile1 + " G1~'A\\A'"));
         for (String fileName : new String[] { inputFile, outputFile1, outputFile2, outputFile3 })
             assertTrue(new File(fileName).delete());
     }

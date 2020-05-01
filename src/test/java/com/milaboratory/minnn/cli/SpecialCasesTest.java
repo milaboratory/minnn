@@ -76,7 +76,8 @@ public class SpecialCasesTest {
         exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
                 + " --score-threshold -25 --bitap-max-errors 5 --try-reverse-order"
                 + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
-        sortFile(extractOutput, sortOutput, "UMI");
+        exec("sort -f --groups UMI --input " + extractOutput + " --output " + sortOutput
+                + " --chunk-size 10000");
         exec("correct -f --groups UMI --input " + sortOutput + " --output " + correctOutput
                 + " --cluster-threshold 0.3");
         for (String fileName : new String[] { extractOutput, sortOutput, correctOutput })
@@ -92,7 +93,8 @@ public class SpecialCasesTest {
         exec("extract -f --input " + inputFastqFiles + " --output " + extractOutput
                 + " --score-threshold -25 --bitap-max-errors 5 --try-reverse-order"
                 + " --pattern \"(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\\*\"");
-        sortFile(extractOutput, sortOutput, "UMI");
+        exec("sort -f --groups UMI --input " + extractOutput + " --output " + sortOutput
+                + " --chunk-size 10000");
         exec("consensus -f --groups UMI --input " + sortOutput + " --output " + consensusOutput);
         for (String fileName : new String[] { extractOutput, sortOutput, consensusOutput })
             assertTrue(new File(fileName).delete());

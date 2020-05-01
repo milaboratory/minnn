@@ -42,11 +42,10 @@ import com.milaboratory.util.CanReportProgress;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.Magic.*;
+import static com.milaboratory.minnn.io.IOUtils.THREAD_POOL;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static java.lang.Double.NaN;
 
@@ -69,13 +68,13 @@ public final class MifReader extends PipelineConfigurationReaderMiNNN
     private String mifVersionInfo;
 
     public MifReader(String fileName) throws IOException {
-        this(fileName, Executors.newCachedThreadPool(), PRIMITIVIO_DEFAULT_CONCURRENCY);
+        this(fileName, PRIMITIVIO_DEFAULT_CONCURRENCY);
     }
 
-    public MifReader(String fileName, ExecutorService executorService, int concurrency) throws IOException {
+    public MifReader(String fileName, int concurrency) throws IOException {
         this.fileName = fileName;
         File file = new File(fileName);
-        primitivIHybrid = new PrimitivIHybrid(executorService, file.toPath(), concurrency);
+        primitivIHybrid = new PrimitivIHybrid(THREAD_POOL, file.toPath(), concurrency);
         readMetaInfo();
         reader = primitivIHybrid.beginPrimitivIBlocks(ParsedRead.class, PRIMITIVIO_READ_AHEAD_BLOCKS);
     }

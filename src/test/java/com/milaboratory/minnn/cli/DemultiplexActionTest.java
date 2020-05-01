@@ -95,29 +95,28 @@ public class DemultiplexActionTest {
                 + " --pattern \"(G1:NNN)&(G2:AANA)\\(G3:ntt)&(G4:nnnn)\" --try-reverse-order"
                 + " --threads 5 --mismatch-score -9 --gap-score -10 --single-overlap-penalty -10");
 
-        execAsProcess("demultiplex -f " + inputFile + " --by-barcode G1 --by-sample "
-                + sampleFiles.get("sample1") + " --by-barcode G4 --demultiplex-log " + LOG_FILE);
+        exec("demultiplex -f " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
+                + " --by-barcode G4 --demultiplex-log " + LOG_FILE);
         assertOutputContains(true, "already exists", () -> callableExec("demultiplex " + inputFile
                 + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1") + " --by-barcode G4 --demultiplex-log "
                 + LOG_FILE));
-        execAsProcess("demultiplex " + inputFile + " --by-barcode G1 --by-sample "
-                + sampleFiles.get("sample1") + " --by-barcode G4 --demultiplex-log " + LOG_FILE
-                + " --overwrite-if-required");
+        exec("demultiplex " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
+                + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required");
         File[] outputFiles = getOutputFiles();
         assertEquals(4667, outputFiles.length);
-        execAsProcess("demultiplex " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
+        exec("demultiplex " + inputFile + " --by-barcode G1 --by-sample " + sampleFiles.get("sample1")
                 + " --by-barcode G4 --demultiplex-log " + LOG_FILE + " --overwrite-if-required");
         outputFiles = getOutputFiles();
         assertEquals(4667, outputFiles.length);
         deleteOutputFiles(outputFiles, true);
 
-        execAsProcess("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("sample2")
+        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("sample2")
                 + " --by-sample " + sampleFiles.get("sample3") + " --demultiplex-log " + LOG_FILE);
         outputFiles = getOutputFiles();
         assertEquals(16, outputFiles.length);
         deleteOutputFiles(outputFiles, true);
 
-        execAsProcess("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("asterisk_sample")
+        exec("demultiplex -f " + inputFile + " --by-sample " + sampleFiles.get("asterisk_sample")
                 + " --demultiplex-log " + LOG_FILE);
         outputFiles = getOutputFiles();
         assertEquals(10, outputFiles.length);

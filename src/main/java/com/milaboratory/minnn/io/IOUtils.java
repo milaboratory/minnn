@@ -30,11 +30,15 @@ package com.milaboratory.minnn.io;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.milaboratory.minnn.util.SystemUtils.*;
 
 public final class IOUtils {
     private IOUtils() {}
+
+    public static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool();
 
     public static List<String> readLines(String filename) {
         List<String> lines = new ArrayList<>();

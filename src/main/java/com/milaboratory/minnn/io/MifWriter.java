@@ -38,11 +38,10 @@ import com.milaboratory.primitivio.blocks.PrimitivOHybrid;
 import com.milaboratory.util.CanReportProgress;
 
 import java.io.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.cli.Magic.*;
+import static com.milaboratory.minnn.io.IOUtils.THREAD_POOL;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static java.lang.Double.NaN;
@@ -56,20 +55,15 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
     private long originalNumberOfReads;
 
     public MifWriter(String fileName, MifMetaInfo mifMetaInfo) throws IOException {
-        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), PRIMITIVIO_DEFAULT_CONCURRENCY);
+        this(fileName, mifMetaInfo, PRIMITIVIO_DEFAULT_CONCURRENCY);
     }
 
     public MifWriter(String fileName, MifMetaInfo mifMetaInfo, int concurrency) throws IOException {
-        this(fileName, mifMetaInfo, Executors.newCachedThreadPool(), concurrency);
-    }
-
-    public MifWriter(String fileName, MifMetaInfo mifMetaInfo, ExecutorService executorService, int concurrency)
-            throws IOException {
         File file = new File(fileName);
         if (file.exists())
             if (!file.delete())
                 throw new IOException("File " + fileName + " already exists and cannot be deleted!");
-        primitivOHybrid = new PrimitivOHybrid(executorService, file.toPath());
+        primitivOHybrid = new PrimitivOHybrid(THREAD_POOL, file.toPath());
         writeHeader(mifMetaInfo);
         writer = primitivOHybrid.beginPrimitivOBlocks(concurrency, PRIMITIVIO_BLOCK_SIZE);
         this.estimatedNumberOfReads = mifMetaInfo.getNumberOfReads();
