@@ -38,7 +38,11 @@ import static com.milaboratory.minnn.util.SystemUtils.*;
 public final class IOUtils {
     private IOUtils() {}
 
-    public static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool();
+    public static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool(r -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
 
     public static List<String> readLines(String filename) {
         List<String> lines = new ArrayList<>();
