@@ -26,21 +26,29 @@
  * PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY
  * PATENT, TRADEMARK OR OTHER RIGHTS.
  */
-package com.milaboratory.minnn.consensus;
+package com.milaboratory.minnn.readfilter;
 
-import com.milaboratory.minnn.util.DebugUtils.*;
+import com.milaboratory.minnn.outputconverter.ParsedRead;
 
-public class ConsensusAlgorithmRNASeq extends ConsensusAlgorithm {
-    public ConsensusAlgorithmRNASeq() {
-        super(null, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                false, null, (byte)0, null, false);
-        throw new NotImplementedException();
+public final class NoWildcardsReadFilter implements ReadFilter {
+    private final String groupNameOrAll;
+
+    public NoWildcardsReadFilter(String groupNameOrAll) {
+        this.groupNameOrAll = groupNameOrAll;
     }
 
     @Override
-    public CalculatedConsensuses process(Cluster cluster) {
-        throw new NotImplementedException();
+    public ParsedRead filter(ParsedRead parsedRead) {
+        if (groupNameOrAll.equals("*")) {
+            if (parsedRead.getGroups().stream().anyMatch(group -> group.getValue().getSequence().containsWildcards()))
+                return notMatchedRead(parsedRead);
+            else
+                return parsedRead;
+        } else {
+            if (getGroupByName(parsedRead, groupNameOrAll).getValue().getSequence().containsWildcards())
+                return notMatchedRead(parsedRead);
+            else
+                return parsedRead;
+        }
     }
 }

@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
 
 public final class FilterActionConfiguration implements ActionConfiguration {
-    private static final String FILTER_ACTION_VERSION_ID = "3";
+    private static final String FILTER_ACTION_VERSION_ID = "4";
     private final FilterActionParameters filterParameters;
 
     @JsonCreator

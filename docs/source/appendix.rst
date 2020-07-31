@@ -71,7 +71,8 @@ than the specified value. :code:`GroupMaxNFraction(group_name)=value` allows to 
    minnn filter "GroupMaxNFraction(UMI) = 0.1"
 
 All filters that have :code:`group_name` as argument allow to use :code:`*` instead of group name. This option allows
-to apply filter to all groups in the input (except built-in groups :code:`R1`, :code:`R2` etc). Examples:
+to apply filter to all groups in the input (except built-in groups :code:`R1`, :code:`R2` etc unless filter description
+states that it includes built-in groups). Examples:
 
 .. code-block:: text
 
@@ -80,6 +81,17 @@ to apply filter to all groups in the input (except built-in groups :code:`R1`, :
    minnn filter "AvgGroupQuality(*) = 15"
    minnn filter "GroupMaxNCount(*) = 0"
    minnn filter "GroupMaxNFraction(*) = 0.15"
+
+No wildcards filters can be used to filter out barcodes that contain wildcards. :code:`NoWildcards(group_name)`
+excludes reads where the specified group contains any wildcards. **Important:** for this filter, using :code:`*`
+instead of group name also includes built-in groups :code:`R1`, :code:`R2` etc, so :code:`NoWildcards(*)` filter
+can be used to exclude all reads with wildcards. Examples:
+
+.. code-block:: text
+
+   minnn filter "NoWildcards(UMI)"
+   minnn filter "NoWildcards(R2)"
+   minnn filter "NoWildcards(*)"
 
 Consensus reads filter is used for filtering MIF files written by :ref:`consensus` and :ref:`consensus-dma` actions.
 The syntax is :code:`MinConsensusReads=value`. Only consensuses calculated from :code:`value` or more reads will be

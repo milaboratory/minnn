@@ -76,7 +76,8 @@ public class FilterActionTest {
                 "G1~'TAACT' & Len(G2)=3", "G2~'T&nc'", "G1~'CT'&G1~'ta+[a&t]'", "G1~'~ta'",
                 "G2~'^TC||[n{2}]$'|(G1~'<{2}Taac'&G2~'*'| Len(G2)=5)", "G2~'AT && ~^GC'",
                 "MinConsensusReads=0", "MinConsensusReads = 5 & Len(G1) = 4", "Len( * )=4", "Len(*)=5",
-                "MinGroupQuality(*)=5 & AvgGroupQuality(G1)=10", "GroupMaxNCount(G2)=0", "GroupMaxNFraction(*)=0.01"
+                "MinGroupQuality(*)=5 & AvgGroupQuality(G1)=10", "GroupMaxNCount(G2)=0", "GroupMaxNFraction(*)=0.01",
+                "NoWildcards(*)", "NoWildcards(R1)", "NoWildcards(G1) & NoWildcards(G2)"
         };
         return " \"" + filters[rg.nextInt(filters.length)] + "\"";
     }

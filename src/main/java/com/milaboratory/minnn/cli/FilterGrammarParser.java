@@ -18,34 +18,36 @@ public class FilterGrammarParser extends Parser {
 		new PredictionContextCache();
 	public static final int
 		SINGLE_QUOTE=1, STRING=2, MIN_GROUP_QUALITY=3, AVG_GROUP_QUALITY=4, GROUP_N_COUNT=5, 
-		GROUP_N_FRACTION=6, MIN_CONSENSUS_READS=7, LEN=8, FLOAT_NUMBER=9, INT_NUMBER=10, 
-		GROUP_NAME=11, OPEN_PARENTHESIS=12, CLOSED_PARENTHESIS=13, EQUALS=14, 
-		TILDE=15, AND=16, OR=17, ASTERISK=18, WS=19;
+		GROUP_N_FRACTION=6, MIN_CONSENSUS_READS=7, LEN=8, NO_WILDCARDS=9, FLOAT_NUMBER=10, 
+		INT_NUMBER=11, GROUP_NAME=12, OPEN_PARENTHESIS=13, CLOSED_PARENTHESIS=14, 
+		EQUALS=15, TILDE=16, AND=17, OR=18, ASTERISK=19, WS=20;
 	public static final int
 		RULE_filter = 0, RULE_filterInParentheses = 1, RULE_anySingleFilter = 2, 
 		RULE_or = 3, RULE_orOperand = 4, RULE_and = 5, RULE_andOperand = 6, RULE_pattern = 7, 
 		RULE_simpleFilter = 8, RULE_minGroupQuality = 9, RULE_avgGroupQuality = 10, 
-		RULE_groupNCount = 11, RULE_groupNFraction = 12, RULE_len = 13, RULE_minConsensusReads = 14, 
-		RULE_patternString = 15, RULE_minGroupQualityNum = 16, RULE_avgGroupQualityNum = 17, 
-		RULE_groupNCountNum = 18, RULE_groupNFractionNum = 19, RULE_groupLength = 20, 
-		RULE_minConsensusReadsNum = 21, RULE_groupName = 22, RULE_groupNameOrAll = 23;
+		RULE_groupNCount = 11, RULE_groupNFraction = 12, RULE_len = 13, RULE_noWildcards = 14, 
+		RULE_minConsensusReads = 15, RULE_patternString = 16, RULE_minGroupQualityNum = 17, 
+		RULE_avgGroupQualityNum = 18, RULE_groupNCountNum = 19, RULE_groupNFractionNum = 20, 
+		RULE_groupLength = 21, RULE_minConsensusReadsNum = 22, RULE_groupName = 23, 
+		RULE_groupNameOrAll = 24;
 	public static final String[] ruleNames = {
 		"filter", "filterInParentheses", "anySingleFilter", "or", "orOperand", 
 		"and", "andOperand", "pattern", "simpleFilter", "minGroupQuality", "avgGroupQuality", 
-		"groupNCount", "groupNFraction", "len", "minConsensusReads", "patternString", 
-		"minGroupQualityNum", "avgGroupQualityNum", "groupNCountNum", "groupNFractionNum", 
-		"groupLength", "minConsensusReadsNum", "groupName", "groupNameOrAll"
+		"groupNCount", "groupNFraction", "len", "noWildcards", "minConsensusReads", 
+		"patternString", "minGroupQualityNum", "avgGroupQualityNum", "groupNCountNum", 
+		"groupNFractionNum", "groupLength", "minConsensusReadsNum", "groupName", 
+		"groupNameOrAll"
 	};
 
 	private static final String[] _LITERAL_NAMES = {
 		null, "'''", null, "'MinGroupQuality'", "'AvgGroupQuality'", "'GroupMaxNCount'", 
-		"'GroupMaxNFraction'", "'MinConsensusReads'", "'Len'", null, null, null, 
-		"'('", "')'", "'='", "'~'", "'&'", "'|'", "'*'"
+		"'GroupMaxNFraction'", "'MinConsensusReads'", "'Len'", "'NoWildcards'", 
+		null, null, null, "'('", "')'", "'='", "'~'", "'&'", "'|'", "'*'"
 	};
 	private static final String[] _SYMBOLIC_NAMES = {
 		null, "SINGLE_QUOTE", "STRING", "MIN_GROUP_QUALITY", "AVG_GROUP_QUALITY", 
-		"GROUP_N_COUNT", "GROUP_N_FRACTION", "MIN_CONSENSUS_READS", "LEN", "FLOAT_NUMBER", 
-		"INT_NUMBER", "GROUP_NAME", "OPEN_PARENTHESIS", "CLOSED_PARENTHESIS", 
+		"GROUP_N_COUNT", "GROUP_N_FRACTION", "MIN_CONSENSUS_READS", "LEN", "NO_WILDCARDS", 
+		"FLOAT_NUMBER", "INT_NUMBER", "GROUP_NAME", "OPEN_PARENTHESIS", "CLOSED_PARENTHESIS", 
 		"EQUALS", "TILDE", "AND", "OR", "ASTERISK", "WS"
 	};
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
@@ -122,20 +124,20 @@ public class FilterGrammarParser extends Parser {
 		FilterContext _localctx = new FilterContext(_ctx, getState());
 		enterRule(_localctx, 0, RULE_filter);
 		try {
-			setState(50);
+			setState(52);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,0,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(48);
+				setState(50);
 				filterInParentheses();
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(49);
+				setState(51);
 				anySingleFilter();
 				}
 				break;
@@ -178,11 +180,11 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(52);
-			match(OPEN_PARENTHESIS);
-			setState(53);
-			anySingleFilter();
 			setState(54);
+			match(OPEN_PARENTHESIS);
+			setState(55);
+			anySingleFilter();
+			setState(56);
 			match(CLOSED_PARENTHESIS);
 			}
 		}
@@ -228,34 +230,34 @@ public class FilterGrammarParser extends Parser {
 		AnySingleFilterContext _localctx = new AnySingleFilterContext(_ctx, getState());
 		enterRule(_localctx, 4, RULE_anySingleFilter);
 		try {
-			setState(60);
+			setState(62);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,1,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(56);
+				setState(58);
 				or();
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(57);
+				setState(59);
 				and();
 				}
 				break;
 			case 3:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(58);
+				setState(60);
 				pattern();
 				}
 				break;
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(59);
+				setState(61);
 				simpleFilter();
 				}
 				break;
@@ -304,25 +306,25 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(62);
-			orOperand();
-			setState(63);
-			match(OR);
 			setState(64);
 			orOperand();
-			setState(69);
+			setState(65);
+			match(OR);
+			setState(66);
+			orOperand();
+			setState(71);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while (_la==OR) {
 				{
 				{
-				setState(65);
+				setState(67);
 				match(OR);
-				setState(66);
+				setState(68);
 				orOperand();
 				}
 				}
-				setState(71);
+				setState(73);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
@@ -370,34 +372,34 @@ public class FilterGrammarParser extends Parser {
 		OrOperandContext _localctx = new OrOperandContext(_ctx, getState());
 		enterRule(_localctx, 8, RULE_orOperand);
 		try {
-			setState(76);
+			setState(78);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,3,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(72);
+				setState(74);
 				and();
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(73);
+				setState(75);
 				pattern();
 				}
 				break;
 			case 3:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(74);
+				setState(76);
 				simpleFilter();
 				}
 				break;
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(75);
+				setState(77);
 				filterInParentheses();
 				}
 				break;
@@ -446,25 +448,25 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(78);
-			andOperand();
-			setState(79);
-			match(AND);
 			setState(80);
 			andOperand();
-			setState(85);
+			setState(81);
+			match(AND);
+			setState(82);
+			andOperand();
+			setState(87);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while (_la==AND) {
 				{
 				{
-				setState(81);
+				setState(83);
 				match(AND);
-				setState(82);
+				setState(84);
 				andOperand();
 				}
 				}
-				setState(87);
+				setState(89);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
@@ -509,13 +511,13 @@ public class FilterGrammarParser extends Parser {
 		AndOperandContext _localctx = new AndOperandContext(_ctx, getState());
 		enterRule(_localctx, 12, RULE_andOperand);
 		try {
-			setState(91);
+			setState(93);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case GROUP_NAME:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(88);
+				setState(90);
 				pattern();
 				}
 				break;
@@ -525,16 +527,17 @@ public class FilterGrammarParser extends Parser {
 			case GROUP_N_FRACTION:
 			case MIN_CONSENSUS_READS:
 			case LEN:
+			case NO_WILDCARDS:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(89);
+				setState(91);
 				simpleFilter();
 				}
 				break;
 			case OPEN_PARENTHESIS:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(90);
+				setState(92);
 				filterInParentheses();
 				}
 				break;
@@ -581,11 +584,11 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(93);
-			groupName();
-			setState(94);
-			match(TILDE);
 			setState(95);
+			groupName();
+			setState(96);
+			match(TILDE);
+			setState(97);
 			patternString();
 			}
 		}
@@ -619,6 +622,9 @@ public class FilterGrammarParser extends Parser {
 		public LenContext len() {
 			return getRuleContext(LenContext.class,0);
 		}
+		public NoWildcardsContext noWildcards() {
+			return getRuleContext(NoWildcardsContext.class,0);
+		}
 		public SimpleFilterContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -637,49 +643,56 @@ public class FilterGrammarParser extends Parser {
 		SimpleFilterContext _localctx = new SimpleFilterContext(_ctx, getState());
 		enterRule(_localctx, 16, RULE_simpleFilter);
 		try {
-			setState(103);
+			setState(106);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case MIN_GROUP_QUALITY:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(97);
+				setState(99);
 				minGroupQuality();
 				}
 				break;
 			case AVG_GROUP_QUALITY:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(98);
+				setState(100);
 				avgGroupQuality();
 				}
 				break;
 			case GROUP_N_COUNT:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(99);
+				setState(101);
 				groupNCount();
 				}
 				break;
 			case GROUP_N_FRACTION:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(100);
+				setState(102);
 				groupNFraction();
 				}
 				break;
 			case MIN_CONSENSUS_READS:
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(101);
+				setState(103);
 				minConsensusReads();
 				}
 				break;
 			case LEN:
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(102);
+				setState(104);
 				len();
+				}
+				break;
+			case NO_WILDCARDS:
+				enterOuterAlt(_localctx, 7);
+				{
+				setState(105);
+				noWildcards();
 				}
 				break;
 			default:
@@ -728,17 +741,17 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(105);
-			match(MIN_GROUP_QUALITY);
-			setState(106);
-			match(OPEN_PARENTHESIS);
-			setState(107);
-			groupNameOrAll();
 			setState(108);
-			match(CLOSED_PARENTHESIS);
+			match(MIN_GROUP_QUALITY);
 			setState(109);
-			match(EQUALS);
+			match(OPEN_PARENTHESIS);
 			setState(110);
+			groupNameOrAll();
+			setState(111);
+			match(CLOSED_PARENTHESIS);
+			setState(112);
+			match(EQUALS);
+			setState(113);
 			minGroupQualityNum();
 			}
 		}
@@ -784,17 +797,17 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(112);
-			match(AVG_GROUP_QUALITY);
-			setState(113);
-			match(OPEN_PARENTHESIS);
-			setState(114);
-			groupNameOrAll();
 			setState(115);
-			match(CLOSED_PARENTHESIS);
+			match(AVG_GROUP_QUALITY);
 			setState(116);
-			match(EQUALS);
+			match(OPEN_PARENTHESIS);
 			setState(117);
+			groupNameOrAll();
+			setState(118);
+			match(CLOSED_PARENTHESIS);
+			setState(119);
+			match(EQUALS);
+			setState(120);
 			avgGroupQualityNum();
 			}
 		}
@@ -840,17 +853,17 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(119);
-			match(GROUP_N_COUNT);
-			setState(120);
-			match(OPEN_PARENTHESIS);
-			setState(121);
-			groupNameOrAll();
 			setState(122);
-			match(CLOSED_PARENTHESIS);
+			match(GROUP_N_COUNT);
 			setState(123);
-			match(EQUALS);
+			match(OPEN_PARENTHESIS);
 			setState(124);
+			groupNameOrAll();
+			setState(125);
+			match(CLOSED_PARENTHESIS);
+			setState(126);
+			match(EQUALS);
+			setState(127);
 			groupNCountNum();
 			}
 		}
@@ -896,17 +909,17 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(126);
-			match(GROUP_N_FRACTION);
-			setState(127);
-			match(OPEN_PARENTHESIS);
-			setState(128);
-			groupNameOrAll();
 			setState(129);
-			match(CLOSED_PARENTHESIS);
+			match(GROUP_N_FRACTION);
 			setState(130);
-			match(EQUALS);
+			match(OPEN_PARENTHESIS);
 			setState(131);
+			groupNameOrAll();
+			setState(132);
+			match(CLOSED_PARENTHESIS);
+			setState(133);
+			match(EQUALS);
+			setState(134);
 			groupNFractionNum();
 			}
 		}
@@ -952,18 +965,66 @@ public class FilterGrammarParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(133);
-			match(LEN);
-			setState(134);
-			match(OPEN_PARENTHESIS);
-			setState(135);
-			groupNameOrAll();
 			setState(136);
-			match(CLOSED_PARENTHESIS);
+			match(LEN);
 			setState(137);
-			match(EQUALS);
+			match(OPEN_PARENTHESIS);
 			setState(138);
+			groupNameOrAll();
+			setState(139);
+			match(CLOSED_PARENTHESIS);
+			setState(140);
+			match(EQUALS);
+			setState(141);
 			groupLength();
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class NoWildcardsContext extends ParserRuleContext {
+		public TerminalNode NO_WILDCARDS() { return getToken(FilterGrammarParser.NO_WILDCARDS, 0); }
+		public TerminalNode OPEN_PARENTHESIS() { return getToken(FilterGrammarParser.OPEN_PARENTHESIS, 0); }
+		public GroupNameOrAllContext groupNameOrAll() {
+			return getRuleContext(GroupNameOrAllContext.class,0);
+		}
+		public TerminalNode CLOSED_PARENTHESIS() { return getToken(FilterGrammarParser.CLOSED_PARENTHESIS, 0); }
+		public NoWildcardsContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_noWildcards; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof FilterGrammarListener ) ((FilterGrammarListener)listener).enterNoWildcards(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof FilterGrammarListener ) ((FilterGrammarListener)listener).exitNoWildcards(this);
+		}
+	}
+
+	public final NoWildcardsContext noWildcards() throws RecognitionException {
+		NoWildcardsContext _localctx = new NoWildcardsContext(_ctx, getState());
+		enterRule(_localctx, 28, RULE_noWildcards);
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(143);
+			match(NO_WILDCARDS);
+			setState(144);
+			match(OPEN_PARENTHESIS);
+			setState(145);
+			groupNameOrAll();
+			setState(146);
+			match(CLOSED_PARENTHESIS);
 			}
 		}
 		catch (RecognitionException re) {
@@ -999,15 +1060,15 @@ public class FilterGrammarParser extends Parser {
 
 	public final MinConsensusReadsContext minConsensusReads() throws RecognitionException {
 		MinConsensusReadsContext _localctx = new MinConsensusReadsContext(_ctx, getState());
-		enterRule(_localctx, 28, RULE_minConsensusReads);
+		enterRule(_localctx, 30, RULE_minConsensusReads);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(140);
+			setState(148);
 			match(MIN_CONSENSUS_READS);
-			setState(141);
+			setState(149);
 			match(EQUALS);
-			setState(142);
+			setState(150);
 			minConsensusReadsNum();
 			}
 		}
@@ -1040,11 +1101,11 @@ public class FilterGrammarParser extends Parser {
 
 	public final PatternStringContext patternString() throws RecognitionException {
 		PatternStringContext _localctx = new PatternStringContext(_ctx, getState());
-		enterRule(_localctx, 30, RULE_patternString);
+		enterRule(_localctx, 32, RULE_patternString);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(144);
+			setState(152);
 			match(STRING);
 			}
 		}
@@ -1077,11 +1138,11 @@ public class FilterGrammarParser extends Parser {
 
 	public final MinGroupQualityNumContext minGroupQualityNum() throws RecognitionException {
 		MinGroupQualityNumContext _localctx = new MinGroupQualityNumContext(_ctx, getState());
-		enterRule(_localctx, 32, RULE_minGroupQualityNum);
+		enterRule(_localctx, 34, RULE_minGroupQualityNum);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(146);
+			setState(154);
 			match(INT_NUMBER);
 			}
 		}
@@ -1114,11 +1175,11 @@ public class FilterGrammarParser extends Parser {
 
 	public final AvgGroupQualityNumContext avgGroupQualityNum() throws RecognitionException {
 		AvgGroupQualityNumContext _localctx = new AvgGroupQualityNumContext(_ctx, getState());
-		enterRule(_localctx, 34, RULE_avgGroupQualityNum);
+		enterRule(_localctx, 36, RULE_avgGroupQualityNum);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(148);
+			setState(156);
 			match(INT_NUMBER);
 			}
 		}
@@ -1151,11 +1212,11 @@ public class FilterGrammarParser extends Parser {
 
 	public final GroupNCountNumContext groupNCountNum() throws RecognitionException {
 		GroupNCountNumContext _localctx = new GroupNCountNumContext(_ctx, getState());
-		enterRule(_localctx, 36, RULE_groupNCountNum);
+		enterRule(_localctx, 38, RULE_groupNCountNum);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(150);
+			setState(158);
 			match(INT_NUMBER);
 			}
 		}
@@ -1189,12 +1250,12 @@ public class FilterGrammarParser extends Parser {
 
 	public final GroupNFractionNumContext groupNFractionNum() throws RecognitionException {
 		GroupNFractionNumContext _localctx = new GroupNFractionNumContext(_ctx, getState());
-		enterRule(_localctx, 38, RULE_groupNFractionNum);
+		enterRule(_localctx, 40, RULE_groupNFractionNum);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(152);
+			setState(160);
 			_la = _input.LA(1);
 			if ( !(_la==FLOAT_NUMBER || _la==INT_NUMBER) ) {
 			_errHandler.recoverInline(this);
@@ -1235,11 +1296,11 @@ public class FilterGrammarParser extends Parser {
 
 	public final GroupLengthContext groupLength() throws RecognitionException {
 		GroupLengthContext _localctx = new GroupLengthContext(_ctx, getState());
-		enterRule(_localctx, 40, RULE_groupLength);
+		enterRule(_localctx, 42, RULE_groupLength);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(154);
+			setState(162);
 			match(INT_NUMBER);
 			}
 		}
@@ -1272,11 +1333,11 @@ public class FilterGrammarParser extends Parser {
 
 	public final MinConsensusReadsNumContext minConsensusReadsNum() throws RecognitionException {
 		MinConsensusReadsNumContext _localctx = new MinConsensusReadsNumContext(_ctx, getState());
-		enterRule(_localctx, 42, RULE_minConsensusReadsNum);
+		enterRule(_localctx, 44, RULE_minConsensusReadsNum);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(156);
+			setState(164);
 			match(INT_NUMBER);
 			}
 		}
@@ -1309,11 +1370,11 @@ public class FilterGrammarParser extends Parser {
 
 	public final GroupNameContext groupName() throws RecognitionException {
 		GroupNameContext _localctx = new GroupNameContext(_ctx, getState());
-		enterRule(_localctx, 44, RULE_groupName);
+		enterRule(_localctx, 46, RULE_groupName);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(158);
+			setState(166);
 			match(GROUP_NAME);
 			}
 		}
@@ -1347,12 +1408,12 @@ public class FilterGrammarParser extends Parser {
 
 	public final GroupNameOrAllContext groupNameOrAll() throws RecognitionException {
 		GroupNameOrAllContext _localctx = new GroupNameOrAllContext(_ctx, getState());
-		enterRule(_localctx, 46, RULE_groupNameOrAll);
+		enterRule(_localctx, 48, RULE_groupNameOrAll);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(160);
+			setState(168);
 			_la = _input.LA(1);
 			if ( !(_la==GROUP_NAME || _la==ASTERISK) ) {
 			_errHandler.recoverInline(this);
@@ -1376,49 +1437,52 @@ public class FilterGrammarParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\25\u00a5\4\2\t\2"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\26\u00ad\4\2\t\2"+
 		"\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13"+
 		"\t\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
-		"\3\2\3\2\5\2\65\n\2\3\3\3\3\3\3\3\3\3\4\3\4\3\4\3\4\5\4?\n\4\3\5\3\5\3"+
-		"\5\3\5\3\5\7\5F\n\5\f\5\16\5I\13\5\3\6\3\6\3\6\3\6\5\6O\n\6\3\7\3\7\3"+
-		"\7\3\7\3\7\7\7V\n\7\f\7\16\7Y\13\7\3\b\3\b\3\b\5\b^\n\b\3\t\3\t\3\t\3"+
-		"\t\3\n\3\n\3\n\3\n\3\n\3\n\5\nj\n\n\3\13\3\13\3\13\3\13\3\13\3\13\3\13"+
-		"\3\f\3\f\3\f\3\f\3\f\3\f\3\f\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\16\3\16\3\16"+
-		"\3\16\3\16\3\16\3\16\3\17\3\17\3\17\3\17\3\17\3\17\3\17\3\20\3\20\3\20"+
-		"\3\20\3\21\3\21\3\22\3\22\3\23\3\23\3\24\3\24\3\25\3\25\3\26\3\26\3\27"+
-		"\3\27\3\30\3\30\3\31\3\31\3\31\2\2\32\2\4\6\b\n\f\16\20\22\24\26\30\32"+
-		"\34\36 \"$&(*,.\60\2\4\3\2\13\f\4\2\r\r\24\24\2\u009c\2\64\3\2\2\2\4\66"+
-		"\3\2\2\2\6>\3\2\2\2\b@\3\2\2\2\nN\3\2\2\2\fP\3\2\2\2\16]\3\2\2\2\20_\3"+
-		"\2\2\2\22i\3\2\2\2\24k\3\2\2\2\26r\3\2\2\2\30y\3\2\2\2\32\u0080\3\2\2"+
-		"\2\34\u0087\3\2\2\2\36\u008e\3\2\2\2 \u0092\3\2\2\2\"\u0094\3\2\2\2$\u0096"+
-		"\3\2\2\2&\u0098\3\2\2\2(\u009a\3\2\2\2*\u009c\3\2\2\2,\u009e\3\2\2\2."+
-		"\u00a0\3\2\2\2\60\u00a2\3\2\2\2\62\65\5\4\3\2\63\65\5\6\4\2\64\62\3\2"+
-		"\2\2\64\63\3\2\2\2\65\3\3\2\2\2\66\67\7\16\2\2\678\5\6\4\289\7\17\2\2"+
-		"9\5\3\2\2\2:?\5\b\5\2;?\5\f\7\2<?\5\20\t\2=?\5\22\n\2>:\3\2\2\2>;\3\2"+
-		"\2\2><\3\2\2\2>=\3\2\2\2?\7\3\2\2\2@A\5\n\6\2AB\7\23\2\2BG\5\n\6\2CD\7"+
-		"\23\2\2DF\5\n\6\2EC\3\2\2\2FI\3\2\2\2GE\3\2\2\2GH\3\2\2\2H\t\3\2\2\2I"+
-		"G\3\2\2\2JO\5\f\7\2KO\5\20\t\2LO\5\22\n\2MO\5\4\3\2NJ\3\2\2\2NK\3\2\2"+
-		"\2NL\3\2\2\2NM\3\2\2\2O\13\3\2\2\2PQ\5\16\b\2QR\7\22\2\2RW\5\16\b\2ST"+
-		"\7\22\2\2TV\5\16\b\2US\3\2\2\2VY\3\2\2\2WU\3\2\2\2WX\3\2\2\2X\r\3\2\2"+
-		"\2YW\3\2\2\2Z^\5\20\t\2[^\5\22\n\2\\^\5\4\3\2]Z\3\2\2\2][\3\2\2\2]\\\3"+
-		"\2\2\2^\17\3\2\2\2_`\5.\30\2`a\7\21\2\2ab\5 \21\2b\21\3\2\2\2cj\5\24\13"+
-		"\2dj\5\26\f\2ej\5\30\r\2fj\5\32\16\2gj\5\36\20\2hj\5\34\17\2ic\3\2\2\2"+
-		"id\3\2\2\2ie\3\2\2\2if\3\2\2\2ig\3\2\2\2ih\3\2\2\2j\23\3\2\2\2kl\7\5\2"+
-		"\2lm\7\16\2\2mn\5\60\31\2no\7\17\2\2op\7\20\2\2pq\5\"\22\2q\25\3\2\2\2"+
-		"rs\7\6\2\2st\7\16\2\2tu\5\60\31\2uv\7\17\2\2vw\7\20\2\2wx\5$\23\2x\27"+
-		"\3\2\2\2yz\7\7\2\2z{\7\16\2\2{|\5\60\31\2|}\7\17\2\2}~\7\20\2\2~\177\5"+
-		"&\24\2\177\31\3\2\2\2\u0080\u0081\7\b\2\2\u0081\u0082\7\16\2\2\u0082\u0083"+
-		"\5\60\31\2\u0083\u0084\7\17\2\2\u0084\u0085\7\20\2\2\u0085\u0086\5(\25"+
-		"\2\u0086\33\3\2\2\2\u0087\u0088\7\n\2\2\u0088\u0089\7\16\2\2\u0089\u008a"+
-		"\5\60\31\2\u008a\u008b\7\17\2\2\u008b\u008c\7\20\2\2\u008c\u008d\5*\26"+
-		"\2\u008d\35\3\2\2\2\u008e\u008f\7\t\2\2\u008f\u0090\7\20\2\2\u0090\u0091"+
-		"\5,\27\2\u0091\37\3\2\2\2\u0092\u0093\7\4\2\2\u0093!\3\2\2\2\u0094\u0095"+
-		"\7\f\2\2\u0095#\3\2\2\2\u0096\u0097\7\f\2\2\u0097%\3\2\2\2\u0098\u0099"+
-		"\7\f\2\2\u0099\'\3\2\2\2\u009a\u009b\t\2\2\2\u009b)\3\2\2\2\u009c\u009d"+
-		"\7\f\2\2\u009d+\3\2\2\2\u009e\u009f\7\f\2\2\u009f-\3\2\2\2\u00a0\u00a1"+
-		"\7\r\2\2\u00a1/\3\2\2\2\u00a2\u00a3\t\3\2\2\u00a3\61\3\2\2\2\t\64>GNW"+
-		"]i";
+		"\4\32\t\32\3\2\3\2\5\2\67\n\2\3\3\3\3\3\3\3\3\3\4\3\4\3\4\3\4\5\4A\n\4"+
+		"\3\5\3\5\3\5\3\5\3\5\7\5H\n\5\f\5\16\5K\13\5\3\6\3\6\3\6\3\6\5\6Q\n\6"+
+		"\3\7\3\7\3\7\3\7\3\7\7\7X\n\7\f\7\16\7[\13\7\3\b\3\b\3\b\5\b`\n\b\3\t"+
+		"\3\t\3\t\3\t\3\n\3\n\3\n\3\n\3\n\3\n\3\n\5\nm\n\n\3\13\3\13\3\13\3\13"+
+		"\3\13\3\13\3\13\3\f\3\f\3\f\3\f\3\f\3\f\3\f\3\r\3\r\3\r\3\r\3\r\3\r\3"+
+		"\r\3\16\3\16\3\16\3\16\3\16\3\16\3\16\3\17\3\17\3\17\3\17\3\17\3\17\3"+
+		"\17\3\20\3\20\3\20\3\20\3\20\3\21\3\21\3\21\3\21\3\22\3\22\3\23\3\23\3"+
+		"\24\3\24\3\25\3\25\3\26\3\26\3\27\3\27\3\30\3\30\3\31\3\31\3\32\3\32\3"+
+		"\32\2\2\33\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\2\4\3"+
+		"\2\f\r\4\2\16\16\25\25\2\u00a4\2\66\3\2\2\2\48\3\2\2\2\6@\3\2\2\2\bB\3"+
+		"\2\2\2\nP\3\2\2\2\fR\3\2\2\2\16_\3\2\2\2\20a\3\2\2\2\22l\3\2\2\2\24n\3"+
+		"\2\2\2\26u\3\2\2\2\30|\3\2\2\2\32\u0083\3\2\2\2\34\u008a\3\2\2\2\36\u0091"+
+		"\3\2\2\2 \u0096\3\2\2\2\"\u009a\3\2\2\2$\u009c\3\2\2\2&\u009e\3\2\2\2"+
+		"(\u00a0\3\2\2\2*\u00a2\3\2\2\2,\u00a4\3\2\2\2.\u00a6\3\2\2\2\60\u00a8"+
+		"\3\2\2\2\62\u00aa\3\2\2\2\64\67\5\4\3\2\65\67\5\6\4\2\66\64\3\2\2\2\66"+
+		"\65\3\2\2\2\67\3\3\2\2\289\7\17\2\29:\5\6\4\2:;\7\20\2\2;\5\3\2\2\2<A"+
+		"\5\b\5\2=A\5\f\7\2>A\5\20\t\2?A\5\22\n\2@<\3\2\2\2@=\3\2\2\2@>\3\2\2\2"+
+		"@?\3\2\2\2A\7\3\2\2\2BC\5\n\6\2CD\7\24\2\2DI\5\n\6\2EF\7\24\2\2FH\5\n"+
+		"\6\2GE\3\2\2\2HK\3\2\2\2IG\3\2\2\2IJ\3\2\2\2J\t\3\2\2\2KI\3\2\2\2LQ\5"+
+		"\f\7\2MQ\5\20\t\2NQ\5\22\n\2OQ\5\4\3\2PL\3\2\2\2PM\3\2\2\2PN\3\2\2\2P"+
+		"O\3\2\2\2Q\13\3\2\2\2RS\5\16\b\2ST\7\23\2\2TY\5\16\b\2UV\7\23\2\2VX\5"+
+		"\16\b\2WU\3\2\2\2X[\3\2\2\2YW\3\2\2\2YZ\3\2\2\2Z\r\3\2\2\2[Y\3\2\2\2\\"+
+		"`\5\20\t\2]`\5\22\n\2^`\5\4\3\2_\\\3\2\2\2_]\3\2\2\2_^\3\2\2\2`\17\3\2"+
+		"\2\2ab\5\60\31\2bc\7\22\2\2cd\5\"\22\2d\21\3\2\2\2em\5\24\13\2fm\5\26"+
+		"\f\2gm\5\30\r\2hm\5\32\16\2im\5 \21\2jm\5\34\17\2km\5\36\20\2le\3\2\2"+
+		"\2lf\3\2\2\2lg\3\2\2\2lh\3\2\2\2li\3\2\2\2lj\3\2\2\2lk\3\2\2\2m\23\3\2"+
+		"\2\2no\7\5\2\2op\7\17\2\2pq\5\62\32\2qr\7\20\2\2rs\7\21\2\2st\5$\23\2"+
+		"t\25\3\2\2\2uv\7\6\2\2vw\7\17\2\2wx\5\62\32\2xy\7\20\2\2yz\7\21\2\2z{"+
+		"\5&\24\2{\27\3\2\2\2|}\7\7\2\2}~\7\17\2\2~\177\5\62\32\2\177\u0080\7\20"+
+		"\2\2\u0080\u0081\7\21\2\2\u0081\u0082\5(\25\2\u0082\31\3\2\2\2\u0083\u0084"+
+		"\7\b\2\2\u0084\u0085\7\17\2\2\u0085\u0086\5\62\32\2\u0086\u0087\7\20\2"+
+		"\2\u0087\u0088\7\21\2\2\u0088\u0089\5*\26\2\u0089\33\3\2\2\2\u008a\u008b"+
+		"\7\n\2\2\u008b\u008c\7\17\2\2\u008c\u008d\5\62\32\2\u008d\u008e\7\20\2"+
+		"\2\u008e\u008f\7\21\2\2\u008f\u0090\5,\27\2\u0090\35\3\2\2\2\u0091\u0092"+
+		"\7\13\2\2\u0092\u0093\7\17\2\2\u0093\u0094\5\62\32\2\u0094\u0095\7\20"+
+		"\2\2\u0095\37\3\2\2\2\u0096\u0097\7\t\2\2\u0097\u0098\7\21\2\2\u0098\u0099"+
+		"\5.\30\2\u0099!\3\2\2\2\u009a\u009b\7\4\2\2\u009b#\3\2\2\2\u009c\u009d"+
+		"\7\r\2\2\u009d%\3\2\2\2\u009e\u009f\7\r\2\2\u009f\'\3\2\2\2\u00a0\u00a1"+
+		"\7\r\2\2\u00a1)\3\2\2\2\u00a2\u00a3\t\2\2\2\u00a3+\3\2\2\2\u00a4\u00a5"+
+		"\7\r\2\2\u00a5-\3\2\2\2\u00a6\u00a7\7\r\2\2\u00a7/\3\2\2\2\u00a8\u00a9"+
+		"\7\16\2\2\u00a9\61\3\2\2\2\u00aa\u00ab\t\3\2\2\u00ab\63\3\2\2\2\t\66@"+
+		"IPY_l";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {
