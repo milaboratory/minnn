@@ -229,4 +229,9 @@ public class SpecialCasesTest {
                 assertEquals(8, currentPartTokens[1].length());
         }
     }
+
+    @Test
+    public void debugStatsTest() throws Exception {
+
+    }
 }
