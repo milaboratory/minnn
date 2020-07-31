@@ -483,9 +483,9 @@ public final class ConsensusIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
         if (debugMode) {
-            report.append("\n\nDebug information:\n\n");
+            report.append("\nDebug information:\n\n");
             report.append("Reader stats:\n").append(readerStats).append('\n');
-            report.append("Writer stats:\n").append(writerStats).append("\n\n");
+            report.append("Writer stats:\n").append(writerStats).append('\n');
         }
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');

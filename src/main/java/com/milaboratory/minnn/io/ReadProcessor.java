@@ -169,10 +169,10 @@ public final class ReadProcessor {
                     .append('\n');
         reportFileHeader.append("Pattern: ").append(patternQuery).append('\n');
         if (debugMode) {
-            reportFileHeader.append("\n\nDebug information:\n\n");
+            reportFileHeader.append("\nDebug information:\n\n");
             if (inputFormat == MIF)
                 reportFileHeader.append("Reader stats:\n").append(readerStats).append('\n');
-            reportFileHeader.append("Writer stats:\n").append(writerStats).append("\n\n");
+            reportFileHeader.append("Writer stats:\n").append(writerStats).append('\n');
         }
 
         long elapsedTime = System.currentTimeMillis() - startTime;
