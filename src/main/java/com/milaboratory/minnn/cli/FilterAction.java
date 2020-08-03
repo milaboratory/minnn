@@ -259,6 +259,13 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
         }
     }
 
+    private static class NoWildcardsListener extends AntlrFilterListener {
+        @Override
+        public void enterNoWildcards(FilterGrammarParser.NoWildcardsContext ctx) {
+            filter = new NoWildcardsReadFilter(ctx.groupNameOrAll().getText());
+        }
+    }
+
     private static class MinConsensusReadsListener extends AntlrFilterListener {
         @Override
         public void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) {
@@ -314,6 +321,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
             setIfNotNull(ctx.groupNFraction(), new GroupNFractionListener());
             setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
             setIfNotNull(ctx.len(), new LenListener());
+            setIfNotNull(ctx.noWildcards(), new NoWildcardsListener());
         }
     }
 
