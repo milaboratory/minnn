@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -132,6 +132,7 @@ final class Token {
         else throw new ParserException("Expected MultipleReadsOperator, but got " + pattern);
     }
 
+    @SuppressWarnings("unchecked")
     <P extends Pattern> P getSpecificPattern(Class<P> patternClass) throws ParserException {
         try {
             if (patternClass.isAssignableFrom(getPattern().getClass()))

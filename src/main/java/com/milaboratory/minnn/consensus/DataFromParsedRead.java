@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -35,7 +35,7 @@ import gnu.trove.map.hash.TByteObjectHashMap;
 import java.util.*;
 import java.util.stream.*;
 
-public class DataFromParsedRead {
+public class DataFromParsedRead implements java.io.Serializable {
     protected final TByteObjectHashMap<SequenceWithAttributes> sequences;
     protected final List<Barcode> barcodes;
     protected final long originalReadId;

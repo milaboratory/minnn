@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -33,7 +33,7 @@ import com.milaboratory.minnn.pattern.Pattern;
 import java.util.stream.IntStream;
 
 public final class Parser {
-    public final static int BUILTIN_READ_GROUPS_NUM = 127;
+    public final static byte PARSER_BUILTIN_READ_GROUPS_NUM = Byte.MAX_VALUE;
     private final ParserConfiguration conf;
 
     public Parser(ParserConfiguration conf) {
@@ -77,11 +77,12 @@ public final class Parser {
      */
     private static boolean defaultGroupsOverride(String query, boolean simplifiedSyntax) {
         String strippedQuery = query.replaceAll("\\s+", "");
-        return IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM).mapToObj(i -> "R" + i).anyMatch(groupName -> {
-            if (simplifiedSyntax)
-                return strippedQuery.contains("GroupEdge('" + groupName + "'");
-            else
-                return strippedQuery.contains("(" + groupName + ":");
-        });
+        return IntStream.rangeClosed(1, PARSER_BUILTIN_READ_GROUPS_NUM).mapToObj(i -> "R" + i)
+                .anyMatch(groupName -> {
+                    if (simplifiedSyntax)
+                        return strippedQuery.contains("GroupEdge('" + groupName + "'");
+                    else
+                        return strippedQuery.contains("(" + groupName + ":");
+                });
     }
 }

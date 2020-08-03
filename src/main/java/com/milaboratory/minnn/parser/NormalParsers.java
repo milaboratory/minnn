@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -206,33 +206,35 @@ final class NormalParsers {
 
     ArrayList<FoundToken> parseAnyPatterns(TokenizedString tokenizedString) throws ParserException {
         ArrayList<FoundToken> foundTokens = new ArrayList<>();
-        List<Token> stringTokens = tokenizedString.getTokens(0, tokenizedString.getFullLength()).stream()
-                .filter(Token::isString).collect(Collectors.toList());
-        for (int i = 0; i < stringTokens.size(); i++) {
-            Token currentStringToken = stringTokens.get(i);
-            String currentString = currentStringToken.getString();
-            int asteriskPosition = currentString.indexOf("*");
-            while (asteriskPosition != -1) {
-                int start = asteriskPosition + currentStringToken.getStartCoordinate();
-                if (((i != 0) && !currentString.substring(0, asteriskPosition).matches(".*(&&|\\|\\||\\\\).*"))
-                        || ((i != stringTokens.size() - 1) && !currentString.substring(asteriskPosition)
+        List<Token> allTokens = tokenizedString.getTokens(0, tokenizedString.getFullLength());
+        for (int i = 0; i < allTokens.size(); i++) {
+            Token currentToken = allTokens.get(i);
+            if (currentToken.isString()) {
+                String currentString = currentToken.getString();
+                int asteriskPosition = currentString.indexOf("*");
+                while (asteriskPosition != -1) {
+                    int start = asteriskPosition + currentToken.getStartCoordinate();
+                    if (((i != 0) && !currentString.substring(0, asteriskPosition)
+                            .matches(".*(&&|\\|\\||\\\\).*"))
+                            || ((i != allTokens.size() - 1) && !currentString.substring(asteriskPosition)
                             .matches(".*(&&|\\|\\||\\\\).*")))
-                    throw new ParserException("'*' pattern is invalid if there are other patterns in the same read, "
-                            + "use 'n{*}' instead!");
+                        throw new ParserException("'*' pattern is invalid if there are other patterns "
+                                + "in the same target, use 'n{*}' instead!");
 
-                List<FoundGroupEdgePosition> foundGroupEdgePositions = new ArrayList<>();
-                foundGroupEdgePositions.addAll(findGroupsOnBorder(start, true, 0));
-                foundGroupEdgePositions.addAll(findGroupsOnBorder(start, false, 0));
-                ArrayList<GroupEdge> groupEdges = foundGroupEdgePositions.stream()
-                        .map(fe -> fe.groupEdgePosition.getGroupEdge())
-                        .collect(Collectors.toCollection(ArrayList::new));
-                validateGroupEdges(groupEdges, true, false);
-                foundGroupEdgePositions.forEach(fe -> foundTokens.add(new FoundToken(null, fe.start, fe.end)));
+                    List<FoundGroupEdgePosition> foundGroupEdgePositions = new ArrayList<>();
+                    foundGroupEdgePositions.addAll(findGroupsOnBorder(start, true, 0));
+                    foundGroupEdgePositions.addAll(findGroupsOnBorder(start, false, 0));
+                    ArrayList<GroupEdge> groupEdges = foundGroupEdgePositions.stream()
+                            .map(fe -> fe.groupEdgePosition.getGroupEdge())
+                            .collect(Collectors.toCollection(ArrayList::new));
+                    validateGroupEdges(groupEdges, true, false);
+                    foundGroupEdgePositions.forEach(fe -> foundTokens.add(new FoundToken(null, fe.start, fe.end)));
 
-                foundTokens.add(new FoundToken(new AnyPattern(conf.getPatternConfiguration(), groupEdges),
-                        start, start + 1));
-                asteriskPosition = (asteriskPosition == currentString.length() - 1) ? -1
-                        : currentString.indexOf("*", asteriskPosition + 1);
+                    foundTokens.add(new FoundToken(new AnyPattern(conf.getPatternConfiguration(), groupEdges),
+                            start, start + 1));
+                    asteriskPosition = (asteriskPosition == currentString.length() - 1) ? -1
+                            : currentString.indexOf("*", asteriskPosition + 1);
+                }
             }
         }
 

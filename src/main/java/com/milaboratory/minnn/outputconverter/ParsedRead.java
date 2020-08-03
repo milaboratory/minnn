@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -44,7 +44,7 @@ import java.util.stream.IntStream;
 import static com.milaboratory.minnn.outputconverter.GroupUtils.*;
 
 @Serializable(by = IO.ParsedReadSerializer.class)
-public final class ParsedRead {
+public final class ParsedRead implements java.io.Serializable {
     private final SequenceRead originalRead;
     private final boolean reverseMatch;
     /* positive value if there was default groups override in the pattern, otherwise -1

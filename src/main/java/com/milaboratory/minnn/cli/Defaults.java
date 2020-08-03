@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -30,8 +30,11 @@ package com.milaboratory.minnn.cli;
 
 import com.milaboratory.minnn.io.MinnnDataFormat;
 
+import java.util.UUID;
+
 import static com.milaboratory.core.sequence.SequenceQuality.*;
 import static com.milaboratory.minnn.io.MinnnDataFormat.*;
+import static com.milaboratory.minnn.parser.Parser.PARSER_BUILTIN_READ_GROUPS_NUM;
 
 public final class Defaults {
     private Defaults() {}
@@ -49,7 +52,6 @@ public final class Defaults {
     public final static int DEFAULT_MAX_QUALITY_PENALTY = -4;
     public final static long DEFAULT_SINGLE_OVERLAP_PENALTY = DEFAULT_GAP_SCORE;
     public final static long DEFAULT_NOT_RESULT_SCORE = 0;
-    public final static int DEFAULT_THREADS = 4;
     public final static MinnnDataFormat DEFAULT_INPUT_FORMAT = FASTQ;
     public final static int DEFAULT_SORT_MIN_CHUNK_SIZE = 16384;
     public final static int DEFAULT_SORT_MAX_CHUNK_SIZE = 65536;
@@ -60,6 +62,7 @@ public final class Defaults {
     public final static float DEFAULT_CORRECT_SINGLE_SUBSTITUTION_PROBABILITY = 0.1f;
     public final static float DEFAULT_CORRECT_SINGLE_INDEL_PROBABILITY = 0.02f;
     public final static float DEFAULT_CORRECT_WILDCARDS_COLLAPSING_MERGE_THRESHOLD = 10.0f;
+    public final static int DEFAULT_CORRECT_MAX_THREADS = 4;
     public final static int DEFAULT_CONSENSUS_ALIGNER_WIDTH = 20;
     public final static int DEFAULT_CONSENSUS_SCORE_THRESHOLD = -100;
     public final static float DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT = 0.05f;
@@ -68,11 +71,14 @@ public final class Defaults {
     public final static float DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD = 10.0f;
     public final static int DEFAULT_CONSENSUS_READS_TRIM_WINDOW_SIZE = 20;
     public final static byte DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH = 5;
+    public final static float DEFAULT_CONSENSUS_LOW_COVERAGE_THRESHOLD = 0.2f;
     public final static float DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD = 10.0f;
+    public final static float DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE = GOOD_QUALITY_VALUE;
     public final static int DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE = 20;
     public final static long DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY = -17;
     public final static byte DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD = GOOD_QUALITY_VALUE;
     public final static int DEFAULT_CONSENSUS_MAX_WARNINGS = 5;
+    public final static int DEFAULT_CONSENSUS_MAX_THREADS = 10;
     public final static int DEFAULT_CONSENSUS_KMER_LENGTH = 21;
     public final static int DEFAULT_CONSENSUS_KMER_OFFSET = 15;
     public final static int DEFAULT_CONSENSUS_KMER_MAX_ERRORS = 3;
@@ -83,6 +89,9 @@ public final class Defaults {
     public final static int BITAP_MAX_LENGTH = 63;
     public final static int SEQUENCES_OF_CHARACTERS_CACHE_SIZE = 100;
     public final static int SEQUENCES_OF_N_CACHE_SIZE = 1000;
+    public final static byte BUILTIN_READ_GROUPS_NUM = PARSER_BUILTIN_READ_GROUPS_NUM;
+    public final static byte DEMULTIPLEX_MAX_ID_STRING_LENGTH = 50;
+    public final static String DEMULTIPLEX_EMPTY_STRING_ID = UUID.nameUUIDFromBytes(new byte[0]).toString();
     public final static double OVERFLOW_PROTECTION_MIN = 1E-100D;
     public final static double OVERFLOW_PROTECTION_MAX = 1E100D;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -33,18 +33,22 @@ import com.milaboratory.core.alignment.Alignment;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.core.sequence.NucleotideAlphabetCaseSensitive;
 import com.milaboratory.core.sequence.NucleotideSequenceCaseSensitive;
+import gnu.trove.map.hash.TObjectByteHashMap;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static com.milaboratory.minnn.parser.Parser.BUILTIN_READ_GROUPS_NUM;
+import static com.milaboratory.minnn.cli.Defaults.BUILTIN_READ_GROUPS_NUM;
 
 public final class PatternUtils {
     private PatternUtils() {}
 
-    static final Map<String, Byte> defaultGroupIds = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
-            .mapToObj(i -> (byte)i).collect(Collectors.toMap(targetId -> "R" + targetId, Byte::new));
+    static final TObjectByteHashMap<String> defaultGroupIds = new TObjectByteHashMap<>(BUILTIN_READ_GROUPS_NUM,
+            0.5f, (byte)-1);
+
+    static {
+        for (int targetId = 1; targetId <= BUILTIN_READ_GROUPS_NUM; targetId++)
+            defaultGroupIds.put("R" + targetId, (byte)targetId);
+    }
 
     public static int invertCoordinate(int x) {
         return -2 - x;
@@ -126,7 +130,7 @@ public final class PatternUtils {
 
         for (GroupEdgePosition groupEdgePosition : groupEdgePositions) {
             byte matchedGroupTargetId = overrideTargetIds
-                    ? defaultGroupIds.getOrDefault(groupEdgePosition.getGroupEdge().getGroupName(), (byte)-1)
+                    ? defaultGroupIds.get(groupEdgePosition.getGroupEdge().getGroupName())
                     : targetId;
             int foundGroupEdgePosition = toSeq2Position(alignment, groupEdgePosition.getPosition());
             MatchedGroupEdge matchedGroupEdge = new MatchedGroupEdge(target, matchedGroupTargetId, 0,

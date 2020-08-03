@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -33,8 +33,8 @@ import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.core.sequence.SequenceQuality;
 import com.milaboratory.minnn.consensus.doublemultialign.ConsensusAlgorithmDoubleMultiAlign;
 import com.milaboratory.minnn.consensus.singlecell.ConsensusAlgorithmSingleCell;
+import com.milaboratory.minnn.util.DebugUtils.*;
 import gnu.trove.map.hash.TByteObjectHashMap;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -44,7 +44,7 @@ import static com.milaboratory.minnn.cli.Defaults.*;
 import static org.junit.Assert.*;
 
 public class ConsensusTestUtils {
-    public static synchronized void displayTestWarning(String text) {
+    private static synchronized void displayTestWarning(String text) {
         System.err.println(text);
     }
 
@@ -58,13 +58,16 @@ public class ConsensusTestUtils {
         float readsAvgQualityThreshold = DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD;
         int readsTrimWindowSize = DEFAULT_CONSENSUS_READS_TRIM_WINDOW_SIZE;
         byte minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
+        float lowCoverageThreshold = DEFAULT_CONSENSUS_LOW_COVERAGE_THRESHOLD;
         float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
+        float avgQualityThresholdForLowCoverage = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE;
         int trimWindowSize = DEFAULT_CONSENSUS_TRIM_WINDOW_SIZE;
         long goodQualityMismatchPenalty = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_PENALTY;
         byte goodQualityMismatchThreshold = DEFAULT_CONSENSUS_GOOD_QUALITY_MISMATCH_THRESHOLD;
         int matchScore = DEFAULT_MATCH_SCORE;
         int mismatchScore = DEFAULT_MISMATCH_SCORE;
         int gapScore = DEFAULT_GAP_SCORE;
+        boolean saveNotUsedReads = false;
         int kmerLength = DEFAULT_CONSENSUS_KMER_LENGTH;
         int kmerOffset = DEFAULT_CONSENSUS_KMER_OFFSET;
         int kmerMaxErrors = DEFAULT_CONSENSUS_KMER_MAX_ERRORS;
@@ -96,8 +99,14 @@ public class ConsensusTestUtils {
                     case "MIN_GOOD_SEQ_LENGTH":
                         minGoodSeqLength = (Byte)(entry.getValue());
                         break;
+                    case "LOW_COVERAGE_THRESHOLD":
+                        lowCoverageThreshold = (Float)(entry.getValue());
+                        break;
                     case "AVG_QUALITY_THRESHOLD":
                         avgQualityThreshold = (Float)(entry.getValue());
+                        break;
+                    case "AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE":
+                        avgQualityThresholdForLowCoverage = (Float)(entry.getValue());
                         break;
                     case "TRIM_WINDOW_SIZE":
                         trimWindowSize = (Integer)(entry.getValue());
@@ -116,6 +125,9 @@ public class ConsensusTestUtils {
                         break;
                     case "GAP_SCORE":
                         gapScore = (Integer)(entry.getValue());
+                        break;
+                    case "SAVE_NOT_USED_READS":
+                        saveNotUsedReads = (Boolean)(entry.getValue());
                         break;
                     case "KMER_LENGTH":
                         kmerLength = (Integer)(entry.getValue());
@@ -136,13 +148,14 @@ public class ConsensusTestUtils {
                         alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
                         goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxPerCluster,
                         readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                        avgQualityThreshold, trimWindowSize, false, null,
-                        (byte)0, null);
+                        lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
+                        false, null, (byte)0, null, saveNotUsedReads);
             case SINGLE_CELL:
                 return new ConsensusAlgorithmSingleCell(ConsensusTestUtils::displayTestWarning, numberOfTargets,
                         maxPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength, readsAvgQualityThreshold,
-                        readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold, trimWindowSize,
-                        false, null, (byte)0, null,
+                        readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
+                        avgQualityThresholdForLowCoverage, trimWindowSize,
+                        false, null, (byte)0, null, saveNotUsedReads,
                         kmerLength, kmerOffset, kmerMaxErrors);
             case RNA_SEQ:
                 throw new NotImplementedException();
@@ -150,8 +163,8 @@ public class ConsensusTestUtils {
         throw new IllegalStateException();
     }
 
-    public static Cluster rawSequencesToCluster(List<List<String>> testSequences,
-                                                List<LinkedHashMap<String, String>> barcodeValues) {
+    public static Cluster rawSequencesToCluster(
+            List<List<String>> testSequences, List<LinkedHashMap<String, String>> barcodeValues) {
         int numberOfReads = testSequences.size();
         int numberOfTargets = testSequences.get(0).size();
         testSequences.forEach(readSeqs -> assertEquals(numberOfTargets, readSeqs.size()));
@@ -164,7 +177,7 @@ public class ConsensusTestUtils {
                         toSeqWithAttributes(currentRawBarcode.getValue(), 0), targetId));
         }
 
-        Cluster cluster = new Cluster(0);
+        Cluster cluster = new Cluster(0, false);
         for (int readIndex = 0; readIndex < numberOfReads; readIndex++) {
             TByteObjectHashMap<SequenceWithAttributes> sequences = new TByteObjectHashMap<>();
             for (byte targetId = 1; targetId <= numberOfTargets; targetId++)
@@ -176,8 +189,8 @@ public class ConsensusTestUtils {
         return cluster;
     }
 
-    public static List<List<String>> consensusesToRawSequences(CalculatedConsensuses calculatedConsensuses,
-                                                               boolean withQuality) {
+    public static List<List<String>> consensusesToRawSequences(
+            CalculatedConsensuses calculatedConsensuses, boolean withQuality) {
         List<List<String>> outputSequences = new ArrayList<>();
         for (Consensus consensus : calculatedConsensuses.consensuses)
             if (withQuality)
@@ -191,7 +204,7 @@ public class ConsensusTestUtils {
         return outputSequences;
     }
 
-    public static SequenceWithAttributes toSeqWithAttributes(String str, long readId) {
+    private static SequenceWithAttributes toSeqWithAttributes(String str, long readId) {
         if (str.contains(" ")) {
             NucleotideSequence sequence = new NucleotideSequence(str.split(" ")[0]);
             SequenceQuality quality = new SequenceQuality(str.split(" ")[1]);

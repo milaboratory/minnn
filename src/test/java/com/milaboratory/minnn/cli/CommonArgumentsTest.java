@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -33,13 +33,12 @@ import org.junit.*;
 
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class CommonArgumentsTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
+        actionTestInit();
     }
 
     @Test

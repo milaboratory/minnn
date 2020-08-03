@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -82,12 +82,19 @@ class CommonDescriptions {
     private static final String AVG_QUALITY_THRESHOLD = "Minimal average quality for bad quality tails trimmer.";
     private static final String TRIM_WINDOW_SIZE = "Window size for bad quality tails trimmer.";
     private static final String FOR_INPUT_READS = " This parameter is for trimming input reads.";
-    private static final String FOR_OUTPUT_CONSENSUSES = " This parameter is for trimming output consensuses.";
+    private static final String FOR_OUTPUT_CONSENSUSES = " This parameter is for trimming output consensuses " +
+            "by quality and coverage.";
     static final String READS_MIN_GOOD_SEQUENCE_LENGTH = MIN_GOOD_SEQUENCE_LENGTH + FOR_INPUT_READS;
     static final String READS_AVG_QUALITY_THRESHOLD = AVG_QUALITY_THRESHOLD + FOR_INPUT_READS;
     static final String READS_TRIM_WINDOW_SIZE = TRIM_WINDOW_SIZE + FOR_INPUT_READS;
     static final String CONSENSUSES_MIN_GOOD_SEQUENCE_LENGTH = MIN_GOOD_SEQUENCE_LENGTH + FOR_OUTPUT_CONSENSUSES;
-    static final String CONSENSUSES_AVG_QUALITY_THRESHOLD = AVG_QUALITY_THRESHOLD + FOR_OUTPUT_CONSENSUSES;
+    static final String CONSENSUSES_LOW_COVERAGE_THRESHOLD = "Coverage is calculated as number of reads that have " +
+            "letters on current position divided by total number of reads for this consensus. Values lower than " +
+            "this parameter will be considered low." + FOR_OUTPUT_CONSENSUSES;
+    static final String CONSENSUSES_AVG_QUALITY_THRESHOLD = "Minimal average quality for parts of consensus with " +
+            "good coverage." + FOR_OUTPUT_CONSENSUSES;
+    static final String CONSENSUSES_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE = "Minimal average quality for parts of " +
+            "consensus with low coverage." + FOR_OUTPUT_CONSENSUSES;
     static final String CONSENSUSES_TRIM_WINDOW_SIZE = TRIM_WINDOW_SIZE + FOR_OUTPUT_CONSENSUSES;
     static final String ORIGINAL_READ_STATS = "Save extra statistics for each original read into separate file. " +
             "Output file in space separated text format.";

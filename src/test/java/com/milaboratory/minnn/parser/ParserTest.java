@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -310,6 +310,18 @@ public class ParserTest {
         String target = "TATATTAATCAATGCCCAGCAGC";
         Pattern pattern = strictParser.parseQuery(query);
         assertEquals(target, bestToString(pattern.match(new NSequenceWithQuality(target))));
+    }
+
+    @Test
+    public void specialCaseTest1() throws Exception {
+        boolean exceptionThrown = false;
+        try {
+            strictParser.parseQuery("^(R1:(CB:N{16})(UMI:N{10})*)\\(R2:*)\\(I1:*)\\(I2:*)");
+        } catch (ParserException e) {
+            exceptionThrown = true;
+            assertTrue(e.getMessage().contains("'*' pattern is invalid if there are other patterns"));
+        }
+        assertTrue(exceptionThrown);
     }
 
     private static void testSample(String query, String target, Range expectedRange) throws Exception {

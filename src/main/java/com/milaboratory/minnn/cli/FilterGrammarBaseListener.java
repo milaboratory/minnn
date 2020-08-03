@@ -184,6 +184,18 @@ public class FilterGrammarBaseListener implements FilterGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterNoWildcards(FilterGrammarParser.NoWildcardsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNoWildcards(FilterGrammarParser.NoWildcardsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterMinConsensusReads(FilterGrammarParser.MinConsensusReadsContext ctx) { }
 	/**
 	 * {@inheritDoc}

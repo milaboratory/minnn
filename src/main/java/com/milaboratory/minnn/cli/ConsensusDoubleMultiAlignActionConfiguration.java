@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.ConsensusDoubleMultiAlignAction.CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME;
 
 public final class ConsensusDoubleMultiAlignActionConfiguration implements ActionConfiguration {
-    private static final String CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_VERSION_ID = "1";
+    private static final String CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_VERSION_ID = "2";
     private final ConsensusDoubleMultiAlignActionParameters consensusParameters;
 
     @JsonCreator
@@ -90,7 +90,9 @@ public final class ConsensusDoubleMultiAlignActionConfiguration implements Actio
         private float readsAvgQualityThreshold;
         private int readsTrimWindowSize;
         private int minGoodSeqLength;
+        private float lowCoverageThreshold;
         private float avgQualityThreshold;
+        private float avgQualityThresholdForLowCoverage;
         private int trimWindowSize;
         private boolean toSeparateGroups;
         private long inputReadsLimit;
@@ -110,7 +112,9 @@ public final class ConsensusDoubleMultiAlignActionConfiguration implements Actio
                 @JsonProperty("readsAvgQualityThreshold") float readsAvgQualityThreshold,
                 @JsonProperty("readsTrimWindowSize") int readsTrimWindowSize,
                 @JsonProperty("minGoodSeqLength") int minGoodSeqLength,
+                @JsonProperty("lowCoverageThreshold") float lowCoverageThreshold,
                 @JsonProperty("avgQualityThreshold") float avgQualityThreshold,
+                @JsonProperty("avgQualityThresholdForLowCoverage") float avgQualityThresholdForLowCoverage,
                 @JsonProperty("trimWindowSize") int trimWindowSize,
                 @JsonProperty("toSeparateGroups") boolean toSeparateGroups,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
@@ -128,7 +132,9 @@ public final class ConsensusDoubleMultiAlignActionConfiguration implements Actio
             this.readsAvgQualityThreshold = readsAvgQualityThreshold;
             this.readsTrimWindowSize = readsTrimWindowSize;
             this.minGoodSeqLength = minGoodSeqLength;
+            this.lowCoverageThreshold = lowCoverageThreshold;
             this.avgQualityThreshold = avgQualityThreshold;
+            this.avgQualityThresholdForLowCoverage = avgQualityThresholdForLowCoverage;
             this.trimWindowSize = trimWindowSize;
             this.toSeparateGroups = toSeparateGroups;
             this.inputReadsLimit = inputReadsLimit;
@@ -246,12 +252,28 @@ public final class ConsensusDoubleMultiAlignActionConfiguration implements Actio
             this.minGoodSeqLength = minGoodSeqLength;
         }
 
+        public float getLowCoverageThreshold() {
+            return lowCoverageThreshold;
+        }
+
+        public void setLowCoverageThreshold(float lowCoverageThreshold) {
+            this.lowCoverageThreshold = lowCoverageThreshold;
+        }
+
         public float getAvgQualityThreshold() {
             return avgQualityThreshold;
         }
 
         public void setAvgQualityThreshold(float avgQualityThreshold) {
             this.avgQualityThreshold = avgQualityThreshold;
+        }
+
+        public float getAvgQualityThresholdForLowCoverage() {
+            return avgQualityThresholdForLowCoverage;
+        }
+
+        public void setAvgQualityThresholdForLowCoverage(float avgQualityThresholdForLowCoverage) {
+            this.avgQualityThresholdForLowCoverage = avgQualityThresholdForLowCoverage;
         }
 
         public int getTrimWindowSize() {
@@ -296,7 +318,10 @@ public final class ConsensusDoubleMultiAlignActionConfiguration implements Actio
             if (Float.compare(that.readsAvgQualityThreshold, readsAvgQualityThreshold) != 0) return false;
             if (readsTrimWindowSize != that.readsTrimWindowSize) return false;
             if (minGoodSeqLength != that.minGoodSeqLength) return false;
+            if (Float.compare(that.lowCoverageThreshold, lowCoverageThreshold) != 0) return false;
             if (Float.compare(that.avgQualityThreshold, avgQualityThreshold) != 0) return false;
+            if (Float.compare(that.avgQualityThresholdForLowCoverage, avgQualityThresholdForLowCoverage) != 0)
+                return false;
             if (trimWindowSize != that.trimWindowSize) return false;
             if (toSeparateGroups != that.toSeparateGroups) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
@@ -321,8 +346,10 @@ public final class ConsensusDoubleMultiAlignActionConfiguration implements Actio
                     ? Float.floatToIntBits(readsAvgQualityThreshold) : 0);
             result = 31 * result + readsTrimWindowSize;
             result = 31 * result + minGoodSeqLength;
-            result = 31 * result + (avgQualityThreshold != +0.0f
-                    ? Float.floatToIntBits(avgQualityThreshold) : 0);
+            result = 31 * result + (lowCoverageThreshold != +0.0f ? Float.floatToIntBits(lowCoverageThreshold) : 0);
+            result = 31 * result + (avgQualityThreshold != +0.0f ? Float.floatToIntBits(avgQualityThreshold) : 0);
+            result = 31 * result + (avgQualityThresholdForLowCoverage != +0.0f
+                    ? Float.floatToIntBits(avgQualityThresholdForLowCoverage) : 0);
             result = 31 * result + trimWindowSize;
             result = 31 * result + (toSeparateGroups ? 1 : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));

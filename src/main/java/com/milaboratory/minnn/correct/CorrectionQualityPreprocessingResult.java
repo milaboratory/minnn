@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -37,11 +37,11 @@ import java.util.*;
 import static com.milaboratory.minnn.cli.Defaults.DEFAULT_MAX_QUALITY;
 
 public final class CorrectionQualityPreprocessingResult {
-    public final Map<String, NSequenceWithQuality> groupValues;
-    public final int clusterSize;
-    public final Map<String, NucleotideSequence> primaryGroups;
+    final Map<String, NSequenceWithQuality> groupValues;
+    final int clusterSize;
+    final Map<String, NucleotideSequence> primaryGroups;
 
-    public CorrectionQualityPreprocessingResult(
+    CorrectionQualityPreprocessingResult(
             Map<String, NucleotideSequence> groupSequences, Map<String, long[]> groupQualities, int clusterSize,
             Map<String, NucleotideSequence> primaryGroups) {
         this.groupValues = new HashMap<>();

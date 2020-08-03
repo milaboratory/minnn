@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -30,14 +30,15 @@ package com.milaboratory.minnn.consensus;
 
 import cc.redberry.pipe.Processor;
 import com.milaboratory.core.sequence.NSequenceWithQuality;
-import com.milaboratory.core.sequence.NucleotideSequence;
-import com.milaboratory.core.sequence.SequenceWithQuality;
+import com.milaboratory.minnn.consensus.trimmer.ConsensusTrimmer;
+import com.milaboratory.minnn.consensus.trimmer.SequenceWithQualityAndCoverage;
 import com.milaboratory.minnn.util.ConsensusLetter;
 import gnu.trove.map.hash.TByteObjectHashMap;
+import gnu.trove.set.hash.TLongHashSet;
+import org.clapper.util.misc.FileHashMap;
 
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -53,8 +54,9 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     protected final boolean toSeparateGroups;
     protected final PrintStream debugOutputStream;
     protected final byte debugQualityThreshold;
-    protected final ConcurrentHashMap<Long, OriginalReadData> originalReadsData;
+    private final FileHashMap<Long, OriginalReadData> originalReadsData;
     protected final boolean collectOriginalReadsData;
+    protected final boolean saveNotUsedReads;
     protected final AtomicLong consensusCurrentTempId;
     // this flag must be set after reading 1st cluster in process() function
     protected final AtomicBoolean defaultGroupsOverride = new AtomicBoolean(false);
@@ -62,15 +64,15 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     private final float readsAvgQualityThreshold;
     private final int readsTrimWindowSize;
     private final int minGoodSeqLength;
-    private final float avgQualityThreshold;
-    private final int trimWindowSize;
+    private final ConsensusTrimmer consensusTrimmer;
 
     public ConsensusAlgorithm(
             Consumer<String> displayWarning, int numberOfTargets, int maxConsensusesPerCluster,
             float skippedFractionToRepeat, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
-            int readsTrimWindowSize, int minGoodSeqLength, float avgQualityThreshold, int trimWindowSize,
-            boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
-            ConcurrentHashMap<Long, OriginalReadData> originalReadsData) {
+            int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
+            float avgQualityThresholdForLowCoverage, int trimWindowSize, boolean toSeparateGroups,
+            PrintStream debugOutputStream, byte debugQualityThreshold,
+            FileHashMap<Long, OriginalReadData> originalReadsData, boolean saveNotUsedReads) {
         this.displayWarning = displayWarning;
         this.numberOfTargets = numberOfTargets;
         this.maxConsensusesPerCluster = maxConsensusesPerCluster;
@@ -79,14 +81,27 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         this.readsAvgQualityThreshold = readsAvgQualityThreshold;
         this.readsTrimWindowSize = readsTrimWindowSize;
         this.minGoodSeqLength = minGoodSeqLength;
-        this.avgQualityThreshold = avgQualityThreshold;
-        this.trimWindowSize = trimWindowSize;
+        this.consensusTrimmer = new ConsensusTrimmer(trimWindowSize, lowCoverageThreshold, avgQualityThreshold,
+                avgQualityThresholdForLowCoverage);
         this.toSeparateGroups = toSeparateGroups;
         this.debugOutputStream = debugOutputStream;
         this.debugQualityThreshold = debugQualityThreshold;
         this.originalReadsData = originalReadsData;
         this.collectOriginalReadsData = (originalReadsData != null);
+        this.saveNotUsedReads = saveNotUsedReads;
         this.consensusCurrentTempId = new AtomicLong(0);
+    }
+
+    protected OriginalReadData getOriginalReadData(long readId) {
+        synchronized (originalReadsData) {
+            return originalReadsData.get(readId);
+        }
+    }
+
+    protected void setOriginalReadData(long readId, OriginalReadData originalReadData) {
+        synchronized (originalReadsData) {
+            originalReadsData.put(readId, originalReadData);
+        }
     }
 
     /**
@@ -148,21 +163,23 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
                 }
             }
 
-            OriginalReadData currentReadData = collectOriginalReadsData
-                    ? originalReadsData.get(dataFromParsedRead.getOriginalReadId()) : null;
+            long originalReadId = dataFromParsedRead.getOriginalReadId();
+            OriginalReadData currentReadData = collectOriginalReadsData ? getOriginalReadData(originalReadId) : null;
             if (currentReadData != null)
                 currentReadData.trimmedLettersCounters = trimmedLettersCounters;
             if (allSequencesAreGood) {
                 if (dataFromParsedRead instanceof DataFromParsedReadWithAllGroups)
                     processedData.add(new DataFromParsedReadWithAllGroups(processedSequences,
-                            dataFromParsedRead.getBarcodes(), dataFromParsedRead.getOriginalReadId(),
+                            dataFromParsedRead.getBarcodes(), originalReadId,
                             dataFromParsedRead.isDefaultGroupsOverride(),
                             ((DataFromParsedReadWithAllGroups)dataFromParsedRead).getOtherGroups()));
                 else
                     processedData.add(new DataFromParsedRead(processedSequences, dataFromParsedRead.getBarcodes(),
-                            dataFromParsedRead.getOriginalReadId(), dataFromParsedRead.isDefaultGroupsOverride()));
+                            originalReadId, dataFromParsedRead.isDefaultGroupsOverride()));
             } else if (currentReadData != null)
                 currentReadData.status = READ_DISCARDED_TRIM;
+            if (currentReadData != null)
+                setOriginalReadData(originalReadId, currentReadData);
         }
 
         return processedData;
@@ -171,35 +188,54 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     /**
      * Trim bad quality tails from consensus sequence.
      *
-     * @param consensusSequence         calculated consensus sequence
+     * @param consensus                 calculated consensus sequence with quality and coverage
      * @param targetId                  target id of this sequence; used for saving counts of trimmed letters
      * @param trimmedLettersCounters    data structure to save counts of trimmed letters,
      *                                  or null if saving original reads data is not enabled
+     * @param debugData                 data structure to save trimmed consensus debug data,
+     *                                  or null if debug file is not enabled
      * @return                          trimmed sequence or null if consensus was discarded after trimming
      */
-    protected SequenceWithQuality<NucleotideSequence> trimConsensusBadQualityTails(
-            NSequenceWithQuality consensusSequence, byte targetId, TrimmedLettersCounters trimmedLettersCounters) {
-        int trimResultLeft = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
-                1, true, avgQualityThreshold, trimWindowSize);
+    protected NSequenceWithQuality trimConsensusBadQualityTails(
+            SequenceWithQualityAndCoverage consensus, byte targetId, TrimmedLettersCounters trimmedLettersCounters,
+            ConsensusDebugData debugData) {
+        NSequenceWithQuality trimmedConsensus;
+        int trimResultLeft = consensusTrimmer.trim(consensus, 0, consensus.size(), true);
+        int trimResultRight = -1;
         if (trimResultLeft < -1) {
             if (collectOriginalReadsData)
-                trimmedLettersCounters.byTargetId.put(targetId, consensusSequence.size());
-            return null;
+                trimmedLettersCounters.byTargetId.put(targetId, consensus.size());
+            trimmedConsensus = null;
+        } else {
+            trimResultRight = consensusTrimmer.trim(consensus, 0, consensus.size(), false);
+            if (trimResultRight < 0)
+                throw new IllegalStateException("Unexpected negative trimming result");
+            else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
+                if (collectOriginalReadsData)
+                    trimmedLettersCounters.byTargetId.put(targetId, consensus.size()
+                            - Math.max(0, trimResultRight - trimResultLeft - 1));
+                trimmedConsensus = null;
+            } else {
+                if (collectOriginalReadsData)
+                    trimmedLettersCounters.byTargetId.put(targetId,
+                            consensus.size() - (trimResultRight - trimResultLeft - 1));
+                trimmedConsensus = consensus.toNSequenceWithQuality(trimResultLeft + 1, trimResultRight);
+            }
         }
-        int trimResultRight = trim(consensusSequence.getQuality(), 0, consensusSequence.size(),
-                -1, true, avgQualityThreshold, trimWindowSize);
-        if (trimResultRight < 0)
-            throw new IllegalStateException("Unexpected negative trimming result");
-        else if (trimResultRight - trimResultLeft - 1 < minGoodSeqLength) {
-            if (collectOriginalReadsData)
-                trimmedLettersCounters.byTargetId.put(targetId, consensusSequence.size()
-                        - Math.max(0, trimResultRight - trimResultLeft - 1));
-            return null;
+
+        if (debugData != null) {
+            ArrayList<NSequenceWithQuality> currentRawConsensusData = debugData.consensusData
+                    .get(targetId - 1);
+            ArrayList<NSequenceWithQuality> currentTrimmedConsensusData = debugData.trimmedConsensusData
+                    .get(targetId - 1);
+            for (int i = 0; i < currentRawConsensusData.size(); i++) {
+                if ((trimmedConsensus == null) || (i <= trimResultLeft) || (i >= trimResultRight))
+                    currentTrimmedConsensusData.add(null);
+                else
+                    currentTrimmedConsensusData.add(currentRawConsensusData.get(i));
+            }
         }
-        if (collectOriginalReadsData)
-            trimmedLettersCounters.byTargetId.put(targetId,
-                    consensusSequence.size() - (trimResultRight - trimResultLeft - 1));
-        return consensusSequence.getSubSequence(trimResultLeft + 1, trimResultRight);
+        return trimmedConsensus;
     }
 
     protected String formatBarcodeValues(List<Barcode> barcodes) {
@@ -213,5 +249,15 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
             builder.append(barcode.groupName).append('=').append(barcode.value.getSeq().toString());
         }
         return builder.toString();
+    }
+
+    protected void collectNotUsedReads(
+            CalculatedConsensuses calculatedConsensuses, Cluster cluster, List<DataFromParsedRead> remainingData) {
+        if (saveNotUsedReads) {
+            TLongHashSet remainingReadIds = new TLongHashSet();
+            remainingData.stream().mapToLong(DataFromParsedRead::getOriginalReadId).forEach(remainingReadIds::add);
+            cluster.savedReads.stream().filter(read -> remainingReadIds.contains(read.getOriginalRead().getId()))
+                    .forEach(calculatedConsensuses.notUsedReads::add);
+        }
     }
 }

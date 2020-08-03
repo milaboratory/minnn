@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -68,7 +68,7 @@ public class FuzzyMatchPatternTest {
             assertEquals(nseq, result.getBestMatch().getMatchedRange().getTarget());
             assertTrue(result.isFound());
             assertEquals(1, countMatches(result, true));
-            assertEquals(1, result.getBestMatch().getNumberOfPatterns());
+            assertEquals(1, result.getBestMatch().getNumberOfTargets());
             assertEquals(1, result.getBestMatch().getMatchedRanges().length);
             assertEquals(0, result.getBestMatch().getMatchedGroupEdges().size());
         }

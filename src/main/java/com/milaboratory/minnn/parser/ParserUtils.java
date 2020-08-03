@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -37,13 +37,13 @@ import java.util.stream.IntStream;
 
 import static com.milaboratory.minnn.parser.BracketsDetector.*;
 import static com.milaboratory.minnn.parser.BracketsType.*;
-import static com.milaboratory.minnn.parser.Parser.BUILTIN_READ_GROUPS_NUM;
+import static com.milaboratory.minnn.parser.Parser.PARSER_BUILTIN_READ_GROUPS_NUM;
 import static com.milaboratory.minnn.parser.SimplifiedSyntaxStrings.*;
 
 public final class ParserUtils {
     /** Default group names: they are ignored in validateGroupEdges() if there is no default groups override. */
-    private static final Set<String> defaultGroupNamesCache = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
-            .mapToObj(i -> "R" + i).collect(Collectors.toSet());
+    private static final Set<String> defaultGroupNamesCache = IntStream
+            .rangeClosed(1, PARSER_BUILTIN_READ_GROUPS_NUM).mapToObj(i -> "R" + i).collect(Collectors.toSet());
 
     /**
      * Find all non-quoted positions of specified token in string.

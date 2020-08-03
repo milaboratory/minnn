@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -46,6 +46,7 @@ import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 
 final class BarcodeClusteringStrategy
         implements ClusteringStrategy<SequenceWithQualityAndCount, SequenceWithQualityForClustering> {
+    private final CorrectionStats stats = new CorrectionStats();
     private final TreeSearchParameters treeSearchParameters;
     private final float threshold;
     private final int maxClusterDepth;
@@ -65,6 +66,7 @@ final class BarcodeClusteringStrategy
     public boolean canAddToCluster(
             Cluster<SequenceWithQualityAndCount> cluster, SequenceWithQualityAndCount minorSequenceCounter,
             NeighborhoodIterator<SequenceWithQualityForClustering, SequenceWithQualityAndCount[]> iterator) {
+        stats.barcodeCanAddToClusterCalls++;
         Alignment<SequenceWithQualityForClustering> currentAlignment = iterator.getCurrentAlignment();
         Mutations<SequenceWithQualityForClustering> currentMutations = currentAlignment.getAbsoluteMutations();
         NSequenceWithQuality seq1 = currentAlignment.getSequence1().nSequenceWithQuality;
@@ -94,8 +96,16 @@ final class BarcodeClusteringStrategy
                     throw new IllegalStateException("Wrong mutation type: " + mutationType);
             }
         }
-        return !equalByWildcards && (minorClusterCount <= expected)
-                && ((float)minorClusterCount / majorClusterCount < threshold);
+
+        boolean canAddByExpectedCount = minorClusterCount <= expected;
+        boolean canAddByThreshold = (float)minorClusterCount / majorClusterCount < threshold;
+        if (equalByWildcards)
+            stats.barcodeClusterNotAddedByWildcards++;
+        else if (!canAddByExpectedCount)
+            stats.barcodeClusterNotAddedByExpectedCount++;
+        else if (!canAddByThreshold)
+            stats.barcodeClusterNotAddedByThreshold++;
+        return !equalByWildcards && canAddByExpectedCount && canAddByThreshold;
     }
 
     @Override
@@ -117,5 +127,9 @@ final class BarcodeClusteringStrategy
     @Override
     public int compare(SequenceWithQualityAndCount s1, SequenceWithQualityAndCount s2) {
         return Long.compare(s1.count, s2.count);
+    }
+
+    CorrectionStats getStats() {
+        return stats;
     }
 }

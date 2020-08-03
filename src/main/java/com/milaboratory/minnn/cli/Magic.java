@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -38,7 +38,7 @@ public final class Magic {
     public static final int BEGIN_MAGIC_LENGTH = 14;
     public static final int BEGIN_MAGIC_LENGTH_SHORT = 9;
     public static final String BEGIN_MAGIC_MIF = "MiNNN.MIF";
-    private static final int MAGIC_VERSION = 11;
+    private static final int MAGIC_VERSION = 12;
     private static final TIntObjectHashMap<String> MAGIC_VERSIONS = new TIntObjectHashMap<>();
     static {
         for (int i = 1; i <= MAGIC_VERSION; i++)

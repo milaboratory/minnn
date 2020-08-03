@@ -17,28 +17,33 @@ created for each combination of barcode values and samples, so this command can 
 output files will be written. You can use the log file from previous run and add :code:`--overwrite-if-required`
 argument if you want to use smart overwrite feature: overwrite output files only if the input file had changed.
 
+:code:`--output-path` argument allows to set the path for output files. If not specified, output files will be written
+to the same directory as input file. This option does not affect demultiplex log file; you can specify the path for
+demultiplex log file in :code:`--demultiplex-log` argument.
+
 Examples for demultiplex action:
 
 .. code-block:: text
 
    minnn demultiplex --output-buffer-size 30000 --by-barcode SB1 corrected.mif --demultiplex-log log.txt
    minnn demultiplex --demultiplex-log 1.log --by-sample samples1.txt --by-sample samples2.txt --by-barcode UMI in.mif
+   minnn demultiplex --by-barcode S1 data.mif --output-path ./data --demultiplex-log ./logs/demultiplex.log
 
 **Sample file format:**
 
 Sample file is a plain-text table with values separated with spaces or tabs. First line contains the keyword
 :code:`Sample` and then group names. Other lines start with sample names and then there are values of the groups
-for this sample.
+for this sample. Multiple lines with the same sample name will be combined into one sample.
 
 Example for sample file with single group:
 
 .. code-block:: text
 
    Sample UMI
-   good_value_1 AAAA
-   good_value_2 TTTT
-   good_value_3 CCCC
-   good_value_4 AAGG
+   good_sample_1 AAAA
+   good_sample_1 TTTT
+   good_sample_2 CCCC
+   good_sample_2 AAGG
    error_value_1 GGAA
    error_value_2 AATT
    special_value TTAA

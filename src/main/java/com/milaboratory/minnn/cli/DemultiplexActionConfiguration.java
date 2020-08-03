@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.DemultiplexAction.DEMULTIPLEX_ACTION_NAME;
 
 public final class DemultiplexActionConfiguration implements ActionConfiguration {
-    private static final String DEMULTIPLEX_ACTION_VERSION_ID = "1";
+    private static final String DEMULTIPLEX_ACTION_VERSION_ID = "3";
     private final DemultiplexActionParameters demultiplexParameters;
 
     @JsonCreator
@@ -77,13 +77,16 @@ public final class DemultiplexActionConfiguration implements ActionConfiguration
     @Serializable(asJson = true)
     public static final class DemultiplexActionParameters implements java.io.Serializable {
         private List<String> argumentsQuery;
+        private String outputFilesPath;
         private long inputReadsLimit;
 
         @JsonCreator
         public DemultiplexActionParameters(
                 @JsonProperty("argumentsQuery") List<String> argumentsQuery,
+                @JsonProperty("outputFilesPath") String outputFilesPath,
                 @JsonProperty("inputReadsLimit") long inputReadsLimit) {
             this.argumentsQuery = argumentsQuery;
+            this.outputFilesPath = outputFilesPath;
             this.inputReadsLimit = inputReadsLimit;
         }
 
@@ -93,6 +96,14 @@ public final class DemultiplexActionConfiguration implements ActionConfiguration
 
         public void setArgumentsQuery(List<String> argumentsQuery) {
             this.argumentsQuery = argumentsQuery;
+        }
+
+        public String getOutputFilesPath() {
+            return outputFilesPath;
+        }
+
+        public void setOutputFilesPath(String outputFilesPath) {
+            this.outputFilesPath = outputFilesPath;
         }
 
         public long getInputReadsLimit() {
@@ -109,12 +120,14 @@ public final class DemultiplexActionConfiguration implements ActionConfiguration
             if (o == null || getClass() != o.getClass()) return false;
             DemultiplexActionParameters that = (DemultiplexActionParameters)o;
             if (inputReadsLimit != that.inputReadsLimit) return false;
-            return Objects.equals(argumentsQuery, that.argumentsQuery);
+            if (!Objects.equals(argumentsQuery, that.argumentsQuery)) return false;
+            return Objects.equals(outputFilesPath, that.outputFilesPath);
         }
 
         @Override
         public int hashCode() {
             int result = argumentsQuery != null ? argumentsQuery.hashCode() : 0;
+            result = 31 * result + (outputFilesPath != null ? outputFilesPath.hashCode() : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));
             return result;
         }

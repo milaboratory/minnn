@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -79,7 +79,6 @@ public class ParsedReadTest {
         }
     }};
 
-    @Ignore
     @Test
     public void retargetTest() {
         ParsedRead newParsedRead = testParsedRead.retarget("R1", "R2", "R3", "G3-1", "G1-2", "G1-1");
@@ -87,7 +86,7 @@ public class ParsedReadTest {
         assertFalse(newParsedRead.isReverseMatch());
         Match targetMatch = newParsedRead.getBestMatch();
         assertEquals(testScore, targetMatch.getScore());
-        assertEquals(6, targetMatch.getNumberOfPatterns());
+        assertEquals(6, targetMatch.getNumberOfTargets());
         assertEquals(1, targetMatch.getMatchedGroupEdge("G3-1", true).getPosition());
         ArrayList<MatchedGroupEdge> targetGroupEdges = targetMatch.getMatchedGroupEdges();
         String[] expectedValues = new String[] { "R1", "R1", "G1-1", "G1-1", "G1-2", "G1-2", "R2", "R2",
@@ -107,7 +106,7 @@ public class ParsedReadTest {
         }
 
         targetMatch = testParsedRead.retarget("G3-1", "R3").getBestMatch();
-        assertEquals(2, targetMatch.getNumberOfPatterns());
+        assertEquals(2, targetMatch.getNumberOfTargets());
         assertEquals(0, targetMatch.getMatchedGroupEdge("G3-1", true).getPosition());
         targetGroupEdges = targetMatch.getMatchedGroupEdges();
         expectedValues = new String[] { "G3-1", "G3-1", "R3", "R3", "G3-1", "G3-1" };
@@ -122,11 +121,8 @@ public class ParsedReadTest {
         }
 
         final Match finalTargetMatch = testParsedRead.retarget("G1-1").getBestMatch();
-        assertEquals(1, finalTargetMatch.getNumberOfPatterns());
-        assertException(IllegalStateException.class, () -> {
-            finalTargetMatch.getMatchedGroupEdge("G3-1", true);
-            return null;
-        });
+        assertEquals(1, finalTargetMatch.getNumberOfTargets());
+        assertEquals(-1, finalTargetMatch.getMatchedGroupEdge("G3-1", true).getPosition());
         targetGroupEdges = finalTargetMatch.getMatchedGroupEdges();
         expectedValues = new String[] { "G1-1", "G1-1" };
         expectedPositions = new int[] { 0, 1 };

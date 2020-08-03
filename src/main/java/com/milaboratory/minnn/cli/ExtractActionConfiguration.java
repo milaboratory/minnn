@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -41,7 +41,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.ExtractAction.EXTRACT_ACTION_NAME;
 
 public final class ExtractActionConfiguration implements ActionConfiguration {
-    private static final String EXTRACT_ACTION_VERSION_ID = "1";
+    private static final String EXTRACT_ACTION_VERSION_ID = "2";
     private final ExtractActionParameters extractParameters;
 
     @JsonCreator
@@ -78,7 +78,7 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
     public static final class ExtractActionParameters implements java.io.Serializable {
         private String query;
         private MinnnDataFormat inputFormat;
-        private boolean oriented;
+        private boolean tryReverseOrder;
         private int matchScore;
         private int mismatchScore;
         private int uppercaseMismatchScore;
@@ -99,7 +99,7 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
         public ExtractActionParameters(
                 @JsonProperty("query") String query,
                 @JsonProperty("inputFormatName") MinnnDataFormat inputFormat,
-                @JsonProperty("oriented") boolean oriented,
+                @JsonProperty("tryReverseOrder") boolean tryReverseOrder,
                 @JsonProperty("matchScore") int matchScore,
                 @JsonProperty("mismatchScore") int mismatchScore,
                 @JsonProperty("uppercaseMismatchScore") int uppercaseMismatchScore,
@@ -117,7 +117,7 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
                 @JsonProperty("simplifiedSyntax") boolean simplifiedSyntax) {
             this.query = query;
             this.inputFormat = inputFormat;
-            this.oriented = oriented;
+            this.tryReverseOrder = tryReverseOrder;
             this.matchScore = matchScore;
             this.mismatchScore = mismatchScore;
             this.uppercaseMismatchScore = uppercaseMismatchScore;
@@ -151,12 +151,12 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
             this.inputFormat = inputFormat;
         }
 
-        public boolean isOriented() {
-            return oriented;
+        public boolean isTryReverseOrder() {
+            return tryReverseOrder;
         }
 
-        public void setOriented(boolean oriented) {
-            this.oriented = oriented;
+        public void setTryReverseOrder(boolean tryReverseOrder) {
+            this.tryReverseOrder = tryReverseOrder;
         }
 
         public int getMatchScore() {
@@ -284,7 +284,7 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ExtractActionParameters that = (ExtractActionParameters)o;
-            if (oriented != that.oriented) return false;
+            if (tryReverseOrder != that.tryReverseOrder) return false;
             if (matchScore != that.matchScore) return false;
             if (mismatchScore != that.mismatchScore) return false;
             if (uppercaseMismatchScore != that.uppercaseMismatchScore) return false;
@@ -308,7 +308,7 @@ public final class ExtractActionConfiguration implements ActionConfiguration {
         public int hashCode() {
             int result = query != null ? query.hashCode() : 0;
             result = 31 * result + (inputFormat != null ? inputFormat.hashCode() : 0);
-            result = 31 * result + (oriented ? 1 : 0);
+            result = 31 * result + (tryReverseOrder ? 1 : 0);
             result = 31 * result + matchScore;
             result = 31 * result + mismatchScore;
             result = 31 * result + uppercaseMismatchScore;

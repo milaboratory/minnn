@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -29,55 +29,56 @@
 package com.milaboratory.minnn.util;
 
 import com.milaboratory.cli.AppVersionInfo;
-import com.milaboratory.cli.AppVersionInfo.OutputType;
 import com.milaboratory.util.VersionInfo;
 
 import java.util.Map;
 
 import static com.milaboratory.minnn.cli.Defaults.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 
 public final class MinnnVersionInfo {
     private MinnnVersionInfo() {}
 
-    public static String getShortestVersionString() {
-        VersionInfo minnn = AppVersionInfo.get().getComponentVersions().get(APP_NAME);
-        return minnn.getVersion() +
-                "; built=" +
-                minnn.getTimestamp() +
-                "; rev=" +
-                minnn.getRevision();
-    }
-
-    public static String getVersionString(OutputType outputType, boolean full) {
+    public static String getVersionString(MinnnVersionInfoType type) {
         Map<String, VersionInfo> componentVersions = AppVersionInfo.get().getComponentVersions();
         VersionInfo minnn = componentVersions.get(APP_NAME);
-        VersionInfo milib = componentVersions.get("milib");
 
-        StringBuilder builder = new StringBuilder();
+        if (type == VERSION_INFO_SHORTEST) {
+            return minnn.getVersion() +
+                    "; built=" +
+                    minnn.getTimestamp() +
+                    "; rev=" +
+                    minnn.getRevision();
+        } else {
+            VersionInfo milib = componentVersions.get("milib");
+            StringBuilder builder = new StringBuilder();
 
-        builder.append("MiNNN v")
-                .append(minnn.getVersion())
-                .append(" (built ")
-                .append(minnn.getTimestamp())
-                .append("; rev=")
-                .append(minnn.getRevision())
-                .append("; branch=")
-                .append(minnn.getBranch());
+            builder.append("MiNNN v")
+                    .append(minnn.getVersion())
+                    .append(" (built ")
+                    .append(minnn.getTimestamp())
+                    .append("; rev=")
+                    .append(minnn.getRevision())
+                    .append("; branch=")
+                    .append(minnn.getBranch());
 
-        if (full)
-            builder.append("; host=")
-                    .append(minnn.getHost());
+            if (type == VERSION_INFO_MAIN)
+                builder.append("; host=")
+                        .append(minnn.getHost())
+                        .append(")\n");
+            else
+                builder.append("); ");
 
-        builder.append(")")
-                .append(outputType.delimiter);
+            builder.append("MiLib v")
+                    .append(milib.getVersion())
+                    .append(" (rev=")
+                    .append(milib.getRevision())
+                    .append(")");
 
-        builder.append("MiLib v")
-                .append(milib.getVersion())
-                .append(" (rev=")
-                .append(milib.getRevision())
-                .append(")")
-                .append(outputType.delimiter);
+            if (type == VERSION_INFO_MAIN)
+                builder.append("\n");
 
-        return builder.toString();
+            return builder.toString();
+        }
     }
 }

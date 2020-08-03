@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -32,16 +32,20 @@ import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.SinglePattern;
 
 import java.io.File;
+import java.util.*;
 
 import static com.milaboratory.minnn.cli.Main.main;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
+import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class CommandLineTestUtils {
+    private static final String cmdLineSplitRegexp = "[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)";
+
     public static void exec(String cmdLine) {
         ParsedRead.clearStaticCache();
-        main(cmdLine.split("[ ]+(?=([^\"]*\"[^\"]*\")*[^\"]*$)"));
+        main(cmdLine.split(cmdLineSplitRegexp));
     }
 
     public static Void callableExec(String cmdLine) {
@@ -53,11 +57,43 @@ public class CommandLineTestUtils {
         return null;
     }
 
+    public static void execAsProcess(String jvmArgs, String args, String workingDir) throws Exception {
+        String javaHome = System.getProperty("java.home");
+        String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
+        String classpath = System.getProperty("java.class.path");
+
+        List<String> command = new ArrayList<>();
+        command.add(javaBin);
+        if (jvmArgs != null)
+            command.addAll(Arrays.asList(jvmArgs.split(cmdLineSplitRegexp)));
+        command.add("-cp");
+        command.add(classpath);
+        command.add(Main.class.getName());
+        command.addAll(Arrays.asList(args.split(cmdLineSplitRegexp)));
+
+        ProcessBuilder builder = new ProcessBuilder(command);
+        if (workingDir != null)
+            builder.directory(new File(workingDir));
+        Process process = builder.inheritIO().start();
+        process.waitFor();
+    }
+
+    public static void actionTestInit() {
+        exitOnError = false;
+        File outputFilesDirectory = new File(TEMP_DIR);
+        if (!outputFilesDirectory.exists())
+            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+    }
+
     public static void createRandomMifFile(String fileName) {
         String fastqFile = EXAMPLES_PATH + "small/100.fastq";
         SinglePattern randomPattern = getRandomSingleReadPattern();
         exec("extract -f --input " + fastqFile + " --output " + fileName + " --devel-parser-syntax"
                 + " --pattern \"" + randomPattern.toString() + "\"");
+    }
+
+    public static void sortFile(String inputFile, String outputFile, String groups) {
+        exec("sort -f --input " + inputFile + " --output " + outputFile + " --groups " + groups);
     }
 
     public static void assertMifEqualsAsFastq(String mif1, String mif2, boolean withR2) throws Exception {
@@ -66,6 +102,16 @@ public class CommandLineTestUtils {
 
     public static void assertMifNotEqualsAsFastq(String mif1, String mif2, boolean withR2) throws Exception {
         checkFastqEquality(mif1, mif2, withR2, false);
+    }
+
+    public static void assertMifEqualsAsSortedFastq(
+            String mif1, String mif2, boolean withR2, String groups) throws Exception {
+        checkSortedFastqEquality(mif1, mif2, withR2, groups, true);
+    }
+
+    public static void assertMifNotEqualsAsSortedFastq(
+            String mif1, String mif2, boolean withR2, String groups) throws Exception {
+        checkSortedFastqEquality(mif1, mif2, withR2, groups, false);
     }
 
     private static void checkFastqEquality(String mif1, String mif2, boolean withR2, boolean equals) throws Exception {
@@ -95,7 +141,14 @@ public class CommandLineTestUtils {
             assertTrue(new File(tempFile).delete());
     }
 
-    public static void sortFile(String inputFile, String outputFile, String groups) {
-        exec("sort -f --input " + inputFile + " --output " + outputFile + " --groups " + groups);
+    private static void checkSortedFastqEquality(
+            String mif1, String mif2, boolean withR2, String groups, boolean equals) throws Exception {
+        String sorted1 = TEMP_DIR + "_sorted1.mif";
+        String sorted2 = TEMP_DIR + "_sorted2.mif";
+        sortFile(mif1, sorted1, groups);
+        sortFile(mif2, sorted2, groups);
+        checkFastqEquality(sorted1, sorted2, withR2, equals);
+        for (String tempFile : new String[] { sorted1, sorted2 })
+            assertTrue(new File(tempFile).delete());
     }
 }

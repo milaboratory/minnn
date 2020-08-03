@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -28,7 +28,7 @@
  */
 package com.milaboratory.minnn.pattern;
 
-public final class GroupEdgePosition {
+public final class GroupEdgePosition implements java.io.Serializable {
     private final GroupEdge groupEdge;
     private final int position;
 

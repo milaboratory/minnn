@@ -5,7 +5,7 @@ set -euxo pipefail
 prefix=standard_pipeline_test
 input="test01_R1.fastq.gz test01_R2.fastq.gz"
 pattern="(FULL:tggtatcaacgcagagt(UMI:nnnntnnnntnnnn)tct)\*"
-minnn extract -Xmx900M -f --pattern "$pattern" --input ${input} --output ${prefix}_extracted.mif
+minnn extract -Xmx900M -f --pattern "$pattern" --try-reverse-order --input ${input} --output ${prefix}_extracted.mif
 minnn sort -Xmx900M -f --chunk-size 5000 --groups UMI --input ${prefix}_extracted.mif --output ${prefix}_sorted1.mif
 minnn correct -Xmx900M -f --groups UMI --input ${prefix}_sorted1.mif --output ${prefix}_corrected.mif
 minnn sort -Xmx900M -f --chunk-size 5000 --groups UMI --input ${prefix}_corrected.mif --output ${prefix}_sorted2.mif

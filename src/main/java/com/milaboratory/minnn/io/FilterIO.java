@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -46,7 +46,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -54,6 +55,8 @@ public final class FilterIO {
     private final PipelineConfiguration pipelineConfiguration;
     private final ReadFilter readFilter;
     private final String filterQuery;
+    private final String barcodeWhitelistFiles;
+    private final String barcodeWhitelistPatternFiles;
     private final String inputFileName;
     private final String outputFileName;
     private final long inputReadsLimit;
@@ -62,12 +65,16 @@ public final class FilterIO {
     private final String jsonReportFileName;
     private final AtomicLong totalReadsCounter = new AtomicLong(0);
 
-    public FilterIO(PipelineConfiguration pipelineConfiguration, ReadFilter readFilter, String filterQuery,
-                    String inputFileName, String outputFileName, long inputReadsLimit, int threads,
-                    String reportFileName, String jsonReportFileName) {
+    public FilterIO(
+            PipelineConfiguration pipelineConfiguration, ReadFilter readFilter, String filterQuery,
+            String barcodeWhitelistFiles, String barcodeWhitelistPatternFiles,
+            String inputFileName, String outputFileName, long inputReadsLimit, int threads,
+            String reportFileName, String jsonReportFileName) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.readFilter = readFilter;
         this.filterQuery = filterQuery;
+        this.barcodeWhitelistFiles = barcodeWhitelistFiles;
+        this.barcodeWhitelistPatternFiles = barcodeWhitelistPatternFiles;
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.inputReadsLimit = inputReadsLimit;
@@ -108,7 +115,7 @@ public final class FilterIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
-        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
+        reportFileHeader.append("MiNNN v").append(getVersionString(VERSION_INFO_SHORTEST)).append('\n');
         reportFileHeader.append("Report for Filter command:\n");
         if (inputFileName == null)
             reportFileHeader.append("Input is from stdin\n");
@@ -118,7 +125,13 @@ public final class FilterIO {
             reportFileHeader.append("Output is to stdout\n");
         else
             reportFileHeader.append("Output file name: ").append(outputFileName).append('\n');
-        reportFileHeader.append("Filter query: ").append(filterQuery).append('\n');
+        if (filterQuery != null)
+            reportFileHeader.append("Filter query: ").append(filterQuery).append('\n');
+        if (barcodeWhitelistFiles != null)
+            reportFileHeader.append("Barcode whitelist files: ").append(barcodeWhitelistFiles).append('\n');
+        if (barcodeWhitelistPatternFiles != null)
+            reportFileHeader.append("Barcode whitelist pattern files: ")
+                    .append(barcodeWhitelistPatternFiles).append('\n');
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
@@ -126,10 +139,12 @@ public final class FilterIO {
         report.append("Processed ").append(totalReadsCounter).append(" reads, matched ").append(matchedReads)
                 .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
 
-        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("version", getVersionString(VERSION_INFO_SHORTEST));
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("filterQuery", filterQuery);
+        jsonReportData.put("barcodeWhitelistFiles", barcodeWhitelistFiles);
+        jsonReportData.put("barcodeWhitelistPatternFiles", barcodeWhitelistPatternFiles);
         jsonReportData.put("elapsedTime", elapsedTime);
         jsonReportData.put("matchedReads", matchedReads);
         jsonReportData.put("totalReads", totalReadsCounter.get());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -44,13 +44,13 @@ final class ReportWriter {
         PrintStream reportFileOutputStream = null;
         try {
             if (fileName != null)
-                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName));
+                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName, true));
         } catch (IOException e) {
             throw exitWithError(e.toString());
         }
         if (reportFileOutputStream != null) {
             reportFileOutputStream.print(fileHeader);
-            reportFileOutputStream.print(text);
+            reportFileOutputStream.println(text);
             reportFileOutputStream.close();
         }
     }
@@ -59,7 +59,7 @@ final class ReportWriter {
         PrintStream reportFileOutputStream = null;
         try {
             if (fileName != null)
-                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName));
+                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName, true));
         } catch (IOException e) {
             throw exitWithError(e.toString());
         }
@@ -70,6 +70,7 @@ final class ReportWriter {
             } catch (JsonProcessingException e) {
                 throw exitWithError(e.toString());
             }
+            reportFileOutputStream.close();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -36,7 +36,7 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.outputconverter.ParsedReadObjectSerializer;
 import com.milaboratory.util.SmartProgressReporter;
-import com.milaboratory.util.Sorter;
+import com.milaboratory.util.sorting.Sorter;
 import com.milaboratory.util.TempFileManager;
 
 import java.io.File;
@@ -47,7 +47,8 @@ import java.util.*;
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getShortestVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -102,7 +103,7 @@ public final class SorterIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
-        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
+        reportFileHeader.append("MiNNN v").append(getVersionString(VERSION_INFO_SHORTEST)).append('\n');
         reportFileHeader.append("Report for Sort command:\n");
         if (inputFileName == null)
             reportFileHeader.append("Input is from stdin\n");
@@ -118,7 +119,7 @@ public final class SorterIO {
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         report.append("Sorted ").append(totalReads).append(" reads\n");
 
-        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("version", getVersionString(VERSION_INFO_SHORTEST));
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("sortGroupNames", sortGroupNames);

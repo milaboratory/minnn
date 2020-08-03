@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -34,9 +34,10 @@ import com.milaboratory.core.alignment.*;
 import com.milaboratory.core.io.sequence.*;
 import com.milaboratory.core.io.sequence.fastq.SingleFastqReader;
 import com.milaboratory.core.io.sequence.fastq.SingleFastqWriter;
+import com.milaboratory.core.mutations.Mutation;
+import com.milaboratory.core.mutations.Mutations;
 import com.milaboratory.core.sequence.*;
 import com.milaboratory.minnn.pattern.*;
-import com.milaboratory.test.TestUtil;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -48,14 +49,17 @@ import java.util.stream.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static com.milaboratory.core.mutations.Mutation.*;
+import static com.milaboratory.core.sequence.SequencesUtils.concatenate;
 import static com.milaboratory.minnn.cli.Defaults.*;
 import static com.milaboratory.minnn.pattern.PatternUtils.invertCoordinate;
 import static com.milaboratory.minnn.util.CommonTestUtils.RandomStringType.*;
+import static com.milaboratory.test.TestUtil.randomSequence;
 import static org.junit.Assert.*;
 
 public class CommonTestUtils {
     public static final Random rg = new Random();
-    public static final String TEMP_DIR = System.getProperty("java.io.tmpdir") + "/";
+    public static final String TEMP_DIR = System.getProperty("java.io.tmpdir") + File.separator;
     private static final String LN_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final String QUERY_CHAR_STRING = " ATGCNatgcn()[]{}^$:+&|\\~0123456789-*";
 
@@ -71,66 +75,147 @@ public class CommonTestUtils {
         return countPortValues(matchingResult.getMatches(fair));
     }
 
-    public static NucleotideSequenceCaseSensitive makeRandomInsertions(NucleotideSequenceCaseSensitive seq,
-                                                                       int number) {
-        NucleotideSequenceCaseSensitive result = seq;
+    public static double getRandomLogNormal(double mean, double dev) {
+        return Math.exp(rg.nextGaussian() * dev + mean);
+    }
+
+    public static NSequenceWithQuality mutateSeqWithRandomQuality(
+            NSequenceWithQuality originalSeqWithQuality, Mutations<NucleotideSequence> mutations) {
+        Alphabet<NucleotideSequence> alphabet = NucleotideSequence.ALPHABET;
+        NucleotideSequence originalSeq = originalSeqWithQuality.getSequence();
+        SequenceQuality originalQual = originalSeqWithQuality.getQuality();
+        NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
+        int pointer = 0;
+        int mutPointer = 0;
+        int mut;
+        byte qualityAtPointer;
+        while (pointer < originalSeq.size() || mutPointer < mutations.size()) {
+            if (mutPointer < mutations.size()
+                    && ((mut = mutations.getMutation(mutPointer)) >>> POSITION_OFFSET) <= pointer)
+                switch (mut & MUTATION_TYPE_MASK) {
+                    case RAW_MUTATION_TYPE_SUBSTITUTION:
+                        if (((mut >> FROM_OFFSET) & LETTER_MASK) != originalSeq.codeAt(pointer))
+                            throw new IllegalArgumentException("Mutation = " + Mutation.toString(alphabet, mut) +
+                                    " but seq[" + pointer + "]=" + originalSeq.symbolAt(pointer));
+                        qualityAtPointer = originalQual.value(pointer);
+                        ++pointer;
+                        builder.append(new NSequenceWithQuality(
+                                new NucleotideSequence(new byte[] { (byte)(mut & LETTER_MASK) }),
+                                qualityAtPointer));
+                        ++mutPointer;
+                        break;
+                    case RAW_MUTATION_TYPE_DELETION:
+                        if (((mut >> FROM_OFFSET) & LETTER_MASK) != originalSeq.codeAt(pointer))
+                            throw new IllegalArgumentException("Mutation = " + Mutation.toString(alphabet, mut) +
+                                    " but seq[" + pointer + "]=" + originalSeq.symbolAt(pointer));
+                        ++pointer;
+                        ++mutPointer;
+                        break;
+                    case RAW_MUTATION_TYPE_INSERTION:
+                        if (pointer >= originalSeq.size())
+                            qualityAtPointer = originalQual.value(originalQual.size() - 1);
+                        else
+                            qualityAtPointer = originalQual.value(pointer);
+                        builder.append(new NSequenceWithQuality(
+                                new NucleotideSequence(new byte[] { (byte)(mut & LETTER_MASK) }),
+                                qualityAtPointer));
+                        ++mutPointer;
+                        break;
+                }
+            else {
+                builder.append(originalSeqWithQuality.getRange(pointer, pointer + 1));
+                pointer++;
+            }
+        }
+        return builder.createAndDestroy();
+    }
+
+    public static NSequenceWithQuality randomSeqWithQuality(int length, boolean basicLettersOnly) {
+        NucleotideSequence randomSeq = randomSequence(NucleotideSequence.ALPHABET, length, length, basicLettersOnly);
+        SequenceQualityBuilder randomQualityBuilder = new SequenceQualityBuilder();
+        IntStream.range(0, length)
+                .forEach(i -> randomQualityBuilder.append((byte)(rg.nextInt(DEFAULT_MAX_QUALITY) + 1)));
+        return new NSequenceWithQuality(randomSeq, randomQualityBuilder.createAndDestroy());
+    }
+
+    public static NSequenceWithQuality randomSeqWithWildcardShare(int length, float wildcardShare, boolean onlyN) {
+        NucleotideAlphabet alphabet = NucleotideSequence.ALPHABET;
+        NSequenceWithQualityBuilder builder = new NSequenceWithQualityBuilder();
+        for (int i = 0; i < length; i++) {
+            int letter = (rg.nextFloat() < wildcardShare) ? (onlyN ? alphabet.symbolToCode('N')
+                    : rg.nextInt(alphabet.size() - alphabet.basicSize()) + alphabet.basicSize())
+                    : rg.nextInt(alphabet.basicSize());
+            NucleotideSequence seq = new NucleotideSequence(new byte[] { (byte)letter });
+            SequenceQuality qual = new SequenceQuality(new byte[] { (byte)(rg.nextInt(DEFAULT_MAX_QUALITY) + 1) });
+            builder.append(new NSequenceWithQuality(seq, qual));
+        }
+        return builder.createAndDestroy();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <S extends Seq<S>> S randomSeq(S sampleInstance, int length) {
+        if (sampleInstance instanceof NucleotideSequenceCaseSensitive)
+            return (S)randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, length, length);
+        else if (sampleInstance instanceof NucleotideSequence)
+            return (S)randomSequence(NucleotideSequence.ALPHABET, length, length);
+        else if (sampleInstance instanceof NSequenceWithQuality)
+            return (S)randomSeqWithQuality(length, false);
+        else
+            throw new IllegalArgumentException(sampleInstance.getClass().toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <S extends Seq<S>> S makeRandomInsertions(S seq, int number) {
+        S result = seq;
         int currentLength;
         int currentInsertPosition;
         for (int i = 0; i < number; i++) {
             currentLength = seq.size() + i;
-            currentInsertPosition = rg.nextInt(currentLength);
-            result = SequencesUtils.concatenate(result.getRange(0, currentInsertPosition),
-                    TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, 1, 1),
+            currentInsertPosition = (currentLength == 0) ? 0 : rg.nextInt(currentLength);
+            result = concatenate(result.getRange(0, currentInsertPosition), randomSeq(seq, 1),
                     result.getRange(currentInsertPosition, currentLength));
         }
         return result;
     }
 
-    public static NucleotideSequenceCaseSensitive makeRandomDeletions(NucleotideSequenceCaseSensitive seq,
-                                                                      int number) {
+    @SuppressWarnings("unchecked")
+    public static <S extends Seq<S>> S makeRandomDeletions(S seq, int number) {
         assertTrue(seq.size() > number);
-        NucleotideSequenceCaseSensitive result = seq;
+        S result = seq;
         int currentLength;
         int currentDeletePosition;
         for (int i = 0; i < number; i++) {
             currentLength = seq.size() - i;
             currentDeletePosition = rg.nextInt(currentLength);
-            result = SequencesUtils.concatenate(result.getRange(0, currentDeletePosition),
+            result = concatenate(result.getRange(0, currentDeletePosition),
                     result.getRange(currentDeletePosition + 1, currentLength));
         }
         return result;
     }
 
-    public static NucleotideSequenceCaseSensitive makeRandomReplacements(NucleotideSequenceCaseSensitive seq,
-                                                                         int number) {
-        NucleotideSequenceCaseSensitive result = seq;
+    @SuppressWarnings("unchecked")
+    public static <S extends Seq<S>> S makeRandomSubstitutions(S seq, int number) {
+        assertTrue(seq.size() > 0);
+        S result = seq;
         int currentPosition;
         for (int i = 0; i < number; i++) {
             currentPosition = rg.nextInt(seq.size());
-            result = SequencesUtils.concatenate(result.getRange(0, currentPosition),
-                    TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET, 1, 1),
+            result = concatenate(result.getRange(0, currentPosition), randomSeq(seq, 1),
                     result.getRange(currentPosition + 1, seq.size()));
         }
         return result;
     }
 
-    public static NucleotideSequenceCaseSensitive makeRandomErrors(NucleotideSequenceCaseSensitive seq, int number) {
-        NucleotideSequenceCaseSensitive result = seq;
-        for (int i = 0; i < number; i++) {
-            switch (rg.nextInt(3)) {
-                case 0:
-                    result = makeRandomInsertions(result, 1);
-                    break;
-                case 1:
-                    if (result.size() < 2) break;
-                    result = makeRandomDeletions(result, 1);
-                    break;
-                case 2:
-                    result = makeRandomReplacements(result, 1);
-                    break;
-            }
-        }
-        return result;
+    public static <S extends Seq<S>> S makeRandomErrors(S seq, int number) {
+        assertTrue(seq.size() > 0);
+        if (number == 0)
+            return seq;
+        int numSubstitutions = rg.nextInt(number + 1);
+        int numDeletions = Math.min(seq.size() - 1, rg.nextInt(number - numSubstitutions + 1));
+        int numInsertions = number - numSubstitutions - numDeletions;
+        S result = makeRandomSubstitutions(seq, numSubstitutions);
+        result = makeRandomDeletions(result, numDeletions);
+        return makeRandomInsertions(result, numInsertions);
     }
 
     public static NucleotideSequenceCaseSensitive toLowerCase(NucleotideSequenceCaseSensitive seq) {
@@ -290,7 +375,7 @@ public class CommonTestUtils {
         int length = rg.nextInt(150) + 1;
         RandomBorders randomBorders = new RandomBorders(length);
         RandomCuts randomCuts = new RandomCuts(length);
-        NucleotideSequenceCaseSensitive seq = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
+        NucleotideSequenceCaseSensitive seq = randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                 length, length);
         return new FuzzyMatchPattern(patternConfiguration, seq, randomCuts.left, randomCuts.right,
                 randomBorders.left, randomBorders.right,
@@ -302,7 +387,7 @@ public class CommonTestUtils {
         int minRepeats = rg.nextInt(10) + 1;
         int maxRepeats = rg.nextInt(100) + minRepeats;
         RandomBorders randomBorders = new RandomBorders(maxRepeats);
-        NucleotideSequenceCaseSensitive seq = TestUtil.randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
+        NucleotideSequenceCaseSensitive seq = randomSequence(NucleotideSequenceCaseSensitive.ALPHABET,
                 1, 1);
         if (Character.toUpperCase(seq.toString().charAt(0)) == 'N')
             return new RepeatNPattern(patternConfiguration, minRepeats, maxRepeats,

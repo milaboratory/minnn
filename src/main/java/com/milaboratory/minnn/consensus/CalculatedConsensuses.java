@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -28,13 +28,17 @@
  */
 package com.milaboratory.minnn.consensus;
 
+import com.milaboratory.minnn.outputconverter.ParsedRead;
+
 import java.util.ArrayList;
 
 public final class CalculatedConsensuses {
     public final ArrayList<Consensus> consensuses = new ArrayList<>();
+    public final ArrayList<ParsedRead> notUsedReads;
     public final long orderedPortIndex;
 
-    public CalculatedConsensuses(long orderedPortIndex) {
+    public CalculatedConsensuses(long orderedPortIndex, boolean saveNotUsedReads) {
+        this.notUsedReads = saveNotUsedReads ? new ArrayList<>() : null;
         this.orderedPortIndex = orderedPortIndex;
     }
 }

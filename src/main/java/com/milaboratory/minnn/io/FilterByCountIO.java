@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -41,6 +41,7 @@ import java.util.*;
 import static com.milaboratory.minnn.cli.CliUtils.*;
 import static com.milaboratory.minnn.io.ReportWriter.*;
 import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -121,7 +122,7 @@ public final class FilterByCountIO {
         StringBuilder report = new StringBuilder();
         LinkedHashMap<String, Object> jsonReportData = new LinkedHashMap<>();
 
-        reportFileHeader.append("MiNNN v").append(getShortestVersionString()).append('\n');
+        reportFileHeader.append("MiNNN v").append(getVersionString(VERSION_INFO_SHORTEST)).append('\n');
         reportFileHeader.append("Report for Filter by Count command:\n");
         reportFileHeader.append("Input file name: ").append(inputFileName).append('\n');
         if (outputFileName == null)
@@ -140,7 +141,7 @@ public final class FilterByCountIO {
             report.append("Reads excluded by low barcode count: ").append(excludedReads).append(" (")
                     .append(floatFormat.format((float)excludedReads / totalReads * 100)).append("%)\n");
 
-        jsonReportData.put("version", getShortestVersionString());
+        jsonReportData.put("version", getVersionString(VERSION_INFO_SHORTEST));
         jsonReportData.put("inputFileName", inputFileName);
         jsonReportData.put("outputFileName", outputFileName);
         jsonReportData.put("excludedBarcodesOutputFileName", excludedBarcodesOutputFileName);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -36,6 +36,7 @@ import com.milaboratory.core.tree.TreeSearchParameters;
 
 final class WildcardClusteringStrategy
         implements ClusteringStrategy<SequenceWithWildcardsCount, SequenceWithQualityForClustering> {
+    private final CorrectionStats stats = new CorrectionStats();
     private final float wildcardsCollapsingMergeThreshold;
 
     WildcardClusteringStrategy(float wildcardsCollapsingMergeThreshold) {
@@ -46,10 +47,14 @@ final class WildcardClusteringStrategy
     public boolean canAddToCluster(
             Cluster<SequenceWithWildcardsCount> cluster, SequenceWithWildcardsCount minorSequenceCounter,
             NeighborhoodIterator<SequenceWithQualityForClustering, SequenceWithWildcardsCount[]> iterator) {
+        stats.wildcardCanAddToClusterCalls++;
         // major cluster can have lower count if head contains less wildcards than minorSequenceCounter
         long majorClusterCount = cluster.getHead().count;
         long minorClusterCount = minorSequenceCounter.count;
-        return majorClusterCount * wildcardsCollapsingMergeThreshold >= minorClusterCount;
+        boolean canAddByThreshold = majorClusterCount * wildcardsCollapsingMergeThreshold >= minorClusterCount;
+        if (!canAddByThreshold)
+            stats.wildcardClusterNotAddedByThreshold++;
+        return canAddByThreshold;
     }
 
     @Override
@@ -75,5 +80,9 @@ final class WildcardClusteringStrategy
         if (result == 0)
             result = Long.compare(s1.count, s2.count);
         return result;
+    }
+
+    CorrectionStats getStats() {
+        return stats;
     }
 }

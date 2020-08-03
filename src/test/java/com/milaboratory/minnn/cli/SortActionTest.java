@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -35,16 +35,12 @@ import java.io.File;
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class SortActionTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
-        File outputFilesDirectory = new File(TEMP_DIR);
-        if (!outputFilesDirectory.exists())
-            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+        actionTestInit();
     }
 
     @Test

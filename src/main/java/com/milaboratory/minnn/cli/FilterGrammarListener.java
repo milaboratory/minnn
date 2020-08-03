@@ -148,6 +148,16 @@ public interface FilterGrammarListener extends ParseTreeListener {
 	 */
 	void exitLen(FilterGrammarParser.LenContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FilterGrammarParser#noWildcards}.
+	 * @param ctx the parse tree
+	 */
+	void enterNoWildcards(FilterGrammarParser.NoWildcardsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FilterGrammarParser#noWildcards}.
+	 * @param ctx the parse tree
+	 */
+	void exitNoWildcards(FilterGrammarParser.NoWildcardsContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FilterGrammarParser#minConsensusReads}.
 	 * @param ctx the parse tree
 	 */

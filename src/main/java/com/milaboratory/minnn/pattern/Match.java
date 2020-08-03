@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -40,8 +40,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Serializable(by = IO.MatchSerializer.class)
-public class Match {
-    protected final int numberOfPatterns;
+public class Match implements java.io.Serializable {
+    protected final int numberOfTargets;
     protected final long score;
     protected final ArrayList<MatchedGroupEdge> matchedGroupEdges;
     private ArrayList<MatchedGroup> groups = null;
@@ -51,12 +51,12 @@ public class Match {
     /**
      * Serializable final match for single- or multi-pattern.
      *
-     * @param numberOfPatterns      number of patterns in multi-pattern, or 1 if it is single pattern
+     * @param numberOfTargets       number of targets (R1, R2 etc)
      * @param score                 match score
      * @param matchedGroupEdges     list of matched group edges
      */
-    public Match(int numberOfPatterns, long score, ArrayList<MatchedGroupEdge> matchedGroupEdges) {
-        this.numberOfPatterns = numberOfPatterns;
+    public Match(int numberOfTargets, long score, ArrayList<MatchedGroupEdge> matchedGroupEdges) {
+        this.numberOfTargets = numberOfTargets;
         this.score = score;
         this.matchedGroupEdges = matchedGroupEdges;
     }
@@ -65,8 +65,8 @@ public class Match {
      * Return MatchedGroupEdge by name and isStart flag.
      *
      * @param groupName group name
-     * @param isStart flag, true if it must be group start, false if must be group end
-     * @return MatchedRange for specified pattern
+     * @param isStart   flag, true if it must be group start, false if must be group end
+     * @return          MatchedRange for specified pattern
      */
     public MatchedGroupEdge getMatchedGroupEdge(String groupName, boolean isStart) {
         if (matchedGroupEdgesCache == null)
@@ -95,8 +95,8 @@ public class Match {
         return matchedGroupEdges;
     }
 
-    public int getNumberOfPatterns() {
-        return numberOfPatterns;
+    public int getNumberOfTargets() {
+        return numberOfTargets;
     }
 
     public long getScore() {
@@ -120,8 +120,8 @@ public class Match {
                 if ((start.getPosition() == -1) ^ (end.getPosition() == -1))
                     throw new IllegalStateException("Group start and group end can be -1 only simultaneously. Start: "
                             + start.getPosition() + ", end: " + end.getPosition());
-                else if ((start.getPosition() != -1) && (start.getPosition() >= end.getPosition()))
-                    throw new IllegalStateException("Group start must be lower than the end. Start: "
+                else if ((start.getPosition() != -1) && (start.getPosition() > end.getPosition()))
+                    throw new IllegalStateException("Group start must not be bigger than the end. Start: "
                             + start.getPosition() + ", end: " + end.getPosition());
                 if ((start.getValueOverride() != null) ^ (start.getPosition() == -1))
                     throw new IllegalStateException("Value override must be set if position is -1 and not set if "
@@ -164,14 +164,14 @@ public class Match {
     }
 
     public static void write(PrimitivO output, Match object) {
-        output.writeVarIntZigZag(object.getNumberOfPatterns());
+        output.writeVarIntZigZag(object.getNumberOfTargets());
         output.writeVarLongZigZag(object.getScore());
         output.writeVarIntZigZag(object.getMatchedGroupEdges().size());
         for (MatchedGroupEdge matchedGroupEdge : object.getMatchedGroupEdges())
             output.writeObject(matchedGroupEdge);
     }
 
-    private class MatchedGroupEdgeIndex {
+    private static class MatchedGroupEdgeIndex implements java.io.Serializable {
         private final String groupName;
         private final boolean isStart;
 

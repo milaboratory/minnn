@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -36,7 +36,7 @@ import java.util.stream.*;
 
 import static com.milaboratory.minnn.consensus.ConsensusStageForDebug.*;
 
-public final class ConsensusDebugData {
+public final class ConsensusDebugData implements java.io.Serializable {
     private final int numberOfTargets;
     private final byte debugQualityThreshold;
     private final ConsensusStageForDebug stage;
@@ -44,9 +44,9 @@ public final class ConsensusDebugData {
     // targetIndex is always targetId - 1; targetId -1 is not used because these ids are only for target sequences
     // outer list - targetIndex, second - sequenceIndex, inner - positionIndex
     public List<ArrayList<ArrayList<SequenceWithAttributes>>> data;
-    // outer list - targetIndex, inner - positionIndex
+    // for consensusData, trimmedConsensusData and alignmentScores: outer list - targetIndex, inner - positionIndex
     public List<ArrayList<NSequenceWithQuality>> consensusData;
-    // outer list - targetIndex, inner - sequenceIndex
+    public List<ArrayList<NSequenceWithQuality>> trimmedConsensusData;
     public List<ArrayList<Long>> alignmentScores;
 
     public ConsensusDebugData(int numberOfTargets, byte debugQualityThreshold, ConsensusStageForDebug stage,
@@ -58,6 +58,8 @@ public final class ConsensusDebugData {
         this.data = IntStream.range(0, numberOfTargets)
                 .mapToObj(i -> new ArrayList<ArrayList<SequenceWithAttributes>>()).collect(Collectors.toList());
         this.consensusData = IntStream.range(0, numberOfTargets)
+                .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());
+        this.trimmedConsensusData = IntStream.range(0, numberOfTargets)
                 .mapToObj(i -> new ArrayList<NSequenceWithQuality>()).collect(Collectors.toList());
         if (useAlignmentScores)
             this.alignmentScores = IntStream.range(0, numberOfTargets)
@@ -76,7 +78,9 @@ public final class ConsensusDebugData {
             debugOutputStream.println("targetIndex: " + targetIndex);
             ArrayList<ArrayList<SequenceWithAttributes>> targetData = data.get(targetIndex);
             ArrayList<NSequenceWithQuality> targetConsensus = consensusData.get(targetIndex);
+            ArrayList<NSequenceWithQuality> targetTrimmedConsensus = trimmedConsensusData.get(targetIndex);
             ArrayList<Long> targetAlignmentScores = useAlignmentScores ? alignmentScores.get(targetIndex) : null;
+
             for (int sequenceIndex = 0; sequenceIndex < targetData.size(); sequenceIndex++) {
                 ArrayList<SequenceWithAttributes> sequenceData = targetData.get(sequenceIndex);
                 long alignmentScore = useAlignmentScores ? targetAlignmentScores.get(sequenceIndex) : 0;
@@ -100,6 +104,7 @@ public final class ConsensusDebugData {
                 }
                 debugOutputStream.println(sequenceString.toString());
             }
+
             StringBuilder consensusString = new StringBuilder();
             for (NSequenceWithQuality currentLetter : targetConsensus) {
                 if (currentLetter == NSequenceWithQuality.EMPTY)
@@ -112,8 +117,27 @@ public final class ConsensusDebugData {
                 }
             }
             if (targetConsensus.size() > 0)
-                consensusString.append(" - consensus");
+                consensusString.append(" - consensus before trimming");
             debugOutputStream.println(consensusString.toString());
+
+            StringBuilder trimmedConsensusString = new StringBuilder();
+            for (NSequenceWithQuality currentLetter : targetTrimmedConsensus) {
+                if (currentLetter == NSequenceWithQuality.EMPTY)
+                    trimmedConsensusString.append("-");
+                else if (currentLetter == null)
+                    trimmedConsensusString.append(".");
+                else {
+                    if (currentLetter.getQuality().value(0) < debugQualityThreshold)
+                        trimmedConsensusString.append(Character.toLowerCase(
+                                currentLetter.getSequence().symbolAt(0)));
+                    else
+                        trimmedConsensusString.append(Character.toUpperCase(
+                                currentLetter.getSequence().symbolAt(0)));
+                }
+            }
+            if (targetTrimmedConsensus.size() > 0)
+                trimmedConsensusString.append(" - trimmed consensus");
+            debugOutputStream.println(trimmedConsensusString.toString());
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -64,6 +64,7 @@ final class NormalTokenizer extends Tokenizer {
         normalParsers.parseRepeatPatterns(getRepeatPatternBraces(bracesPairs, borderBracesPairs))
                 .forEach(tokenizedString::tokenizeSubstring);
         normalParsers.parseFuzzyMatchPatterns(tokenizedString).forEach(tokenizedString::tokenizeSubstring);
+        clearGarbageTokens(normalParsers, tokenizedString, false);
         normalParsers.parseAnyPatterns(tokenizedString).forEach(tokenizedString::tokenizeSubstring);
         clearGarbageTokens(normalParsers, tokenizedString, false);
         normalParsers.parseFilters(tokenizedString, false).forEach(tokenizedString::tokenizeSubstring);

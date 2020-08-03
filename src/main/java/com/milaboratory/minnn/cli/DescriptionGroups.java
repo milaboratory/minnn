@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -41,13 +41,12 @@ import java.util.regex.Pattern;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 public final class DescriptionGroups {
-    private final LinkedHashMap<String, String> cliArgs;
     private final LinkedHashMap<String, GroupPattern> regexPatterns = new LinkedHashMap<>();
 
     DescriptionGroups(LinkedHashMap<String, String> cliArgs) {
-        this.cliArgs = (cliArgs == null) ? new LinkedHashMap<>() : cliArgs;
-        for (HashMap.Entry<String, String> entry : this.cliArgs.entrySet())
-            regexPatterns.put(entry.getKey(), new GroupPattern(entry.getValue()));
+        if (cliArgs != null)
+            for (HashMap.Entry<String, String> entry : cliArgs.entrySet())
+                regexPatterns.put(entry.getKey(), new GroupPattern(entry.getValue()));
     }
 
     public LinkedHashSet<String> getGroupNames() {
@@ -60,14 +59,14 @@ public final class DescriptionGroups {
             return oldBestMatch;
         }
         ArrayList<MatchedGroupEdge> matchedGroupEdges = oldBestMatch.getMatchedGroupEdges();
-        int numberOfTargets = oldBestMatch.getNumberOfPatterns();
+        int numberOfTargets = oldBestMatch.getNumberOfTargets();
         for (HashMap.Entry<String, GroupPattern> entry : regexPatterns.entrySet()) {
             String groupName = entry.getKey();
             NSequenceWithQuality seq = null;
             int readId = 0;
             while (seq == null) {
                 if (readId == numberOfTargets)
-                    throw exitWithError("Regular expression " + cliArgs.get(groupName)
+                    throw exitWithError("Regular expression " + entry.getValue().patternStr
                             + " didn't match nucleotide sequence in any of read descriptions "
                             + seqDescriptionsToString(originalRead));
                 Matcher matcher = entry.getValue().pattern.matcher(originalRead.getRead(readId).getDescription());
@@ -110,14 +109,15 @@ public final class DescriptionGroups {
         return stringBuilder.append("]").toString();
     }
 
-    private class GroupPattern {
+    private static class GroupPattern {
+        final String patternStr;
         final Pattern pattern;
         final boolean withQuality;
 
         public GroupPattern(String patternStr) {
-            if ((patternStr.charAt(0) != '\'') || (patternStr.charAt(patternStr.length() - 1) != '\''))
-                throw exitWithError("Missing single quotes around regular expression: " + patternStr);
-            patternStr = patternStr.substring(1, patternStr.length() - 1);
+            if ((patternStr.charAt(0) == '\'') && (patternStr.charAt(patternStr.length() - 1) == '\''))
+                patternStr = patternStr.substring(1, patternStr.length() - 1);
+            this.patternStr = patternStr;
             pattern = Pattern.compile(patternStr);
             withQuality = patternStr.contains("?<seq>") && patternStr.contains("?<qual>");
         }

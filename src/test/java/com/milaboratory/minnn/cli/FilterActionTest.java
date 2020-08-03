@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -35,16 +35,12 @@ import java.io.File;
 import static com.milaboratory.minnn.cli.CommandLineTestUtils.*;
 import static com.milaboratory.minnn.cli.TestResources.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.*;
-import static com.milaboratory.minnn.util.SystemUtils.*;
 import static org.junit.Assert.*;
 
 public class FilterActionTest {
     @BeforeClass
     public static void init() {
-        exitOnError = false;
-        File outputFilesDirectory = new File(TEMP_DIR);
-        if (!outputFilesDirectory.exists())
-            throw exitWithError("Directory for temporary output files " + TEMP_DIR + " does not exist!");
+        actionTestInit();
     }
 
     @Test
@@ -80,7 +76,8 @@ public class FilterActionTest {
                 "G1~'TAACT' & Len(G2)=3", "G2~'T&nc'", "G1~'CT'&G1~'ta+[a&t]'", "G1~'~ta'",
                 "G2~'^TC||[n{2}]$'|(G1~'<{2}Taac'&G2~'*'| Len(G2)=5)", "G2~'AT && ~^GC'",
                 "MinConsensusReads=0", "MinConsensusReads = 5 & Len(G1) = 4", "Len( * )=4", "Len(*)=5",
-                "MinGroupQuality(*)=5 & AvgGroupQuality(G1)=10", "GroupMaxNCount(G2)=0", "GroupMaxNFraction(*)=0.01"
+                "MinGroupQuality(*)=5 & AvgGroupQuality(G1)=10", "GroupMaxNCount(G2)=0", "GroupMaxNFraction(*)=0.01",
+                "NoWildcards(*)", "NoWildcards(R1)", "NoWildcards(G1) & NoWildcards(G2)"
         };
         return " \"" + filters[rg.nextInt(filters.length)] + "\"";
     }
@@ -160,6 +157,19 @@ public class FilterActionTest {
         } catch (RuntimeException ignored) {}
 
         for (String fileName : new String[] { inputFile, outputFile1, outputFile2 })
+            assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void emptyReadsTest() throws Exception {
+        String inputFile = getExampleMif("with-empty-reads");
+        String filtered1 = TEMP_DIR + "filtered1.mif";
+        String filtered2 = TEMP_DIR + "filtered2.mif";
+        exec("filter -f --input " + inputFile + " --output " + filtered1
+                + " \"AvgGroupQuality(*)=20\"");
+        exec("filter -f --input " + inputFile + " --output " + filtered2
+                + " \"GroupMaxNFraction(*)=0.15\"");
+        for (String fileName : new String[] { inputFile, filtered1, filtered2 })
             assertTrue(new File(fileName).delete());
     }
 }

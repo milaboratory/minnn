@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -207,7 +207,7 @@ public final class CorrectAction extends ACommandWithSmartOverwrite implements M
     @Option(description = "Number of threads for barcodes correction. Multi-threading is used only with " +
             "--primary-groups argument: correction for different primary groups can be performed in parallel.",
             names = "--threads")
-    private int threads = DEFAULT_THREADS;
+    private int threads = Math.min(DEFAULT_CORRECT_MAX_THREADS, Runtime.getRuntime().availableProcessors());
 
     @Option(description = REPORT,
             names = "--report")

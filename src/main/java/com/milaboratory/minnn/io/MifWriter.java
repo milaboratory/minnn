@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -28,7 +28,6 @@
  */
 package com.milaboratory.minnn.io;
 
-import com.milaboratory.cli.AppVersionInfo.*;
 import com.milaboratory.cli.PipelineConfigurationWriter;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.pattern.GroupEdge;
@@ -38,7 +37,8 @@ import com.milaboratory.util.CanReportProgress;
 import java.io.*;
 
 import static com.milaboratory.minnn.cli.Magic.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.getVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
 import static java.lang.Double.NaN;
 
 public final class MifWriter implements PipelineConfigurationWriter, AutoCloseable, CanReportProgress {
@@ -68,7 +68,7 @@ public final class MifWriter implements PipelineConfigurationWriter, AutoCloseab
 
     private void writeHeader(MifHeader mifHeader) {
         output.write(getBeginMagicBytes());
-        output.writeUTF(getVersionString(OutputType.ToFile, false));
+        output.writeUTF(getVersionString(VERSION_INFO_MIF));
         output.writeObject(mifHeader.getPipelineConfiguration());
         output.writeInt(mifHeader.getNumberOfTargets());
         output.writeInt(mifHeader.getCorrectedGroups().size());

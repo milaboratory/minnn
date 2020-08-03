@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -33,6 +33,8 @@ import com.milaboratory.cli.PipelineConfiguration;
 import com.milaboratory.cli.PipelineConfigurationReader;
 import com.milaboratory.minnn.io.MifReader;
 
+import java.io.IOException;
+
 import static com.milaboratory.minnn.cli.Magic.BEGIN_MAGIC_MIF;
 import static com.milaboratory.minnn.io.MifInfoExtractor.*;
 import static com.milaboratory.minnn.util.SystemUtils.*;
@@ -54,7 +56,7 @@ public class PipelineConfigurationReaderMiNNN implements PipelineConfigurationRe
             return null;
         try {
             return fromFile(fileName, fileInfo);
-        } catch (Throwable ignored) {}
+        } catch (RuntimeException ignored) {}
         return null;
     }
 
@@ -80,8 +82,8 @@ public class PipelineConfigurationReaderMiNNN implements PipelineConfigurationRe
                 }
             }
             throw exitWithError("Not a MiNNN file");
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

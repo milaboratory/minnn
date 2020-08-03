@@ -20,7 +20,7 @@ Feature requests and bug reports are very welcome!
 - Process data with Unique Molecular Identifier (UMI)
   - Correct sequencing/PCR errors in UMI
   - Assemble sequences by UMI
-- Any combinations of above, 
+- Any combinations of above,
 
 ### Main features:
 
@@ -30,7 +30,7 @@ Feature requests and bug reports are very welcome!
 - Comprehensive sequence assemble algorithm
   - corrects both mismatches and indels
   - detects and extracts multiple sequence clusters for single UMI
-  
+
 ### Documentation
 
 Documentation is available at [http://minnn.readthedocs.io/](http://minnn.readthedocs.io/)
@@ -38,7 +38,7 @@ Documentation is available at [http://minnn.readthedocs.io/](http://minnn.readth
 ### License
 
 ```
-Copyright (c) 2016-2018, MiLaboratory LLC
+Copyright (c) 2016-2020, MiLaboratory LLC
 All Rights Reserved
 
 Permission to use, copy, modify and distribute any part of this program for
@@ -48,8 +48,8 @@ provided that the above copyright notice, this paragraph and the following
 three paragraphs appear in all copies.
 
 Those desiring to incorporate this work into commercial products or use for
-commercial purposes should contact MiLaboratory LLC, which owns exclusive 
-rights for distribution of this program for commercial purposes, using the 
+commercial purposes should contact MiLaboratory LLC, which owns exclusive
+rights for distribution of this program for commercial purposes, using the
 following email address: licensing@milaboratory.com.
 
 IN NO EVENT SHALL THE INVENTORS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,

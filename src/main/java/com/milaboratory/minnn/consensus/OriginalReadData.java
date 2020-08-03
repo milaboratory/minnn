@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -36,7 +36,7 @@ import java.util.*;
 import static com.milaboratory.minnn.consensus.OriginalReadStatus.*;
 import static com.milaboratory.minnn.util.CommonUtils.*;
 
-public final class OriginalReadData {
+public final class OriginalReadData implements java.io.Serializable {
     public final ParsedRead read;
     public OriginalReadStatus status = NOT_USED_IN_CONSENSUS;
     public TrimmedLettersCounters trimmedLettersCounters = null;

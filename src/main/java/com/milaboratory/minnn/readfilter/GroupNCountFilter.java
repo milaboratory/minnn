@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -28,6 +28,8 @@
  */
 package com.milaboratory.minnn.readfilter;
 
+import com.milaboratory.core.sequence.NucleotideAlphabet;
+import com.milaboratory.core.sequence.NucleotideSequence;
 import com.milaboratory.minnn.outputconverter.MatchedGroup;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 
@@ -57,7 +59,11 @@ public final class GroupNCountFilter implements ReadFilter {
     }
 
     static int getNCount(MatchedGroup matchedGroup) {
-        String seqString = matchedGroup.getValue().getSequence().toString().toUpperCase();
-        return seqString.length() - seqString.replace("N", "").length();
+        NucleotideSequence seq = matchedGroup.getValue().getSequence();
+        int nCount = 0;
+        for (int i = 0; i < seq.size(); i++)
+            if (seq.codeAt(i) == NucleotideAlphabet.N)
+                nCount++;
+        return nCount;
     }
 }

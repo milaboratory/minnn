@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -35,8 +35,7 @@ public final class CorrectionData {
     final LinkedHashMap<String, CorrectionGroupData> keyGroupsData;
     public final long orderedPortIndex;
     long parsedReadsCount = 0;
-    long totalWildcardsCount = 0;
-    long totalNucleotidesCount = 0;
+    CorrectionStats stats = new CorrectionStats();
 
     public CorrectionData(
             LinkedHashSet<String> keyGroups, long orderedPortIndex, boolean filterByCount) {

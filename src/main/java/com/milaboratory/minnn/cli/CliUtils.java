@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -54,10 +54,20 @@ public final class CliUtils {
 
     public static void validateInputGroups(
             MifReader mifReader, Collection<String> inputGroups, boolean defaultGroupsAllowed, String argumentName) {
-        if (!defaultGroupsAllowed) {
-            Set<String> defaultGroups = IntStream.rangeClosed(1, mifReader.getNumberOfTargets())
+        Set<String> allDefaultGroups = IntStream.rangeClosed(1, BUILTIN_READ_GROUPS_NUM)
+                .mapToObj(i -> "R" + i).collect(Collectors.toSet());
+        if (defaultGroupsAllowed) {
+            int numTargets = mifReader.getNumberOfTargets();
+            Set<String> validDefaultGroups = IntStream.rangeClosed(1, numTargets)
                     .mapToObj(i -> "R" + i).collect(Collectors.toSet());
-            if (inputGroups.stream().anyMatch(defaultGroups::contains))
+            LinkedHashSet<String> invalidInputGroups = inputGroups.stream().filter(allDefaultGroups::contains)
+                    .filter(g -> !validDefaultGroups.contains(g)).collect(Collectors.toCollection(LinkedHashSet::new));
+            if (invalidInputGroups.size() > 0)
+                throw exitWithError("Found default groups " + invalidInputGroups + " in " + argumentName
+                        + " argument, but the input has " + numTargets
+                        + " targets, so the last allowed default group is R" + numTargets);
+        } else {
+            if (inputGroups.stream().anyMatch(allDefaultGroups::contains))
                 throw exitWithError("Default groups R1, R2 etc are not allowed in " + argumentName + " argument!");
         }
         Set<String> existingGroups = mifReader.getGroupEdges().stream().map(GroupEdge::getGroupName)
@@ -65,10 +75,8 @@ public final class CliUtils {
         LinkedHashSet<String> missingGroups = inputGroups.stream().filter(g -> !existingGroups.contains(g))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         if (missingGroups.size() > 0) {
-            Set<String> defaultGroups = IntStream.rangeClosed(1, mifReader.getNumberOfTargets())
-                    .mapToObj(i -> "R" + i).collect(Collectors.toSet());
             LinkedHashSet<String> availableGroups = mifReader.getGroupEdges().stream().map(GroupEdge::getGroupName)
-                    .filter(g -> !defaultGroups.contains(g)).collect(Collectors.toCollection(LinkedHashSet::new));
+                    .filter(g -> !allDefaultGroups.contains(g)).collect(Collectors.toCollection(LinkedHashSet::new));
             throw exitWithError("Groups " + missingGroups + " not found in the input! Check whether these groups " +
                     "were specified in extract pattern. Available groups in the input: " + availableGroups);
         }

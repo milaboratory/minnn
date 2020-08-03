@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -78,7 +78,7 @@ public final class MatchIntermediate extends Match {
      * @return MatchedRange with patternIndex 0
      */
     public MatchedRange getMatchedRange() {
-        if (numberOfPatterns != 1)
+        if (numberOfTargets != 1)
             throw new IllegalStateException("Multiple pattern. Use getMatchedRange(int) instead.");
         return matchedRanges[0];
     }

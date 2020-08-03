@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.FilterAction.FILTER_ACTION_NAME;
 
 public final class FilterActionConfiguration implements ActionConfiguration {
-    private static final String FILTER_ACTION_VERSION_ID = "3";
+    private static final String FILTER_ACTION_VERSION_ID = "4";
     private final FilterActionParameters filterParameters;
 
     @JsonCreator

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -29,6 +29,10 @@
 package com.milaboratory.minnn.util;
 
 import com.milaboratory.core.sequence.NucleotideSequence;
+
+import java.util.*;
+
+import static com.milaboratory.core.sequence.NucleotideSequence.ALPHABET;
 
 public final class CommonUtils {
     private CommonUtils() {}
@@ -75,5 +79,143 @@ public final class CommonUtils {
 
         // the distance is the cost for transforming all letters in both strings
         return cost[arraySize1 - 1];
+    }
+
+    public static boolean equalByWildcards(NucleotideSequence seq1, NucleotideSequence seq2) {
+        if (seq1.size() != seq2.size())
+            return false;
+        for (int i = 0; i < seq1.size(); i++)
+            if (!ALPHABET.codeToWildcard(seq1.codeAt(i)).intersectsWith(ALPHABET.codeToWildcard(seq2.codeAt(i))))
+                return false;
+        return true;
+    }
+
+    // storage for sequences that are different by wildcards
+    public static class UniqueSequencesSet implements Set<NucleotideSequence> {
+        private Set<NucleotideSequence> sequences = new HashSet<>();
+
+        @Override
+        public int size() {
+            return sequences.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return sequences.isEmpty();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            if (o == null)
+                return false;
+            if (!(o instanceof NucleotideSequence))
+                return false;
+            NucleotideSequence newSeq = (NucleotideSequence)o;
+            if (sequences.contains(newSeq))
+                return true;
+            for (NucleotideSequence sequence : sequences)
+                if (equalByWildcards(sequence, newSeq))
+                    return true;
+            return false;
+        }
+
+        @Override
+        public Iterator<NucleotideSequence> iterator() {
+            return sequences.iterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return sequences.toArray();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T[] toArray(T[] ts) {
+            NucleotideSequence[] sequencesArray = (NucleotideSequence[])ts;
+            NucleotideSequence[] result = sequences.toArray(sequencesArray);
+            return (T[])result;
+        }
+
+        @Override
+        public boolean add(NucleotideSequence newSeq) {
+            if (newSeq == null)
+                throw new NullPointerException();
+            if (contains(newSeq))
+                return false;
+            else
+                return sequences.add(newSeq);
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return sequences.remove(o);
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> collection) {
+            for (Object o : collection)
+                if (!contains(o))
+                    return false;
+            return true;
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends NucleotideSequence> collection) {
+            boolean result = false;
+            for (NucleotideSequence sequence : collection)
+                result |= add(sequence);
+            return result;
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> collection) {
+            return sequences.removeAll(collection);
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> collection) {
+            boolean result;
+            Set<NucleotideSequence> newSet = new HashSet<>();
+            for (NucleotideSequence thisSeq : sequences) {
+                if (collection.contains(thisSeq))
+                    newSet.add(thisSeq);
+                else
+                    for (Object thatObj : collection) {
+                        if (!(thatObj instanceof NucleotideSequence)) {
+                            result = !sequences.equals(new HashSet<>());
+                            clear();
+                            return result;
+                        } else {
+                            NucleotideSequence thatSeq = (NucleotideSequence)thatObj;
+                            if (equalByWildcards(thisSeq, thatSeq)) {
+                                newSet.add(thisSeq);
+                                break;
+                            }
+                        }
+                    }
+            }
+            result = !sequences.equals(newSet);
+            sequences = newSet;
+            return result;
+        }
+
+        @Override
+        public void clear() {
+            sequences.clear();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UniqueSequencesSet that = (UniqueSequencesSet)o;
+            return sequences.equals(that.sequences);
+        }
+
+        @Override
+        public int hashCode() {
+            return sequences.hashCode();
+        }
     }
 }

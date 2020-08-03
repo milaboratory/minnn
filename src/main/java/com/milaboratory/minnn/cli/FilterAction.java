@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -112,9 +112,13 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
             }
         }
         ReadFilter finalReadFilter = (readFilters.size() == 1) ? readFilters.get(0) : new AndReadFilter(readFilters);
-        FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), finalReadFilter,
-                (filterQueryList == null) ? null : String.join("", filterQueryList),
-                inputFileName, outputFileName, inputReadsLimit, threads, reportFileName, jsonReportFileName);
+        String filterQueryStr = (filterQueryList == null) ? null : String.join("", filterQueryList);
+        String barcodeWhitelistFilesStr = (barcodeWhitelistFiles == null) ? null : barcodeWhitelistFiles.toString();
+        String barcodeWhitelistPatternFilesStr = (barcodeWhitelistPatternFiles == null) ? null
+                : barcodeWhitelistPatternFiles.toString();
+        FilterIO filterIO = new FilterIO(getFullPipelineConfiguration(), finalReadFilter, filterQueryStr,
+                barcodeWhitelistFilesStr, barcodeWhitelistPatternFilesStr, inputFileName, outputFileName,
+                inputReadsLimit, threads, reportFileName, jsonReportFileName);
         filterIO.go();
     }
 
@@ -217,7 +221,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
 
     @Option(description = "Number of threads for parsing reads.",
             names = {"--threads"})
-    private int threads = DEFAULT_THREADS;
+    private int threads = Runtime.getRuntime().availableProcessors();
 
     @Option(description = REPORT,
             names = "--report")
@@ -252,6 +256,13 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
                 if (parsedFilter != null)
                     filter = parsedFilter;
             }
+        }
+    }
+
+    private static class NoWildcardsListener extends AntlrFilterListener {
+        @Override
+        public void enterNoWildcards(FilterGrammarParser.NoWildcardsContext ctx) {
+            filter = new NoWildcardsReadFilter(ctx.groupNameOrAll().getText());
         }
     }
 
@@ -310,6 +321,7 @@ public final class FilterAction extends ACommandWithSmartOverwrite implements Mi
             setIfNotNull(ctx.groupNFraction(), new GroupNFractionListener());
             setIfNotNull(ctx.minConsensusReads(), new MinConsensusReadsListener());
             setIfNotNull(ctx.len(), new LenListener());
+            setIfNotNull(ctx.noWildcards(), new NoWildcardsListener());
         }
     }
 

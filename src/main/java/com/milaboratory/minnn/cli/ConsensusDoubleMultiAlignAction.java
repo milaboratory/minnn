@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -60,12 +60,11 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
                 outputFileName, DOUBLE_MULTI_ALIGN, alignerWidth, matchScore, mismatchScore, gapScore,
                 goodQualityMismatchPenalty, goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat,
                 maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
-                minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadStatsFileName,
-                notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
-                0, 0, 0, reportFileName, jsonReportFileName,
-                debugOutputFileName, debugQualityThreshold);
+                minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
+                trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName, toSeparateGroups,
+                inputReadsLimit, actualMaxWarnings, threads, 0, 0, 0,
+                reportFileName, jsonReportFileName, debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
-
     }
 
     @Override
@@ -78,6 +77,10 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
         if (maxConsensusesPerCluster < 1)
             throwValidationException("--max-consensuses-per-cluster value must be positive!");
+        if (readsMinGoodSeqLength < 1)
+            throwValidationException("--reads-min-good-sequence-length value must be positive!");
+        if (minGoodSeqLength < 1)
+            throwValidationException("--min-good-sequence-length value must be positive!");
     }
 
     @Override
@@ -115,8 +118,8 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
                 .ConsensusDoubleMultiAlignActionParameters(groupList, alignerWidth, matchScore, mismatchScore,
                 gapScore, goodQualityMismatchPenalty, goodQualityMismatchThreshold, scoreThreshold,
                 skippedFractionToRepeat, maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold,
-                readsTrimWindowSize, minGoodSeqLength, avgQualityThreshold, trimWindowSize, toSeparateGroups,
-                inputReadsLimit));
+                readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
+                avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups, inputReadsLimit));
     }
 
     @Override
@@ -195,9 +198,17 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
             names = {"--min-good-sequence-length"})
     private int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
+    @Option(description = CONSENSUSES_LOW_COVERAGE_THRESHOLD,
+            names = {"--low-coverage-threshold"})
+    private float lowCoverageThreshold = DEFAULT_CONSENSUS_LOW_COVERAGE_THRESHOLD;
+
     @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD,
             names = {"--avg-quality-threshold"})
     private float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
+
+    @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE,
+            names = {"--avg-quality-threshold-for-low-coverage"})
+    private float avgQualityThresholdForLowCoverage = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE;
 
     @Option(description = CONSENSUSES_TRIM_WINDOW_SIZE,
             names = {"--trim-window-size"})
@@ -225,7 +236,7 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
 
     @Option(description = CONSENSUS_NUMBER_OF_THREADS,
             names = {"--threads"})
-    private int threads = DEFAULT_THREADS;
+    private int threads = Math.min(DEFAULT_CONSENSUS_MAX_THREADS, Runtime.getRuntime().availableProcessors());
 
     @Option(description = REPORT,
             names = "--report")

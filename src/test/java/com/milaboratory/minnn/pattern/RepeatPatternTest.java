@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -79,7 +79,7 @@ public class RepeatPatternTest {
                 assertEquals(nseq, results[i].getBestMatch(fairSorting).getMatchedRange().getTarget());
                 assertTrue(results[i].isFound());
                 assertEquals((i < 3) ? 25 : 7, countMatches(results[i], true));
-                assertEquals(1, results[i].getBestMatch(fairSorting).getNumberOfPatterns());
+                assertEquals(1, results[i].getBestMatch(fairSorting).getNumberOfTargets());
                 assertEquals(1, results[i].getBestMatch(fairSorting).getMatchedRanges().length);
                 assertEquals(0, results[i].getBestMatch(fairSorting).getMatchedGroupEdges().size());
             }

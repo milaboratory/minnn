@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019, MiLaboratory LLC
+ * Copyright (c) 2016-2020, MiLaboratory LLC
  * All Rights Reserved
  *
  * Permission to use, copy, modify and distribute any part of this program for
@@ -60,10 +60,10 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
                 outputFileName, SINGLE_CELL, 0, 0, 0, 0,
                 0, (byte)0, 0, skippedFractionToRepeat,
                 maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
-                minGoodSeqLength, avgQualityThreshold, trimWindowSize, originalReadStatsFileName,
-                notUsedReadsOutputFileName, toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
-                kmerLength, kmerOffset, kmerMaxErrors, reportFileName, jsonReportFileName,
-                debugOutputFileName, debugQualityThreshold);
+                minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
+                trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName, toSeparateGroups,
+                inputReadsLimit, actualMaxWarnings, threads, kmerLength, kmerOffset, kmerMaxErrors,
+                reportFileName, jsonReportFileName, debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
     }
 
@@ -77,6 +77,16 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
         MiNNNCommand.super.validate(getInputFiles(), getOutputFiles());
         if (maxConsensusesPerCluster < 1)
             throwValidationException("--max-consensuses-per-cluster value must be positive!");
+        if (readsMinGoodSeqLength < 1)
+            throwValidationException("--reads-min-good-sequence-length value must be positive!");
+        if (minGoodSeqLength < 1)
+            throwValidationException("--min-good-sequence-length value must be positive!");
+        if (kmerLength < 1)
+            throwValidationException("--kmer-length value must be positive!");
+        if (kmerOffset < 0)
+            throwValidationException("--kmer-offset value must not be negative!");
+        if (kmerMaxErrors < 0)
+            throwValidationException("--kmer-max-errors value must not be negative!");
     }
 
     @Override
@@ -113,8 +123,8 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
         return new ConsensusSingleCellActionConfiguration(new ConsensusSingleCellActionConfiguration
                 .ConsensusSingleCellActionParameters(groupList, skippedFractionToRepeat, maxConsensusesPerCluster,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                avgQualityThreshold, trimWindowSize, toSeparateGroups, inputReadsLimit, kmerLength, kmerOffset,
-                kmerMaxErrors));
+                lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
+                toSeparateGroups, inputReadsLimit, kmerLength, kmerOffset, kmerMaxErrors));
     }
 
     @Override
@@ -165,9 +175,17 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
             names = {"--min-good-sequence-length"})
     private int minGoodSeqLength = DEFAULT_CONSENSUS_MIN_GOOD_SEQ_LENGTH;
 
+    @Option(description = CONSENSUSES_LOW_COVERAGE_THRESHOLD,
+            names = {"--low-coverage-threshold"})
+    private float lowCoverageThreshold = DEFAULT_CONSENSUS_LOW_COVERAGE_THRESHOLD;
+
     @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD,
             names = {"--avg-quality-threshold"})
     private float avgQualityThreshold = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD;
+
+    @Option(description = CONSENSUSES_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE,
+            names = {"--avg-quality-threshold-for-low-coverage"})
+    private float avgQualityThresholdForLowCoverage = DEFAULT_CONSENSUS_AVG_QUALITY_THRESHOLD_FOR_LOW_COVERAGE;
 
     @Option(description = CONSENSUSES_TRIM_WINDOW_SIZE,
             names = {"--trim-window-size"})
@@ -195,7 +213,7 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
 
     @Option(description = CONSENSUS_NUMBER_OF_THREADS,
             names = {"--threads"})
-    private int threads = DEFAULT_THREADS;
+    private int threads = Math.min(DEFAULT_CONSENSUS_MAX_THREADS, Runtime.getRuntime().availableProcessors());
 
     @Option(description = REPORT,
             names = "--report")
