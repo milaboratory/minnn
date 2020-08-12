@@ -32,29 +32,24 @@ import com.milaboratory.minnn.pattern.MatchedGroupEdge;
 
 import java.util.*;
 
+import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
+
 final class GroupUtils {
     private GroupUtils() {}
 
-    static String generateComments(String oldComments, int consensusReads, TreeSet<FastqCommentGroup> commentGroups, boolean reverseMatch) {
+    static String generateComments(String oldComments, int consensusReads, boolean reverseMatch, TreeSet<FastqCommentGroup> commentGroups) {
         StringBuilder comments = new StringBuilder(oldComments);
 
-        if (consensusReads > 0) {
-            if (comments.length() > 0)
-                comments.append("~");
-            comments.append("CONSENSUS_READS=").append(consensusReads);
-        }
+        if (comments.length() > 0)
+            comments.append(" ");
+        comments.append(consensusReads).append("|");
+
+        comments.append(reverseMatch ? "R" : "F");
 
         if (commentGroups.size() > 0) {
-            if (comments.length() > 0)
-                comments.append("~");
+            comments.append("|");
             commentGroups.forEach(cg -> comments.append(cg.getDescription()));
             comments.setLength(comments.length() - 1);  // trim last separator
-        }
-
-        if (reverseMatch) {
-            if (comments.length() > 0)
-                comments.append("~");
-            comments.append("||~");
         }
 
         return comments.toString();
@@ -66,7 +61,10 @@ final class GroupUtils {
     }
 
     static boolean parseReverseMatchFlag(String minnnComments) {
-        return minnnComments.contains("||~");
+        String[] tokens = minnnComments.split("\\|");
+        if (tokens.length < 2)
+            throw exitWithError("Wrong MiNNN FASTQ comments line: " + minnnComments);
+        return tokens[1].equals("R");
     }
 
     // TODO: implementation

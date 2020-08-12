@@ -28,22 +28,23 @@ output FASTQ files.
 
 **Output FASTQ files comments format:**
 
-:code:`@[original_headers~][consensus_reads~]group_descriptions[~||~]`
+:code:`@[original_headers ]consensus_reads|reverse_match_flag|group_descriptions`
 
-:code:`~` symbol is used as separator between sections, :code:`|` symbol is used as separator between groups
-inside :code:`group_descriptions` section.
+:code:`|` symbol is used as separator between sections. :code:`original_headers` section is present only if
+:code:`--copy-original-headers` parameter is specified. Space is used as separator after :code:`original_headers`
+section if it's present. Inside :code:`group_descriptions`, :code:`|` is used as separator between groups.
 
-:code:`original_headers` section is present only if :code:`--copy-original-headers` parameter is specified.
+:code:`consensus_reads` section is containing a number that shows how many reads were used to create the consensus
+if the MIF file was created by :ref:`consensus` or :ref:`consensus-dma` action. If the read is not a consensus and
+doesn't contain a consensus, :code:`consensus_reads` section is :code:`0`. The read can be not a consensus itself,
+but contain consensus as a group if :code:`--consensuses-to-separate-groups` parameter for :ref:`consensus` or
+:ref:`consensus-dma` action was used. In this case there will be a number of reads in the consensus (non-zero value)
+in :code:`consensus_reads` section.
 
-:code:`consensus_reads` section is present only if the MIF file was created by :ref:`consensus` or
-:ref:`consensus-dma` action. Its presence shows that this read is a consensus or contains consensus as a group (if
-:code:`--consensuses-to-separate-groups` parameter for :ref:`consensus` or :ref:`consensus-dma` action was used).
-:code:`consensus_reads` section format is :code:`CONSENSUS_READS=n` where :code:`n` is number of reads that were used
-to create this consensus.
-
-:code:`||~` token is present only if this was a reversed match (with swapped :code:`R1` and :code:`R2`)
+:code:`reverse_match_flag` is :code:`R` if this was a reversed match (with swapped :code:`R1` and :code:`R2`)
 in :ref:`extract` action. In reversed matches :code:`R1` read in extract action input file becomes :code:`R2`
-in mif2fastq output file and vice versa, so :code:`||~` token is used as notification for reversed matches.
+in mif2fastq output file and vice versa, so :code:`R` value is used as notification for reversed matches. For
+non-reversed matches, :code:`reverse_match_flag` is :code:`F`.
 
 :code:`group_descriptions` section contains descriptions of all capture groups except built-in groups :code:`R1`,
 :code:`R2`, :code:`R3` etc. Groups are separated by :code:`|` token. There can be 3 types of groups in this section:
