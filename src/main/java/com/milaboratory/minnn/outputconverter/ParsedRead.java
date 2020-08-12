@@ -372,7 +372,7 @@ public final class ParsedRead implements java.io.Serializable {
 
             String oldComments = (copyOriginalHeaders && (commentsTargetId != -1))
                     ? originalRead.getRead(commentsTargetId - 1).getDescription() : "";
-            readDescription = generateComments(commentGroups, reverseMatch, oldComments);
+            readDescription = generateComments(oldComments, consensusReads, commentGroups, reverseMatch);
         }
 
         commentsCache.put(outputGroupName, readDescription);

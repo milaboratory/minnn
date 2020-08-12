@@ -35,8 +35,14 @@ import java.util.*;
 final class GroupUtils {
     private GroupUtils() {}
 
-    static String generateComments(TreeSet<FastqCommentGroup> commentGroups, boolean reverseMatch, String oldComments) {
+    static String generateComments(String oldComments, int consensusReads, TreeSet<FastqCommentGroup> commentGroups, boolean reverseMatch) {
         StringBuilder comments = new StringBuilder(oldComments);
+
+        if (consensusReads > 0) {
+            if (comments.length() > 0)
+                comments.append("~");
+            comments.append("CONSENSUS_READS=").append(consensusReads);
+        }
 
         if (commentGroups.size() > 0) {
             if (comments.length() > 0)

@@ -36,6 +36,8 @@ import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.milaboratory.minnn.outputconverter.GroupUtils.*;
 import static com.milaboratory.minnn.util.CommonTestUtils.RandomStringType.*;
@@ -156,30 +158,32 @@ public class GroupUtilsTest {
             addAll(commentGroupsNotMatched);
         }};
 
+        String cr = "CONSENSUS_READS=";
         String expectedAllGroups = "A-Test3|G-Test2|Group0~AGACA~CCCCC{3~8}|Group1~T~C{2~3}|Group2~ATTA~CCCC|"
                 + "Group3~TTAG~CCCC{1~5}|Group4~ATTA~CCCC|Group5~ATTA~CCCC{0~4}|Group6~ATTA~CCCC|"
                 + "Group9~ATTAGACATT~CCCCCCCCCC{0~10}|Z-Test1";
 
-        assertEquals("ABC~" + expectedAllGroups + "~||~",
-                generateComments(commentGroups, true, "ABC"));
+        assertEquals("ABC~" + cr + 1 + "~" + expectedAllGroups + "~||~",
+                generateComments("ABC", 1, commentGroups, true));
         assertEquals(expectedAllGroups + "~||~",
-                generateComments(commentGroups, true, ""));
+                generateComments("", 0, commentGroups, true));
         assertEquals("ABC~" + expectedAllGroups,
-                generateComments(commentGroups, false, "ABC"));
+                generateComments("ABC", 0, commentGroups, false));
         assertEquals(expectedAllGroups,
-                generateComments(commentGroups, false, ""));
+                generateComments("", 0, commentGroups, false));
         assertEquals("ABC~A-Test3|G-Test2|Z-Test1~||~",
-                generateComments(commentGroupsNotMatched, true, "ABC"));
-        assertEquals("ABC~A-Test3|G-Test2|Group0~AGACA~CCCCC{3~8}|Group1~T~C{2~3}|"
+                generateComments("ABC", 0, commentGroupsNotMatched, true));
+        assertEquals("ABC~" + cr + 100000 + "~A-Test3|G-Test2|Group0~AGACA~CCCCC{3~8}|Group1~T~C{2~3}|"
                         + "Group3~TTAG~CCCC{1~5}|Group5~ATTA~CCCC{0~4}|Group9~ATTAGACATT~CCCCCCCCCC{0~10}|Z-Test1",
-                generateComments(new TreeSet<FastqCommentGroup>() {{ addAll(commentGroupsInsideMain);
-                    addAll(commentGroupsNotMatched); }}, false, "ABC"));
-        assertEquals("Group2~ATTA~CCCC|Group4~ATTA~CCCC|Group6~ATTA~CCCC",
-                generateComments(commentGroupsNotInsideMain, false, ""));
-        assertEquals("x~||~", generateComments(new TreeSet<>(), true, "x"));
-        assertEquals("||~", generateComments(new TreeSet<>(), true, ""));
-        assertEquals("x", generateComments(new TreeSet<>(), false, "x"));
-        assertEquals("", generateComments(new TreeSet<>(), false, ""));
+                generateComments("ABC", 100000, new TreeSet<>(Stream.concat(
+                        commentGroupsInsideMain.stream(), commentGroupsNotMatched.stream()).collect(Collectors.toSet())), false));
+        assertEquals(cr + 300 + "~Group2~ATTA~CCCC|Group4~ATTA~CCCC|Group6~ATTA~CCCC",
+                generateComments("", 300, commentGroupsNotInsideMain, false));
+        assertEquals("x~" + cr + 1 + "~||~", generateComments("x", 1, new TreeSet<>(), true));
+        assertEquals("x~||~", generateComments("x", 0, new TreeSet<>(), true));
+        assertEquals("||~", generateComments("", 0, new TreeSet<>(), true));
+        assertEquals("x", generateComments("x", 0, new TreeSet<>(), false));
+        assertEquals("", generateComments("", 0, new TreeSet<>(), false));
     }
 
     @Test
@@ -193,7 +197,7 @@ public class GroupUtilsTest {
                 commentGroups.add(generateCommentGroup(null, 0, true));
             for (int j = 0; j < rg.nextInt(15); j++)
                 commentGroups.add(new FastqCommentGroup(getRandomString(rg.nextInt(30) + 1)));
-            generateComments(commentGroups, rg.nextBoolean(), getRandomString(100) + 1);
+            generateComments(getRandomString(100) + 1, rg.nextInt(3), commentGroups, rg.nextBoolean());
         }
     }
 
