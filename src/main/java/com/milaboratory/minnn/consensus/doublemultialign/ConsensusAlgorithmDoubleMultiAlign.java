@@ -157,11 +157,11 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                     displayWarning.accept("WARNING: max consensuses per cluster exceeded; not processed "
                             + filteredOutReads.size() + " reads from cluster of " + cluster.data.size()
                             + " reads! Barcode values: " + formatBarcodeValues(bestData.getBarcodes()));
-                    collectNotUsedReads(calculatedConsensuses, cluster, data);
+                    processNotUsedReads(calculatedConsensuses, cluster, data);
                     data = new ArrayList<>();
                 }
             } else {
-                collectNotUsedReads(calculatedConsensuses, cluster, data);
+                processNotUsedReads(calculatedConsensuses, cluster, data);
                 data = new ArrayList<>();
             }
         }

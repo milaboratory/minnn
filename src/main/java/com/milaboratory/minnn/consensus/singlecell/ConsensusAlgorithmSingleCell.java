@@ -127,7 +127,7 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
             }
         }
 
-        collectNotUsedReads(calculatedConsensuses, cluster, remainingData);
+        processNotUsedReads(calculatedConsensuses, cluster, remainingData);
         return calculatedConsensuses;
     }
 

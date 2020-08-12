@@ -33,6 +33,8 @@ import org.junit.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -326,5 +328,74 @@ public class ConsensusActionTest {
                 + " --reads-min-good-sequence-length 1 --min-good-sequence-length 1");
         for (String fileName : new String[] { inputFile, sorted, consensusSC, consensusDMA })
             assertTrue(new File(fileName).delete());
+    }
+
+    @Test
+    public void notUsedReadsCountTest() throws Exception {
+        String start = TEMP_DIR + "start.mif";
+        String extracted = TEMP_DIR + "extracted.mif";
+        String sorted = TEMP_DIR + "sorted.mif";
+        String consensus1 = TEMP_DIR + "consensus1.mif";
+        String notUsedReads = TEMP_DIR + "not-used-reads.mif";
+        String consensus2 = TEMP_DIR + "consensus2.mif";
+        String jsonReport1 = TEMP_DIR + "json-report1.json";
+        String jsonReport2 = TEMP_DIR + "json-report2.json";
+        String jsonReportMifInfo = TEMP_DIR + "json-report-mif-info.json";
+        for (int i = 0; i < 50; i++) {
+            createRandomMifFile(start);
+            String consensusGroups = Arrays.asList("G1", "G2", "G1 G2", "G2 G1").get(rg.nextInt(4));
+            int scoreThreshold = rg.nextInt(2000) - 1000;
+            int width = rg.nextInt(50) + 1;
+            int maxConsensusesPerCluster = rg.nextInt(30) + 1;
+            float skippedFractionToRepeat = rg.nextFloat() * 0.8f + 0.1f;
+            int readsAvgQualityThreshold = rg.nextInt(DEFAULT_GOOD_QUALITY);
+            int readsTrimWindowSize = rg.nextInt(15) + 1;
+            int readsMinGoodSeqLength = rg.nextInt(50) + 1;
+            int avgQualityThreshold = rg.nextInt(DEFAULT_GOOD_QUALITY);
+            int trimWindowSize = rg.nextInt(15) + 1;
+            int minGoodSeqLength = rg.nextInt(50) + 1;
+            int mismatchScore = -rg.nextInt(10) - 1;
+            int gapScore = -rg.nextInt(10) - 1;
+            exec("extract -f --input-format MIF --input " + start + " --output " + extracted
+                    + " --pattern \"(G1:annnt)(G2:NN)\" --bitap-max-errors 0");
+            sortFile(extracted, sorted, consensusGroups);
+            for (int j = 1; j <= 2; j++)
+                exec("consensus-dma -f --input " + sorted + " --output " + (j == 1 ? consensus1 : consensus2)
+                        + " --groups " + consensusGroups
+                        + " --score-threshold " + scoreThreshold + " --width " + width
+                        + " --max-consensuses-per-cluster " + maxConsensusesPerCluster
+                        + " --skipped-fraction-to-repeat " + skippedFractionToRepeat
+                        + " --reads-avg-quality-threshold " + readsAvgQualityThreshold
+                        + " --reads-trim-window-size " + readsTrimWindowSize
+                        + " --reads-min-good-sequence-length " + readsMinGoodSeqLength
+                        + " --avg-quality-threshold " + avgQualityThreshold
+                        + " --trim-window-size " + trimWindowSize
+                        + " --min-good-sequence-length " + minGoodSeqLength
+                        + " --aligner-match-score 0 --aligner-mismatch-score " + mismatchScore
+                        + " --aligner-gap-score " + gapScore
+                        + (j == 1 ? " --not-used-reads-output " + notUsedReads : "")
+                        + " --json-report " + (j == 1 ? jsonReport1 : jsonReport2));
+            exec("mif-info -f --json-report " + jsonReportMifInfo + " " + notUsedReads);
+
+            List<String> json1Lines = Files.lines(Paths.get(jsonReport1)).collect(Collectors.toList());
+            List<String> json2Lines = Files.lines(Paths.get(jsonReport2)).collect(Collectors.toList());
+            List<String> jsonMifInfoLines = Files.lines(Paths.get(jsonReportMifInfo)).collect(Collectors.toList());
+            Collections.reverse(json1Lines);
+            Collections.reverse(json2Lines);
+            Collections.reverse(jsonMifInfoLines);
+            String json1CountLine = json1Lines.stream().filter(s -> s.contains("notUsedReadsCount")).findFirst().orElseThrow(AssertionError::new);
+            String json2CountLine = json2Lines.stream().filter(s -> s.contains("notUsedReadsCount")).findFirst().orElseThrow(AssertionError::new);
+            String jsonInfoCountLine = jsonMifInfoLines.stream().filter(s -> s.contains("numberOfReads")).findFirst()
+                    .orElseThrow(AssertionError::new);
+            int json1Count = Integer.parseInt(json1CountLine.split(":")[1].replaceAll("[ ,]", ""));
+            int json2Count = Integer.parseInt(json2CountLine.split(":")[1].replaceAll("[ ,]", ""));
+            int jsonInfoCount = Integer.parseInt(jsonInfoCountLine.split(":")[1].replaceAll("[ ,]", ""));
+            assertEquals(json1Count, json2Count);
+            assertEquals(json1Count, jsonInfoCount);
+
+            for (String fileName : new String[] { start, extracted, sorted, consensus1, notUsedReads, consensus2,
+                    jsonReport1, jsonReport2, jsonReportMifInfo })
+                assertTrue(new File(fileName).delete());
+        }
     }
 }

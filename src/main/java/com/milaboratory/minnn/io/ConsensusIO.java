@@ -105,8 +105,9 @@ public final class ConsensusIO {
     private ConsensusAlgorithm consensusAlgorithm;
     private long consensusReads = 0;
     private long clustersCount = 0;
+    private long notUsedReadsCount = 0;
     private int warningsDisplayed = 0;
-    private LinkedHashSet<String> consensusGroups;
+    private final LinkedHashSet<String> consensusGroups;
     private int numberOfTargets;
 
     public ConsensusIO(
@@ -262,7 +263,7 @@ public final class ConsensusIO {
                         break;
                 }
                 clusterOutputPort = new OutputPort<Cluster>() {
-                    Iterator<Cluster> clusters = allClusters.values().iterator();
+                    final Iterator<Cluster> clusters = allClusters.values().iterator();
 
                     @Override
                     public synchronized Cluster take() {
@@ -348,6 +349,7 @@ public final class ConsensusIO {
                 }
                 if (saveNotUsedReads)
                     calculatedConsensuses.notUsedReads.forEach(notUsedReadsWriter::write);
+                notUsedReadsCount += calculatedConsensuses.notUsedReadsCount;
             }
             reader.close();
             originalNumberOfReads = reader.getOriginalNumberOfReads();
@@ -481,6 +483,7 @@ public final class ConsensusIO {
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
         report.append("Processed ").append(totalReads).append(" reads\n");
         report.append("Calculated ").append(consensusReads).append(" consensuses\n");
+        report.append("Reads not used in any consensus: ").append(notUsedReadsCount).append("\n");
         if (consensusReads > 0)
             report.append("Average reads per consensus: ")
                     .append(floatFormat.format((float)totalReads.get() / consensusReads)).append("\n");
@@ -497,6 +500,7 @@ public final class ConsensusIO {
         jsonReportData.put("totalReads", totalReads.get());
         jsonReportData.put("consensusReads", consensusReads);
         jsonReportData.put("clustersCount", clustersCount);
+        jsonReportData.put("notUsedReadsCount", notUsedReadsCount);
 
         System.err.println(report.toString());
         if (reportFileOutputStream != null) {

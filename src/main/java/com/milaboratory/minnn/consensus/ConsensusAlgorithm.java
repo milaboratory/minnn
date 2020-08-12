@@ -251,8 +251,9 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         return builder.toString();
     }
 
-    protected void collectNotUsedReads(
+    protected void processNotUsedReads(
             CalculatedConsensuses calculatedConsensuses, Cluster cluster, List<DataFromParsedRead> remainingData) {
+        calculatedConsensuses.notUsedReadsCount += remainingData.size();
         if (saveNotUsedReads) {
             TLongHashSet remainingReadIds = new TLongHashSet();
             remainingData.stream().mapToLong(DataFromParsedRead::getOriginalReadId).forEach(remainingReadIds::add);

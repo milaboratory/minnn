@@ -35,6 +35,7 @@ import java.util.ArrayList;
 public final class CalculatedConsensuses {
     public final ArrayList<Consensus> consensuses = new ArrayList<>();
     public final ArrayList<ParsedRead> notUsedReads;
+    public long notUsedReadsCount = 0;
     public final long orderedPortIndex;
 
     public CalculatedConsensuses(long orderedPortIndex, boolean saveNotUsedReads) {
