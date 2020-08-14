@@ -244,9 +244,9 @@ public class SpecialCasesTest {
         for (String fileName : new String[] { extracted, fastqR1, fastqR2 })
             assertTrue(new File(fileName).delete());
         String[] firstLineParts = firstLine.split("\\|");
-        for (int i = 0; i <= 2; i++) {
+        for (int i = 2; i <= 4; i++) {
             String[] currentPartTokens = firstLineParts[i].split("~");
-            if (i == 0)
+            if (i == 2)
                 assertTrue((currentPartTokens[1].length() >= 8) && (currentPartTokens[1].length() <= 12));
             else
                 assertEquals(8, currentPartTokens[1].length());

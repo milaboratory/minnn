@@ -239,15 +239,15 @@ public class GroupUtilsTest {
                 "R1", "R2", "G2", "G1", "G3");
 
         assertEquals(5, convertedRead.numberOfReads());
-        assertEquals("abc~G0|G1~AGC~CCC{3~6}|G2~TTAGCTTA~CCCCCCCC{1~9}|G3~TTAAATA~CCCCCCC|G4~||~",
+        assertEquals("abc 0|R|G0|G1~AGC~CCC{3~6}|G2~TTAGCTTA~CCCCCCCC{1~9}|G3~TTAAATA~CCCCCCC|G4",
                 convertedRead.getRead(0).getDescription());
-        assertEquals("123~G0|G1~AGC~CCC|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC{1~8}|G4~||~",
+        assertEquals("123 0|R|G0|G1~AGC~CCC|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC{1~8}|G4",
                 convertedRead.getRead(1).getDescription());
-        assertEquals("abc~G0|G1~AGC~CCC{2~5}|G2~TTAGCTTA~CCCCCCCC{0~8}|G3~TTAAATA~CCCCCCC|G4~||~",
+        assertEquals("abc 0|R|G0|G1~AGC~CCC{2~5}|G2~TTAGCTTA~CCCCCCCC{0~8}|G3~TTAAATA~CCCCCCC|G4",
                 convertedRead.getRead(2).getDescription());
-        assertEquals("abc~G0|G1~AGC~CCC{0~3}|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC|G4~||~",
+        assertEquals("abc 0|R|G0|G1~AGC~CCC{0~3}|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC|G4",
                 convertedRead.getRead(3).getDescription());
-        assertEquals("123~G0|G1~AGC~CCC|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC{0~7}|G4~||~",
+        assertEquals("123 0|R|G0|G1~AGC~CCC|G2~TTAGCTTA~CCCCCCCC|G3~TTAAATA~CCCCCCC{0~7}|G4",
                 convertedRead.getRead(4).getDescription());
     }
 }
