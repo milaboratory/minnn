@@ -120,6 +120,7 @@ public class ConsensusActionTest {
         String notUsedReadsFile = TEMP_DIR + "not_used_reads.mif";
         String consensusFile2 = TEMP_DIR + "consensus2.mif";
         String consensusFile3 = TEMP_DIR + "consensus3.mif";
+        String consensusFile4 = TEMP_DIR + "consensus4.mif";
         sortFile(inputFile, sortedFile1, "G3 G4 G1 G2");
         exec("correct -f --input " + sortedFile1 + " --output " + correctedFile + " --groups G3 G4 G1 G2"
                 + " --max-errors-share 0.5");
@@ -134,7 +135,11 @@ public class ConsensusActionTest {
         exec("consensus-dma -f --input " + consensusFile2 + " --output " + consensusFile3
                 + " --groups G3 G4 G1 --threads 3 --score-threshold -1200 --width 30 --reads-avg-quality-threshold 0"
                 + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0 --good-quality-mismatch-penalty 0");
-        assertMifEqualsAsFastq(consensusFile2, consensusFile3, true);
+        exec("consensus-dma -f --input " + consensusFile3 + " --output " + consensusFile4
+                + " --groups G3 G4 G1 --threads 3 --score-threshold -1200 --width 30 --reads-avg-quality-threshold 0"
+                + " --skipped-fraction-to-repeat 0.75 --avg-quality-threshold 0 --good-quality-mismatch-penalty 0");
+        assertMifNotEqualsAsFastq(consensusFile2, consensusFile3, true);    // must differ in "consensusReads" field
+        assertMifEqualsAsFastq(consensusFile3, consensusFile4, true);
         for (String fileName : new String[] { inputFile, sortedFile1, correctedFile, sortedFile2, consensusFile,
                 notUsedReadsFile, consensusFile2, consensusFile3 })
             assertTrue(new File(fileName).delete());
@@ -198,6 +203,7 @@ public class ConsensusActionTest {
         String notUsedReadsFile = TEMP_DIR + "not_used_reads.mif";
         String consensusFile2 = TEMP_DIR + "consensus2.mif";
         String consensusFile3 = TEMP_DIR + "consensus3.mif";
+        String consensusFile4 = TEMP_DIR + "consensus4.mif";
         sortFile(inputFile, sortedFile1, "G3 G4 G1 G2");
         exec("correct -f --input " + sortedFile1 + " --output " + correctedFile + " --groups G3 G4 G1 G2");
         sortFile(correctedFile, sortedFile2, "G3 G4 G1 G2 R1 R2");
@@ -210,7 +216,11 @@ public class ConsensusActionTest {
         exec("consensus -f --input " + consensusFile2 + " --output " + consensusFile3 + " --groups G3 G4 G1"
                 + " --threads 3 --skipped-fraction-to-repeat 1 --avg-quality-threshold 0"
                 + " --reads-avg-quality-threshold 0 --kmer-max-errors 0 --not-used-reads-output " + notUsedReadsFile);
-        assertMifEqualsAsFastq(consensusFile2, consensusFile3, true);
+        exec("consensus -f --input " + consensusFile3 + " --output " + consensusFile4 + " --groups G3 G4 G1"
+                + " --threads 3 --skipped-fraction-to-repeat 1 --avg-quality-threshold 0"
+                + " --reads-avg-quality-threshold 0 --kmer-max-errors 0 --not-used-reads-output " + notUsedReadsFile);
+        assertMifNotEqualsAsFastq(consensusFile2, consensusFile3, true);    // must differ in "consensusReads" field
+        assertMifEqualsAsFastq(consensusFile3, consensusFile4, true);
         for (String fileName : new String[] { inputFile, sortedFile1, correctedFile, sortedFile2, consensusFile,
                 notUsedReadsFile, consensusFile2, consensusFile3 })
             assertTrue(new File(fileName).delete());
