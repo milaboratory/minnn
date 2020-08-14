@@ -40,7 +40,7 @@ import java.util.Objects;
 import static com.milaboratory.minnn.cli.ConsensusSingleCellAction.CONSENSUS_SINGLE_CELL_ACTION_NAME;
 
 public final class ConsensusSingleCellActionConfiguration implements ActionConfiguration {
-    private static final String CONSENSUS_SINGLE_CELL_ACTION_VERSION_ID = "2";
+    private static final String CONSENSUS_SINGLE_CELL_ACTION_VERSION_ID = "3";
     private final ConsensusSingleCellActionParameters consensusParameters;
 
     @JsonCreator
@@ -79,6 +79,7 @@ public final class ConsensusSingleCellActionConfiguration implements ActionConfi
         private List<String> groupList;
         private float skippedFractionToRepeat;
         private int maxConsensusesPerCluster;
+        private boolean dropOversizedClusters;
         private int readsMinGoodSeqLength;
         private float readsAvgQualityThreshold;
         private int readsTrimWindowSize;
@@ -97,6 +98,7 @@ public final class ConsensusSingleCellActionConfiguration implements ActionConfi
                 @JsonProperty("groupList") List<String> groupList,
                 @JsonProperty("skippedFractionToRepeat") float skippedFractionToRepeat,
                 @JsonProperty("maxConsensusesPerCluster") int maxConsensusesPerCluster,
+                @JsonProperty("dropOversizedClusters") boolean dropOversizedClusters,
                 @JsonProperty("readsMinGoodSeqLength") int readsMinGoodSeqLength,
                 @JsonProperty("readsAvgQualityThreshold") float readsAvgQualityThreshold,
                 @JsonProperty("readsTrimWindowSize") int readsTrimWindowSize,
@@ -113,6 +115,7 @@ public final class ConsensusSingleCellActionConfiguration implements ActionConfi
             this.groupList = groupList;
             this.skippedFractionToRepeat = skippedFractionToRepeat;
             this.maxConsensusesPerCluster = maxConsensusesPerCluster;
+            this.dropOversizedClusters = dropOversizedClusters;
             this.readsMinGoodSeqLength = readsMinGoodSeqLength;
             this.readsAvgQualityThreshold = readsAvgQualityThreshold;
             this.readsTrimWindowSize = readsTrimWindowSize;
@@ -150,6 +153,14 @@ public final class ConsensusSingleCellActionConfiguration implements ActionConfi
 
         public void setMaxConsensusesPerCluster(int maxConsensusesPerCluster) {
             this.maxConsensusesPerCluster = maxConsensusesPerCluster;
+        }
+
+        public boolean isDropOversizedClusters() {
+            return dropOversizedClusters;
+        }
+
+        public void setDropOversizedClusters(boolean dropOversizedClusters) {
+            this.dropOversizedClusters = dropOversizedClusters;
         }
 
         public int getReadsMinGoodSeqLength() {
@@ -263,14 +274,14 @@ public final class ConsensusSingleCellActionConfiguration implements ActionConfi
             ConsensusSingleCellActionParameters that = (ConsensusSingleCellActionParameters)o;
             if (Float.compare(that.skippedFractionToRepeat, skippedFractionToRepeat) != 0) return false;
             if (maxConsensusesPerCluster != that.maxConsensusesPerCluster) return false;
+            if (dropOversizedClusters != that.dropOversizedClusters) return false;
             if (readsMinGoodSeqLength != that.readsMinGoodSeqLength) return false;
             if (Float.compare(that.readsAvgQualityThreshold, readsAvgQualityThreshold) != 0) return false;
             if (readsTrimWindowSize != that.readsTrimWindowSize) return false;
             if (minGoodSeqLength != that.minGoodSeqLength) return false;
             if (Float.compare(that.lowCoverageThreshold, lowCoverageThreshold) != 0) return false;
             if (Float.compare(that.avgQualityThreshold, avgQualityThreshold) != 0) return false;
-            if (Float.compare(that.avgQualityThresholdForLowCoverage, avgQualityThresholdForLowCoverage) != 0)
-                return false;
+            if (Float.compare(that.avgQualityThresholdForLowCoverage, avgQualityThresholdForLowCoverage) != 0) return false;
             if (trimWindowSize != that.trimWindowSize) return false;
             if (toSeparateGroups != that.toSeparateGroups) return false;
             if (inputReadsLimit != that.inputReadsLimit) return false;
@@ -283,18 +294,16 @@ public final class ConsensusSingleCellActionConfiguration implements ActionConfi
         @Override
         public int hashCode() {
             int result = groupList != null ? groupList.hashCode() : 0;
-            result = 31 * result + (skippedFractionToRepeat != +0.0f
-                    ? Float.floatToIntBits(skippedFractionToRepeat) : 0);
+            result = 31 * result + (skippedFractionToRepeat != +0.0f ? Float.floatToIntBits(skippedFractionToRepeat) : 0);
             result = 31 * result + maxConsensusesPerCluster;
+            result = 31 * result + (dropOversizedClusters ? 1 : 0);
             result = 31 * result + readsMinGoodSeqLength;
-            result = 31 * result + (readsAvgQualityThreshold != +0.0f
-                    ? Float.floatToIntBits(readsAvgQualityThreshold) : 0);
+            result = 31 * result + (readsAvgQualityThreshold != +0.0f ? Float.floatToIntBits(readsAvgQualityThreshold) : 0);
             result = 31 * result + readsTrimWindowSize;
             result = 31 * result + minGoodSeqLength;
             result = 31 * result + (lowCoverageThreshold != +0.0f ? Float.floatToIntBits(lowCoverageThreshold) : 0);
             result = 31 * result + (avgQualityThreshold != +0.0f ? Float.floatToIntBits(avgQualityThreshold) : 0);
-            result = 31 * result + (avgQualityThresholdForLowCoverage != +0.0f
-                    ? Float.floatToIntBits(avgQualityThresholdForLowCoverage) : 0);
+            result = 31 * result + (avgQualityThresholdForLowCoverage != +0.0f ? Float.floatToIntBits(avgQualityThresholdForLowCoverage) : 0);
             result = 31 * result + trimWindowSize;
             result = 31 * result + (toSeparateGroups ? 1 : 0);
             result = 31 * result + (int)(inputReadsLimit ^ (inputReadsLimit >>> 32));

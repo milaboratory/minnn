@@ -52,13 +52,13 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
 
     public ConsensusAlgorithmSingleCell(
             Consumer<String> displayWarning, int numberOfTargets, int maxConsensusesPerCluster,
-            float skippedFractionToRepeat, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
-            int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
-            float avgQualityThresholdForLowCoverage, int trimWindowSize, boolean toSeparateGroups,
-            PrintStream debugOutputStream, byte debugQualityThreshold,
+            boolean dropOversizedClusters, float skippedFractionToRepeat, int readsMinGoodSeqLength,
+            float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
+            float lowCoverageThreshold, float avgQualityThreshold, float avgQualityThresholdForLowCoverage,
+            int trimWindowSize, boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
             FileHashMap<Long, OriginalReadData> originalReadsData, boolean saveNotUsedReads,
             int kmerLength, int kmerMaxOffset, int kmerMatchMaxErrors) {
-        super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
+        super(displayWarning, numberOfTargets, maxConsensusesPerCluster, dropOversizedClusters, skippedFractionToRepeat,
                 Math.max(readsMinGoodSeqLength, kmerLength), readsAvgQualityThreshold, readsTrimWindowSize,
                 minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
                 trimWindowSize, toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData,
@@ -73,7 +73,8 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
         defaultGroupsOverride.set(cluster.data.get(0).isDefaultGroupsOverride());
         CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(
                 cluster.orderedPortIndex, saveNotUsedReads);
-        List<DataFromParsedRead> remainingData = trimBadQualityTails(cluster.data);
+        List<DataFromParsedRead> initialData = trimBadQualityTails(cluster.data);
+        List<DataFromParsedRead> remainingData = new ArrayList<>(initialData);
         int clusterSize = cluster.data.size();
         if (remainingData.size() == 0) {
             if (debugOutputStream != null)
@@ -121,9 +122,12 @@ public class ConsensusAlgorithmSingleCell extends ConsensusAlgorithm {
                         + " reads from cluster of " + clusterSize + " reads! Barcode values: "
                         + formatBarcodeValues(remainingData.get(0).getBarcodes()));
             else if ((float)remainingData.size() / clusterSize >= skippedFractionToRepeat) {
-                displayWarning.accept("WARNING: max consensuses per cluster exceeded; not processed "
-                        + remainingData.size() + " reads from cluster of " + clusterSize + " reads! Barcode values: "
-                        + formatBarcodeValues(Objects.requireNonNull(offsetSearchResults).barcodes));
+                if (dropOversizedClusters) {
+                    remainingData = initialData;
+                    calculatedConsensuses = discardOversizedCluster(calculatedConsensuses, initialData);
+                }
+                maxConsensusesExceededWarning(remainingData.size(), clusterSize,
+                        formatBarcodeValues(Objects.requireNonNull(offsetSearchResults).barcodes));
             }
         }
 

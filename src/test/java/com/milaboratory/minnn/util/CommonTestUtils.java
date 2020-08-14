@@ -594,6 +594,19 @@ public class CommonTestUtils {
         return false;
     }
 
+    public static long countFileLines(String fileName) {
+        int linesCount = 0;
+        try (Scanner scanner = new Scanner(new File(fileName))) {
+            while (scanner.hasNextLine()) {
+                scanner.nextLine();
+                linesCount++;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return linesCount;
+    }
+
     public static void gzip(String inputFile, String outputFile) throws IOException {
         try (GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(new File(outputFile)))) {
             try (FileInputStream in = new FileInputStream(inputFile)) {

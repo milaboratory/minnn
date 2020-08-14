@@ -10,6 +10,10 @@ and not used in any consensus calculation. Also, if :code:`--max-consensuses-per
 reads will be discarded. :code:`--not-used-reads-output` argument allows to write all discarded reads to the separate
 MIF file.
 
+:code:`--drop-oversized-clusters` option is useful to filter out bad data in the case when too many consensuses
+in 1 cluster can be used as indicator that the entire cluster is bad. If this option is specified, then anytime when
+:code:`--max-consensuses-per-cluster` threshold is applied, all reads and consensuses from the cluster will be discarded.
+
 Calculated consensuses are processed with quality trimmer to remove low quality tails on the left and right sides.
 You can set trim window size (length of subsequence for which average quality is calculated) with
 :code:`--trim-window-size` option. Quality threshold is set by :code:`--avg-quality-threshold` option, and minimal

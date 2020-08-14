@@ -59,10 +59,10 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
         ConsensusIO consensusIO = new ConsensusIO(getFullPipelineConfiguration(), groupList, inputFileName,
                 outputFileName, SINGLE_CELL, 0, 0, 0, 0,
                 0, (byte)0, 0, skippedFractionToRepeat,
-                maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
-                minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
-                trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName, toSeparateGroups,
-                inputReadsLimit, actualMaxWarnings, threads, kmerLength, kmerOffset, kmerMaxErrors,
+                maxConsensusesPerCluster, dropOversizedClusters, readsMinGoodSeqLength, readsAvgQualityThreshold,
+                readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
+                avgQualityThresholdForLowCoverage, trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName,
+                toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads, kmerLength, kmerOffset, kmerMaxErrors,
                 reportFileName, jsonReportFileName, debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
     }
@@ -122,7 +122,7 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
     public ActionConfiguration getConfiguration() {
         return new ConsensusSingleCellActionConfiguration(new ConsensusSingleCellActionConfiguration
                 .ConsensusSingleCellActionParameters(groupList, skippedFractionToRepeat, maxConsensusesPerCluster,
-                readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
+                dropOversizedClusters, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
                 lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
                 toSeparateGroups, inputReadsLimit, kmerLength, kmerOffset, kmerMaxErrors));
     }
@@ -158,6 +158,10 @@ public final class ConsensusSingleCellAction extends ACommandWithSmartOverwrite 
     @Option(description = MAX_CONSENSUSES_PER_CLUSTER,
             names = {"--max-consensuses-per-cluster"})
     private int maxConsensusesPerCluster = DEFAULT_CONSENSUS_MAX_PER_CLUSTER;
+
+    @Option(description = DROP_OVERSIZED_CLUSTERS,
+            names = {"--drop-oversized-clusters"})
+    private boolean dropOversizedClusters = false;
 
     @Option(description = READS_MIN_GOOD_SEQUENCE_LENGTH,
             names = {"--reads-min-good-sequence-length"})

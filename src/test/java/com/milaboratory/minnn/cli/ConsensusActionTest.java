@@ -408,4 +408,41 @@ public class ConsensusActionTest {
                 assertTrue(new File(fileName).delete());
         }
     }
+
+    @Test
+    public void dropOversizedClustersTest() throws Exception {
+        String inputFile = getExampleMif("twosided");
+        String sortedFile = TEMP_DIR + "sorted.mif";
+        LinkedHashMap<String, List<String>> testRuns = new LinkedHashMap<>();
+        Stream.of("SC1", "SC2", "DMA1", "DMA2").forEach(runName ->
+                testRuns.put(runName, Arrays.asList(TEMP_DIR + "consensus" + runName + ".mif",
+                        TEMP_DIR + "notUsed" + runName + ".mif",
+                        TEMP_DIR + "report" + runName + ".txt", TEMP_DIR + "report" + runName + ".json",
+                        TEMP_DIR + "consensus" + runName + "-R1.fastq", TEMP_DIR + "consensus" + runName + "-R2.fastq",
+                        TEMP_DIR + "notUsed" + runName + "-R1.fastq", TEMP_DIR + "notUsed" + runName + "-R2.fastq")));
+
+        sortFile(inputFile, sortedFile, "G3 G4 G1 G2");
+        for (Map.Entry<String, List<String>> entry : testRuns.entrySet()) {
+            String runName = entry.getKey();
+            String dropOversized = (runName.charAt(runName.length() - 1) == '2') ? " --drop-oversized-clusters" : "";
+            String consensus = runName.substring(0, runName.length() - 1).equals("SC") ? "consensus" : "consensus-dma";
+            List<String> args = entry.getValue();
+            exec(consensus + " -f --input " + sortedFile + " --output " + args.get(0) + " --groups G3 G4 G1"
+                    + " --not-used-reads-output " + args.get(1) + dropOversized + " --consensuses-to-separate-groups"
+                    + " --report " + args.get(2) + " --json-report " + args.get(3));
+            exec("mif2fastq -f --input " + args.get(0) + " --group R1=" + args.get(4) + " R2=" + args.get(5));
+            exec("mif2fastq -f --input " + args.get(1) + " --group R1=" + args.get(6) + " R2=" + args.get(7));
+        }
+
+        assertEquals(countFileLines(testRuns.get("SC1").get(4)), countFileLines(testRuns.get("SC1").get(5)));
+        assertEquals(countFileLines(testRuns.get("SC1").get(6)), countFileLines(testRuns.get("SC1").get(7)));
+        assertEquals(countFileLines(testRuns.get("SC1").get(4)) + countFileLines(testRuns.get("SC1").get(6)),
+                countFileLines(testRuns.get("SC2").get(4)) + countFileLines(testRuns.get("SC2").get(6)));
+
+        for (List<String> args : testRuns.values())
+            for (String fileName : args)
+                assertTrue(new File(fileName).delete());
+        for (String fileName : Arrays.asList(inputFile, sortedFile))
+            assertTrue(new File(fileName).delete());
+    }
 }

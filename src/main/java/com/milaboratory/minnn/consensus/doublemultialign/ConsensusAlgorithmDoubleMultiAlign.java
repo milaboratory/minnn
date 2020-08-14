@@ -57,12 +57,12 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
     public ConsensusAlgorithmDoubleMultiAlign(
             Consumer<String> displayWarning, int numberOfTargets, int alignerWidth, int matchScore, int mismatchScore,
             int gapScore, long goodQualityMismatchPenalty, byte goodQualityMismatchThreshold, long scoreThreshold,
-            float skippedFractionToRepeat, int maxConsensusesPerCluster, int readsMinGoodSeqLength,
-            float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold,
-            float avgQualityThreshold, float avgQualityThresholdForLowCoverage, int trimWindowSize,
-            boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
+            float skippedFractionToRepeat, int maxConsensusesPerCluster, boolean dropOversizedClusters,
+            int readsMinGoodSeqLength, float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
+            float lowCoverageThreshold, float avgQualityThreshold, float avgQualityThresholdForLowCoverage,
+            int trimWindowSize, boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
             FileHashMap<Long, OriginalReadData> originalReadsData, boolean saveNotUsedReads) {
-        super(displayWarning, numberOfTargets, maxConsensusesPerCluster, skippedFractionToRepeat,
+        super(displayWarning, numberOfTargets, maxConsensusesPerCluster, dropOversizedClusters, skippedFractionToRepeat,
                 readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
                 lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
                 toSeparateGroups, debugOutputStream, debugQualityThreshold, originalReadsData, saveNotUsedReads);
@@ -79,7 +79,8 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
         defaultGroupsOverride.set(cluster.data.get(0).isDefaultGroupsOverride());
         CalculatedConsensuses calculatedConsensuses = new CalculatedConsensuses(cluster.orderedPortIndex,
                 saveNotUsedReads);
-        List<DataFromParsedRead> data = trimBadQualityTails(cluster.data);
+        List<DataFromParsedRead> initialData = trimBadQualityTails(cluster.data);
+        List<DataFromParsedRead> data = new ArrayList<>(initialData);
         if (data.size() == 0) {
             calculatedConsensuses.consensuses.add(new Consensus((debugOutputStream == null) ? null
                     : new ConsensusDebugData(numberOfTargets, debugQualityThreshold, STAGE1, true),
@@ -154,9 +155,12 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
                             remainingData.add(data.get(i));
                     data = remainingData;
                 } else {
-                    displayWarning.accept("WARNING: max consensuses per cluster exceeded; not processed "
-                            + filteredOutReads.size() + " reads from cluster of " + cluster.data.size()
-                            + " reads! Barcode values: " + formatBarcodeValues(bestData.getBarcodes()));
+                    if (dropOversizedClusters) {
+                        data = initialData;
+                        calculatedConsensuses = discardOversizedCluster(calculatedConsensuses, initialData);
+                    }
+                    maxConsensusesExceededWarning(dropOversizedClusters ? initialData.size() : filteredOutReads.size(),
+                            cluster.data.size(), formatBarcodeValues(bestData.getBarcodes()));
                     processNotUsedReads(calculatedConsensuses, cluster, data);
                     data = new ArrayList<>();
                 }
@@ -537,7 +541,7 @@ public class ConsensusAlgorithmDoubleMultiAlign extends ConsensusAlgorithm {
     }
 
     private static class LettersWithPositions {
-        private HashMap<Integer, ArrayList<SequenceWithAttributes>> targetSequences = new HashMap<>();
+        private final HashMap<Integer, ArrayList<SequenceWithAttributes>> targetSequences = new HashMap<>();
 
         void set(int targetIndex, ArrayList<SequenceWithAttributes> values) {
             for (SequenceWithAttributes value : values)

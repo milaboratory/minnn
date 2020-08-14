@@ -175,6 +175,7 @@ consensus
  --groups: List of groups that represent barcodes. All these groups must be sorted with "sort" action.
  --skipped-fraction-to-repeat: Fraction of reads skipped by score threshold that must start the search for another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of reads with identical barcodes.
  --max-consensuses-per-cluster: Maximal number of consensuses generated from 1 cluster. Every time this threshold is applied to stop searching for new consensuses, warning will be displayed. Too many consensuses per cluster indicate that score threshold, aligner width or skipped fraction to repeat is too low.
+ --drop-oversized-clusters: If this option is specified, when threshold from --max-consensuses-per-cluster option is applied, consensuses from the entire cluster are discarded.
  --reads-min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming input reads.
  --reads-avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming input reads.
  --reads-trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming input reads.
@@ -218,6 +219,7 @@ consensus-dma
  --score-threshold: Score threshold that used to filter reads for calculating consensus.
  --skipped-fraction-to-repeat: Fraction of reads skipped by score threshold that must start the search for another consensus in skipped reads. Value 1 means always get only 1 consensus from one set of reads with identical barcodes.
  --max-consensuses-per-cluster: Maximal number of consensuses generated from 1 cluster. Every time this threshold is applied to stop searching for new consensuses, warning will be displayed. Too many consensuses per cluster indicate that score threshold, aligner width or skipped fraction to repeat is too low.
+ --drop-oversized-clusters: If this option is specified, when threshold from --max-consensuses-per-cluster option is applied, consensuses from the entire cluster are discarded.
  --reads-min-good-sequence-length: Minimal length of good sequence that will be still considered good after trimming bad quality tails. This parameter is for trimming input reads.
  --reads-avg-quality-threshold: Minimal average quality for bad quality tails trimmer. This parameter is for trimming input reads.
  --reads-trim-window-size: Window size for bad quality tails trimmer. This parameter is for trimming input reads.

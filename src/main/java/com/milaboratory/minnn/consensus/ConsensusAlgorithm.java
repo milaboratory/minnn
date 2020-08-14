@@ -50,6 +50,7 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
     protected final Consumer<String> displayWarning;
     protected final int numberOfTargets;
     protected final int maxConsensusesPerCluster;
+    protected final boolean dropOversizedClusters;
     protected final float skippedFractionToRepeat;
     protected final boolean toSeparateGroups;
     protected final PrintStream debugOutputStream;
@@ -68,14 +69,15 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
 
     public ConsensusAlgorithm(
             Consumer<String> displayWarning, int numberOfTargets, int maxConsensusesPerCluster,
-            float skippedFractionToRepeat, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
-            int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
-            float avgQualityThresholdForLowCoverage, int trimWindowSize, boolean toSeparateGroups,
-            PrintStream debugOutputStream, byte debugQualityThreshold,
+            boolean dropOversizedClusters, float skippedFractionToRepeat, int readsMinGoodSeqLength,
+            float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
+            float lowCoverageThreshold, float avgQualityThreshold, float avgQualityThresholdForLowCoverage,
+            int trimWindowSize, boolean toSeparateGroups, PrintStream debugOutputStream, byte debugQualityThreshold,
             FileHashMap<Long, OriginalReadData> originalReadsData, boolean saveNotUsedReads) {
         this.displayWarning = displayWarning;
         this.numberOfTargets = numberOfTargets;
         this.maxConsensusesPerCluster = maxConsensusesPerCluster;
+        this.dropOversizedClusters = dropOversizedClusters;
         this.skippedFractionToRepeat = skippedFractionToRepeat;
         this.readsMinGoodSeqLength = readsMinGoodSeqLength;
         this.readsAvgQualityThreshold = readsAvgQualityThreshold;
@@ -251,9 +253,38 @@ public abstract class ConsensusAlgorithm implements Processor<Cluster, Calculate
         return builder.toString();
     }
 
+    protected void maxConsensusesExceededWarning(int discardedDataSize, int clusterSize, String barcodeValues) {
+        if (dropOversizedClusters)
+            displayWarning.accept("WARNING: max consensuses per cluster exceeded; discarded " +
+                    "the entire cluster of " + discardedDataSize + " reads ("
+                    + clusterSize + " reads before quality trimming)! Barcode values: " + barcodeValues);
+        else
+            displayWarning.accept("WARNING: max consensuses per cluster exceeded; not processed "
+                    + discardedDataSize + " reads from cluster of " + clusterSize + " reads! "
+                    + "Barcode values: " + barcodeValues);
+    }
+
+    protected CalculatedConsensuses discardOversizedCluster(
+            CalculatedConsensuses calculatedConsensuses, List<DataFromParsedRead> initialReads) {
+        CalculatedConsensuses discardedConsensuses = new CalculatedConsensuses(
+                calculatedConsensuses.orderedPortIndex, saveNotUsedReads);
+        for (Consensus consensus : calculatedConsensuses.consensuses) {
+            if (collectOriginalReadsData)
+                initialReads.stream().mapToLong(DataFromParsedRead::getOriginalReadId).forEach(readId -> {
+                    OriginalReadData currentReadData = getOriginalReadData(readId);
+                    currentReadData.status = OVERSIZED_CLUSTER_DISCARDED;
+                    setOriginalReadData(readId, currentReadData);
+                });
+            discardedConsensuses.consensuses.add(new Consensus(
+                    consensus.debugData, numberOfTargets, true));
+        }
+
+        return discardedConsensuses;
+    }
+
     protected void processNotUsedReads(
             CalculatedConsensuses calculatedConsensuses, Cluster cluster, List<DataFromParsedRead> remainingData) {
-        calculatedConsensuses.notUsedReadsCount += remainingData.size();
+        calculatedConsensuses.notUsedReadsCount = remainingData.size();
         if (saveNotUsedReads) {
             TLongHashSet remainingReadIds = new TLongHashSet();
             remainingData.stream().mapToLong(DataFromParsedRead::getOriginalReadId).forEach(remainingReadIds::add);

@@ -77,6 +77,8 @@ class CommonDescriptions {
             "Every time this threshold is applied to stop searching for new consensuses, warning will be displayed. " +
             "Too many consensuses per cluster indicate that score threshold, aligner width or skipped fraction to " +
             "repeat is too low.";
+    static final String DROP_OVERSIZED_CLUSTERS = "If this option is specified, when threshold from " +
+            "--max-consensuses-per-cluster option is applied, consensuses from the entire cluster are discarded.";
     private static final String MIN_GOOD_SEQUENCE_LENGTH = "Minimal length of good sequence that will be still " +
             "considered good after trimming bad quality tails.";
     private static final String AVG_QUALITY_THRESHOLD = "Minimal average quality for bad quality tails trimmer.";

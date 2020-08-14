@@ -32,10 +32,11 @@ import com.milaboratory.minnn.util.DebugUtils.*;
 
 public class ConsensusAlgorithmRNASeq extends ConsensusAlgorithm {
     public ConsensusAlgorithmRNASeq() {
-        super(null, 0, 0, 0,
+        super(null, 0, 0, false,
                 0, 0, 0, 0,
                 0, 0, 0, 0,
-                false, null, (byte)0, null, false);
+                0, false, null, (byte)0, null,
+                false);
         throw new NotImplementedException();
     }
 

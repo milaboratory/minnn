@@ -77,6 +77,7 @@ public final class ConsensusIO {
     private final long scoreThreshold;
     private final float skippedFractionToRepeat;
     private final int maxConsensusesPerCluster;
+    private final boolean dropOversizedClusters;
     private final int readsMinGoodSeqLength;
     private final float readsAvgQualityThreshold;
     private final int readsTrimWindowSize;
@@ -108,6 +109,7 @@ public final class ConsensusIO {
     private long notUsedReadsCount = 0;
     private int warningsDisplayed = 0;
     private final LinkedHashSet<String> consensusGroups;
+    private final TreeMap<Integer, Long> consensusesByReadsCounts = new TreeMap<>(Collections.reverseOrder());
     private int numberOfTargets;
 
     public ConsensusIO(
@@ -115,11 +117,12 @@ public final class ConsensusIO {
             String outputFileName, ConsensusAlgorithms consensusAlgorithmType, int alignerWidth,
             int matchScore, int mismatchScore, int gapScore, long goodQualityMismatchPenalty,
             byte goodQualityMismatchThreshold, long scoreThreshold, float skippedFractionToRepeat,
-            int maxConsensusesPerCluster, int readsMinGoodSeqLength, float readsAvgQualityThreshold,
-            int readsTrimWindowSize, int minGoodSeqLength, float lowCoverageThreshold, float avgQualityThreshold,
-            float avgQualityThresholdForLowCoverage, int trimWindowSize, String originalReadStatsFileName,
-            String notUsedReadsOutputFileName, boolean toSeparateGroups, long inputReadsLimit, int maxWarnings,
-            int threads, int kmerLength, int kmerMaxOffset, int kmerMatchMaxErrors, String reportFileName,
+            int maxConsensusesPerCluster, boolean dropOversizedClusters, int readsMinGoodSeqLength,
+            float readsAvgQualityThreshold, int readsTrimWindowSize, int minGoodSeqLength,
+            float lowCoverageThreshold, float avgQualityThreshold, float avgQualityThresholdForLowCoverage,
+            int trimWindowSize, String originalReadStatsFileName, String notUsedReadsOutputFileName,
+            boolean toSeparateGroups, long inputReadsLimit, int maxWarnings, int threads,
+            int kmerLength, int kmerMaxOffset, int kmerMatchMaxErrors, String reportFileName,
             String jsonReportFileName, String debugOutputFileName, byte debugQualityThreshold) {
         this.pipelineConfiguration = pipelineConfiguration;
         this.consensusGroups = new LinkedHashSet<>(Objects.requireNonNull(groupList));
@@ -135,6 +138,7 @@ public final class ConsensusIO {
         this.scoreThreshold = scoreThreshold;
         this.skippedFractionToRepeat = skippedFractionToRepeat;
         this.maxConsensusesPerCluster = maxConsensusesPerCluster;
+        this.dropOversizedClusters = dropOversizedClusters;
         this.readsMinGoodSeqLength = readsMinGoodSeqLength;
         this.readsAvgQualityThreshold = readsAvgQualityThreshold;
         this.readsTrimWindowSize = readsTrimWindowSize;
@@ -188,9 +192,9 @@ public final class ConsensusIO {
                 consensusAlgorithm = new ConsensusAlgorithmDoubleMultiAlign(this::displayWarning, numberOfTargets,
                         alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
                         goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat,
-                        maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold,
-                        readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
-                        avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
+                        maxConsensusesPerCluster, dropOversizedClusters, readsMinGoodSeqLength,
+                        readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold,
+                        avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
                         debugOutputStream, debugQualityThreshold, originalReadsData, saveNotUsedReads);
                 break;
             case RNA_SEQ:
@@ -198,7 +202,7 @@ public final class ConsensusIO {
                 break;
             case SINGLE_CELL:
                 consensusAlgorithm = new ConsensusAlgorithmSingleCell(this::displayWarning, numberOfTargets,
-                        maxConsensusesPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength,
+                        maxConsensusesPerCluster, dropOversizedClusters, skippedFractionToRepeat, readsMinGoodSeqLength,
                         readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold,
                         avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups,
                         debugOutputStream, debugQualityThreshold, originalReadsData, saveNotUsedReads,
@@ -336,6 +340,9 @@ public final class ConsensusIO {
                         if (consensusFinalIds != null)
                             consensusFinalIds.put(consensus.tempId, consensusReads);
                         consensusReads++;
+                        int consensusReadsNum = consensus.consensusReadsNum;
+                        Long currentSizeCount = consensusesByReadsCounts.get(consensusReadsNum);
+                        consensusesByReadsCounts.put(consensusReadsNum, currentSizeCount == null ? 1 : currentSizeCount + 1);
                         if (toSeparateGroups)
                             consensus.getReadsWithConsensuses().forEach(writer::write);
                         else
@@ -501,9 +508,16 @@ public final class ConsensusIO {
         jsonReportData.put("consensusReads", consensusReads);
         jsonReportData.put("clustersCount", clustersCount);
         jsonReportData.put("notUsedReadsCount", notUsedReadsCount);
+        jsonReportData.put("consensusesByReadsCounts", consensusesByReadsCounts);
 
         System.err.println(report.toString());
         if (reportFileOutputStream != null) {
+            if (consensusesByReadsCounts.size() > 0) {
+                reportFileOutputStream.println("\nConsensuses counts distribution:");
+                consensusesByReadsCounts.forEach((reads, count) -> reportFileOutputStream.println(
+                        count + " consensus" + (count == 1 ? "" : "es")
+                                +  " assembled from " + reads + " read" + (reads == 1 ? "" : "s")));
+            }
             reportFileOutputStream.println(report.toString());
             reportFileOutputStream.close();
         }

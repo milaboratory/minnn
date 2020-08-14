@@ -59,11 +59,12 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
         ConsensusIO consensusIO = new ConsensusIO(getFullPipelineConfiguration(), groupList, inputFileName,
                 outputFileName, DOUBLE_MULTI_ALIGN, alignerWidth, matchScore, mismatchScore, gapScore,
                 goodQualityMismatchPenalty, goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat,
-                maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
-                minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
-                trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName, toSeparateGroups,
-                inputReadsLimit, actualMaxWarnings, threads, 0, 0, 0,
-                reportFileName, jsonReportFileName, debugOutputFileName, debugQualityThreshold);
+                maxConsensusesPerCluster, dropOversizedClusters, readsMinGoodSeqLength, readsAvgQualityThreshold,
+                readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
+                avgQualityThresholdForLowCoverage, trimWindowSize, originalReadStatsFileName, notUsedReadsOutputFileName,
+                toSeparateGroups, inputReadsLimit, actualMaxWarnings, threads,
+                0, 0, 0, reportFileName, jsonReportFileName,
+                debugOutputFileName, debugQualityThreshold);
         consensusIO.go();
     }
 
@@ -117,9 +118,10 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
         return new ConsensusDoubleMultiAlignActionConfiguration(new ConsensusDoubleMultiAlignActionConfiguration
                 .ConsensusDoubleMultiAlignActionParameters(groupList, alignerWidth, matchScore, mismatchScore,
                 gapScore, goodQualityMismatchPenalty, goodQualityMismatchThreshold, scoreThreshold,
-                skippedFractionToRepeat, maxConsensusesPerCluster, readsMinGoodSeqLength, readsAvgQualityThreshold,
-                readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
-                avgQualityThresholdForLowCoverage, trimWindowSize, toSeparateGroups, inputReadsLimit));
+                skippedFractionToRepeat, maxConsensusesPerCluster, dropOversizedClusters, readsMinGoodSeqLength,
+                readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold,
+                avgQualityThreshold,  avgQualityThresholdForLowCoverage, trimWindowSize,
+                toSeparateGroups, inputReadsLimit));
     }
 
     @Override
@@ -181,6 +183,10 @@ public final class ConsensusDoubleMultiAlignAction extends ACommandWithSmartOver
     @Option(description = MAX_CONSENSUSES_PER_CLUSTER,
             names = {"--max-consensuses-per-cluster"})
     private int maxConsensusesPerCluster = DEFAULT_CONSENSUS_MAX_PER_CLUSTER;
+
+    @Option(description = DROP_OVERSIZED_CLUSTERS,
+            names = {"--drop-oversized-clusters"})
+    private boolean dropOversizedClusters = false;
 
     @Option(description = READS_MIN_GOOD_SEQUENCE_LENGTH,
             names = {"--reads-min-good-sequence-length"})

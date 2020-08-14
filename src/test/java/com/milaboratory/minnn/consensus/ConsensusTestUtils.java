@@ -54,6 +54,7 @@ public class ConsensusTestUtils {
         int scoreThreshold = DEFAULT_CONSENSUS_SCORE_THRESHOLD;
         float skippedFractionToRepeat = DEFAULT_CONSENSUS_SKIPPED_FRACTION_TO_REPEAT;
         int maxPerCluster = DEFAULT_CONSENSUS_MAX_PER_CLUSTER;
+        boolean dropOversizedClusters = false;
         byte readsMinGoodSeqLength = DEFAULT_CONSENSUS_READS_MIN_GOOD_SEQ_LENGTH;
         float readsAvgQualityThreshold = DEFAULT_CONSENSUS_READS_AVG_QUALITY_THRESHOLD;
         int readsTrimWindowSize = DEFAULT_CONSENSUS_READS_TRIM_WINDOW_SIZE;
@@ -86,6 +87,9 @@ public class ConsensusTestUtils {
                         break;
                     case "MAX_PER_CLUSTER":
                         maxPerCluster = (Integer)(entry.getValue());
+                        break;
+                    case "DROP_OVERSIZED_CLUSTERS":
+                        dropOversizedClusters = (Boolean)(entry.getValue());
                         break;
                     case "READS_MIN_GOOD_SEQ_LENGTH":
                         readsMinGoodSeqLength = (Byte)(entry.getValue());
@@ -147,14 +151,15 @@ public class ConsensusTestUtils {
                 return new ConsensusAlgorithmDoubleMultiAlign(ConsensusTestUtils::displayTestWarning, numberOfTargets,
                         alignerWidth, matchScore, mismatchScore, gapScore, goodQualityMismatchPenalty,
                         goodQualityMismatchThreshold, scoreThreshold, skippedFractionToRepeat, maxPerCluster,
-                        readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength,
-                        lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
-                        false, null, (byte)0, null, saveNotUsedReads);
+                        dropOversizedClusters, readsMinGoodSeqLength, readsAvgQualityThreshold, readsTrimWindowSize,
+                        minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold, avgQualityThresholdForLowCoverage,
+                        trimWindowSize, false, null, (byte)0, null,
+                        saveNotUsedReads);
             case SINGLE_CELL:
                 return new ConsensusAlgorithmSingleCell(ConsensusTestUtils::displayTestWarning, numberOfTargets,
-                        maxPerCluster, skippedFractionToRepeat, readsMinGoodSeqLength, readsAvgQualityThreshold,
-                        readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold, avgQualityThreshold,
-                        avgQualityThresholdForLowCoverage, trimWindowSize,
+                        maxPerCluster, dropOversizedClusters, skippedFractionToRepeat, readsMinGoodSeqLength,
+                        readsAvgQualityThreshold, readsTrimWindowSize, minGoodSeqLength, lowCoverageThreshold,
+                        avgQualityThreshold, avgQualityThresholdForLowCoverage, trimWindowSize,
                         false, null, (byte)0, null, saveNotUsedReads,
                         kmerLength, kmerOffset, kmerMaxErrors);
             case RNA_SEQ:
