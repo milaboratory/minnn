@@ -36,7 +36,7 @@ import com.milaboratory.core.sequence.NSequenceWithQuality;
 import com.milaboratory.minnn.outputconverter.ParsedRead;
 import com.milaboratory.minnn.outputconverter.ParsedReadObjectSerializer;
 import com.milaboratory.util.SmartProgressReporter;
-import com.milaboratory.util.Sorter;
+import com.milaboratory.util.sorting.Sorter;
 import com.milaboratory.util.TempFileManager;
 
 import java.io.File;
