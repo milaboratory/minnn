@@ -37,8 +37,17 @@ public final class SystemUtils {
         if (exitOnError) {
             System.err.println(message);
             System.exit(1);
-            throw new RuntimeException();
+            return null;
         } else
-            throw new RuntimeException(message);
+            return new RuntimeException(message);
+    }
+
+    public static RuntimeException exitWithError(Exception ex) {
+        if (exitOnError) {
+            ex.printStackTrace(System.err);
+            System.exit(1);
+            return null;
+        } else
+            return new RuntimeException(ex);
     }
 }
