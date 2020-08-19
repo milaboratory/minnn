@@ -36,9 +36,17 @@
     <packaging>jar</packaging>
     <name>minnn</name>
 
+    <repositories>
+        <repository>
+            <id>mipub</id>
+            <name>Public MiLaboratory Maven Repository</name>
+            <url>https://pub.maven.milaboratory.com</url>
+        </repository>
+    </repositories>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <milib.version>1.14-22a58bb</milib.version>
+        <milib.version>1.14-1e73aba</milib.version>
     </properties>
 
     <dependencies>
