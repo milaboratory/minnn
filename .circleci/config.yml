@@ -17,13 +17,6 @@ jobs:
           - dependencies-{{ checksum "pom.xml" }}
           - dependencies-
 
-      - run:
-          command: |
-              git submodule sync --recursive
-              git submodule update --init --recursive
-              cd milib
-              mvn clean install -DskipTests
-
       - run: mvn dependency:go-offline
 
       - save_cache:
