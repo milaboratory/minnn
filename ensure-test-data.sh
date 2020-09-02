@@ -14,6 +14,6 @@ declare -A links=(
 
 for filename in "${!links[@]}"; do
     if [[ ! -f ${filename} ]]; then
-        curl -sS ${filename} -o "${links[${filename}]}"
+        curl -sS -o "${links[${filename}]}" "${filename}"
     fi
 done
