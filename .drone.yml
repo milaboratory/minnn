@@ -1,7 +1,7 @@
 ---
 kind: pipeline
 type: docker
-name: linux
+name: deploy
 
 platform:
   os: linux
@@ -45,7 +45,7 @@ steps:
       DEPLOY_REPO:
         from_secret: maven-deploy-repo
 
-  - name: Send Telegram Notification
+  - name: telegram
     image: appleboy/drone-telegram
     when:
       status:
@@ -127,13 +127,22 @@ steps:
       local_root: /drone/src
       mount:
         - .m2
+        - src/test/resources/big
 
   - name: build_and_test
     image: maven:3-adoptopenjdk-8
     commands:
-      - mvn --no-transfer-progress clean test
+      - ./ensure-test-data.sh
+      - mvn --no-transfer-progress clean pre-integration-test
     environment:
       MAVEN_OPTS: "-Dmaven.repo.local=/drone/src/.m2"
+
+  - name: integration_tests
+    image: adoptopenjdk:8-hotspot
+    commands:
+      - apt-get update
+      - apt-get install -y jq
+      - ./itests.sh test
 
   - name: rebuild_cache
     image: meltwater/drone-cache
@@ -152,9 +161,10 @@ steps:
       local_root: /drone/src
       mount:
         - .m2
+        - src/test/resources/big
 
 ---
 kind: signature
-hmac: e24b0067ce5d4ddf2d402858432a0f58aed23ec497fd45398f6d577495eda21a
+hmac: eabc2ef4f9b24999340c932c9a84860affd3b7d924a95d911abb785413b3c306
 
 ...
