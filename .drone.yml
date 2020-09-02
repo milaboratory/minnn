@@ -17,7 +17,7 @@ steps:
     settings:
       restore: true
       # debug: true
-      cache_key: '{{ .Commit.Branch }}'
+      cache_key: 'deploy-{{ .Commit.Branch }}'
       access_key:
         from_secret: aws-key-id
       secret_key:
@@ -79,7 +79,68 @@ steps:
     settings:
       rebuild: true
       # debug: true
-      cache_key: '{{ .Commit.Branch }}'
+      cache_key: 'deploy-{{ .Commit.Branch }}'
+      access_key:
+        from_secret: aws-key-id
+      secret_key:
+        from_secret: aws-secret-key
+      bucket:
+        from_secret: aws-cache-bucket
+      region:
+        from_secret: aws-region
+      local_root: /drone/src
+      mount:
+        - .m2
+
+---
+
+kind: pipeline
+type: docker
+name: test
+
+platform:
+  os: linux
+  arch: amd64
+
+node:
+  type: highcpu
+
+event:
+  - push
+
+steps:
+  - name: restore_cache
+    image: meltwater/drone-cache
+    pull: true
+    settings:
+      restore: true
+      # debug: true
+      cache_key: 'test-{{ .Commit.Branch }}'
+      access_key:
+        from_secret: aws-key-id
+      secret_key:
+        from_secret: aws-secret-key
+      bucket:
+        from_secret: aws-cache-bucket
+      region:
+        from_secret: aws-region
+      local_root: /drone/src
+      mount:
+        - .m2
+
+  - name: build_and_test
+    image: maven:3-adoptopenjdk-8
+    commands:
+      - mvn --no-transfer-progress clean test
+    environment:
+      MAVEN_OPTS: "-Dmaven.repo.local=/drone/src/.m2"
+
+  - name: rebuild_cache
+    image: meltwater/drone-cache
+    settings:
+      rebuild: true
+      # debug: true
+      cache_key: 'test-{{ .Commit.Branch }}'
       access_key:
         from_secret: aws-key-id
       secret_key:
@@ -94,6 +155,6 @@ steps:
 
 ---
 kind: signature
-hmac: c501b5d3f5628375e0496a10c8ef8a23fce87e65caab099c66d5515fa278bf90
+hmac: e24b0067ce5d4ddf2d402858432a0f58aed23ec497fd45398f6d577495eda21a
 
 ...
