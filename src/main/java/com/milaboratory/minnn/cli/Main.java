@@ -28,14 +28,16 @@
  */
 package com.milaboratory.minnn.cli;
 
-import com.milaboratory.cli.*;
+import com.milaboratory.cli.AppVersionInfo;
 import com.milaboratory.util.TempFileManager;
 import com.milaboratory.util.VersionInfo;
 import picocli.CommandLine;
 import picocli.CommandLine.*;
-import picocli.CommandLine.Model.*;
+import picocli.CommandLine.Model.CommandSpec;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import static com.milaboratory.minnn.cli.ConsensusDoubleMultiAlignAction.CONSENSUS_DOUBLE_MULTI_ALIGN_ACTION_NAME;
 import static com.milaboratory.minnn.cli.ConsensusSingleCellAction.CONSENSUS_SINGLE_CELL_ACTION_NAME;
@@ -54,8 +56,8 @@ import static com.milaboratory.minnn.cli.ReportAction.REPORT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.SortAction.SORT_ACTION_NAME;
 import static com.milaboratory.minnn.cli.StatGroupsAction.STAT_GROUPS_ACTION_NAME;
 import static com.milaboratory.minnn.cli.StatPositionsAction.STAT_POSITIONS_ACTION_NAME;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.getVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.VERSION_INFO_MAIN;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 public final class Main {
@@ -75,9 +77,9 @@ public final class Main {
                 List<CommandLine> parsedCommands = parseResult.asCommandLineList();
                 CommandLine commandLine = parsedCommands.get(parsedCommands.size() - 1);
                 Object command = commandLine.getCommand();
-                if (command instanceof CommandSpec && ((CommandSpec)command).userObject() instanceof Runnable) {
+                if (command instanceof CommandSpec && ((CommandSpec) command).userObject() instanceof Runnable) {
                     try {
-                        ((Runnable)((CommandSpec)command).userObject()).run();
+                        ((Runnable) ((CommandSpec) command).userObject()).run();
                         return new ArrayList<>();
                     } catch (ParameterException | ExecutionException ex) {
                         throw ex;
@@ -106,6 +108,12 @@ public final class Main {
         String command = System.getProperty(APP_NAME + ".command", "java -jar " + APP_NAME + ".jar");
 
         if (!initialized) {
+            if (System.getProperty("jdk.module.main") == null) // hack fixme
+                // Checking whether we are running a snapshot version
+                if (VersionInfo.getVersionInfoForArtifact("minnn").getVersion().contains("SNAPSHOT"))
+                    // If so, enable asserts
+                    ClassLoader.getSystemClassLoader().setDefaultAssertionStatus(true);
+
             VersionInfo milibVersionInfo = VersionInfo.getVersionInfoForArtifact("milib");
             VersionInfo minnnVersionInfo = VersionInfo.getVersionInfoForArtifact(APP_NAME);
             HashMap<String, VersionInfo> componentVersions = new HashMap<>();
@@ -152,7 +160,7 @@ public final class Main {
 
     private static CommandLine parseArgs(String... args) {
         if (args.length == 0)
-            args = new String[] {"help"};
+            args = new String[]{"help"};
         ExceptionHandler exHandler = new ExceptionHandler();
         exHandler.andExit(1);
         CommandLine cmd = mkCmd();
