@@ -6,7 +6,7 @@ import picocli.CommandLine;
 
 @CommandLine.Command(
         name = "main",
-        versionProvider = com.milaboratory.cli.CommandMain.VersionProvider.class,
+        versionProvider = CommandMain.VersionProvider.class,
         separator = " "
 )
 public class CommandMain extends ABaseCommand {
