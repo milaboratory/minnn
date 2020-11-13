@@ -28,13 +28,12 @@
  */
 package com.milaboratory.minnn.io;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.*;
+import com.milaboratory.util.GlobalObjectMappers;
 
 import java.io.*;
-import java.util.*;
+import java.util.Map;
 
-import static com.milaboratory.minnn.util.SystemUtils.*;
+import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 
 final class ReportWriter {
     private ReportWriter() {}
@@ -55,22 +54,15 @@ final class ReportWriter {
         }
     }
 
-    static void jsonReport(String fileName, LinkedHashMap<String, Object> data) {
-        PrintStream reportFileOutputStream = null;
-        try {
-            if (fileName != null)
-                reportFileOutputStream = new PrintStream(new FileOutputStream(fileName, true));
+    static void jsonReport(String fileName, Map<String, Object> data) {
+        if (fileName == null)
+            return;
+
+        try (OutputStream os = new BufferedOutputStream(new FileOutputStream(fileName, true))) {
+            GlobalObjectMappers.ONE_LINE.writeValue(os, data);
+            os.write('\n');
         } catch (IOException e) {
-            throw exitWithError(e.toString());
-        }
-        if (reportFileOutputStream != null) {
-            ObjectWriter writer = new ObjectMapper().writer().withDefaultPrettyPrinter();
-            try {
-                reportFileOutputStream.println(writer.writeValueAsString(data));
-            } catch (JsonProcessingException e) {
-                throw exitWithError(e.toString());
-            }
-            reportFileOutputStream.close();
+            throw exitWithError(e);
         }
     }
 }

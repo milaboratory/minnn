@@ -45,9 +45,10 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.milaboratory.minnn.cli.CliUtils.floatFormat;
-import static com.milaboratory.minnn.io.ReportWriter.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfo.*;
-import static com.milaboratory.minnn.util.MinnnVersionInfoType.*;
+import static com.milaboratory.minnn.io.ReportWriter.humanReadableReport;
+import static com.milaboratory.minnn.io.ReportWriter.jsonReport;
+import static com.milaboratory.minnn.util.MinnnVersionInfo.getVersionString;
+import static com.milaboratory.minnn.util.MinnnVersionInfoType.VERSION_INFO_SHORTEST;
 import static com.milaboratory.minnn.util.SystemUtils.exitWithError;
 import static com.milaboratory.util.FormatUtils.nanoTimeToString;
 
@@ -108,7 +109,7 @@ public final class FilterIO {
             reader.close();
             writer.setOriginalNumberOfReads(reader.getOriginalNumberOfReads());
         } catch (IOException e) {
-            throw exitWithError(e.getMessage());
+            throw exitWithError(e);
         }
 
         StringBuilder reportFileHeader = new StringBuilder();
@@ -135,7 +136,7 @@ public final class FilterIO {
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         report.append("\nProcessing time: ").append(nanoTimeToString(elapsedTime * 1000000)).append('\n');
-        float percent = (totalReadsCounter.get() == 0) ? 0 : (float)matchedReads / totalReadsCounter.get() * 100;
+        float percent = (totalReadsCounter.get() == 0) ? 0 : (float) matchedReads / totalReadsCounter.get() * 100;
         report.append("Processed ").append(totalReadsCounter).append(" reads, matched ").append(matchedReads)
                 .append(" reads (").append(floatFormat.format(percent)).append("%)\n");
 

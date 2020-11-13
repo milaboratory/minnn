@@ -14,6 +14,6 @@ declare -A links=(
 
 for filename in "${!links[@]}"; do
     if [[ ! -f ${filename} ]]; then
-        wget -O ${filename} "${links[${filename}]}"
+        curl -sS -o "${filename}" "${links[${filename}]}"
     fi
 done
